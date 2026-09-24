@@ -1,7 +1,7 @@
 import {presentAt} from './residence';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance} from './world';
-import {actService,advanceService,assignmentBudget,assignmentEffort,assignmentPause,serviceAttention,serviceReason,serviceTask,serviceChief,serviceRealm,careerStanding,type Assignment,type ServiceCommand} from './assignments';
+import {actService,advanceService,assignmentPlanQuote,assignmentBudget,assignmentEffort,assignmentPause,serviceAttention,serviceReason,serviceTask,serviceChief,serviceRealm,careerStanding,type Assignment,type ServiceCommand} from './assignments';
 import {type AssignmentKind} from '../data/assignments';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 import {governmentOf} from './government';
@@ -94,4 +94,21 @@ describe('general appointments and service lifecycle',()=>{
   for(const mutate of mutations){const bad=structuredClone(w);mutate(bad);expect(()=>serializeWorld(bad)).toThrow();}
  });
 
+});
+
+describe('commission choice tradeoffs',()=>{
+ it('allocates council effort only after decision and trades other work for focus',()=>{
+  const {w,t}=prepared();const c=w.service!.councils.west;c.decided=false;
+  const baseline=assignmentEffort(w,t).total;c.priority='stability';c.decided=true;
+  expect(assignmentEffort(w,t).total).toBe(baseline+1);
+  c.priority='military';expect(assignmentEffort(w,t).total).toBe(Math.max(1,baseline-1));
+  c.decided=false;expect(assignmentEffort(w,t).total).toBe(baseline);
+ });
+ it('quotes actual plan workload with cost, time and quality tradeoffs',()=>{
+  const {w,t}=prepared();const normal=assignmentPlanQuote(w,t,'balanced'),slow=assignmentPlanQuote(w,t,'thorough'),fast=assignmentPlanQuote(w,t,'urgent');
+  expect(t.required).toBe(normal.work);expect(slow.coins).toBeLessThan(normal.coins);expect(slow.days).toBeGreaterThan(normal.days);expect(slow.quality).toBeGreaterThan(normal.quality);
+  expect(fast.coins).toBeGreaterThan(normal.coins);expect(fast.days).toBeLessThan(normal.days);expect(fast.quality).toBeLessThan(normal.quality);
+  expect(normal.days).toBe(Math.ceil(t.required/assignmentEffort(w,t).total));
+  const restored=parseWorld(serializeWorld(w));expect(assignmentPlanQuote(restored,serviceTask(restored,t.id)!,'balanced')).toEqual(normal);
+ });
 });

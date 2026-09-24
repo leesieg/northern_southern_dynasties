@@ -4,7 +4,7 @@ export type ServicePriority=keyof typeof servicePriorities;
 export const assignmentTemplates={
  relief:{name:'赈济安民',category:'stability',skill:'stewardship',coins:35,grain:70,work:160,icon:'grain',description:'开仓赈济，稳住民心。',effect:'秩序依成果质量提升，消耗专拨赈粮'},
  agriculture:{name:'劝课农桑',category:'economy',skill:'stewardship',coins:65,grain:25,work:200,icon:'grain',description:'修整沟渠，劝课农桑。',effect:'繁荣依成果质量提升，水利 +1'},
- commerce:{name:'整顿市务',category:'economy',skill:'stewardship',coins:60,grain:0,work:180,icon:'coins',description:'查验度量，疏通商路。',effect:'繁荣最多 +8，完成时公款 +85'},
+ commerce:{name:'整顿市务',category:'economy',skill:'stewardship',coins:60,grain:0,work:180,icon:'coins',description:'查验度量，疏通商路。',effect:'繁荣随质量提升（常额 +8），完成时公款 +85'},
  training:{name:'操练军伍',category:'military',skill:'martial',coins:70,grain:40,work:180,icon:'army',description:'整顿驻军，习练行阵。',effect:'本城驻军士气最多 +18、兵员最多 +60'},
  supply:{name:'军粮转运',category:'military',skill:'martial',coins:40,grain:120,work:180,icon:'grain',description:'从国都向驻军所在城转运军粮。',effect:'本城驻军补给最多 +90'},
  inspection:{name:'巡察吏治',category:'stability',skill:'intrigue',coins:45,grain:10,work:180,icon:'wary',description:'巡视官署，清查积弊。',effect:'秩序最多 +10，朝廷积弊最多 −8'},
@@ -14,7 +14,7 @@ export const assignmentTemplates={
  hostelworks:{name:'营建驿舍',category:'economy',skill:'stewardship',coins:110,grain:20,work:210,icon:'city',description:'由中枢或度支官员组织修建驿舍。',effect:'驿舍提升 1 级，最高 3 级'},
  greatworks:{name:'兴修水利',category:'economy',skill:'stewardship',coins:180,grain:80,work:400,icon:'estate',description:'由中枢官员主持疏渠筑堰，组织大型水利工程。',effect:'繁荣 +20、秩序 +10、水利 +2'},
  recruitment:{name:'征募兵员',category:'military',skill:'martial',coins:100,grain:80,work:220,icon:'army',description:'由军务或选官职掌主持军户征募。',effect:'补充驻军 200 人；无驻军时组建 200 人军队，消耗对应人口与 5 秩序'},
- taxation:{name:'清查征税',category:'economy',skill:'stewardship',coins:30,grain:0,work:180,icon:'coins',description:'由度支或监察官员清查欠赋，按本城户数与税制征收。',effect:'公款增加 30—150，秩序 −5，每城每季限一次'},
+ taxation:{name:'清查征税',category:'economy',skill:'stewardship',coins:30,grain:0,work:180,icon:'coins',description:'由度支或监察官员清查欠赋，按本城人口与税制征收。',effect:'公款增加 30—150，秩序 −5，每城每季限一次'},
 } as const;
 export type AssignmentKind=keyof typeof assignmentTemplates;
 export const assignmentPlans={balanced:{name:'按部就班',cost:100,work:100,description:'按常额拨款与工期办理，基础质量 100%。'},thorough:{name:'从容详办',cost:80,work:125,description:'预算为常额的八成，工作量增加四分之一，基础质量 115%。'},urgent:{name:'增拨赶办',cost:140,work:80,description:'预算为常额的一点四倍，工作量减少五分之一，基础质量 85%。'}} as const;
@@ -22,3 +22,21 @@ export type AssignmentPlan=keyof typeof assignmentPlans;
 export const assignmentPhases={petition:'待准请命',proposal:'拟定方案',approval:'待批预算',ready:'待启办',working:'办理中',incident:'阻碍待决',aid:'待复求援',report:'待考绩',closed:'已结案'} as const;
 export type AssignmentPhase=keyof typeof assignmentPhases;
 export const careerNames={economy:['初涉经世','善治之才','循吏之望','经世名臣'],stability:['初涉安民','整饬有方','清正之望','砥柱之臣'],military:['初涉军务','治军有方','将略之望','柱国之才'],diplomacy:['初涉邦交','善通国事','折冲之望','纵横名士']} as const;
+
+/** Player-facing choices describe rules, not historical claims. */
+export const assignmentTradeoffs:Record<AssignmentKind,{condition:string;cost:string}>={
+ relief:{condition:'本国控制的城市，可用承办人',cost:'占用赈粮；先稳秩序与粮储，不提高长期水利产能'},
+ agriculture:{condition:'本国控制的城市，可用管理人才',cost:'见效较慢；占用当地劳力，短期生产受影响'},
+ commerce:{condition:'本国控制的城市，可用管理人才',cost:'收益在结案时到账；不能立即填补公库缺口，也不增加粮食产能'},
+ training:{condition:'本城须有驻留军队',cost:'消耗钱粮；新增兵员从当地人口扣除，无法解决缺粮'},
+ supply:{condition:'本城须有驻军，国都至本城道路可通行',cost:'占用中央粮储；补给有上限，军队离城或道路阻断会暂停'},
+ inspection:{condition:'可用监察人才，承办人须在场',cost:'占用承办时间；清查积弊不直接增加公共收入'},
+ envoy:{condition:'目标国未与本国交战',cost:'使团还须等待对方接纳；不能保证修好，也不授予通行权'},
+ marketworks:{condition:'对应中央职掌，市肆未满级且无并行营建',cost:'占用当地劳力与营建名额；资金先支出，收益逐期回收'},
+ granaryworks:{condition:'对应中央职掌，城仓未满级且无并行营建',cost:'占用劳力与营建名额；增加仓容、减少损耗，不直接产粮'},
+ hostelworks:{condition:'对应中央职掌，驿舍未满级且无并行营建',cost:'占用劳力与营建名额；不能替代地方缺粮、低秩序的治理'},
+ greatworks:{condition:'对应中央职掌，可用工程承办人',cost:'预算高、工期长，持续占用劳力；与短期救急争夺经费'},
+ recruitment:{condition:'对应中央职掌，本城至少 700 人；已有军队须在此驻留且未满员',cost:'兵员来自当地人口，秩序 −5；增兵后长期军粮与军饷增加'},
+ taxation:{condition:'对应中央职掌，每城每季限一次',cost:'秩序 −5；追征收入需扣除办理预算，未必划算'},
+};
+export const priorityIcons={economy:'coins',stability:'steadfast',military:'army',diplomacy:'gregarious'} as const;
