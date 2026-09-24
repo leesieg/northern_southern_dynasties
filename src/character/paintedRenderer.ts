@@ -1,9 +1,10 @@
 import { validatePaintedRecipe,type PaintedRecipe,type PaintedPart } from './paintedLayers';
 
 const sources=new Map<string,Promise<HTMLImageElement>>();
-const SOURCE_LIMIT=12;
+const SOURCE_LIMIT=48;
 function loadSource(url:string){
  let request=sources.get(url);
+ if(request){sources.delete(url);sources.set(url,request);}
  if(!request){
   request=new Promise<HTMLImageElement>((resolve,reject)=>{
    const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('人物素材载入失败：'+url));image.src=url;

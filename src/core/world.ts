@@ -1,3 +1,4 @@
+import {ensureFiscal,actFiscal,advanceFiscal,fiscalSnapshot,reconcileFiscal} from './treasury';
 import {ensurePersonalInfluence,snapshotInfluence,restoreInfluence,advancePersonalInfluence} from './personalInfluence';
 import {ensureRetinue,actRetinue,advanceRetinue} from './retinue';
 import {ensureMobility,actMobility,departureReason,advanceMobility,syncArmyTravel} from './mobility';
@@ -87,7 +88,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   ensureDiplomacy(w);
   ensureLifestyle(w);
   ensureLife(w);
-  ensureMobility(w);ensureRetinue(w);ensurePersonalInfluence(w);
+  ensureMobility(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);
   return w;
 }
 function record(world: World, person: Person, text: string) {
@@ -95,7 +96,7 @@ function record(world: World, person: Person, text: string) {
   world.chronicle = world.chronicle.slice(-100);
 }
 export function act(world: World, command: GameCommand): void {
- actCommand(world,command);snapshotInfluence(world);
+ const before=fiscalSnapshot(world);actCommand(world,command);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
 }
 function actCommand(world: World, command: GameCommand): void {
   const person = world.people[0];
@@ -105,6 +106,7 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='health'){actLife(world,command);return;}
   if(command.type==='travel'&&lifeOf(world,world.characterId??'fictional')?.illness?.severity===3)throw new Error('重病期间无法远行，请先延医休养。');
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
+  if(command.type==='fiscal'){actFiscal(world,command);return;}
   if(command.type==='retinue'){actRetinue(world,command);return;}
   if(command.type==='mobility'){actMobility(world,command);return;}
   if(command.type==='travel'&&departureReason(world))throw new Error(departureReason(world));
@@ -143,6 +145,7 @@ export function advance(world: World, days = 1): void {
     if(world.realm?.event)break;
     ensureLife(world);
     const previous=snapshotInfluence(world);
+    const fiscalBefore=fiscalSnapshot(world);
     world.day++;
     advanceDiplomacy(world);
     advanceConstruction(world);
@@ -176,6 +179,7 @@ export function advance(world: World, days = 1): void {
     advanceSocial(world);
     advanceGovernments(world);
     advanceRealm(world);
+    advanceFiscal(world);
     syncArmyTravel(world);
     syncRelationships(world);
     advanceRelationships(world);
@@ -188,6 +192,7 @@ export function advance(world: World, days = 1): void {
     advanceService(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);
     evaluateCampaign(world);
+    reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');
   }
 }
 export function position(person: Person): { lon: number; lat: number } {
@@ -205,3 +210,5 @@ export function dateLabel(day: number,scriptId?:string): string {
   const date = new Date(Date.UTC(getScript(scriptId).year, 0, 1 + day));
   return `${date.getUTCFullYear()} 年 ${date.getUTCMonth()+1} 月 ${date.getUTCDate()} 日`;
 }
+
+function publicActionName(c:GameCommand){const type:Record<string,string>={realm:'政务',service:'差事',duty:'粮务',court:'朝廷',government:'制度',diplomacy:'外交',mobility:'出行',retinue:'幕府',build:'营建',fiscal:'拨款'};const actions:Record<string,string>={muster:'动员',relief:'赈济',fund:'拨付',event:'地方事件',approve:'批准预算',grant:'追加拨款',cancel:'撤回结余',close:'差事结案',war:'宣战',disband:'遣散',ransom:'赎返'};return (type[c.type]??'国政')+('action' in c?' · '+(actions[c.action]??'公务办理'):'');}

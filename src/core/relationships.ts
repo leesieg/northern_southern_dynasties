@@ -109,8 +109,8 @@ export function relationshipQuote(w:World,command:RelationshipCommand){
  if(action==='aid')return !['friend','confidant'].includes(kind??'')&&spouseOf(w,a)!==target?'仅配偶或朋友可请求支援':score<40?'亲友支援接受度需达到 40':s.reserves[target]<50?'对方私人储备不足 50':'';
  if(!w.realm)return '政治关系仅历史沙盒可用';const r=currentRealm(w),g=governmentOf(w,r)!,control=validRegency(w,r);
  if(p.realm!==r)return '效忠与朝廷控制限同一政权，不自动转移领土';
- if(action==='pledge')return s.oaths[a]?'已有个人誓约，须先解除':g.ruler===a?'君主不能宣誓成为个人属员':authorityScore(w,target)<=authorityScore(w,a)?'对方须有更高的军政权力':oathCycle(w,a,target)?'效忠关系会形成循环':kind==='rival'||kind==='nemesis'?'不能向仇敌宣誓':score<40?'效忠接受度需达到 40':'';
- if(action==='recruit')return (ageAt(w,target)??0)<16?'只能招纳成年效忠者':s.oaths[target]?'对方已有誓约':g.ruler===target?'不能以普通效忠取代君主地位':authorityScore(w,a)<=authorityScore(w,target)?'需高于对方的军政权力':oathCycle(w,target,a)?'效忠关系会形成循环':score<65?'招纳接受度需达到 65':'';
+ if(action==='pledge')return w.retinue?.members[a]?'已入幕府，须先离幕再宣誓':s.oaths[a]?'已有个人誓约，须先解除':g.ruler===a?'君主不能宣誓成为个人属员':authorityScore(w,target)<=authorityScore(w,a)?'对方须有更高的军政权力':oathCycle(w,a,target)?'效忠关系会形成循环':kind==='rival'||kind==='nemesis'?'不能向仇敌宣誓':score<40?'效忠接受度需达到 40':'';
+ if(action==='recruit')return w.retinue?.members[target]?'对方已有幕府归属，须先离幕再招纳效忠':(ageAt(w,target)??0)<16?'只能招纳成年效忠者':s.oaths[target]?'对方已有誓约':g.ruler===target?'不能以普通效忠取代君主地位':authorityScore(w,a)<=authorityScore(w,target)?'需高于对方的军政权力':oathCycle(w,target,a)?'效忠关系会形成循环':score<65?'招纳接受度需达到 65':'';
  if(action==='release')return s.oaths[target]?.lord!==a?'对方不是你的效忠者':'';
  if(action==='renounce')return s.oaths[a]?.lord!==target?'此人不是你的誓约领主':w.social.renown<20?'背誓需家业名望 20':'';
  if(action==='control')return target!==g.ruler?'只能筹划控制本国名义君主':s.scheme||w.social.scheme?'已有长期交往或权力计谋':control?.controller===a?'你已掌握实际执政权':authorityScore(w,a)<20?'需中央任职、辖地或执政基础':(g.merit[a]??0)<40?'需功绩 40':relationHooks(w,a,target)<2?'需掌握君主 2 份人情':g.task||g.court?.founding?'先结束制度或建朝议程':'';

@@ -1,0 +1,23 @@
+import {useState} from 'react';
+import {ArtIcon,Resource} from './ArtIcon';
+import {DetailTabs} from './DetailTabs';
+import {HoverHint} from './HoverHint';
+import {CharacterPortrait} from './CharacterPortrait';
+import {accountName,fiscalPath,localBalance,grantFactors,grantPurposes,fiscalReason,superiorForCity,type FiscalCommand,type GrantRequest} from '../core/treasury';
+import {playerRealm,executive,cityYield} from '../core/realm';
+import {politicalName} from '../core/government';
+import {siteById} from '../data/scenario';
+import type {World,GameCommand} from '../core/types';
+import './treasury.css';
+export function TreasuryPanel({world:w,pending,send,site,onPerson}:{world:World;pending:boolean;send:(c:GameCommand)=>void;site?:string;onPerson?:(id:string)=>void}){
+ const [tab,setTab]=useState<'budget'|'requests'|'ledger'>('budget'),[amount,setAmount]=useState(100),[purpose,setPurpose]=useState<GrantRequest['purpose']>('construction');
+ const r=playerRealm(w),s=w.realm!.fiscal,chief=executive(w),cities=Object.entries(w.realm!.cities).filter(([id,c])=>(!site||site===id)&&c.owner===r&&c.controller===r&&(chief||c.governor===w.characterId)),requests=s?.requests.filter(q=>q.realm===r&&(!site||q.site===site)&&(chief||q.actor===w.characterId||q.approver===w.characterId))??[];
+ if(site&&(w.realm!.cities[site].owner!==r||w.realm!.cities[site].controller!==r))return null;
+ const action=(cmd:FiscalCommand,label:string)=>{const reason=fiscalReason(w,cmd);return <HoverHint label={label} content={reason||label}><button disabled={pending||!!reason} onClick={()=>send(cmd)}>{label}</button></HoverHint>;};
+ return <section className="treasury-panel"><h3><ArtIcon name="coins" size={26}/>公库</h3><DetailTabs label="公库事务" value={tab} onChange={setTab} items={[{id:'budget',label:'预算',icon:'coins'},{id:'requests',label:'拨款'+(requests.some(q=>q.status==='pending')?' · '+requests.filter(q=>q.status==='pending').length:''),icon:'influence'},{id:'ledger',label:'账目',icon:'diligent'}]}/>
+ {tab==='budget'&&<><p>每 30 日上缴税赋；中央支付行政、俸禄与军饷后，将各城税收的 35% 逐级拨回。公库不足时按比例拨付。</p><div className="treasury-cities">{cities.map(([id])=><article key={id}><strong>{siteById[id].name}</strong>{!site&&<Resource name="coins" value={localBalance(w,id)} label="地方余额" caption/>}<HoverHint label="税赋与拨付路径" content={fiscalPath(w,id).map(accountName).join(' → ')}><small>税收 {cityYield(w,id).coins} · 计划拨回 {Math.floor(cityYield(w,id).coins*.35)} ⓘ</small></HoverHint>{w.realm!.cities[id].governor===w.characterId&&action({type:'fiscal',action:'relief',site:id},'平粜赈济 · 20 钱 / 秩序 +8')}</article>)}</div>{!cities.length&&<p>尚无归你管理的地方公库。</p>}</>}
+ {tab==='requests'&&<><div className="treasury-form"><label>拨款钱数<input type="number" min={20} max={400} step={10} value={amount} onChange={e=>setAmount(Number(e.target.value))}/></label>{!chief&&<label>用途<select value={purpose} onChange={e=>setPurpose(e.target.value as GrantRequest['purpose'])}>{Object.entries(grantPurposes).map(([id,name])=><option value={id} key={id}>{name}</option>)}</select></label>}</div>{cities.map(([id])=><div className="treasury-request-city" key={id}><strong>{siteById[id].name}</strong>{action(chief?{type:'fiscal',action:'allocate',site:id,amount}:{type:'fiscal',action:'request',site:id,amount,purpose},chief?'拨入地方公库':'呈请'+politicalName(superiorForCity(w,id)!))}</div>)}
+ {requests.slice().reverse().map(q=><article className="treasury-request" key={q.id}><button className="treasury-applicant" onClick={()=>onPerson?.(q.actor)} aria-label={politicalName(q.actor)}><CharacterPortrait world={w} characterId={q.actor} compact/></button><div><strong>{siteById[q.site].name} · {grantPurposes[q.purpose]} · {q.amount} 钱</strong><p>{q.status==='pending'?'候批 · '+politicalName(q.approver):q.reply}</p><HoverHint label="审批因素" content={<>{(q.evaluation??grantFactors(w,q)).map(p=><p key={p.label}>{p.label} {p.value>=0?'+':''}{p.value}</p>)}<p>非玩家上级在 3 日后审议，评分至少 50 且国库足额时批准。</p></>}><span>审批评分 {(q.evaluation??grantFactors(w,q)).reduce((n,p)=>n+p.value,0)} ⓘ</span></HoverHint>{q.status==='pending'&&<div className="realm-actions">{q.approver===w.characterId?<>{action({type:'fiscal',action:'approve',id:q.id},'批准')}{action({type:'fiscal',action:'reject',id:q.id},'驳回')}</>:q.actor===w.characterId&&action({type:'fiscal',action:'cancel',id:q.id},'撤回')}</div>}</div></article>)}</>}
+ {tab==='ledger'&&<div className="treasury-ledger">{(s?.entries??[]).filter(e=>e.realm===r&&(!site||e.from===fiscalPath(w,site)[0]||e.to===fiscalPath(w,site)[0])).slice(-60).reverse().map(e=><article key={e.id}><span>第 {e.day} 日 · {e.reason}</span><strong>{e.coins} 钱</strong><small>{accountName(e.from)} → {accountName(e.to)}</small></article>)}{!s?.entries.length&&<p>本期尚无入账。</p>}</div>}
+ </section>;
+}

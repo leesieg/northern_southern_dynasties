@@ -1,3 +1,4 @@
+import {fundAssignment,fiscalRecord,centralAccount} from './treasury';
 import {awardInfluence} from './personalInfluence';
 import {civicBuildings,officialDutyReason,dutyMinistries} from './officialDuties';
 import {emptyCity} from './construction';
@@ -102,6 +103,7 @@ export function serviceReason(w:World,c:ServiceCommand,actor=w.characterId):stri
 function finish(w:World,t:Assignment,success:boolean,reason:string){
  if(t.result)return;const s=w.service!,g=governmentOf(w,t.realm)!,chief=serviceChief(w,t.realm),city=w.realm!.cities[t.site],treasury=w.realm!.treasuries[t.realm],d=assignmentTemplates[t.kind],effects:string[]=[],awards:NonNullable<Assignment['result']>['awards']=[];
  const change=(object:Record<string,number>,key:string,delta:number,label:string,max=100,min=0)=>{const before=object[key];object[key]=clamp(before+delta,max,min);effects.push(label+' '+(object[key]-before>=0?'+':'')+(object[key]-before));};
+ fiscalRecord(w,t.realm,'task:'+t.id,t.started?'expense':centralAccount(t.realm),t.funds.coins,t.started?'差事结算':'差事退回结余');
  if(!t.started){change(treasury as unknown as Record<string,number>,'coins',t.funds.coins,'退回公款',1_000_000);change(treasury as unknown as Record<string,number>,'grain',t.funds.grain,'退回公粮',1_000_000);}
  if(success){
   const c=city as unknown as Record<string,number>,army=w.realm!.armies.find(a=>a.realm===t.realm&&a.location===t.site&&!a.journey);
@@ -145,7 +147,7 @@ export function actService(w:World,c:ServiceCommand,actor=w.characterId){
  const t=serviceTask(w,c.id)!,treasury=w.realm!.treasuries[t.realm];
  switch(c.action){
  case 'plan':t.plan=c.plan;phase(w,t,'approval');log(w,t,'呈请「'+assignmentPlans[c.plan].name+'」，预算公款 '+assignmentBudget(t.kind,c.plan).coins+'、公粮 '+assignmentBudget(t.kind,c.plan).grain+'。');break;
- case 'approve':if(t.phase==='petition'){phase(w,t,'proposal');log(w,t,'准予请命，请拟议办理方案。');}else{const b=assignmentBudget(t.kind,t.plan!);treasury.coins-=b.coins;treasury.grain-=b.grain;t.funds=b;phase(w,t,'ready');log(w,t,'预算获准，专款已拨付。');}break;
+ case 'approve':if(t.phase==='petition'){phase(w,t,'proposal');log(w,t,'准予请命，请拟议办理方案。');}else{const b=assignmentBudget(t.kind,t.plan!);fundAssignment(w,t.site,t.realm,b.coins,t.id,'差事预算拨付');treasury.grain-=b.grain;t.funds=b;phase(w,t,'ready');log(w,t,'预算获准，专款已拨付。');}break;
  case 'revise':t.plan=null;phase(w,t,'proposal');log(w,t,'方案退回重拟，尚未拨款。');break;
  case 'start':t.started=true;t.required=Math.ceil(assignmentTemplates[t.kind].work*assignmentPlans[t.plan!].work/100)+(t.kind==='supply'?(assignmentRoute(w,t)?.days??0)*4:0);phase(w,t,'working');log(w,t,'差事启办；总工作量 '+t.required+'，按实际能力和协作逐日办理。');break;
  case 'invite':t.invitation={person:c.person,day:w.day};t.invited.push(c.person);log(w,t,'邀请'+politicalName(c.person)+'协办，等待答复。');break;
@@ -154,7 +156,7 @@ export function actService(w:World,c:ServiceCommand,actor=w.characterId){
  case 'withdraw':t.helper=null;log(w,t,politicalName(actor!)+'退出协办，既有贡献保留。');break;
  case 'replace':log(w,t,'改委'+politicalName(c.person)+'，钱粮与进度保留，考绩按实际贡献分配。');t.officer=c.person;t.credential=serviceCredential(w,c.person);if(t.invitation?.person===c.person)t.invitation=null;t.changed=w.day;break;
  case 'request-aid':t.aidRequested=true;phase(w,t,'aid');log(w,t,'承办人请增拨公款 20，排除办理阻碍。');break;
- case 'grant':treasury.coins-=20;t.funds.coins+=20;phase(w,t,'incident');log(w,t,'增拨公款 20 已获准。');break;
+ case 'grant':fundAssignment(w,t.site,t.realm,20,t.id,'差事追加拨付');t.funds.coins+=20;phase(w,t,'incident');log(w,t,'增拨公款 20 已获准。');break;
  case 'deny':phase(w,t,'incident');log(w,t,'未获追加，请另择办法。');break;
  case 'spend':t.incidentDone=true;phase(w,t,'working');log(w,t,'动用追加款排除阻碍，工期不变。');break;
  case 'delay':t.incidentDone=true;t.required+=40;phase(w,t,'working');log(w,t,'缓办疏通，追加工作量 40，不再花费钱粮。');break;

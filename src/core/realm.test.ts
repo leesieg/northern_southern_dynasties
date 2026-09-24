@@ -1,3 +1,4 @@
+import {routeGrant,localBalance} from './treasury';
 import { describe,it,expect } from 'vitest';
 import { newCampaignWorld,act,advance,planRoute } from './world';
 import { serializeWorld,parseWorld } from './save';
@@ -13,9 +14,9 @@ describe('沙盒政治经济军事',()=>{
  });
  it('城市用公款，家产用私产，动员不消耗个人钱粮',()=>{
   const w=sandbox('xiao-gang');w.realm!.mandate=true;act(w,{type:'retinue',action:'recruit',person:'guest-liang'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});const p=w.people[0],r=w.realm!,before=p.coins;
-  act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});expect(p.coins).toBe(before);expect(r.treasuries.liang.coins).toBe(520);
+  routeGrant(w,'jiankang',200,'城市预算');act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});expect(p.coins).toBe(before);expect(r.treasuries.liang.coins).toBe(400);expect(localBalance(w,'jiankang')).toBe(120);
   act(w,{type:'build',scope:'estate',site:'jiankang',building:'fields'});expect(p.coins).toBe(before-40);
-  act(w,{type:'realm',action:'muster'});expect(r.treasuries.liang.coins).toBe(400);expect(r.treasuries.liang.grain).toBe(880);expect(p.coins).toBe(before-40);validate(w);
+  act(w,{type:'realm',action:'muster'});expect(r.treasuries.liang.coins).toBe(400);expect(r.treasuries.liang.grain).toBe(880);expect(localBalance(w,'jiankang')).toBe(0);expect(p.coins).toBe(before-40);validate(w);
  });
  it('税率取舍改变生产与秩序，公共建设不重复发放个人收入',()=>{
   const w=sandbox(),r=w.realm!,initial=cityYield(w,'jiankang').coins;

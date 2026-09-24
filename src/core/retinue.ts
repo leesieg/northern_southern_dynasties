@@ -21,7 +21,7 @@ export type RetinuePost=keyof typeof retinuePosts;
 export interface Retainer {host:string;joined:number;post:RetinuePost|null;site:string|null;arrears:number}
 export interface RetinueState {version:1;since:number;lastMonth:number;members:Record<string,Retainer>;cooldowns:Record<string,number>;recommendations:Record<string,{until:number;bonus:number}>;history:{day:number;host:string;person:string;text:string}[]}
 export type RetinueCommand={type:'retinue';action:'recruit'|'dismiss'|'unassign';person:string}|{type:'retinue';action:'assign';person:string;post:RetinuePost;site?:string}|{type:'retinue';action:'work';post:RetinuePost;task:'resupply'|'audit'|'drill'|'recommend'};
-export function ensureRetinue(w:World){if(w.mode==='sandbox')w.retinue??={version:1,since:w.day,lastMonth:Math.floor(w.day/30)*30,members:{},cooldowns:{},recommendations:{},history:[]};if(w.retinue)for(const [id,m] of Object.entries(w.retinue.members))if(isSovereign(w,m.host))release(w,id,'因主公改用中央官职而解除幕府编制，可由朝廷重新任官');return w.retinue;}
+export function ensureRetinue(w:World){if(w.mode==='sandbox')w.retinue??={version:1,since:w.day,lastMonth:Math.floor(w.day/30)*30,members:{},cooldowns:{},recommendations:{},history:[]};if(w.retinue)for(const [id,m] of Object.entries(w.retinue.members))if(isSovereign(w,m.host)||w.relationships?.oaths[id])release(w,id,'因中央任职或已有个人誓约而解除幕府编制');return w.retinue;}
 export const retinueMembers=(w:World,host=w.characterId!)=>Object.entries(w.retinue?.members??{}).filter(([,m])=>m.host===host).map(([id,m])=>({id,...m}));
 export function isOfficial(w:World,id:string){return officeHierarchy(w).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
 function hasPublicDuties(w:World,id:string){return officeHierarchy(w).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
@@ -51,6 +51,7 @@ export function retinueQuote(w:World,c:RetinueCommand,host=w.characterId!){
   const p=relationshipPersonById[c.person],at=personResidence(w,c.person),to=personResidence(w,host).site;
   if(c.person===w.characterId&&host!==w.characterId)reason='须本人同意，不自动入幕';
   else if(!p||c.person===host||!isAlive(w,c.person)||!adult(w,c.person))reason='须选择另一位在世成年人物';
+  else if(w.relationships?.oaths[c.person])reason='对方已有个人誓约，请先解除效忠再延聘入幕';
   else if(s.members[c.person]||retinueMembers(w,c.person).length)reason='此人已有幕府归属';
   else if(hasPublicDuties(w,c.person))reason='此人有公职在身，不能兼入私人幕府';
   else if(externalBusy(w,c.person)||at.traveling||lifeOf(w,c.person)?.illness?.severity===3)reason='对方正在办事、出行或养病';

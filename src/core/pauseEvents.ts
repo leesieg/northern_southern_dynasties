@@ -10,6 +10,7 @@ import {siteById} from '../data/scenario';
 import type {World} from './types';
 import {playerRealm} from './realm';
 export function pauseHasActions(w:World,event:PauseEvent){
+ if(event.kind==='fiscal')return !!w.realm?.fiscal?.requests.some(q=>q.id===event.fiscalId&&q.status==='pending'&&q.approver===w.characterId);
  if(event.kind==='realm')return !!w.realm?.event;
  if(event.kind==='diplomacy')return !!w.realm&&!!w.diplomacy?.missions.some(m=>m.status==='audience'&&m.to===playerRealm(w));
  if(event.kind==='mobility')return !!w.mobility?.captivity||!!w.mobility?.activities.some(a=>(event.activityId===undefined||a.id===event.activityId)&&!['done','cancelled'].includes(a.phase));
@@ -20,11 +21,12 @@ export function pauseHasActions(w:World,event:PauseEvent){
  }
  return false;
 }
-export interface PauseEvent {id:string;assignmentId?:number;activityId?:number;kind:'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
-export function pauseSnapshot(w:World){return {clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
+export interface PauseEvent {id:string;fiscalId?:number;assignmentId?:number;activityId?:number;kind:'fiscal'|'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
+export function pauseSnapshot(w:World){return {fiscal:new Map(w.realm?.fiscal?.requests.map(q=>[q.id,q.status+'|'+q.approver])),clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
 export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):PauseEvent[]{
  const events:PauseEvent[]=[];
  const add=(kind:PauseEvent['kind'],title:string,body:string,extra:Partial<PauseEvent>={})=>events.push({id:`${w.day}:${kind}:${events.length}`,kind,title,body,...extra});
+ for(const q of w.realm?.fiscal?.requests??[])if(before.fiscal.get(q.id)!==q.status+'|'+q.approver&&(q.status==='pending'?q.approver===w.characterId:q.actor===w.characterId))add('fiscal',q.status==='pending'?'地方请款':'拨款批复',siteById[q.site].name+' · '+q.amount+' 钱 · '+(q.reply||'请审议本城公款申请'),{fiscalId:q.id,site:q.site});
  for(const a of w.mobility?.activities??[])if(before.mobility.get(a.id)!==a.phase&&['ready','decision','done','cancelled'].includes(a.phase))add('mobility',activities[a.kind].name,a.result||`${siteById[a.site].name} · ${a.phase==='ready'?'参加者已到齐，可以开始办理。':'驻留事务已有进展，请决定下一步。'}`,{activityId:a.id,site:a.site});
  if(w.mobility?.captivity&&(w.mobility.reported>before.reported))add('mobility','统帅被俘','所部溃散，可筹措赎金。');
  if(w.mobility&&w.mobility.reported>before.reported&&!events.some(e=>e.kind==='mobility'))add('mobility','军中急报','所部溃散，你负伤脱离军队，请安排休养。');

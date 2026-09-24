@@ -1,3 +1,4 @@
+import {localBalance} from '../core/treasury';
 import {CityOfficeSeat} from './CityOfficeSeat';
 import {OfficialActions} from './OfficialActions';
 import {isSovereign,centralMinistry} from '../core/officialDuties';
@@ -50,7 +51,7 @@ export function ConstructionPanel({world,scope,site,send,onRetinue,selectedCityB
     {estate?<><div className="estate-overview"><span className="estate-seal" style={{fontSize:familyName(world.holdings.estate.family).length>1?20:undefined}}>{familyName(world.holdings.estate.family)}</span><div><span className="eyebrow">家族产业 · 不附属于官职</span><h3>{siteById[site].name} · {familyName(world.holdings.estate.family)}氏庄园</h3><p>主宅 {world.holdings.estate.levels.hall} 级 · 附属建筑 {Object.entries(holding.levels).filter(([id,n])=>id!=='hall'&&n>0).length} / {world.holdings.estate.levels.hall}</p></div></div><p className="construction-note">基础家产每 30 日收入 4 钱。主宅扩建开放建筑位；田庄、作坊与庄仓可升级。</p></>:<p className="construction-note">{!world.holdings.governedCities.includes(site)&&'尚无本城治理权，请前往政务请求任职。'}</p>}
     {estate&&<MobilityPanel world={world} site={site} estate send={send}/>}
     {estate&&<EstatePainting estate={world.holdings.estate} day={world.day} selected={selectedBuilding} onSelect={setSelectedBuilding}/>}
-    {world.social&&<p className="construction-note">{world.realm?(estate?'使用个人钱粮营建家产。':'使用本政权公库营建城市。'):''}新工程造价 {buildingModifiers(world).costRate}% · 工期 {constructionModifiers(world,scope,site).timeRate}%，已计入报价。{traitsFor(world).includes('diligent')&&'勤勉：每次动工压力 +6。'}现有工程不受后续修正影响。</p>}
+    {world.social&&<p className="construction-note">{world.realm?(estate?'使用个人钱粮营建家产。':`使用本城公库（余额 ${localBalance(world,site)} 钱）；不足时前往治理页申请拨款。`):''}新工程造价 {buildingModifiers(world).costRate}% · 工期 {constructionModifiers(world,scope,site).timeRate}%，已计入报价。{traitsFor(world).includes('diligent')&&'勤勉：每次动工压力 +6。'}现有工程不受后续修正影响。</p>}
     {project&&<div className="construction-progress" role="status"><strong>{({...cityBuildings,...estateBuildings})[project.building].name} · 扩建至 {project.level} 级</strong><progress value={world.day-project.started} max={project.due-project.started}/><span>还需 {project.due-world.day} 日 · 已支付 {project.cost} 钱</span></div>}
     <div className="building-list">{Object.entries(definitions).map(([id,d])=>{
       const command={type:'build' as const,scope,site,building:id as Building};

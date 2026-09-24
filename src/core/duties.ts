@@ -1,3 +1,4 @@
+import {fundAssignment,fiscalRecord,centralAccount} from './treasury';
 import {presentAt} from './residence';
 import {serviceBusy} from './assignments';
 import {characterById,historicalCharacters} from '../data/characters';
@@ -72,6 +73,7 @@ export function dutyReason(w:World,c:DutyCommand,actor=w.characterId):string{
 function finish(w:World,t:Duty,success:boolean,reason:string){
  if(t.result)return;
  const chief=chiefOfDuty(w),merit=success?20:0,opinion=success?12:-8;
+ fiscalRecord(w,'west','task:0',t.started?'expense':centralAccount('west'),t.funds.coins,t.started?'天水粮务结算':'天水粮务退回结余');
  if(!t.started){const treasury=w.realm!.treasuries.west;treasury.coins=Math.min(1_000_000,treasury.coins+t.funds.coins);treasury.grain=Math.min(1_000_000,treasury.grain+t.funds.grain);}
  if(success){const city=w.realm!.cities.tianshui;city.order=Math.min(100,city.order+12);city.prosperity=Math.min(100,city.prosperity+4);const army=w.realm!.armies.find(a=>a.realm==='west'&&a.location==='tianshui');if(army)army.supply=Math.min(120,army.supply+60);}
  else w.realm!.cities.tianshui.order=Math.max(0,w.realm!.cities.tianshui.order-8);
@@ -85,11 +87,11 @@ export function actDuty(w:World,c:DutyCommand,actor=w.characterId){
  const t=s.task!,treasury=w.realm!.treasuries.west;
  switch(c.action){
  case 'propose':t.plan=c.plan;phase(w,t,'approval');log(w,t,politicalName(actor!)+'呈请「'+dutyPlans[c.plan].name+'」，请核拨预算。');break;
- case 'approve':{const p=dutyPlans[t.plan!];treasury.coins-=p.coins;treasury.grain-=p.grain;t.funds={coins:p.coins,grain:p.grain};phase(w,t,'ready');log(w,t,politicalName(actor!)+'核准方案，专拨公款 '+p.coins+'、公粮 '+p.grain+'。');break;}
+ case 'approve':{const p=dutyPlans[t.plan!];fundAssignment(w,'tianshui','west',p.coins,0,'天水粮务预算');treasury.grain-=p.grain;t.funds={coins:p.coins,grain:p.grain};phase(w,t,'ready');log(w,t,politicalName(actor!)+'核准方案，专拨公款 '+p.coins+'、公粮 '+p.grain+'。');break;}
  case 'revise':t.plan=null;phase(w,t,'proposal');log(w,t,'方案退回重拟，尚未拨款。');break;
  case 'start':t.started=true;t.required=t.plan==='convoy'?dutyRoute(w)!.days+12:20;phase(w,t,'working');if(t.plan==='purchase')w.realm!.cities.tianshui.prosperity=Math.max(0,w.realm!.cities.tianshui.prosperity-3);log(w,t,politicalName(actor!)+'启办粮务，预计 '+t.required+' 个有效办理日。');break;
  case 'request-aid':t.aidRequested=true;phase(w,t,'aid');log(w,t,'承办人求援：请追加公款 20，增派护送。');break;
- case 'grant':treasury.coins-=20;t.funds.coins+=20;phase(w,t,'incident');log(w,t,'追加公款 20 已拨付，可增派护送。');break;
+ case 'grant':fundAssignment(w,'tianshui','west',20,0,'天水粮务追加');t.funds.coins+=20;phase(w,t,'incident');log(w,t,'追加公款 20 已拨付，可增派护送。');break;
  case 'deny':phase(w,t,'incident');log(w,t,'公库暂不追加，承办人须另择路线。');break;
  case 'escort':t.incidentDone=true;phase(w,t,'working');log(w,t,'增派护送，保持原定工期。');break;
  case 'detour':t.incidentDone=true;t.required+=5;phase(w,t,'working');log(w,t,'改走迂回路段，增加五个办理日，不追加预算。');break;

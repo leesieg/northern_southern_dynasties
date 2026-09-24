@@ -1,6 +1,6 @@
 import {PersonAbilities} from './PersonAbilities';
 import {isSovereign} from '../core/officialDuties';
-import {RetinuePanel,RetinueRecruit} from './RetinuePanel';
+import {RetinuePanel} from './RetinuePanel';
 import {ClanBadge} from './ClanRanking';
 import {ActivityProgress} from './MobilityPanel';
 import {personResidence} from '../core/residence';
@@ -58,8 +58,8 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  {tab==='family'&&family&&<>{self&&<DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree',label:'族谱',icon:'renown'},{id:'legacy',label:'世业继任',icon:'estate'}]}/>}{(!self||familyMode==='tree')&&<FamilyPanel world={w} selected={familySelection??id} onSelect={setFamilySelection} onPerson={onPerson}/>}{self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
  {tab==='office'&&<><OfficeHierarchy world={w} person={id} onPerson={onPerson}/><ServiceProfile world={w} person={id} onOpen={onService}/>{self&&w.realm&&<button className="primary" onClick={onRealm}><ArtIcon name="influence" size={24}/>任职与朝廷事务 →</button>}</>}
  {tab==='relations'&&<PersonConnections key={id} world={w} person={id} onPerson={onPerson}/>}
- {tab==='retinue'&&!isSovereign(w,id)&&<RetinuePanel world={w} host={id} pending={pending} send={send} onPerson={onPerson} onFind={onFind}/>}
- {tab==='interaction'&&!self&&w.social&&extra&&!retired&&!deceased&&<><RetinueRecruit world={w} person={id} pending={pending} send={send} onPerson={onPerson}/><RelationshipPanel key={id} world={w} pending={pending} send={send} targetId={id}/></>}
+ {tab==='retinue'&&!isSovereign(w,id)&&<RetinuePanel onInteract={target=>{onPerson(target);onTab('interaction');}} world={w} host={id} pending={pending} send={send} onPerson={onPerson} onFind={onFind}/>}
+ {tab==='interaction'&&!self&&w.social&&extra&&!retired&&!deceased&&<><RelationshipPanel key={id} world={w} pending={pending} send={send} targetId={id}/></>}
 
  </div>;
 }

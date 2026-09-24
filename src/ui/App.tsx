@@ -100,6 +100,7 @@ export function App(){
     else if(event.kind==='mobility')openPerson(game.world!.characterId!,false);
     else if(event.kind==='health'||event.kind==='inheritance')openPerson(event.person??game.world!.characterId!,false);
     else if(event.kind==='retinue'){openPerson(game.world!.characterId!,false);setPersonTab('retinue');}
+    else if(event.kind==='fiscal'){setRealmTab('treasury');openModal('realm');}
     else if(event.kind==='clan'){setRealmTab('clans');openModal('realm');}
     else if(event.kind==='service'){setRealmTab('duties');openModal('realm');}
     else if(event.kind==='duties'){setRealmTab('duties');openModal('realm');}

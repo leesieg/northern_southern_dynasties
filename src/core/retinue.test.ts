@@ -1,3 +1,4 @@
+import {routeGrant} from './treasury';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance} from './world';
 import {actRetinue,advanceRetinue,retinueQuote,postStatus,retinueMembers,recommendationBonus,isOfficial} from './retinue';
@@ -19,7 +20,7 @@ describe('幕僚的招募、履职与生命周期',()=>{
   expect(buildQuote(w,command).reason).toContain('营造参军');const money=w.people[0].coins;hire(w,person);expect(w.people[0].coins).toBe(money-30);
   act(w,{type:'retinue',action:'assign',person,post:'engineer',site});
   for(let i=0;i<150&&postStatus(w,'engineer',site).reason;i++)tick(w);
-  expect(postStatus(w,'engineer',site).reason).toBe('');const q=buildQuote(w,command);expect(q.reason).toBe('');act(w,command);
+  routeGrant(w,site,100,'营建预算');expect(postStatus(w,'engineer',site).reason).toBe('');const q=buildQuote(w,command);expect(q.reason).toBe('');act(w,command);
   const project=w.holdings.cities[site].project!;expect(project.engineerBonus).toBeGreaterThan(0);expect(project.supervisor).toBe(person);save(w);
   act(w,{type:'retinue',action:'dismiss',person});expect(w.holdings.cities[site].project).toEqual(project);save(w);
  });
@@ -49,7 +50,7 @@ describe('幕僚的招募、履职与生命周期',()=>{
   for(let i=0;i<50&&(!presentAt(w,'guest-liang','jingkou')||w.people[0].journey);i++)tick(w);expect(presentAt(w,'guest-liang','jingkou')).toBe(true);save(w);
  });
  it('军司马遵守授权，整训实际增加士气且冷却',()=>{
-  const w=start();w.realm!.mandate=true;hire(w);act(w,{type:'realm',action:'muster'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'marshal',site:'jiankang'});
+  const w=start();w.realm!.mandate=true;hire(w);routeGrant(w,w.people[0].home,120,'军需预算');act(w,{type:'realm',action:'muster'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'marshal',site:'jiankang'});
   const army=w.realm!.armies[0];army.morale=30;act(w,{type:'retinue',action:'work',post:'marshal',task:'drill'});expect(army.morale).toBeGreaterThan(30);
   expect(()=>act(w,{type:'retinue',action:'work',post:'secretary',task:'drill'})).toThrow();w.realm!.mandate=false;w.retinue!.cooldowns={};expect(()=>act(w,{type:'retinue',action:'work',post:'marshal',task:'drill'})).toThrow('授权');
  });
@@ -80,9 +81,9 @@ describe('幕僚的招募、履职与生命周期',()=>{
   for(const edit of [(v:World)=>{v.retinue!.members['guest-liang'].host='wang-lingbin';},(v:World)=>{v.retinue!.members['wang-lingbin'].post='secretary';},(v:World)=>{v.retinue!.members['guest-liang'].site='missing';},(v:World)=>{v.retinue!.members['guest-liang'].arrears=2;},(v:World)=>{v.retinue!.members['guest-liang'].joined=-1;}]){const v=structuredClone(valid);edit(v);expect(()=>serializeWorld(v)).toThrow('存档');}save(valid);
  });
  it('旧档已开工项目不追加幕僚要求，新工程保存的工期修正不能篡改',()=>{
-  const old=start();delete old.retinue;act(old,{type:'build',scope:'city',site:'jiankang',building:'market'});const project=structuredClone(old.holdings.cities.jiankang.project),migrated=parseWorld(serializeWorld(old));expect(migrated.holdings.cities.jiankang.project).toEqual(project);expect(retinueMembers(migrated)).toHaveLength(0);
+  const old=start();routeGrant(old,'jiankang',100,'营建预算');delete old.retinue;act(old,{type:'build',scope:'city',site:'jiankang',building:'market'});const project=structuredClone(old.holdings.cities.jiankang.project),migrated=parseWorld(serializeWorld(old));expect(migrated.holdings.cities.jiankang.project).toEqual(project);expect(retinueMembers(migrated)).toHaveLength(0);
   for(let i=0;i<30&&migrated.holdings.cities.jiankang.project;i++)tick(migrated);expect(migrated.holdings.cities.jiankang.levels.market).toBe(1);
-  const w=start();hire(w);act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});w.holdings.cities.jiankang.project!.engineerBonus=100;expect(()=>serializeWorld(w)).toThrow('存档');
+  const w=start();hire(w);act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});routeGrant(w,'jiankang',100,'营建预算');act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});w.holdings.cities.jiankang.project!.engineerBonus=100;expect(()=>serializeWorld(w)).toThrow('存档');
  });
  it('NPC 每季延聘、授职与工资也参与同一世界规则',()=>{
   const w=start('yuan-qin');w.day=90;advanceRetinue(w);const members=Object.values(w.retinue!.members);expect(members.length).toBeGreaterThan(0);expect(members.some(m=>m.post!==null)).toBe(true);expect(members.every(m=>m.host!=='yuan-qin')).toBe(true);save(w);

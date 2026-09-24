@@ -21,6 +21,8 @@ describe('worker menu and save lifecycle without browser UI',()=>{
   const failed=await request({type:'command',command});fault.mockRestore();expect(failed.world).toEqual(before.world);
   const hired=await request({type:'command',command});expect(hired.world.retinue!.members['guest-liang'].host).toBe('xiao-gang');expect(hired.world.people[0].coins).toBe(before.world.people[0].coins-30);
   await request({type:'command',command:{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'}});
+  await request({type:'command',command:{type:'fiscal',action:'request',site:'jiankang',amount:100,purpose:'construction'}});
+  for(let i=0;i<3;i++)await request({type:'step'});
   const built=await request({type:'command',command:{type:'build',scope:'city',site:'jiankang',building:'market'}});expect(built.world.holdings.cities.jiankang.project?.supervisor).toBe('guest-liang');
   const restored=await request({type:'load',slot:'auto'});expect(restored.world.retinue).toEqual(built.world.retinue);expect(restored.world.holdings).toEqual(built.world.holdings);
  });

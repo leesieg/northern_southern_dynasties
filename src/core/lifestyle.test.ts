@@ -1,3 +1,4 @@
+import {routeGrant,localBalance} from './treasury';
 import { describe,it,expect } from 'vitest';
 import { act,advance,newCampaignWorld } from './world';
 import { ensureLifestyle,lifestyleProgress,lifestylePoints,lifestyleLearning,lifestyleBonuses,lifestyleMasteries } from './lifestyle';
@@ -36,8 +37,8 @@ describe('生活重心',()=>{
  });
  it('营建效果真实扣费和锁定工期，换重心不追改在建项目',()=>{
   const w=trained('stewardship','xiao-gang');w.social!.legacies.stewardship=2;expect(buildingModifiers(w).costRate).toBe(67);
-  act(w,{type:'retinue',action:'recruit',person:'guest-liang'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});const q=buildQuote(w,{type:'build',scope:'city',site:'jiankang',building:'market'}),money=w.realm!.treasuries.liang.coins;
-  act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});expect(w.realm!.treasuries.liang.coins).toBe(money-q.cost);
+  act(w,{type:'retinue',action:'recruit',person:'guest-liang'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});routeGrant(w,'jiankang',100,'营建预算');const q=buildQuote(w,{type:'build',scope:'city',site:'jiankang',building:'market'}),money=localBalance(w,'jiankang');
+  act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});expect(localBalance(w,'jiankang')).toBe(money-q.cost);
   expect(parseWorld(serializeWorld(w))).toEqual(w);const project=structuredClone(w.holdings.cities.jiankang.project);w.day+=90;focus(w,'etiquette');expect(w.holdings.cities.jiankang.project).toEqual(project);
  });
  it('管理税粮仅影响亲治城市，交游改变实际费用与好感',()=>{

@@ -1,3 +1,4 @@
+import {TreasuryPanel} from './TreasuryPanel';
 import {CityOfficeSeat} from './CityOfficeSeat';
 import {clanStanding} from '../core/clans';
 import {recommendationBonus} from '../core/retinue';
@@ -20,7 +21,7 @@ import { siteById } from '../data/scenario';
 import { eventDefinitions,executive,playerRealm,realmReason } from '../core/realm';
 import type { World,GameCommand } from '../core/types';
 import './realm.css';
-export type RealmTab='overview'|'duties'|'politics'|'government'|'hierarchy'|'court'|'clans';
+export type RealmTab='overview'|'duties'|'politics'|'government'|'hierarchy'|'court'|'clans'|'treasury';
 export function RealmPanel({world:w,pending,send,onCity,onPerson,tab,onTab,courtTab,onCourtTab,serviceFocus}:{serviceFocus?:{id?:number;seq:number;view?:'council'|'duties'};world:World;pending:boolean;send:(c:GameCommand)=>void;onCity:(id:string)=>void;onPerson:(id:string)=>void;tab:RealmTab;onTab:(tab:RealmTab)=>void;courtTab:CourtTab;onCourtTab:(tab:CourtTab)=>void}){
  const [selected,setSelected]=useState(w.people[0].location),[confirm,setConfirm]=useState<string|null>(null);
  const s=w.realm;if(!s)return <p>政务用于新建的历史沙盒。旧教学局保留原规则。</p>;
@@ -31,6 +32,7 @@ export function RealmPanel({world:w,pending,send,onCity,onPerson,tab,onTab,court
  {tab!=='overview'&&<nav className="realm-breadcrumb" aria-label="政务位置"><button onClick={()=>onTab('overview')}>← 政务总览</button><span>{realmPageNames[tab]}</span></nav>}
  {tab==='overview'&&<RealmOverview world={w} onCity={onCity} onTab={next=>{if(next==='court')onCourtTab('ministries');onTab(next);}} onPerson={onPerson}/>}
  {tab==='politics'&&((clanStanding(w,w.characterId!)?.petition??0)>0||recommendationBonus(w,w.characterId!)>0)&&<HoverHint label="求官影响因素" content={`世族门第：求官接受度 +${clanStanding(w,w.characterId!)?.petition??0}，城邑请任功绩要求 −${clanStanding(w,w.characterId!)?.merit??0}；典签荐书：求官接受度 +${recommendationBonus(w,w.characterId!)}。年龄、治理权与军务门槛仍须满足。`}><span className="clan-standing-badge">求官荫望 ⓘ</span></HoverHint>}
+ {tab==='treasury'&&<TreasuryPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}
  {tab==='clans'&&<ClanRanking world={w} realm={r} onPerson={onPerson}/>}
  {tab==='duties'&&<><ServicePanel key={serviceFocus?.seq} initialTaskId={serviceFocus?.id} initialTab={serviceFocus?.view==='council'?'council':'active'} world={w} pending={pending} send={send} onPerson={onPerson}/>{r==='west'&&<details open={serviceFocus?.view==='duties'}><summary>天水粮务 · 专案文书</summary><DutiesPanel world={w} pending={pending} send={send} onPerson={onPerson}/></details>}</>}
  {tab==='court'&&<CourtPanel tab={courtTab} onTab={onCourtTab} world={w} pending={pending} send={send} onPerson={onPerson}/>}

@@ -1,7 +1,7 @@
 import {civicBuildings,isSovereign,centralMinistry} from './officialDuties';
 import {postStatus} from './retinue';
 import { awardPrestige,memberId } from './family';
-import { playerRealm } from './realm';
+import {localBalance,spendLocal} from './treasury';
 import { buildingModifiers, traitsFor } from './social';
 import { familyName } from '../data/characters';
 import { siteById } from '../data/scenario';
@@ -52,13 +52,13 @@ export function buildQuote(world:World,command:BuildCommand):{cost:number;days:n
   else if(holding.project)reason='已有工程进行中';
   else if(level>3)reason='已达最高等级';
   else if(scope==='estate'&&building!=='hall'&&current===0&&Object.entries(holding.levels).filter(([id,n])=>id!=='hall'&&n>0).length>=holdings.estate.levels.hall)reason='附属建筑位已满，请先扩建主宅';
-  else if((world.realm&&scope==='city'?world.realm.treasuries[playerRealm(world)].coins:world.people[0].coins)<cost)reason=world.realm&&scope==='city'?'公款不足':'盘缠不足';
+  else if((world.realm&&scope==='city'?localBalance(world,site):world.people[0].coins)<cost)reason=world.realm&&scope==='city'?'本城公库不足，请在治理页申请拨款':'盘缠不足';
   return {cost,days,level,reason};
 }
 export function beginConstruction(world:World,command:BuildCommand){
   const quote=buildQuote(world,command);if(quote.reason)throw new Error(quote.reason);
   const holding=command.scope==='city'?(world.holdings.cities[command.site]??=emptyCity()):world.holdings.estate;
-  if(world.realm&&command.scope==='city')world.realm.treasuries[playerRealm(world)].coins-=quote.cost;else world.people[0].coins-=quote.cost;
+  if(world.realm&&command.scope==='city')spendLocal(world,command.site,quote.cost,'城市营建');else world.people[0].coins-=quote.cost;
   holding.project={building:command.building,level:quote.level,started:world.day,due:world.day+quote.days,cost:quote.cost};
   if(world.social||world.lifestyles?.people.fictional?.focus){holding.project.modifiers=buildingModifiers(world);if(command.scope==='city'&&world.retinue){const engineer=postStatus(world,'engineer',command.site);if(!engineer.reason&&engineer.member){holding.project.engineerBonus=Math.floor(engineer.aptitude/10);holding.project.supervisor=engineer.member.id;}}if(world.social&&traitsFor(world).includes('diligent'))world.social.stress=Math.min(100,world.social.stress+6);}
   const name=command.scope==='city'?cityBuildings[command.building as CityBuilding].name:estateBuildings[command.building as EstateBuilding].name;

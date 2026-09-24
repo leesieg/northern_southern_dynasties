@@ -1,3 +1,4 @@
+import {routeGrant} from './treasury';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance,remainingDays} from './world';
 import {ongoingItems} from './ongoing';
@@ -26,13 +27,13 @@ describe('顶部进行中事项投影',()=>{
   g.task={kind:'government',target:'feudal',started:0,progress:10,required:180,sponsor:'yuwen-tai'};g.support=10;const reform=ongoingItems(w).find(i=>i.kind==='reform')!;expect(reform.progress).toBeCloseTo(10/180);expect(reform.days).toBeNull();expect(reform.status).toContain('支持');g.task=null;expect(ongoingItems(w).some(i=>i.kind==='reform')).toBe(false);
  });
  it('城市和庄园工程都可追踪，存读前后项目及报价进度一致',()=>{
-  const w=start('xiao-gang');act(w,{type:'retinue',action:'recruit',person:'guest-liang'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});act(w,{type:'build',scope:'estate',site:'jiankang',building:'fields'});advance(w,2);const items=ongoingItems(w);expect(items.filter(i=>i.kind==='construction')).toHaveLength(2);expect(items.every(i=>i.progress===null||i.progress>=0&&i.progress<=1)).toBe(true);expect(ongoingItems(parseWorld(serializeWorld(w)))).toEqual(items);
+  const w=start('xiao-gang');act(w,{type:'retinue',action:'recruit',person:'guest-liang'});act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});routeGrant(w,'jiankang',100,'营建预算');act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});act(w,{type:'build',scope:'estate',site:'jiankang',building:'fields'});advance(w,2);const items=ongoingItems(w);expect(items.filter(i=>i.kind==='construction')).toHaveLength(2);expect(items.every(i=>i.progress===null||i.progress>=0&&i.progress<=1)).toBe(true);expect(ongoingItems(parseWorld(serializeWorld(w)))).toEqual(items);
  });
  it('使团抵达仍是同一旗帜，倒计时改为答复期限；结束即消失',()=>{
   const w=start();act(w,{type:'diplomacy',action:'improve',target:'west'});const mission=w.diplomacy!.missions[0],first=ongoingItems(w).find(i=>i.kind==='diplomacy')!;expect(first.days).toBe(mission.due-w.day);mission.status='audience';const next=ongoingItems(w).find(i=>i.id===first.id)!;expect(next.clock).toBe('deadline');expect(next.days).toBe(mission.expires-w.day);w.diplomacy!.missions=[];expect(ongoingItems(w).some(i=>i.id===first.id)).toBe(false);
  });
  it('幕僚在途可追踪，不把同行主公重复算作军队旗帜',()=>{
-  const w=start('xiao-gang');w.realm!.mandate=true;w.mobility!.residences['guest-liang']={site:'jingkou',journey:null};act(w,{type:'retinue',action:'recruit',person:'guest-liang'});advance(w);expect(ongoingItems(w).some(i=>i.kind==='retinue')).toBe(true);act(w,{type:'realm',action:'muster'});act(w,{type:'mobility',action:'command',person:'xiao-yan'});act(w,{type:'realm',action:'march',site:'jingkou'});expect(ongoingItems(w).filter(i=>i.kind==='military')).toHaveLength(1);expect(ongoingItems(w).some(i=>i.kind==='travel')).toBe(false);const armyId=ongoingItems(w).find(i=>i.kind==='military')!.id;advance(w);expect(ongoingItems(w).filter(i=>i.kind==='military')).toHaveLength(1);expect(ongoingItems(w).find(i=>i.kind==='military')!.id).toBe(armyId);
+  const w=start('xiao-gang');w.realm!.mandate=true;w.mobility!.residences['guest-liang']={site:'jingkou',journey:null};act(w,{type:'retinue',action:'recruit',person:'guest-liang'});advance(w);expect(ongoingItems(w).some(i=>i.kind==='retinue')).toBe(true);routeGrant(w,w.people[0].home,120,'军需预算');act(w,{type:'realm',action:'muster'});act(w,{type:'mobility',action:'command',person:'xiao-yan'});act(w,{type:'realm',action:'march',site:'jingkou'});expect(ongoingItems(w).filter(i=>i.kind==='military')).toHaveLength(1);expect(ongoingItems(w).some(i=>i.kind==='travel')).toBe(false);const armyId=ongoingItems(w).find(i=>i.kind==='military')!.id;advance(w);expect(ongoingItems(w).filter(i=>i.kind==='military')).toHaveLength(1);expect(ongoingItems(w).find(i=>i.kind==='military')!.id).toBe(armyId);
  });
 });
 describe('暂停弹窗的决策与通知',()=>{
