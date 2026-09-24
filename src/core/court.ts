@@ -3,7 +3,7 @@ import {allegianceRealm,publicOfficeReason} from './officeEligibility';
 import {clanStanding} from './clans';
 import {recommendationBonus} from './retinue';
 import {isAlive} from './lifeState';
-import { syncRelationships } from './relationships';
+import { creditPersonalCoins,syncRelationships } from './relationships';
 import { historicalCharacters } from '../data/characters';
 import { movements,movementIds,ministries,ministryIds,type MovementId,type MinistryId,type CourtPhase,type CourtPolicy } from '../data/court';
 import { governmentOf,governingExecutives,currentRealm,governmentExecutive,politicalName,regimeName } from './government';
@@ -158,4 +158,4 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
  }}
 
 export function courtSalary(w:World,r:RealmId){return courtEnabled(w,r)?Object.values(courtOf(w,r)?.ministries??{}).filter(Boolean).length*4:0;}
-export function payCourtSalary(w:World,r:RealmId,paid:number){const c=courtOf(w,r);if(!c||!courtEnabled(w,r))return;const holders=Object.values(c.ministries).filter(Boolean);if(paid<holders.length*4){c.tension=cap(c.tension+5);log(w,r,'中央俸给不足：紧张 +5。');}if(r===currentRealm(w)&&holders.includes(w.characterId!))w.people[0].coins=cap(w.people[0].coins+Math.floor(paid/holders.length),1_000_000);}
+export function payCourtSalary(w:World,r:RealmId,paid:number){const c=courtOf(w,r);if(!c||!courtEnabled(w,r))return;const holders=Object.values(c.ministries).filter(Boolean);if(paid<holders.length*4){c.tension=cap(c.tension+5);log(w,r,'中央俸给不足：紧张 +5。');}for(let i=0;i<holders.length;i++)creditPersonalCoins(w,holders[i]!,Math.floor(paid/holders.length)+(i<paid%holders.length?1:0));}

@@ -2,7 +2,7 @@ import {relationshipPersonById,relationshipPeople} from '../data/relationships';
 import {serviceNeed,servicePolitics,serviceDomain,incidentChoices} from './serviceNeeds';
 import {enactPoliticalAction} from './politicalActions';
 import {allegianceRealm,officeCandidates} from './officeEligibility';
-import {fundAssignment,fiscalRecord,centralAccount} from './treasury';
+import {grantRoom,fundAssignment,fiscalRecord,centralAccount} from './treasury';
 import {awardInfluence} from './personalInfluence';
 import {civicBuildings,officialDutyReason,dutyMinistries} from './officialDuties';
 import {emptyCity} from './construction';
@@ -98,8 +98,9 @@ export function serviceReason(w:World,c:ServiceCommand,actor=w.characterId):stri
  if(['plan','start','request-aid','spend','delay','strain'].includes(c.action)&&!officer)return '须由承办人办理';
  const expected:Partial<Record<ServiceCommand['action'],AssignmentPhase[]>>={plan:['proposal'],approve:['petition','approval'],revise:['approval'],start:['ready'],'request-aid':['incident'],grant:['aid'],deny:['aid'],spend:['incident'],delay:['incident'],strain:['incident'],close:['report']};if(!expected[c.action]?.includes(t.phase))return '差事阶段已经变化';
  if(c.action==='plan')return Object.hasOwn(assignmentPlans,c.plan)?'':'未知方案';
- if(c.action==='approve'&&t.phase==='approval'){const b=assignmentBudget(t.kind,t.plan!),treasury=w.realm.treasuries[r];if(treasury.coins<b.coins||treasury.grain<b.grain)return '公库不足，无法拨款';}
+ if(c.action==='approve'&&t.phase==='approval'){const b=assignmentBudget(t.kind,t.plan!),treasury=w.realm.treasuries[r];if(grantRoom(w,t.site,t.realm)<b.coins)return '拨款路径公库容量不足';if(treasury.coins<b.coins||treasury.grain<b.grain)return '公库不足，无法拨款';}
  if(c.action==='request-aid'&&t.aidRequested)return '已请求追加，请选择其他办法';
+ if(c.action==='grant'&&grantRoom(w,t.site,t.realm)<20)return '拨款路径公库容量不足';
  if(c.action==='grant'&&w.realm.treasuries[r].coins<20)return '公款不足 20';
  if(c.action==='spend'&&(!assignmentRoute(w,t)||w.realm.cities[t.site].order<25))return '道路或地方执行受阻，经费不能替代疏通与协商';
  if(c.action==='spend'&&t.funds.coins<assignmentBudget(t.kind,t.plan!).coins+20)return '须先获批追加公款 20';
@@ -111,9 +112,9 @@ export function serviceReason(w:World,c:ServiceCommand,actor=w.characterId):stri
 function finish(w:World,t:Assignment,success:boolean,reason:string){
  if(t.result)return;const s=w.service!,g=governmentOf(w,t.realm)!,chief=serviceChief(w,t.realm),city=w.realm!.cities[t.site],treasury=w.realm!.treasuries[t.realm],d=assignmentTemplates[t.kind],effects:string[]=[],awards:NonNullable<Assignment['result']>['awards']=[];
  const change=(object:Record<string,number>,key:string,delta:number,label:string,max=100,min=0)=>{const before=object[key];object[key]=clamp(before+delta,max,min);effects.push(label+' '+(object[key]-before>=0?'+':'')+(object[key]-before));};
- const fraction=t.started?Math.min(1,t.progress/Math.max(1,t.required)):0,spent=Math.max(t.spent?.coins??0,Math.ceil(t.funds.coins*fraction)),refund=t.funds.coins-spent,grainRefund=t.funds.grain-Math.max(t.spent?.grain??0,Math.ceil(t.funds.grain*fraction));
+ const fraction=t.started?Math.min(1,t.progress/Math.max(1,t.required)):0,spent=Math.max(t.spent?.coins??0,Math.ceil(t.funds.coins*fraction)),unused=t.funds.coins-spent,unusedGrain=t.funds.grain-Math.max(t.spent?.grain??0,Math.ceil(t.funds.grain*fraction)),refund=Math.min(unused,1_000_000-treasury.coins),grainRefund=Math.min(unusedGrain,1_000_000-treasury.grain);
  fiscalRecord(w,t.realm,'task:'+t.id,'expense',spent,'差事实际支出');
- if(refund){treasury.coins+=refund;fiscalRecord(w,t.realm,'task:'+t.id,centralAccount(t.realm),refund,'退回未使用专款');}treasury.grain+=grainRefund;
+ if(refund){treasury.coins+=refund;fiscalRecord(w,t.realm,'task:'+t.id,centralAccount(t.realm),refund,'退回未使用专款');}treasury.grain+=grainRefund;if(unused>refund||unusedGrain>grainRefund){fiscalRecord(w,t.realm,'task:'+t.id,'expense',unused-refund,'退款超出公库容量损失');effects.push('退回超过库容：公款损失 '+(unused-refund)+' / 公粮损失 '+(unusedGrain-grainRefund));}
  effects.push('进度 '+Math.round(fraction*100)+'%；实际支出 '+spent+'，退回公款 '+refund+' / 公粮 '+grainRefund+'；成果质量 '+(t.quality??100)+'%；'+(w.day<=t.deadline?'按期':'逾期'));
  if(!success&&fraction>=.25&&city.controller===t.realm){const partial=Math.floor(8*fraction);if(['relief','inspection'].includes(t.kind)){city.order=Math.min(100,city.order+partial);effects.push('已完成部分保留：秩序 +'+partial);}if(['agriculture','greatworks','commerce'].includes(t.kind)){city.prosperity=Math.min(100,city.prosperity+partial);effects.push('已完成部分保留：繁荣 +'+partial);}}
  if(success){

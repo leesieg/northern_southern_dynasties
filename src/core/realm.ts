@@ -1,17 +1,17 @@
-import {advanceArmyLogistics,type ArmyConvoy} from './armyLogistics';
+import {advanceArmyLogistics,returnArmyConvoy,type ArmyConvoy} from './armyLogistics';
 import {enactPoliticalAction} from './politicalActions';
 import {allegianceRealm,officeName,publicOfficeReason,appointmentAuthorityReason} from './officeEligibility';
 import {isAlive} from './lifeState';
 import {presentAt} from './residence';
 import {dispatchNPC} from './mobility';
 import {regionalEconomy} from '../data/regionalEconomy';
-import {civilianFood,settleLocalGrain,ensurePopulation} from './population';
+import {civilianFood,settleLocalGrain,grainCapacity,ensurePopulation} from './population';
 import {collectFiscal,distributeFiscal,payFiscalOperations,localBalance,spendLocal} from './treasury';
 import {clanStanding} from './clans';
 import {recommendationBonus} from './retinue';
 import {attributes} from './social';
 import { foreignWarReason,diplomaticWar,canEnter } from './diplomacy';
-import { courtSalary,payCourtSalary } from './court';
+import { courtSalary } from './court';
 import { governmentExecutive,governingAuthority,governmentBonus,appointmentReason,meritAccess,governmentMusterReason,spendGovernmentMuster,governmentOf,regimeName } from './government';
 import type { GovernmentState } from './government';
 import { lifestyleBonuses } from './lifestyle';
@@ -71,7 +71,7 @@ export function cityYield(w:World,id:string){
  const management=c.governor?Math.max(-10,Math.min(20,(attributes(w,c.governor).stewardship-8)*2)):0;
  const capacity=region.capacity*(1+c.irrigation*.15),effective=Math.min(c.population,capacity)+Math.max(0,c.population-capacity)*.25;
  const grain=Math.floor(effective/100*region.fertility*(1+c.irrigation*.1)*labor*(.75+c.order/400)*(100+bonus.grain+management)/100);
- return {coins:Math.floor((c.population/600+c.population/600*region.trade*access+(b?.market??0)*8*access)*rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+governmentBonus(w,c.controller,id).tax)/100),grain,expense:Math.ceil(c.population/900),food:civilianFood(w,id),labor,capacity,region,management,access};
+ return {coins:Math.floor((c.population/600+c.population/600*region.trade*access+(b?.market??0)*8*access)*rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+governmentBonus(w,c.controller,id).tax)/100),grain,expense:Math.ceil(c.population/900)+(c.governor?4:0),food:civilianFood(w,id),labor,capacity,region,management,access};
 }
 export function realmForecast(w:World,id:RealmId){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=cityYield(w,site);income+=y.coins;expense+=y.expense;food+=y.grain-y.food;}const a=w.realm!.armies.find(a=>a.realm===id);if(a){expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id);return {income,expense,food};}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
@@ -83,8 +83,8 @@ export function realmReason(w:World,c:RealmCommand):string {
  if(c.action==='event'){if(!s.event)return '没有待处理事件';if(!['fund','decline'].includes(c.choice))return '无效选项';if(c.choice==='fund'){const k=s.event.kind;if((k==='flood'||k==='levy')?t.grain<(k==='flood'?60:40):t.coins<(k==='market'?50:k==='dispute'?30:k==='harvest'?40:35))return '公库资源不足，可选择搁置';}return '';}
  if(s.event)return '先处理待决事务';
  switch(c.action){
- case 'tax':if(!['light','normal','heavy'].includes(c.tax))return '无效税制';return city!.governor!==w.characterId||city!.controller!==r?'需要本城治理权':'';
- case 'relief':return city!.governor!==w.characterId||city!.controller!==r?'需要本城治理权':t.grain<50?'需公粮 50':'';
+ case 'tax':if(!['light','normal','heavy'].includes(c.tax))return '无效税制';return city!.governor!==w.characterId||city!.controller!==r?'需要本城治理权':city!.tax===c.tax?'已是现行税制':'';
+ case 'relief':return city!.governor!==w.characterId||city!.controller!==r?'需要本城治理权':city!.grain+(c.site===capital(r)?t.grain:0)<50?'需本城公粮 50（都城可动用中央储粮）':'';
  case 'appoint':return appointmentAuthorityReason(w,r)||(allegianceRealm(w,c.candidate)!==r?'需当前效忠本国的人物':publicOfficeReason(w,c.candidate))||(city!.owner!==r||city!.controller!==r?'仅可任命本国控制的本国城市':s.offices.some(o=>o.site===c.site)?'任命正在送达':city!.governor===c.candidate?'此人已在任':s.influence<20?'需影响力 20':appointmentReason(w,c.candidate,c.site));
  case 'petition':if(governmentOf(w)?.type==='feudal'&&appointmentReason(w,w.characterId!,c.site))return appointmentReason(w,w.characterId!,c.site);return city!.owner!==r||city!.controller!==r?'只能请任本国控制的本国城市':city!.governor===w.characterId?'你已在任':s.offices.some(o=>o.site===c.site)?'任命正在送达':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'office')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?`需执政者接受度 60 或官僚功绩 ${20-(clanStanding(w,w.characterId!)?.merit??0)}`:'';
  case 'mandate':return s.mandate?'已有军务授权':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'military')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?'需执政者接受度 60 或官僚功绩 40':'';
@@ -100,11 +100,11 @@ export function actRealm(w:World,c:RealmCommand){
  const reason=realmReason(w,c);if(reason)throw new Error(reason);const s=w.realm!,r=playerRealm(w),t=s.treasuries[r];
  switch(c.action){
  case 'tax':enactPoliticalAction(w,r,'tax');s.cities[c.site].tax=c.tax;log(w,siteById[c.site].name+'税制调整为'+({light:'轻税',normal:'常税',heavy:'重税'})[c.tax]+'。');break;
- case 'relief':t.grain-=50;s.cities[c.site].order=clamp(s.cities[c.site].order+15,0,100);log(w,'向'+siteById[c.site].name+'拨粮 50，秩序 +15。');break;
+ case 'relief':{const local=Math.min(s.cities[c.site].grain,50);s.cities[c.site].grain-=local;t.grain-=50-local;s.cities[c.site].order=clamp(s.cities[c.site].order+15,0,100);log(w,'向'+siteById[c.site].name+'拨粮 50，秩序 +15。');break;}
  case 'appoint':case 'petition':{enactPoliticalAction(w,r,'appointment');const candidate=c.action==='appoint'?c.candidate:w.characterId!;s.influence-=c.action==='appoint'?20:40;const g=governmentOf(w)!;if((g.merit[candidate]??0)<20){g.support=Math.max(0,g.support-10);s.cities[c.site].order=Math.max(0,s.cities[c.site].order-3);}const days=planRoute(capital(r),c.site)?.days??1;s.offices.push({site:c.site,candidate,due:w.day+days+7});log(w,'任命'+officeName(candidate)+'治理'+siteById[c.site].name+'，文书预计 '+(days+7)+' 日送达。');break;}
  case 'mandate':s.influence-=40;s.mandate=true;log(w,'获得本局军务授权，可以动员与发动边境争夺。');break;
  case 'muster':{enactPoliticalAction(w,r,'military');spendGovernmentMuster(w);const home=w.people[0].home,location=s.cities[home].controller===r?home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;if(executive(w))t.coins-=120;else spendLocal(w,location,120,'地方动员');t.grain-=120;s.cities[location].population-=600;s.armies.push({realm:r,location,troops:600,morale:100,supply:120,journey:null,siege:0});const army=s.armies.at(-1)!;log(w,regimeName(w,r)+`动员 600 人，每 30 日军饷 ${armyMonthlyPay(w,army)} 钱，每日消耗军粮 ${armyDailyFood(w,army)}。`);break;}
- case 'disband':{if(w.mobility){const leader=w.mobility.commanders[r];if(leader===w.characterId)w.people[0].journey=null;else if(leader&&w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.commanders[r];}const a=s.armies.find(a=>a.realm===r)!;t.grain=clamp(t.grain+a.supply);s.cities[a.location].population+=a.troops;s.armies=s.armies.filter(a=>a.realm!==r);log(w,'军队遣散，剩余随军粮食归还公库；动员费用不退。');break;}
+ case 'disband':{if(w.mobility){const leader=w.mobility.commanders[r];if(leader===w.characterId)w.people[0].journey=null;else if(leader&&w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.commanders[r];}const a=s.armies.find(a=>a.realm===r)!;s.cities[a.location].grain=Math.min(grainCapacity(w,a.location),s.cities[a.location].grain+a.supply);returnArmyConvoy(w,a);s.cities[a.location].population=Math.min(1_000_000,s.cities[a.location].population+a.troops);s.armies=s.armies.filter(a=>a.realm!==r);log(w,'军队遣散，剩余随军粮食归还驻地粮仓（超出仓容损耗）；动员费用不退。');break;}
  case 'war':s.influence-=40;s.war={attacker:r,defender:s.cities[c.site].owner as RealmId,target:c.site,started:w.day,score:0};diplomaticWar(w,r,s.cities[c.site].owner as RealmId);log(w,regimeName(w,r)+'发起对'+siteById[c.site].name+'的边境争夺（模拟分歧）。');break;
  case 'march':{const a=s.armies.find(a=>a.realm===r)!;march(a,c.site,w.day,w);log(w,regimeName(w,r)+'军前往'+siteById[c.site].name+'，依道路逐日行军。');break;}
  case 'peace':settleWar(w);break;
@@ -141,15 +141,15 @@ export function advanceRealm(w:World){
 
  s.offices=s.offices.filter(o=>o.due>w.day);syncGovernance(w);
  if(w.day%30===0){
- for(const r of realms){const t=s.treasuries[r],f=realmForecast(w,r);payCourtSalary(w,r,Math.min(courtSalary(w,r),Math.max(0,t.coins+f.income-(f.expense-courtSalary(w,r)))));t.lastIncome=f.income;t.lastExpense=f.expense;t.lastFood=f.food;collectFiscal(w,r);payFiscalOperations(w,r);distributeFiscal(w,r);
+ for(const r of realms){const t=s.treasuries[r],f=realmForecast(w,r);t.lastIncome=f.income;t.lastExpense=f.expense;t.lastFood=f.food;collectFiscal(w,r);payFiscalOperations(w,r);distributeFiscal(w,r);
  // Army consumption is daily, so only civilian production/consumption is booked here.
  settleLocalGrain(w,r,id=>cityYield(w,id).grain);
  s.ledger.push({day:w.day,realm:r,...f});
- for(const city of Object.values(s.cities))if(city.controller===r){city.order=clamp(city.order+(city.tax==='light'?4:city.tax==='heavy'?-6:1)-(t.coins===0?6:0)-(t.grain===0?8:0),0,100);city.prosperity=clamp(city.prosperity+(city.order>=60?1:-2),0,100);city.population=clamp(city.population+(city.order>=70?Math.max(1,Math.floor(city.population*.002)):city.order<30?-Math.max(1,Math.floor(city.population*.003)):0),100,1_000_000);}
+ for(const city of Object.values(s.cities))if(city.controller===r){city.order=clamp(city.order+(city.tax==='light'?4:city.tax==='heavy'?-6:1)-(t.coins===0?6:0),0,100);city.prosperity=clamp(city.prosperity+(city.order>=60?1:-2),0,100);city.population=clamp(city.population+(city.order>=70?Math.max(1,Math.floor(city.population*.002)):city.order<30?-Math.max(1,Math.floor(city.population*.003)):0),100,1_000_000);}
  if(r!==playerRealm(w))for(const city of Object.values(s.cities))if(city.controller===r)city.tax=city.order<45?'light':t.coins<100?'heavy':'normal';
  }
  s.ledger=s.ledger.slice(-36);s.influence=clamp(s.influence+5,0,999);
- const salary=Math.min(s.treasuries[playerRealm(w)].coins,w.holdings.governedCities.length*4);w.people[0].coins=clamp(w.people[0].coins+salary);s.treasuries[playerRealm(w)].coins=clamp(s.treasuries[playerRealm(w)].coins-salary);
+
  }
  const war=s.war;
  if(war){const enemy=war.attacker===playerRealm(w)?war.defender:war.attacker,t=s.treasuries[enemy];let a=s.armies.find(a=>a.realm===enemy);
@@ -173,7 +173,7 @@ export function advanceRealm(w:World){
  }else army.siege=0;}
  if(w.day-war.started>=360)settleWar(w);
  }
- s.armies=s.armies.filter(a=>a.troops>=100);
+ for(const a of s.armies)if(a.troops<100)returnArmyConvoy(w,a);s.armies=s.armies.filter(a=>a.troops>=100);
  if(!s.event&&w.day-s.lastEvent>=90&&w.holdings.governedCities.length){const kinds=Object.keys(eventDefinitions) as EventKind[];s.event={kind:kinds[(Math.floor(w.day/90)-1)%kinds.length],site:w.holdings.governedCities[0],day:w.day};s.lastEvent=w.day;log(w,'收到待决事务：'+eventDefinitions[s.event.kind].title+'。');}
 }
 export function handoverOffice(w:World){if(w.realm){if(governmentOf(w)?.type==='feudal'){const former=w.social?.lineage.at(-2)?.id;if(former)for(const city of Object.values(w.realm.cities))if(city.governor===former&&city.owner===playerRealm(w)&&city.controller===playerRealm(w))city.governor=w.characterId!;}w.realm.mandate=executive(w)||(!(governmentOf(w)?.stages.length)&&characterById[w.characterId!].role==='commander');w.realm.event=null;syncGovernance(w);}}

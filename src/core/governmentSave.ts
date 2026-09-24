@@ -31,7 +31,7 @@ export function validGovernments(w:World):boolean {
  if(!validCourt(w,r))return false;
  if(g.laws.some(id=>governmentYear(w)<reformDefinitions[id as ReformId].year)||g.stages.some(id=>governmentYear(w)<successionDefinitions[id as SuccessionId].year))return false;
  for(const [id,contract] of Object.entries(g.contracts))if(!site(id)||!['balanced','tax','levy'].includes(String(contract)))return false;
- for(const [key,due] of Object.entries(g.cooldowns)){if(!['council',...roster.map(p=>p.id+'|appraise'),...Object.keys(siteById).map(id=>'contract|'+id)].includes(key)||!int(due,w.day+90))return false;}
+ for(const [key,due] of Object.entries(g.cooldowns)){if(!['council',...['appointment','reform','tax','military','welfare','migration','commerce'].map(id=>'politics|'+id),...roster.map(p=>p.id+'|appraise'),...Object.keys(siteById).map(id=>'contract|'+id)].includes(key)||!int(due,w.day+90))return false;}
  if(g.task!==null){const t=g.task;if(!obj(t)||!['government','law','succession'].includes(String(t.kind))||!text(t.target)||!int(t.started,w.day)||t.started<state.since||!int(t.required,240,1)||!int(t.progress,t.required-1)||t.progress>w.day-t.started||!roster.some(p=>p.id===t.sponsor))return false;
  if(t.kind==='government'){if(!governmentTypes.includes(t.target as never)||t.target===g.type||t.required!==180)return false;}
  if(t.kind==='law'){if(!reformIds.includes(t.target as ReformId))return false;const d=reformDefinitions[t.target as ReformId];if(d.realm!==r||d.initial||g.laws.includes(t.target)||t.required!==d.days||!(d.requires as readonly string[]).every(id=>(g.laws as string[]).includes(id))||governmentYear(w,t.started)<d.year)return false;}

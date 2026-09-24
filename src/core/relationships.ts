@@ -167,3 +167,6 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
  if(w.realm){const loyal=Object.values(s.oaths).filter(o=>o.lord===w.characterId&&o.loyalty>=70).length;w.realm.influence=cap(w.realm.influence+Math.min(4,loyal),999);}
  for(const r of realms){const c=validRegency(w,r);if(c&&c.origin!=='restored'){c.grip=cap(c.grip-(governmentOf(w,r)!.support>=60?1:4));if(c.grip===0)restoreRule(w,r);}}
 }
+
+/** Personal receipts use the same wallet whether the holder is playable or an NPC. */
+export function creditPersonalCoins(w:World,id:string,amount:number){if(!Number.isSafeInteger(amount)||amount<0)throw new Error('无效个人入账');if(id===w.characterId)w.people[0].coins=Math.min(1_000_000,w.people[0].coins+amount);else if(w.relationships&&Object.hasOwn(w.relationships.reserves,id))w.relationships.reserves[id]=Math.min(1000,w.relationships.reserves[id]+amount);}

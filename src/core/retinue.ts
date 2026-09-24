@@ -3,7 +3,7 @@ import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
 import {isAlive,ageAt,lifeOf} from './lifeState';
 import {attributes,traitsFor} from './social';
-import {relationOpinion,changeRelationOpinion} from './relationships';
+import {creditPersonalCoins,relationOpinion,changeRelationOpinion} from './relationships';
 import {officeHierarchy} from './offices';
 import {personResidence,presentAt} from './residence';
 import {planRoute} from './world';
@@ -118,7 +118,7 @@ export function advanceRetinue(w:World){const s=w.retinue;if(!s)return;
   if(m.post&&retinuePosts[m.post].official&&!isOfficial(w,m.host)){m.post=null;m.site=null;log(w,m.host,id,'主公卸任，'+politicalName(id)+'解去幕职。');}
  }
  const month=Math.floor(w.day/30)*30;if(month<=s.lastMonth)return;s.lastMonth=month;
- for(const [id,m] of Object.entries(s.members)){const wage=m.post?4:2,due=wage*(1+m.arrears);if(money(w,m.host)>=due){pay(w,m.host,due);m.arrears=0;}else{m.arrears++;log(w,m.host,id,politicalName(id)+'俸钱未付，职务暂停。');if(m.arrears>=2)release(w,id,'因连续欠俸离幕');}}
+ for(const [id,m] of Object.entries(s.members)){const wage=m.post?4:2,due=wage*(1+m.arrears);if(money(w,m.host)>=due){pay(w,m.host,due);creditPersonalCoins(w,id,due);m.arrears=0;}else{m.arrears++;log(w,m.host,id,politicalName(id)+'俸钱未付，职务暂停。');if(m.arrears>=2)release(w,id,'因连续欠俸离幕');}}
  for(const [id,r] of Object.entries(s.recommendations))if(r.until<=w.day)delete s.recommendations[id];
  // NPC hosts compete for the same known candidates and pay their own personal reserves.
  if(w.day%90===0)for(const host of relationshipPeople.filter(p=>p.status==='roster'&&p.id!==w.characterId&&isAlive(w,p.id)&&isOfficial(w,p.id))){

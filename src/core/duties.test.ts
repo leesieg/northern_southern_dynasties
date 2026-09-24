@@ -20,7 +20,7 @@ describe('local duty lifecycle',()=>{
  });
  it('chief receives proposals and aid requests and judges the completed convoy',()=>{
   const w=start('yuwen-tai'),before=opinionBreakdown(w,'dugu-xin','yuwen-tai').parts[1].value,reverse=opinionBreakdown(w,'yuwen-tai','dugu-xin').parts[1].value;until(w,'approval');act(w,{type:'duty',action:'approve'});until(w,'aid');
-  act(w,{type:'duty',action:'grant'});until(w,'report');act(w,{type:'duty',action:'close'});
+  act(w,{type:'duty',action:'grant'});until(w,'report');const stored=w.realm!.cities.tianshui.grain;act(w,{type:'duty',action:'close'});expect(w.realm!.cities.tianshui.grain).toBe(stored+120);
   expect(opinionBreakdown(w,'dugu-xin','yuwen-tai').parts[1].value-before).toBe(12);expect(opinionBreakdown(w,'yuwen-tai','dugu-xin').parts[1].value-reverse).toBe(12);expect(w.duties!.task!.funds).toEqual({coins:60,grain:120});expect(w.duties!.task!.result?.success).toBe(true);validateWorld(w);
  });
  it('officer can request escort and persists across a pending request',()=>{

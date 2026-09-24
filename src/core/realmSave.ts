@@ -22,7 +22,7 @@ export function validRealm(w:World):boolean {
  for(const id of sites.map(s=>s.id)){const c=s.cities[id];if(!obj(c)||(!realm(c.owner)&&c.owner!=='frontier')||(!realm(c.controller)&&c.controller!=='frontier')||!(c.population===undefined?int(c.households,100,10000):int(c.population,100,1_000_000))||(c.grain!==undefined&&!int(c.grain))||(c.irrigation!==undefined&&!int(c.irrigation,0,10))||!int(c.order,0,100)||!int(c.prosperity,0,100)||!['light','normal','heavy'].includes(String(c.tax))||(c.governor!==null&&(typeof c.governor!=='string'||!relationshipPersonById[c.governor]||allegianceRealm(w,c.governor)!==c.owner)))return false;}
  if(Object.keys(s.treasuries).length!==3)return false;
  for(const id of realms){const t=s.treasuries[id];if(!obj(t)||!int(t.coins)||!int(t.grain)||!int(t.lastIncome)||!int(t.lastExpense)||!int(t.lastFood,-1_000_000,1_000_000))return false;}
- if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||Object.keys(s.personalInfluence).length!==Object.keys(characterById).length||Object.entries(s.personalInfluence).some(([id,n])=>!character(id)||!int(n,0,999))))return false;
+ if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!Object.keys(characterById).every(id=>Object.hasOwn(s.personalInfluence!,id))||Object.entries(s.personalInfluence).some(([id,n])=>!relationshipPersonById[id]||!int(n,0,999))))return false;
  if(!int(s.influence,0,999)||typeof s.mandate!=='boolean'||!int(s.lastEvent,0,w.day)||!obj(s.truces))return false;
  for(const [key,day] of Object.entries(s.truces)){if(!['east|liang','east|west','liang|west'].includes(key)||!int(day,0,w.day+360))return false;}
  if(!Array.isArray(s.offices)||s.offices.length>sites.length||new Set(s.offices.map(o=>o?.site)).size!==s.offices.length)return false;
