@@ -1,3 +1,4 @@
+import {RealmBadge} from './RealmBadge';
 import {PersonAbilities} from './PersonAbilities';
 import {isSovereign} from '../core/officialDuties';
 import {RetinuePanel} from './RetinuePanel';
@@ -17,7 +18,7 @@ import {PersonConnections,PersonDomains} from './PersonConnections';
 import { RelationshipPanel } from './RelationshipPanel';
 import { relationshipPersonById } from '../data/relationships';
 import { OfficeHierarchy } from './OfficeHierarchy';
-import { regimeName,politicalTitle } from '../core/government';
+import { politicalTitle } from '../core/government';
 import { FamilyPanel,FamilyCrest } from './FamilyPanel';
 import { familyById,familyPersonById } from '../data/families';
 import { characterById } from '../data/characters';
@@ -40,7 +41,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  const name=c?.name??extra?.name??reference?.name??p!.name,family=c?familyById[c.family]:reference?familyById[reference.family]:null,realm=c?.polity??extra?.realm;
  return <div className="person-sheet">
  {ids.length>1&&<nav className="person-picker-list" aria-label="此处人物">{ids.map(person=><button key={person} aria-pressed={person===raw} onClick={()=>onSelect(person)}><ArtIcon name="person" size={22}/>{characterById[person]?.name??relationshipPersonById[person]?.name??w.people.find(p=>p.id===person)?.name}</button>)}</nav>}
- <header className="person-identity"><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{realm?<button className="relationship-link" onClick={()=>onDiplomacy(realm)}>{regimeName(w,realm)} →</button>:reference?'族谱记载':'行旅'}{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><h2>{name}</h2><LifeSummary world={w} id={lifeId}/><ClanBadge world={w} person={id}/><p>{c?politicalTitle(w,id):extra?'':reference?'史料人物':'行旅之人'}</p>{family&&<button className="person-clan" onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/>{family.name} →</button>}{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}{c&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}</div>}</div></header>
+ <header className="person-identity"><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{realm?<RealmBadge realm={realm} world={w} onOpen={onDiplomacy}/>:reference?'族谱记载':'行旅'}{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><h2>{name}</h2><LifeSummary world={w} id={lifeId}/><ClanBadge world={w} person={id}/><p>{c?politicalTitle(w,id):extra?'':reference?'史料人物':'行旅之人'}</p>{family&&<button className="person-clan" onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/>{family.name} →</button>}{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}{c&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}</div>}</div></header>
  <PersonAbilities world={w} person={id}/>
  <PersonDomains world={w} person={id} onCity={onCity}/>
  <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'office',label:'官职',icon:'influence'},{id:'relations',label:'关系',icon:'gregarious'},{id:'retinue',label:'幕府',icon:'influence'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='office'&&!!w.realm||key==='relations'||key==='retinue'&&!isSovereign(w,id)&&!!w.retinue&&(self||Object.values(w.retinue.members).some(m=>m.host===id))||key==='interaction'&&!self&&!!extra&&!!w.social&&!retired&&!deceased)}/>

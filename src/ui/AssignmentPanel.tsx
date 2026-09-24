@@ -1,3 +1,4 @@
+import {RealmBadge} from './RealmBadge';
 import {PersonChoice,PositionSeat} from './PersonSelection';
 import {attributes} from '../core/social';
 import {presentAt} from '../core/residence';
@@ -8,7 +9,7 @@ import {HoverHint} from './HoverHint';
 import {useState} from 'react';
 import {assignmentTemplates,assignmentPlans,assignmentPhases} from '../data/assignments';
 import {assignmentBudget,assignmentEffort,assignmentPause,serviceCandidates,serviceChief,serviceReason,type ServiceCommand,type Assignment} from '../core/assignments';
-import {politicalName,regimeName} from '../core/government';
+import {politicalName} from '../core/government';
 import {siteById} from '../data/scenario';
 import type {World,GameCommand} from '../core/types';
 import {Resource,ArtIcon} from './ArtIcon';
@@ -19,7 +20,7 @@ export function AssignmentPanel({world:w,pending,send,onPerson,task:t}:ServicePr
  const d=assignmentTemplates[t.kind],chief=serviceChief(w,t.realm),mine=t.officer===w.characterId,authority=chief===w.characterId,effort=assignmentEffort(w,t),pause=assignmentPause(w,t),candidates=serviceCandidates(w,t.realm,t.id).filter(c=>c.id!==t.officer&&c.id!==t.helper);
  const button=(command:ServiceCommand,label:string)=>{const reason=serviceReason(w,command);return <div className="realm-action"><HoverHint label={label} content={reason||label}><button disabled={pending||!!reason} onClick={()=>send(command)}>{label}</button></HoverHint></div>;};
  const action=(action:Extract<ServiceCommand,{id:number}>['action'],label:string)=>button({type:'service',action,id:t.id} as ServiceCommand,label);
- return <article className="assignment-detail"><header className="assignment-heading"><ArtIcon name={d.icon} size={48}/><div><small>{regimeName(w,t.realm)} · {assignmentPhases[t.phase]}</small><h3>{siteById[t.site].name} · {d.name}</h3></div></header><p>{d.description} {t.target&&<>出使对象：{regimeName(w,t.target)}。</>}</p><div className="assignment-officers"><PositionSeat world={w} holder={t.officer} title="承办" onPerson={onPerson}/><PositionSeat world={w} holder={chief} title="执政" onPerson={onPerson}/>{t.helper&&<PositionSeat world={w} holder={t.helper} title="协办" onPerson={onPerson}/>}</div>
+ return <article className="assignment-detail"><header className="assignment-heading"><ArtIcon name={d.icon} size={48}/><div><small><RealmBadge realm={t.realm} world={w}/> · {assignmentPhases[t.phase]}</small><h3>{siteById[t.site].name} · {d.name}</h3></div></header><p>{d.description} {t.target&&<>出使对象：<RealmBadge realm={t.target} world={w}/>。</>}</p><div className="assignment-officers"><PositionSeat world={w} holder={t.officer} title="承办" onPerson={onPerson}/><PositionSeat world={w} holder={chief} title="执政" onPerson={onPerson}/>{t.helper&&<PositionSeat world={w} holder={t.helper} title="协办" onPerson={onPerson}/>}</div>
  <div className="service-metrics"><Resource name="coins" value={t.funds.coins} label="专拨公款" caption/><Resource name="grain" value={t.funds.grain} label="专拨公粮" caption/><span>{t.phase==='closed'?'已结案':`限期余 ${Math.max(0,t.deadline-w.day)} 日`}</span></div>
  {t.started&&<><progress aria-label="办理进度" value={t.progress} max={t.required}/><p>工作量 {t.progress} / {t.required}{t.phase!=='closed'&&` · 约需 ${Math.ceil((t.required-t.progress)/effort.total)} 个有效办理日`}</p></>}
  {w.mobility&&(mine||t.helper===w.characterId)&&!presentAt(w,w.characterId!,t.site)&&!['report','closed','proposal','approval','petition'].includes(t.phase)&&<HoverHint label="赴任要求" content={departureReason(w)||(!personalRoute(w,t.site)?'暂无可通行道路':'前往差事所在地，抵达后办理。')}><button disabled={pending||!!w.people[0].journey||!!departureReason(w)||!personalRoute(w,t.site)} onClick={()=>send({type:'travel',destination:t.site})}><ArtIcon name="world" size={24}/>赴任 · {siteById[t.site].name}</button></HoverHint>}

@@ -1,8 +1,9 @@
+import {RealmBadge} from './RealmBadge';
 import {DetailTabs} from './DetailTabs';
 import { useState } from 'react';
 import { ArtIcon,Resource } from './ArtIcon';
 import { governmentDefinitions,governmentTypes,reformDefinitions,reformIds } from '../data/governments';
-import { governmentOf,governingExecutives,governmentReason,governmentYear,governmentBonus,governmentTaskPause,regimeName,politicalName,taskName,currentRealm,type GovernmentCommand,type Contract } from '../core/government';
+import { governmentOf,governingExecutives,governmentReason,governmentYear,governmentBonus,governmentTaskPause,politicalName,taskName,currentRealm,type GovernmentCommand,type Contract } from '../core/government';
 import { historicalCharacters } from '../data/characters';
 import { siteById } from '../data/scenario';
 import type { World } from '../core/types';
@@ -12,7 +13,7 @@ export function GovernmentPanel({world:w,pending,send}:{world:World;pending:bool
  const g=governmentOf(w);if(!g)return <p>读取存档后可使用政体制度。</p>;
  const r=currentRealm(w),definition=governmentDefinitions[g.type],bonus=governmentBonus(w,r),cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r&&c.controller===r),task=g.task;
  const action=(c:GovernmentCommand,label:string,consequence?:string)=>{const reason=governmentReason(w,c),key=JSON.stringify(c);return <div className="government-action"><button className={consequence?'primary':''} disabled={pending||!!reason} onClick={()=>{if(consequence&&confirmation!==key){setConfirmation(key);return;}setConfirmation(null);send(c);}}>{confirmation===key?'确认：':''}{label}</button>{reason&&<small>{reason}</small>}{confirmation===key&&<div className="government-confirm"><p>{consequence}</p><button onClick={()=>setConfirmation(null)}>暂不执行</button></div>}</div>;};
- return <div className="government-panel"><div className="government-banner"><ArtIcon name="influence" size={48}/><div><span className="eyebrow">{regimeName(w,r)} · {governmentYear(w)} 年</span><h3>{definition.name}</h3><p>{definition.subtitle}</p></div></div>
+ return <div className="government-panel"><div className="government-banner"><ArtIcon name="influence" size={48}/><div><span className="eyebrow"><RealmBadge realm={r} world={w}/> {governmentYear(w)} 年</span><h3>{definition.name}</h3><p>{definition.subtitle}</p></div></div>
  <div className="government-rulers"><span>君主 <b>{politicalName(g.ruler)}</b></span><span>实际执政 <b>{governingExecutives(w,r).map(politicalName).join('、')}</b></span></div>
  <div className="government-meters"><label>{g.type==='celestial'?'天命':'合法性'} <b>{g.legitimacy}</b><progress max={100} value={g.legitimacy}/></label><label>{g.type==='tribal'?'部众支持':'朝野支持'} <b>{g.support}</b><progress max={100} value={g.support}/></label></div>
  {task&&<article className="government-progress" aria-live="polite"><small>正在推进 · 发起人 {politicalName(task.sponsor)}</small><h3>{taskName(task)}</h3><progress max={task.required} value={task.progress}/><p>{task.progress} / {task.required} 有效实施日 · {governmentTaskPause(w,r)||'正在实施'}</p>{action({type:'government',action:'cancel'},'撤回议程','已付成本不退，已经产生的支持变化保留。')}</article>}

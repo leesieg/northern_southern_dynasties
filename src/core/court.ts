@@ -39,6 +39,25 @@ export function movementPower(w:World,r:RealmId,id:string){
  return 10+Math.floor((g.merit[id]??0)/5)+office+Math.min(20,cities*5)+familyStanding(w,id).tier*3+trait+(c.boosts[id]?.until>w.day?c.boosts[id].power:0)+(governingExecutives(w,r).includes(id)?10:0);
 }
 export function movementSummary(w:World,r:RealmId,group:MovementId){const c=courtOf(w,r)!;const members=Object.keys(c.members).filter(id=>isAlive(w,id)&&c.members[id]===group).sort((a,b)=>movementPower(w,r,b)-movementPower(w,r,a)||a.localeCompare(b));const power=members.reduce((n,id)=>n+movementPower(w,r,id),0),total=Object.keys(c.members).reduce((n,id)=>n+movementPower(w,r,id),0);return {members,power,share:total?Math.floor(power*100/total):0,leader:group==='unaligned'?null:members[0]??null};}
+/** Derived from live political conditions; no second membership or satisfaction ledger. */
+export function movementMood(w:World,r:RealmId,group:MovementId){
+ const c=courtOf(w,r)!,g=governmentOf(w,r)!,m=movementSummary(w,r,group),factors:{label:string;value:number}[]=[];
+ const add=(label:string,value:number)=>factors.push({label,value});
+ if(group==='unaligned'||!m.members.length)return {...m,satisfaction:50,factors,tension:0,support:0};
+ add('基本认同',50);
+ if(c.favored===group)add('朝廷眷顾',20);else if(c.favored)add('他派受眷顾',-10);
+ const aligned=group==='reform'?c.policy==='reform':group==='expansion'?c.policy==='expansion':group==='conservative'?c.policy==='consolidation':null;
+ if(aligned!==null)add(aligned?'国策符合诉求':'国策背离诉求',aligned?20:-15);
+ const occupied=Object.values(c.ministries).filter((id):id is string=>!!id&&isAlive(w,id));
+ if(occupied.length){const seats=occupied.filter(id=>c.members[id]===group).length;add('中央任职份额',Math.max(-15,Math.min(15,Math.round((seats/occupied.length-m.share/100)*30))));}
+ if(group==='dynastic')add('君主合法性',Math.round((g.legitimacy-50)/3));
+ if(group==='reform'||group==='conservative')add('官场积弊',-Math.floor(c.corruption/5));
+ if(w.realm!.war&&[w.realm!.war.attacker,w.realm!.war.defender].includes(r))add('战争立场',group==='expansion'?10:group==='conservative'?-15:-5);
+ const satisfaction=cap(factors.reduce((n,v)=>n+v.value,0));
+ const tension=satisfaction<40?Math.ceil(m.share*(40-satisfaction)/200):satisfaction>=70?-Math.floor(m.share*(satisfaction-60)/500):0;
+ const support=satisfaction<30?-Math.ceil(m.share/25):satisfaction>=70?Math.floor(m.share/25):0;
+ return {...m,satisfaction,factors,tension,support};
+}
 export function courtBonus(w:World,r:RealmId){
  const c=courtOf(w,r);if(!c||!courtEnabled(w,r))return {tax:0,pay:0,attack:0};
  return {tax:(c.phase==='strained'?-10:c.phase==='chaos'?-25:0)+(ministryCompetent(w,r,'finance')?8:0)+(c.phase==='stable'&&c.policy==='reform'?8:0),pay:(ministryCompetent(w,r,'military')?-8:0)+(c.phase==='chaos'?15:c.phase==='stable'&&c.policy==='expansion'?5:0),attack:c.phase==='stable'?(c.policy==='expansion'?10:c.policy==='reform'?-5:0):0};
@@ -113,8 +132,7 @@ function foundDynasty(w:World,r:RealmId){const g=governmentOf(w,r)!,c=courtOf(w,
 export function courtCatalysts(w:World,r:RealmId){const c=courtOf(w,r)!,g=governmentOf(w,r)!,s=w.realm!,t=s.treasuries[r],cities=Object.values(s.cities).filter(c=>c.owner===r),order=cities.length?cities.reduce((n,c)=>n+c.order,0)/cities.length:0;const capital=s.cities[capitals[r]];
  const rows:{label:string;value:number}[]=[];const add=(label:string,value:number)=>rows.push({label,value});
  if(!t.coins||!t.grain)add('公库或公粮见底',10);if(capital.owner!==r||capital.controller!==r)add('都城失守',15);if(s.war&&[s.war.attacker,s.war.defender].includes(r))add('持续战争',5);if(order<45)add('地方失序',8);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
- const dominant=movementIds.filter(k=>k!=='unaligned').map(k=>({group:k,...movementSummary(w,r,k)})).sort((a,b)=>b.power-a.power)[0];
- if(dominant&&dominant.share>=60&&c.favored!==dominant.group)add('强势集团未获朝廷眷顾',4);
+ for(const group of movementIds){const m=movementMood(w,r,group);if(m.tension)add(movements[group].name+(m.tension>0?'施压':'支持'),m.tension);}
  if(!rows.length)add('府库、秩序与天命平稳',-4);if(ministryCompetent(w,r,'censorate'))add('监察履职',-2);
  return rows;
 }
@@ -128,6 +146,10 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
  if(ministryCompetent(w,r,'secretariat'))g.support=cap(g.support+2);
  if(ministryCompetent(w,r,'personnel'))for(const id of Object.keys(g.merit))g.merit[id]=cap(g.merit[id]+1);
  c.corruption=cap(c.corruption+employed.filter(id=>(g.merit[id]??0)<40).length*3-(ministryCompetent(w,r,'censorate')?5:0)-(c.phase==='stable'&&c.policy==='consolidation'?1:0));
+ const moods=movementIds.map(group=>({group,...movementMood(w,r,group)}));
+ const supportDelta=moods.reduce((n,m)=>n+m.support,0);g.support=cap(g.support+supportDelta);
+ if(supportDelta)log(w,r,'集团态度：朝野支持 '+(supportDelta>0?'+':'')+supportDelta+'。');
+ if(!c.petition&&(c.cooldowns.petition??0)<=w.day){const opposition=moods.filter(m=>m.leader&&m.leader!==w.characterId&&m.satisfaction<40&&m.share>=25).sort((a,b)=>b.share-a.share)[0];if(opposition){c.petition={group:opposition.group,sponsor:opposition.leader!,due:w.day+15};c.cooldowns.petition=w.day+90;log(w,r,movements[opposition.group].name+'因诉求未获满足呈递奏议，15 日内等待裁决。');}}
  const catalysts=courtCatalysts(w,r);c.tension=cap(c.tension+catalysts.reduce((n,v)=>n+v.value,0));const previous=c.phase;
  c.phase=c.tension>=80||g.legitimacy<15?'chaos':c.tension>=40?'strained':'stable';
  log(w,r,`月度局势：${catalysts.map(v=>v.label+(v.value>0?'+':'')+v.value).join('；')}。紧张 ${c.tension}。`);

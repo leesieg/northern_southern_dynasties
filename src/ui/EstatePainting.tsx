@@ -1,11 +1,11 @@
 import { familyName } from '../data/characters';
 import { useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties,ReactNode } from 'react';
 import { estateBuildings,type EstateBuilding,type Holdings } from '../core/construction';
 import { estateScene } from './estateScene';
 import './estatePainting.css';
-interface Props {estate:Holdings['estate'];day:number;selected:EstateBuilding;onSelect:(id:EstateBuilding)=>void}
-export function EstatePainting({estate,day,selected,onSelect}:Props){
+interface Props {children?:ReactNode;estate:Holdings['estate'];day:number;selected:EstateBuilding|null;onSelect:(id:EstateBuilding)=>void}
+export function EstatePainting({estate,day,selected,onSelect,children}:Props){
   const [failed,setFailed]=useState(false);
   const parts=estateScene(estate,day);
   const description=parts.map(part=>`${estateBuildings[part.id].name}${part.level?part.level+'级':'未建'}${part.constructing?`，扩建至${part.target}级，还需${part.remaining}日`:''}`).join('；');
@@ -20,7 +20,7 @@ export function EstatePainting({estate,day,selected,onSelect}:Props){
         {!part.level&&!part.constructing&&<span className="estate-empty-land" aria-hidden="true">＋</span>}
         <span className="estate-plot-caption"><strong>{estateBuildings[part.id].name}</strong><small>{part.constructing?`施工 · ${part.remaining} 日`:part.level?`${part.level} 级`:'待营建'}</small>{part.progress!==null&&<span className="estate-work-meter"><i style={{width:`${part.progress*100}%`}}/></span>}</span>
       </button>)}
-      <div className="estate-scene-light" aria-hidden="true"/>
+      <div className="estate-scene-light" aria-hidden="true"/>{children}
       {failed&&<p className="estate-art-error" role="alert">庄园画面资源加载失败，请刷新重试。下方营建操作仍可使用。</p>}
     </div>
     <figcaption><span>点选画中建筑，查看或安排营建</span><span>画面随工程与建筑等级更新</span></figcaption>

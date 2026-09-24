@@ -1,3 +1,5 @@
+import {mapActivities} from '../core/mapActivities';
+import type {OngoingItem} from '../core/ongoing';
 import {mapTravelers} from '../core/residence';
 import { diplomaticColor,personalRoute } from '../core/diplomacy';
 import type { RealmId } from '../core/realm';
@@ -26,6 +28,7 @@ setWorkerCount(2);
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
+  onActivity:(item:OngoingItem)=>void;
   onDiplomacy:(r:RealmId)=>void;
   onInspectPeople:(ids:string[])=>void;
   territory:string;territoryLevel:TerritoryLevel;historyEvent:string|null;onSelectTerritory:(id:string)=>void;
@@ -37,6 +40,7 @@ interface MapAPI {update:()=>void;camera:(type:Props['cameraAction']['type'])=>v
 export function WorldMap(props:Props){
   const host=useRef<HTMLDivElement>(null),api=useRef<MapAPI|null>(null),current=useRef(props);
   current.current=props;
+  const [activitySite,setActivitySite]=useState<string|null>(null);
   const [error,setError]=useState(''),[warning,setWarning]=useState(''),[ready,setReady]=useState(false),[retry,setRetry]=useState(0);
   const [hover,setHover]=useState<{id:string;x:number;y:number}|null>(null);
   const [menu,setMenu]=useState<{id:string;x:number;y:number}|null>(null);
@@ -59,6 +63,7 @@ export function WorldMap(props:Props){
     let lastMode='',lastTilt:boolean|undefined,lastWorld:World|undefined,lastSelected='',lastRoute='';
     let hoveredId:string|null=null;
     const allMarkers:Marker[]=[];
+    const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     const places:{marker:Marker;button:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
@@ -132,6 +137,10 @@ export function WorldMap(props:Props){
         }
         for(const item of places){const state=p.world.realm?.cities[item.id];if(state){item.button.style.borderColor=polities[state.controller].color;item.button.textContent=siteById[item.id].name+(state.controller!==state.owner?' · 占':'');item.button.title='法理：'+regimeName(p.world,state.owner)+' / 控制：'+regimeName(p.world,state.controller);}}
         for(const [realm,item] of armyMarkers){const a=p.world.realm?.armies.find(a=>a.realm===realm);item.marker.getElement().hidden=!a;if(a){let {lon,lat}=siteById[a.location];if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],t=j.elapsed/j.durations[j.leg];lon=from.lon+(to.lon-from.lon)*t;lat=from.lat+(to.lat-from.lat)*t;}item.marker.setLngLat([lon,lat]);item.button.textContent=regimeName(p.world,a.realm)+'軍 · '+a.troops;item.button.title='士气 '+a.morale+' / 随军粮 '+a.supply;}}
+        const activityGroups=mapActivities(p.world);
+        for(const [site,entry] of activityMarkers)if(!activityGroups.some(g=>g.site===site)){entry.marker.remove();activityMarkers.delete(site);}
+        for(const group of activityGroups){let entry=activityMarkers.get(group.site);if(!entry){const button=document.createElement('button');button.className='atlas-activity-marker';const loc=siteById[group.site];const marker=new Marker({element:button,anchor:'left',offset:[18,-22]}).setLngLat([loc.lon,loc.lat]).addTo(map);entry={marker,button};activityMarkers.set(group.site,entry);}
+         const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent=group.items.length>1?String(group.items.length):'';entry.button.title=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',siteById[group.site].name+'的活动：'+entry.button.title);entry.button.onclick=e=>{e.stopPropagation();setActivitySite(group.site);};}
         lastWorld=p.world;lastRoute=routeKey;
       }
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
@@ -249,7 +258,7 @@ export function WorldMap(props:Props){
     }catch(e){setError(e instanceof Error?e.message:'无法启动 WebGL 2 地图。');}
     return()=>{
       disposed=true;if(slowLoad)clearTimeout(slowLoad);cancelAnimationFrame(frame);observer?.disconnect();
-      allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
+      activityMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
     };
   },[retry]);
 
@@ -261,6 +270,7 @@ export function WorldMap(props:Props){
   return <div className="world-map atlas-map">
     <div className="map-canvas atlas-canvas" ref={host}/>
     <div className="atlas-paper" aria-hidden="true"/>
+    {activitySite&&<section className="map-activity-list" aria-label="当地活动"><header><strong>{siteById[activitySite].name}</strong><button aria-label="关闭活动列表" onClick={()=>setActivitySite(null)}>×</button></header>{(mapActivities(props.world).find(g=>g.site===activitySite)?.items??[]).map(item=><button key={item.id} onClick={()=>{props.onActivity(item);setActivitySite(null);}}><ArtIcon name={item.kind==='construction'?'estate':item.kind==='service'?'diligent':'person'} size={28}/><span><strong>{item.title}</strong><small>{item.status} · {item.days===null?'待定':item.days+' 日'}</small>{item.progress!==null&&<progress max={1} value={item.progress}/>}</span><span>›</span></button>)}</section>}
     {shownEvent&&<div className="history-map-notice"><strong>{shownEvent.year} 年 · {shownEvent.label}</strong><span>标记为城市攻取记录；底图仍是 546 行政基底，未重建当年疆界。</span></div>}
     {hover&&hoverSite&&!menu&&<div className="territory-tooltip" style={{left:hover.x,top:hover.y}}>
       <span className="territory-kicker">{regimeName(props.world,props.world.realm?.cities[hoverSite.id]?.controller??hoverSite.polity)} · {administration[hoverSite.id]?.prefecture??'区划待核'}</span><strong>{hoverNode?.name??hoverSite.name}</strong><p>{hoverNode?levelNames[hoverNode.level]:'城市'} · 单击选择此层级</p>

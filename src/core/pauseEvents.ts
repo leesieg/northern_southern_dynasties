@@ -1,3 +1,6 @@
+import {courtOf} from './court';
+import {governmentExecutive} from './government';
+import {movements} from '../data/court';
 import {retinueMembers,postStatus} from './retinue';
 import {clanStanding} from './clans';
 import {relationshipPersonById} from '../data/relationships';
@@ -10,6 +13,7 @@ import {siteById} from '../data/scenario';
 import type {World} from './types';
 import {playerRealm} from './realm';
 export function pauseHasActions(w:World,event:PauseEvent){
+ if(event.kind==='court')return !!w.characterId&&!!courtOf(w)?.petition&&courtOf(w)?.petition?.due===event.courtDue&&governmentExecutive(w);
  if(event.kind==='fiscal')return !!w.realm?.fiscal?.requests.some(q=>q.id===event.fiscalId&&q.status==='pending'&&q.approver===w.characterId);
  if(event.kind==='realm')return !!w.realm?.event;
  if(event.kind==='diplomacy')return !!w.realm&&!!w.diplomacy?.missions.some(m=>m.status==='audience'&&m.to===playerRealm(w));
@@ -21,8 +25,8 @@ export function pauseHasActions(w:World,event:PauseEvent){
  }
  return false;
 }
-export interface PauseEvent {id:string;fiscalId?:number;assignmentId?:number;activityId?:number;kind:'fiscal'|'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
-export function pauseSnapshot(w:World){return {fiscal:new Map(w.realm?.fiscal?.requests.map(q=>[q.id,q.status+'|'+q.approver])),clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
+export interface PauseEvent {id:string;courtDue?:number;fiscalId?:number;assignmentId?:number;activityId?:number;kind:'court'|'fiscal'|'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
+export function pauseSnapshot(w:World){return {courtDue:w.characterId?courtOf(w)?.petition?.due:undefined,fiscal:new Map(w.realm?.fiscal?.requests.map(q=>[q.id,q.status+'|'+q.approver])),clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
 export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):PauseEvent[]{
  const events:PauseEvent[]=[];
  const add=(kind:PauseEvent['kind'],title:string,body:string,extra:Partial<PauseEvent>={})=>events.push({id:`${w.day}:${kind}:${events.length}`,kind,title,body,...extra});
@@ -43,5 +47,6 @@ export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):Pau
  if(w.realm?.event&&JSON.stringify(w.realm.event)!==before.event)add('realm','政务待决','有新的政务呈报，请作出裁决。');
  if(w.campaign&&w.campaign.status!=='active'&&w.campaign.status!==before.status)add('outcome','此段生涯已终','本局已经结束，请查看生涯结果。');
  if(before.destination&&!w.people[0].journey&&before.actor===w.characterId&&!events.some(e=>e.kind==='mobility'&&e.site===w.people[0].location)){const arrived=w.people[0].location===before.destination;add(arrived?'arrival':'journey',arrived?'抵达目的地':'行程中止',arrived?`你已抵达${siteById[w.people[0].location].name}，可以拜访当地人物或安排下一步行程。`:'行程因局势变化中止，请查看当前所在地与纪事。',{site:w.people[0].location,assignmentId:w.service?.tasks.find(t=>t.site===w.people[0].location&&(t.officer===w.characterId||t.helper===w.characterId)&&!['report','closed'].includes(t.phase))?.id});}
+ const petition=w.characterId?courtOf(w)?.petition:null;if(petition&&petition.due!==before.courtDue&&governmentExecutive(w))add('court',movements[petition.group].name+'奏议',movements[petition.group].goal+' 请决定批准或否决。',{courtDue:petition.due});
  return events;
 }

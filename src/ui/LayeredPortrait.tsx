@@ -1,5 +1,4 @@
 import { composePortrait,type PortraitContext } from '../character/composition';
-import { TraitBadge } from './ArtIcon';
 import { PaintedComposition } from './PaintedComposition';
 import { approvedPaintedRecipe } from '../character/paintedSelection';
 import { PortraitFrame } from './PortraitFrame';
@@ -12,6 +11,5 @@ export function LayeredPortrait({context,name,characterId,compact=false,rank}:{c
  <PaintedComposition recipe={painted} compact={compact} life={context.life}/>
  {context.life?.deceased&&<span className="portrait-memorial">故</span>}
  {rank&&<PortraitFrame rank={rank} compact={compact}/>}
- <div className="portrait-trait-ribbon">{context.traits.map(t=><TraitBadge key={t} trait={t}/>)}</div>
  </div>;
 }

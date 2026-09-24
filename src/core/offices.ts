@@ -30,7 +30,7 @@ export function officeHierarchy(w:World):OfficeNode[]{
    add({id:`office:546:${o.id}`,name:o.name,holder:o.holder,parentId:o.kind==='honour'?root:ownExecutive>=0?`office:${r}:executive:${ownExecutive}`:chief,kind:o.kind,relation:o.kind==='honour'?'honour':'administration',active:true,source:c.sources});
   }
   for(const [site,c] of Object.entries(w.realm!.cities))if(c.owner===r){
-   add({id:`office:city:${site}`,name:siteById[site].name+(relation==='liege'?'领有':relation==='chief'?'驻地治理':'治理官'),holder:c.governor,parentId:chief,kind:'city',relation,active:c.controller===c.owner,site});
+   add({id:`office:city:${site}`,name:siteById[site].name+'刺史',holder:c.governor,parentId:chief,kind:'city',relation,active:c.controller===c.owner,site});
   }
  }
  return nodes;

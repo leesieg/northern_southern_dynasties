@@ -1,3 +1,4 @@
+import {RealmBadge} from './RealmBadge';
 import {TreasuryPanel} from './TreasuryPanel';
 import {CityOfficeSeat} from './CityOfficeSeat';
 import {clanStanding} from '../core/clans';
@@ -6,14 +7,13 @@ import {HoverHint} from './HoverHint';
 import {ClanRanking} from './ClanRanking';
 import type {RealmCommand} from '../core/realm';
 import {RealmOverview,realmPageNames} from './RealmOverview';
-import {RealmFlag} from './RealmFlag';
 import './realmOverview.css';
 import {ServicePanel} from './ServicePanel';
 import {DutiesPanel} from './DutiesPanel';
 import { CourtPanel,type CourtTab } from './CourtPanel';
 import { OfficeHierarchy } from './OfficeHierarchy';
 import { GovernmentPanel } from './GovernmentPanel';
-import { regimeName,politicalName,governingAuthority } from '../core/government';
+import { politicalName,governingAuthority } from '../core/government';
 import { Resource } from './ArtIcon';
 import { useState } from 'react';
 import { characterById } from '../data/characters';
@@ -27,7 +27,7 @@ export function RealmPanel({world:w,pending,send,onCity,onPerson,tab,onTab,court
  const s=w.realm;if(!s)return <p>政务用于新建的历史沙盒。旧教学局保留原规则。</p>;
  const r=playerRealm(w),t=s.treasuries[r],city=s.cities[selected],friendly=Object.entries(s.cities).filter(([,c])=>c.owner===r);
  const action=(c:RealmCommand,label:string,danger=false)=>{const reason=realmReason(w,c),key=JSON.stringify(c);return <div className="realm-action"><button disabled={pending||!!reason} className={danger?'danger':''} onClick={()=>{if(danger&&confirm!==key){setConfirm(key);return;}setConfirm(null);send(c);}}>{confirm===key?'确认：':''}{label}</button>{reason&&<small>{reason}</small>}{confirm===key&&<button onClick={()=>setConfirm(null)}>取消</button>}</div>;};
- return <div className="realm-panel"><header className="realm-identity"><RealmFlag realm={r} world={w} compact showLabel={false}/><div><small>我所在的政权</small><h2>{regimeName(w,r)}</h2></div><div className="realm-public-funds"><Resource name="coins" value={t.coins} label="公款" caption/><Resource name="grain" value={t.grain} label="公粮" caption/><Resource name="influence" value={s.influence} label="影响力" caption/></div></header>
+ return <div className="realm-panel"><header className="realm-identity"><RealmBadge realm={r} world={w}/><div className="realm-public-funds"><Resource name="coins" value={t.coins} label="公款" caption/><Resource name="grain" value={t.grain} label="公粮" caption/><Resource name="influence" value={s.influence} label="影响力" caption/></div></header>
  {s.event&&<section className="realm-event" role="status"><small>待决事务 · {siteById[s.event.site].name} · 时间已暂停</small><h3>{eventDefinitions[s.event.kind].title}</h3><p>{eventDefinitions[s.event.kind].body}</p><p>{eventDefinitions[s.event.kind].effect}</p><div className="realm-actions">{action({type:'realm',action:'event',choice:'fund'},'拨付处理 · '+eventDefinitions[s.event.kind].cost)}{action({type:'realm',action:'event',choice:'decline'},'暂缓处理')}</div><small>处理后关闭窗口，再继续时间。</small></section>}
  {tab!=='overview'&&<nav className="realm-breadcrumb" aria-label="政务位置"><button onClick={()=>onTab('overview')}>← 政务总览</button><span>{realmPageNames[tab]}</span></nav>}
  {tab==='overview'&&<RealmOverview world={w} onCity={onCity} onTab={next=>{if(next==='court')onCourtTab('ministries');onTab(next);}} onPerson={onPerson}/>}

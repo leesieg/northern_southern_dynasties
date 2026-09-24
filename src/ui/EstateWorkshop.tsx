@@ -1,0 +1,14 @@
+import {useEffect,useRef,useState} from 'react';
+import {EstatePainting} from './EstatePainting';
+import {MobilityPanel} from './MobilityPanel';
+import {ArtIcon,Resource} from './ArtIcon';
+import {buildQuote,estateBuildings,type EstateBuilding} from '../core/construction';
+import {siteById} from '../data/scenario';
+import type {World,GameCommand} from '../core/types';
+export function EstateWorkshop({world:w,send}:{world:World;send:(c:GameCommand)=>void}){
+ const [selected,setSelected]=useState<EstateBuilding|null>(null),[family,setFamily]=useState(false),close=useRef<HTMLButtonElement>(null);
+ const e=w.holdings.estate;
+ useEffect(()=>{if(selected)close.current?.focus();},[selected]);
+ const d=selected?estateBuildings[selected]:null,cmd=selected?{type:'build',scope:'estate',site:e.location,building:selected} as const:null,q=cmd?buildQuote(w,cmd):null,level=selected?e.levels[selected]:0;
+ return <div className="estate-workshop estate-canvas-workshop"><div className="estate-workshop-heading"><span>{siteById[e.location].name}</span><Resource name="coins" value={w.people[0].coins} label="个人钱"/><small>建筑位 {Object.entries(e.levels).filter(([id,n])=>id!=='hall'&&n>0).length}/{e.levels.hall}</small><button aria-pressed={family} onClick={()=>{setFamily(!family);setSelected(null);}}><ArtIcon name="person" size={22}/>家事</button></div><EstatePainting estate={e} day={w.day} selected={selected} onSelect={id=>{setSelected(id);setFamily(false);}}>{selected&&d&&q&&cmd&&<section className={'estate-plot-popover at-'+selected} aria-label={d.name+'营建'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setSelected(null);}}}><header><h3>{d.name} <small>{level}/3 级</small></h3><button ref={close} aria-label="关闭营建详情" onClick={()=>setSelected(null)}>×</button></header><p>{d.effect}</p>{e.project?.building===selected&&<div><progress max={e.project.due-e.project.started} value={w.day-e.project.started}/><small>营建中 · 余 {Math.max(0,e.project.due-w.day)} 日</small></div>}{level<3&&<div className="estate-plot-cost"><ArtIcon name="coins" size={22}/><b>{q.cost}</b><span>{q.days} 日</span></div>}<button className="primary" disabled={!!q.reason} onClick={()=>{send(cmd);setSelected(null);}}>{level>=3?'已满级':level?'扩建至 '+q.level+' 级':'兴建'}</button>{q.reason&&<small className="estate-requirement">{q.reason}</small>}</section>}{family&&<section className="estate-family-overlay"><header><strong>家事</strong><button aria-label="关闭家事" onClick={()=>setFamily(false)}>×</button></header><MobilityPanel world={w} site={e.location} estate send={send}/></section>}</EstatePainting></div>;
+}

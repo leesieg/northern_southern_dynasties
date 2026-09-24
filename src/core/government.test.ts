@@ -57,7 +57,10 @@ describe('政体、改革与政权实体沿革',()=>{
  it('西魏从府兵到六官，再由宇文觉受禅建周，宇文护执政',()=>{
   const w=start('yuwen-tai');atYear(w,550);capitalReady(w);act(w,{type:'government',action:'law',law:'west-militia'});finish(w);expect(governmentBonus(w,'west').pay).toBe(-15);
   atYear(w,556);capitalReady(w);act(w,{type:'government',action:'law',law:'west-offices'});finish(w);capitalReady(w);act(w,{type:'government',action:'succession',stage:'west-regency'});finish(w);expect(governmentOf(w)!.ruler).toBe('yuan-kuo');expect(executive(w)).toBe(false);
-  atYear(w,557);capitalReady(w);act(w,{type:'government',action:'succession',stage:'zhou-accession'});finish(w);expect(regimeName(w,'west')).toBe('北周');expect(governmentOf(w)!.ruler).toBe('yuwen-jue');expect(governmentOf(w)!.executives).toEqual(['yuwen-hu']);
+  atYear(w,557);capitalReady(w);
+  // This scenario isolates the succession chain; political crises are tested separately.
+  governmentOf(w)!.court!.tension=15;governmentOf(w)!.court!.phase='stable';
+  act(w,{type:'government',action:'succession',stage:'zhou-accession'});finish(w);expect(regimeName(w,'west')).toBe('北周');expect(governmentOf(w)!.ruler).toBe('yuwen-jue');expect(governmentOf(w)!.executives).toEqual(['yuwen-hu']);
  });
  it('高洋受禅建立新实体，撤销旧授权但不替换玩家人物或家业',()=>{
   const w=start('gao-huan');atYear(w,549);capitalReady(w);act(w,{type:'government',action:'succession',stage:'east-regency'});finish(w);expect(executive(w)).toBe(false);

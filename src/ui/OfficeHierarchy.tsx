@@ -1,3 +1,4 @@
+import {RealmBadge} from './RealmBadge';
 import {PositionSeat,PersonSelectionDialog} from './PersonSelection';
 import {CityOfficeSeat} from './CityOfficeSeat';
 import {useState} from 'react';
@@ -9,7 +10,7 @@ import {courtReason} from '../core/court';
 import { movements } from '../data/court';
 import { courtOf,movementPower } from '../core/court';
 import { officeHierarchy,officeChain,superiorOffice,directSubordinates,type OfficeNode } from '../core/offices';
-import { politicalName,regimeName } from '../core/government';
+import { politicalName } from '../core/government';
 import { playerRealm,type RealmId } from '../core/realm';
 import { characterById } from '../data/characters';
 import { siteById } from '../data/scenario';
@@ -22,7 +23,7 @@ export function OfficeHierarchy({world,person,realm=playerRealm(world),onPerson,
  const held=person?all.filter(n=>n.holder===person):all.filter(n=>n.realm===realm);
  const link=(id:string)=><button className="office-person" onClick={()=>onPerson(id)}>{politicalName(id)} ↗</button>;
  const card=(n:OfficeNode)=>{const superior=superiorOffice(all,n);return <article className="office-card" key={n.id}>
-  <header><strong>{n.name}</strong><small>{regimeName(world,n.realm)} · {n.kind==='honour'?'身份／爵号':n.kind==='city'?(n.active?'在任辖地':'失守 · 治理暂停'):n.active?'朝廷职位':'政体停用 · 无履职增益'}</small></header>
+  <header><strong>{n.name}</strong><small><RealmBadge realm={n.realm} world={world}/> · {n.kind==='honour'?'身份／爵号':n.kind==='city'?(n.active?'在任辖地':'失守 · 治理暂停'):n.active?'朝廷职位':'政体停用 · 无履职增益'}</small></header>
   {!person&&<div>{n.holder?link(n.holder):<span className="small-note">空缺 · 未任命</span>}</div>}
   {n.kind==='honour'?<p className="small-note">奉属君主 {superior?.holder?link(superior.holder):'本人'}；此身份不授予城市治理权。</p>:<div className="office-superior">{superior?.holder?<>{n.relation==='liege'?'直属领主':n.relation==='chief'?'上级首领':n.kind==='executive'&&n.parentId?.endsWith('sovereign')?'奉事君主':'直属上级'}：{link(superior.holder)}<small>{superior.name}</small></>:<span className="small-note">{n.parentId?'兼任上级职位，无其他直属上级':'本政权最高名义位阶'}</span>}</div>}
   {person&&n.kind!=='honour'&&<details><summary>完整职位链</summary><ol className="office-chain">{officeChain(all,n).map(p=><li key={p.id}><span>{p.name}</span>{p.holder?link(p.holder):'空缺'}</li>)}</ol></details>}
