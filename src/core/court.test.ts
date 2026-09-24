@@ -24,7 +24,7 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
  });
  it('非执政人物可凭功绩请任，中央俸给计入预算而不会重复扣款',()=>{
   const w=start('xiao-gang');resources(w);governmentOf(w)!.merit['xiao-gang']=60;const base=realmForecast(w,'liang').expense;
-  expect(courtReason(w,{type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'})).toContain('执政');act(w,{type:'court',action:'seek-office',ministry:'secretariat'});expect(realmForecast(w,'liang').expense).toBe(base+4);
+  expect(courtReason(w,{type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'})).toContain('执政');act(w,{type:'court',action:'seek-office',ministry:'secretariat'});expect(realmForecast(w,'liang').expense).toBe(base);expect(w.realm!.cities.jiankang.governor).toBeNull();
   const clone=structuredClone(w);courtOf(clone)!.ministries.secretariat=null;pass(w,30);pass(clone,30);expect(w.people[0].coins-clone.people[0].coins).toBe(4);expect(clone.realm!.treasuries.liang.coins-w.realm!.treasuries.liang.coins).toBe(4);
   expect(parseWorld(serializeWorld(w))).toEqual(w);
  });

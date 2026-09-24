@@ -51,7 +51,7 @@ describe('可组合人物与遗传规则',()=>{
   expect(changed.phenotype).toEqual(base.phenotype);expect(JSON.stringify(c.identity.genome)).toBe(before);
  });
  it('实际任命、退居和军务动员影响服饰；压力不改基因',()=>{
-  const w=newCampaignWorld('xiao-yi',undefined,'sandbox');for(const c of Object.values(w.realm!.cities))c.governor=null;
+  const w=newCampaignWorld('xiao-yi',undefined,'sandbox');for(const c of Object.values(w.realm!.cities))c.governor=null;for(const s of Object.values(w.realm!.local!.seats))s.holder=null;
   expect(portraitContext('xiao-yi',w).office).toBe('civilian');w.realm!.cities.jiangling.governor='xiao-yi';
   expect(portraitContext('xiao-yi',w).office).toBe('governor');w.realm!.mandate=true;
   w.realm!.armies.push({realm:'liang',location:'jiangling',troops:100,morale:50,supply:100,journey:null,siege:0});

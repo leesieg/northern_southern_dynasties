@@ -32,7 +32,7 @@ describe('官爵与科层图',()=>{
   const w=start('dugu-xin'),id='office:city:tianshui';w.realm!.cities.tianshui.controller='east';const n=node(w,id);
   expect(n.active).toBe(false);expect(n.realm).toBe('west');expect(n.holder).toBe('dugu-xin');expect(superiorOffice(officeHierarchy(w),n)?.holder).toBe('yuwen-tai');
   // Legal transfer, as performed by the peace rule, preserves office identity, but changes its parent and clears its holder.
-  w.realm!.cities.tianshui.owner='east';w.realm!.cities.tianshui.governor=null;expect(node(w,id)).toMatchObject({realm:'east',holder:null,parentId:'office:east:executive:0',active:true});
+  w.realm!.cities.tianshui.owner='east';w.realm!.cities.tianshui.governor=null;expect(node(w,id)).toMatchObject({realm:'east',holder:null,parentId:'office:local:east:prefecture:tianshui',active:true});
  });
  it('封建家业交接转移领有；官僚家业交接不继承公职',()=>{
   for(const feudal of [false,true]){const w=start();if(feudal)governmentOf(w)!.type='feudal';act(w,{type:'heir',target:'xiao-gang'});act(w,{type:'handover'});expect(node(w,'office:city:jiankang')).toMatchObject({holder:feudal?'xiao-gang':'xiao-yan',relation:feudal?'liege':'administration'});}

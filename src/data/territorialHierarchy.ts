@@ -1,7 +1,7 @@
 import { administration } from './administration.ts';
 import { sites,polities } from './scenario.ts';
 export type TerritoryLevel='realm'|'province'|'prefecture'|'county'|'city';
-export const levelNames:Record<TerritoryLevel,string>={realm:'政权',province:'州',prefecture:'郡／尹',county:'县',city:'城市'};
+export const levelNames:Record<TerritoryLevel,string>={realm:'政权',province:'州',prefecture:'郡／尹',county:'县',city:'县域'};
 export interface TerritoryNode {id:string;name:string;level:TerritoryLevel;parent:string|null;site?:string;basis:'scenario'|'gazetteer'|'unresolved';from:number;until:number}
 // Explicit entities and parent links; no administrative identity is inferred from a polygon.
 // The current administrative baseline is only asserted for the 546 scenario.

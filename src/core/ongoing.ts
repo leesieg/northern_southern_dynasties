@@ -1,3 +1,4 @@
+import {localTitle} from './localAdministration';
 import type {World,Journey} from './types';
 import {siteById} from '../data/scenario';
 import {relationshipPersonById} from '../data/relationships';
@@ -11,7 +12,7 @@ import {playerRealm} from './realm';
 import {diplomacyActions} from './diplomacy';
 import {cityBuildings,estateBuildings} from './construction';
 export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue';
-export type OngoingTarget={page:'person';person:string}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'};
+export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'};
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;
 const name=(id:string)=>relationshipPersonById[id]?.name??id;
@@ -36,7 +37,8 @@ export function ongoingItems(w:World):OngoingItem[]{
   const proposal=w.service?.councils[r].proposal;if(proposal&&(proposal.actor===actor||chief))add({id:'council:'+proposal.actor+':'+proposal.day,kind:'petition',title:'本季议事奏请',started:proposal.day,progress:null,days:null,clock:'waiting',status:'待批复',target:{page:'service'}});
   const task=g?.task;if(task&&(task.sponsor===actor||chief))add({id:'reform:'+task.started+':'+task.target,kind:'reform',title:task.kind==='law'?'推行新法':task.kind==='succession'?'继位议程':'政体改革',started:task.started,progress:ratio(task.progress,task.required),days:governmentTaskPause(w,r)?null:Math.max(0,task.required-task.progress),clock:'estimate',status:governmentTaskPause(w,r)||'推行中',target:{page:'government'}});
   const founding=court?.founding;if(founding&&(founding.sponsor===actor||chief))add({id:'founding:'+founding.started,kind:'reform',title:'建朝 · '+founding.name,started:founding.started,progress:ratio(founding.progress,founding.required),days:foundingPause(w,r)?null:Math.max(0,founding.required-founding.progress),clock:'estimate',status:foundingPause(w,r)||'筹备中',target:{page:'court'}});
-  for(const o of w.realm!.offices)if(o.candidate===actor||chief&&w.realm!.cities[o.site].owner===r)add({id:'office:'+o.site+':'+o.candidate,kind:'petition',title:siteById[o.site].name+'任命',started:0,progress:null,days:o.due-w.day<=1?null:o.due-w.day,clock:o.due-w.day<=1?'waiting':'remaining',status:o.due-w.day<=1?'等待本人赴任':'文书送达中',target:{page:'politics'}});
+  for(const q of w.realm!.local?.requests??[])if(q.status==='pending'&&(q.actor===actor||q.approver===actor))add({id:'local:'+q.id,kind:'petition',title:localTitle(q.territory)+'奏请',started:q.created,progress:null,days:Math.max(0,60-w.day+q.created),clock:'deadline',status:'等待批复',target:{page:'territory',territory:q.territory}});
+  for(const o of w.realm!.offices)if(o.candidate===actor||chief&&w.realm!.cities[o.site].owner===r)add({id:'office:'+o.site+':'+o.candidate,kind:'petition',title:localTitle(o.territory??'city:'+o.site)+'任命',started:0,progress:null,days:o.due-w.day<=1?null:o.due-w.day,clock:o.due-w.day<=1?'waiting':'remaining',status:o.due-w.day<=1?'等待本人赴任':'文书送达中',target:{page:'territory',territory:o.territory??'city:'+o.site}});
   for(const m of w.diplomacy?.missions??[])if(m.actor===actor||chief&&(m.from===r||m.to===r)){if(m.status==='traveling')timed('envoy:'+m.id,'diplomacy',diplomacyActions[m.action],m.sent,m.due,{page:'diplomacy',realm:m.from===r?m.to:m.from},'使团在途');else add({id:'envoy:'+m.id,kind:'diplomacy',title:diplomacyActions[m.action],started:m.sent,progress:1,days:Math.max(0,m.expires-w.day),clock:'deadline',status:'等待接见',target:{page:'diplomacy',realm:m.from===r?m.to:m.from}});}
   for(const army of w.realm!.armies)if(army.realm===r&&army.journey&&w.mobility?.commanders[r]!==actor&&(chief||w.realm!.mandate))add({id:'army:'+r+':'+army.journey.started,kind:'military',title:'行军 · '+siteById[army.journey.route.at(-1)!].name,started:army.journey.started,...journeyProgress(army.journey),clock:'remaining',status:'行军中',target:{page:'city',site:army.location,tab:'military'}});
  }

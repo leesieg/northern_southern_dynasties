@@ -36,7 +36,7 @@ export function ConstructionPanel({world,scope,site,send,onRetinue,selectedCityB
   const holding=world.holdings.cities[site]??emptyCity(),definitions=cityBuildings,project=holding.project;
   return <div className="construction-panel city-development">
     {world.holdings.governedCities.includes(site)&&world.retinue&&!isSovereign(world)&&!['secretariat','finance'].includes(centralMinistry(world,world.characterId!)??'')&&postStatus(world,'engineer',site).reason&&onRetinue&&<button onClick={onRetinue}><ArtIcon name="person" size={24}/>安排营造参军 ›</button>}
-    {!world.holdings.governedCities.includes(site)&&<p className="construction-note">尚无本城治理权，请点击刺史席位申请任职。</p>}
+    {!world.holdings.governedCities.includes(site)&&<p className="construction-note">尚无本城治理权，请点击县令席位申请任职。</p>}
     {world.social&&<HoverHint label="营建费用与修正" content={<p>{world.realm?`使用本城公库（余额 ${localBalance(world,site)} 钱）；不足时前往政务页申请拨款。`:''}新工程造价 {buildingModifiers(world).costRate}% · 工期 {constructionModifiers(world,scope,site).timeRate}%，已计入报价。{traitsFor(world).includes('diligent')&&'勤勉：每次动工压力 +6。'}现有工程不受后续修正影响。</p>}><span className="construction-note"><ArtIcon name="coins" size={22}/>{world.realm?'本城公库 · 报价明细':'营建报价明细'}</span></HoverHint>}
     {project&&<div className="construction-progress" role="status"><strong>{cityBuildings[project.building as CityBuilding].name} · 扩建至 {project.level} 级</strong><progress value={world.day-project.started} max={project.due-project.started}/><span>还需 {project.due-world.day} 日 · 已支付 {project.cost} 钱</span></div>}
     <div className="building-list">{Object.entries(definitions).map(([id,d])=>{

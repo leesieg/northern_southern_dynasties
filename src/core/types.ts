@@ -36,7 +36,7 @@ export type GameCommand = import('./population').PopulationCommand
   | { type: 'travel'; destination: string }
   | { type: 'provision' }
   | { type: 'commission' }
-  | import('./treasury').FiscalCommand | RetinueCommand | MobilityCommand | ServiceCommand | DutyCommand | LifeCommand | DiplomacyCommand | RelationshipCommand | CourtCommand | GovernmentCommand | BuildCommand | SocialCommand | RealmCommand | LifestyleCommand;
+  | import('./localAdministration').LocalCommand | import('./treasury').FiscalCommand | RetinueCommand | MobilityCommand | ServiceCommand | DutyCommand | LifeCommand | DiplomacyCommand | RelationshipCommand | CourtCommand | GovernmentCommand | BuildCommand | SocialCommand | RealmCommand | LifestyleCommand;
 export type Request =
   | { type: 'init' }
   | { type:'new';mode?:'sandbox'|'tutorial';scriptId?:string;characterId?:string }

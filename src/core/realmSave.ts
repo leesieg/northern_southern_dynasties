@@ -1,3 +1,4 @@
+import {territoryNodes,descendantSites} from '../data/territorialHierarchy';
 import {relationshipPersonById} from '../data/relationships';
 import {allegianceRealm} from './officeEligibility';
 import {validPopulation} from './population';
@@ -25,8 +26,8 @@ export function validRealm(w:World):boolean {
  if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!Object.keys(characterById).every(id=>Object.hasOwn(s.personalInfluence!,id))||Object.entries(s.personalInfluence).some(([id,n])=>!relationshipPersonById[id]||!int(n,0,999))))return false;
  if(!int(s.influence,0,999)||typeof s.mandate!=='boolean'||!int(s.lastEvent,0,w.day)||!obj(s.truces))return false;
  for(const [key,day] of Object.entries(s.truces)){if(!['east|liang','east|west','liang|west'].includes(key)||!int(day,0,w.day+360))return false;}
- if(!Array.isArray(s.offices)||s.offices.length>sites.length||new Set(s.offices.map(o=>o?.site)).size!==s.offices.length)return false;
- for(const o of s.offices)if(!obj(o)||!site(o.site)||(typeof o.candidate!=='string'||!relationshipPersonById[o.candidate])||!int(o.due,w.day+1,w.day+1000))return false;
+ if(!Array.isArray(s.offices)||s.offices.length>Object.keys(territoryNodes).length||new Set(s.offices.map(o=>(o?.realm??s.cities[o?.site]?.owner)+'|'+(o?.territory??'county:'+o?.site))).size!==s.offices.length)return false;
+ for(const o of s.offices)if(!obj(o)||!site(o.site)||(typeof o.candidate!=='string'||!relationshipPersonById[o.candidate])||!int(o.due,w.day+1,w.day+1000)||o.territory!==undefined&&(!Object.hasOwn(territoryNodes,String(o.territory))||territoryNodes[String(o.territory)].level==='realm'||!descendantSites(String(o.territory)).includes(o.site as string)||!realm(o.realm)||typeof o.issuer!=='string'||!relationshipPersonById[o.issuer]||typeof o.acting!=='boolean'||o.concurrent!==undefined&&typeof o.concurrent!=='boolean'||!int(o.issued,0,w.day)))return false;
  if(!Array.isArray(s.armies)||s.armies.length>3)return false;const seen=new Set<string>();
  for(const a of s.armies){if(!obj(a)||!realm(a.realm)||seen.has(a.realm)||!site(a.location)||!int(a.troops,100,600)||!int(a.morale,0,100)||!int(a.supply,0,600)||!int(a.siege,0,100))return false;seen.add(a.realm);
  if(a.convoy!==undefined&&a.convoy!==null){const c=a.convoy;if(!obj(c)||!site(c.from)||!site(c.to)||!int(c.grain,1,600)||!Array.isArray(c.route)||c.route.length<2||c.route[0]!==c.from||c.route.at(-1)!==c.to||!c.route.every(site)||!Array.isArray(c.durations)||c.durations.length!==c.route.length-1||!int(c.leg,0,c.durations.length-1)||!int(c.elapsed,0,999))return false;for(let i=0;i<c.durations.length;i++){try{if(legDays(c.route[i],c.route[i+1])!==c.durations[i])return false;}catch{return false;}}if(c.elapsed>=c.durations[c.leg])return false;}

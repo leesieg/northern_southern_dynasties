@@ -145,7 +145,7 @@ export function advanceMobility(w:World){
   const task=w.service?.tasks.find(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id));const duty=w.duties?.task;
   const pendingActivity=s.activities.find(a=>a.delegate===id&&!['done','cancelled'].includes(a.phase));
   const held=offices.filter(n=>n.holder===id&&n.active),office=held.find(n=>n.kind==='city'&&n.site===location.site)??held.find(n=>n.kind==='city')??held.find(n=>n.kind==='office');const realm=allegianceRealm(w,id);
-  const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??(office&&realm?capital(realm):undefined))??(realm&&executives[realm].includes(id)?capital(realm):characterById[id]?.home);
+  const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??office?.seatSite??(office&&realm?capital(realm):undefined))??(realm&&executives[realm].includes(id)?capital(realm):characterById[id]?.home);
   if(destination&&!commandArmy(w,id))dispatchNPC(w,id,destination);
  }
  for(const a of s.activities){if(['done','cancelled'].includes(a.phase))continue;

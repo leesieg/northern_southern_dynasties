@@ -32,7 +32,7 @@ export function populationReason(w:World,c:PopulationCommand){
  const army=s.armies.find(a=>a.realm===r&&!a.journey&&a.location===c.from);
  if(!s.mandate||!army||!atWar(w,r,a.owner as RealmId)||a.owner===r)return '须有军务授权、驻军并占领交战敌城';
  if(c.amount>army.troops||c.amount>Math.floor(a.population*.2))return '掠夺人数不得超过驻军人数与当地人口的两成';
- }else if(!governmentExecutive(w)&&!(c.kind==='grain'&&a.governor===w.characterId))return '迁民政策须有实际执政权，调粮亦可由本城刺史发起';
+ }else if(!governmentExecutive(w)&&!(c.kind==='grain'&&a.governor===w.characterId))return '迁民政策须有实际执政权，调粮亦可由本县主官发起';
  if(c.kind!=='raid'&&a.owner!==r)return '迁民须从本国城市出发';
  if(c.kind==='grain'){if(c.amount>a.grain+(c.from===capital(r)?s.treasuries[r].grain:0))return '本城公粮不足';if(b.grain+c.amount>grainCapacity(w,c.to))return '目的地仓容不足';}
  else if(b.population+c.amount+(s.population?.transfers.filter(t=>t.to===c.to&&t.status==='traveling'&&t.kind!=='grain').reduce((n,t)=>n+t.sent,0)??0)>1_000_000)return '目的地人口承载已达上限';

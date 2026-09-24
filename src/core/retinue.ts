@@ -23,8 +23,8 @@ export interface RetinueState {version:1;since:number;lastMonth:number;members:R
 export type RetinueCommand={type:'retinue';action:'recruit'|'dismiss'|'unassign';person:string}|{type:'retinue';action:'assign';person:string;post:RetinuePost;site?:string}|{type:'retinue';action:'work';post:RetinuePost;task:'resupply'|'audit'|'drill'|'recommend'};
 export function ensureRetinue(w:World){if(w.mode==='sandbox')w.retinue??={version:1,since:w.day,lastMonth:Math.floor(w.day/30)*30,members:{},cooldowns:{},recommendations:{},history:[]};if(w.retinue)for(const [id,m] of Object.entries(w.retinue.members))if(isSovereign(w,m.host)||w.relationships?.oaths[id])release(w,id,'因中央任职或已有个人誓约而解除幕府编制');return w.retinue;}
 export const retinueMembers=(w:World,host=w.characterId!)=>Object.entries(w.retinue?.members??{}).filter(([,m])=>m.host===host).map(([id,m])=>({id,...m}));
-export function isOfficial(w:World,id:string){return officeHierarchy(w).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
-function hasPublicDuties(w:World,id:string){return officeHierarchy(w).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
+export function isOfficial(w:World,id:string){return officeHierarchy(w,id).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
+function hasPublicDuties(w:World,id:string){return officeHierarchy(w,id).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
 export function retinueBusy(w:World,id:string){return !!w.retinue?.members[id];}
 function externalBusy(w:World,id:string){return w.realm?.offices.some(o=>o.candidate===id)||!!w.mobility?.appointments[id]||Object.values(w.mobility?.commanders??{}).includes(id)||w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id&&!a.delegate||a.delegate===id))||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id))||w.duties?.task?.phase!=='closed'&&w.duties?.task?.officer===id;}
 function adult(w:World,id:string){return (ageAt(w,id)??(relationshipPersonById[id]?.adult?18:0))>=16;}

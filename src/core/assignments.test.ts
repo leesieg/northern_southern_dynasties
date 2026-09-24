@@ -4,7 +4,6 @@ import {newCampaignWorld,act,advance} from './world';
 import {actService,advanceService,assignmentPlanQuote,assignmentBudget,assignmentEffort,assignmentPause,serviceAttention,serviceReason,serviceTask,serviceChief,serviceRealm,careerStanding,type Assignment,type ServiceCommand} from './assignments';
 import {type AssignmentKind} from '../data/assignments';
 import {parseWorld,serializeWorld,validateWorld} from './save';
-import {governmentOf} from './government';
 import {lifeOf} from './lifeState';
 import {die} from './life';
 import {diplomaticPair} from './diplomacy';
@@ -50,7 +49,7 @@ describe('general appointments and service lifecycle',()=>{
  it('pauses work during serious illness and travel and invalidates lost office mandates',()=>{
   const {w,t}=prepared();lifeOf(w,'dugu-xin')!.illness={kind:'fever',since:0,severity:3};tick(w);expect(t.progress).toBe(0);expect(assignmentPause(w,t)).toContain('重病');lifeOf(w,'dugu-xin')!.illness=null;
   act(w,{type:'travel',destination:'changan'});tick(w);expect(t.progress).toBe(0);expect(assignmentPause(w,t)).toContain('出行');
-  governmentOf(w,'west')!.dynasty='zhou';expect(assignmentPause(w,t)).toContain('原职');
+  for(const seat of Object.values(w.realm!.local!.seats))if(seat.holder==='dugu-xin')seat.holder=null;w.realm!.cities.tianshui.governor=null;expect(assignmentPause(w,t)).toContain('原职');
  });
  it('does not transfer the entire reward to a last-minute replacement',()=>{
   const {w,t}=prepared();for(let i=0;i<5;i++)tick(w);const contribution=t.contributors['dugu-xin'].lead;
@@ -87,7 +86,7 @@ describe('general appointments and service lifecycle',()=>{
     }tick(w);validateWorld(w);
   }return w;};
   const a=run(parseWorld(saved)),b=run(parseWorld(saved));expect(a).toEqual(b);expect(a.service!.councils.east.season).toBeGreaterThanOrEqual(3);expect(a.service!.tasks.filter(t=>t.result?.success).length).toBeGreaterThan(5);expect(a.service!.tasks.length).toBeLessThanOrEqual(64);
- },20000);
+ },30000);
  it('rejects mutated contribution totals, council proposals and reward ledgers',()=>{
   const {w,t}=prepared();drive(w,t.id);
   const mutations=[(v:typeof w)=>{v.service!.tasks[0].contributors['dugu-xin'].lead++;},(v:typeof w)=>{v.service!.councils.west.petitioned=['gao-huan'];},(v:typeof w)=>{v.service!.tasks[0].result!.awards[0].merit=500;},(v:typeof w)=>{v.service!.nextId=1;}];

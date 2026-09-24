@@ -1,3 +1,4 @@
+import {LocalCareer} from './LocalAdministration';
 import {RealmBadge} from './RealmBadge';
 import {PersonAbilities} from './PersonAbilities';
 import {isSovereign} from '../core/officialDuties';
@@ -57,7 +58,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  {c&&<details><summary>生平</summary><p>{c.biography}</p></details>}
  </>}
  {tab==='family'&&family&&<>{self&&<DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree',label:'族谱',icon:'renown'},{id:'legacy',label:'世业继任',icon:'estate'}]}/>}{(!self||familyMode==='tree')&&<FamilyPanel world={w} selected={familySelection??id} onSelect={setFamilySelection} onPerson={onPerson}/>}{self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
- {tab==='office'&&<><OfficeHierarchy world={w} person={id} onPerson={onPerson}/><ServiceProfile world={w} person={id} onOpen={onService}/>{self&&w.realm&&<button className="primary" onClick={onRealm}><ArtIcon name="influence" size={24}/>任职与朝廷事务 →</button>}</>}
+ {tab==='office'&&<><OfficeHierarchy world={w} person={id} onPerson={onPerson}/><LocalCareer world={w} person={id} send={send} pending={pending} onPerson={onPerson}/><ServiceProfile world={w} person={id} onOpen={onService}/>{self&&w.realm&&<button className="primary" onClick={onRealm}><ArtIcon name="influence" size={24}/>任职与朝廷事务 →</button>}</>}
  {tab==='relations'&&<PersonConnections key={id} world={w} person={id} onPerson={onPerson}/>}
  {tab==='retinue'&&!isSovereign(w,id)&&<RetinuePanel onInteract={target=>{onPerson(target);onTab('interaction');}} world={w} host={id} pending={pending} send={send} onPerson={onPerson} onFind={onFind}/>}
  {tab==='interaction'&&!self&&w.social&&extra&&!retired&&!deceased&&<><RelationshipPanel key={id} world={w} pending={pending} send={send} targetId={id}/></>}

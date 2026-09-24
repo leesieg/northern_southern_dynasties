@@ -1,3 +1,6 @@
+import {migrateCountyAccounts} from './treasury';
+import {ensureLocalAdministration} from './localAdministration';
+import {validLocalAdministration} from './localAdministrationSave';
 import {upgradeContent} from './contentMigration';
 import {ensurePopulation} from './population';
 import {ensureFiscal} from './treasury';
@@ -114,7 +117,7 @@ export function validateWorld(value: unknown): asserts value is World {
     if(c.status==='won'&&!campaignGoals(value as unknown as World).every(g=>g.done))return fail();
   }
   if(!validRelationships(value as unknown as World)||!validLife(value as unknown as World))return fail();
-  if(!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
+  if(!validLocalAdministration(value as unknown as World)||!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
   for (const event of value.chronicle) {
     if (!obj(event) || !integer(event.day,0,value.day) || !text(event.text,400) || !expected.includes(String(event.person))) return fail();
   }
@@ -158,6 +161,6 @@ export function parseWorld(source: string): World {
   ensureDiplomacy(world);
   if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
-  ensureMobility(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);
+  ensureMobility(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
   return world;
 }

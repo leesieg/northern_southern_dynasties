@@ -1,3 +1,4 @@
+import {clearLocalPerson} from './localAdministration';
 import {acceptance} from './social';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {characterById} from '../data/characters';
@@ -20,4 +21,4 @@ export function publicOfficeReason(w:World,id:string){
 export function appointmentAuthorityReason(w:World,r:RealmId){const g=governmentOf(w,r)!;if(governingExecutives(w,r).includes(w.characterId!))return '';if(g.ruler===w.characterId){const executive=governingExecutives(w,r)[0];return executive&&acceptance(w,executive).reduce((n,p)=>n+p.value,0)>=60?'':'任命权受实际执政者制约：需执政者接受度 60，或先争取亲政';}return '任命权掌握在本政权实际执政者手中';}
 export function officerPresent(w:World,id:string,site:string){return presentAt(w,id,site);}
 
-export function reconcileOfficeAllegiance(w:World){if(!w.realm)return;for(const c of Object.values(w.realm.cities))if(c.governor&&allegianceRealm(w,c.governor)!==c.owner)c.governor=null;for(const r of ['liang','east','west'] as RealmId[]){const g=governmentOf(w,r);if(g?.court)for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[]){const id=g.court.ministries[m];if(id&&allegianceRealm(w,id)!==r)g.court.ministries[m]=null;}}w.holdings.governedCities=Object.entries(w.realm.cities).filter(([,c])=>c.governor===w.characterId&&c.controller===allegianceRealm(w,w.characterId!)).map(([id])=>id);}
+export function reconcileOfficeAllegiance(w:World){if(!w.realm)return;for(const [key,seat] of Object.entries(w.realm.local?.seats??{}))if(seat.holder&&allegianceRealm(w,seat.holder)!==key.split('|')[0])clearLocalPerson(w,seat.holder);for(const c of Object.values(w.realm.cities))if(c.governor&&allegianceRealm(w,c.governor)!==c.owner)c.governor=null;for(const r of ['liang','east','west'] as RealmId[]){const g=governmentOf(w,r);if(g?.court)for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[]){const id=g.court.ministries[m];if(id&&allegianceRealm(w,id)!==r)g.court.ministries[m]=null;}}w.holdings.governedCities=Object.entries(w.realm.cities).filter(([,c])=>c.governor===w.characterId&&c.controller===allegianceRealm(w,w.characterId!)).map(([id])=>id);}
