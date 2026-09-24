@@ -1,7 +1,8 @@
+import {expandedSeats} from './expandedGeography.ts';
 import { countySeats } from './administration.ts';
 import type { Polity, Road, Site } from '../core/types';
 
-export const CONTENT_VERSION = '546-map-0.1';
+export const CONTENT_VERSION = '546-map-0.2';
 export const polities: Record<Polity, { name: string; color: string; short: string }> = {
   liang: { name: '梁', color: '#668b7b', short: '江左' },
   east: { name: '东魏', color: '#8e778f', short: '河北' },
@@ -64,6 +65,10 @@ for(const [id,name,lon,lat,parent] of countySeats){
   const center=sites.find(site=>site.id===parent)!;
   sites.push({id,name,lon,lat,polity:center.polity,terrain:center.terrain,rank:'county',description:'史籍记载的县治，城址位置约略。'});
   links.push([parent,id]);
+}
+for(const [id,name,lon,lat,connection,polity,terrain] of expandedSeats){
+ sites.push({id,name,lon,lat,polity,terrain,rank:'county',description:'州郡县治与周边乡里，城址约略。'});
+ links.push([connection,id]);
 }
 export const roads: Road[] = links.map(([from, to, factor = 1]) => ({from, to, factor}));
 export const siteById = Object.fromEntries(sites.map(site => [site.id, site])) as Record<string, Site>;

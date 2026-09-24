@@ -18,7 +18,7 @@ export function activeRoute(world:World,preview:string[]):FeatureCollection<Line
   return {type:'FeatureCollection',features:coordinates.length>1?[lineFeature(coordinates)]:[]};
 }
 
-export interface AtlasLabel {text:string;lon:number;lat:number;kind:'realm'|'range'|'water'|'prefecture';minZoom:number;maxZoom:number}
+export interface AtlasLabel {text:string;lon:number;lat:number;kind:'realm'|'range'|'water'|'prefecture'|'province';minZoom:number;maxZoom:number}
 export const atlasLabels:AtlasLabel[]=[
   {text:'梁',lon:112.7,lat:28.6,kind:'realm',minZoom:2,maxZoom:6},
   {text:'东 魏',lon:117,lat:38.2,kind:'realm',minZoom:2,maxZoom:6},
@@ -35,4 +35,10 @@ export const atlasLabels:AtlasLabel[]=[
 ];
 
 const labeledGroups=new Set<string>();
-for(const site of sites){const a=administration[site.id];if(!a||labeledGroups.has(a.group))continue;labeledGroups.add(a.group);atlasLabels.push({text:a.prefecture,lon:site.lon,lat:site.lat+.45,kind:'prefecture',minZoom:4,maxZoom:6.4});}
+for(const site of sites){const a=administration[site.id];if(!a||labeledGroups.has(a.group))continue;labeledGroups.add(a.group);atlasLabels.push({text:a.prefecture,lon:site.lon,lat:site.lat+.45,kind:'prefecture',minZoom:4.9,maxZoom:6.4});}
+
+// Label one province entity at the centroid of its recorded seats; zoom separates
+// province / prefecture / city labels instead of adding a permanently dense layer.
+const provinceSeats=new Map<string,typeof sites>();
+for(const site of sites){const a=administration[site.id];if(!a)continue;const key=site.polity+':'+a.province;provinceSeats.set(key,[...(provinceSeats.get(key)??[]),site]);}
+for(const seats of provinceSeats.values())atlasLabels.push({text:administration[seats[0].id].province,lon:seats.reduce((n,s)=>n+s.lon,0)/seats.length,lat:seats.reduce((n,s)=>n+s.lat,0)/seats.length,kind:'province',minZoom:3.5,maxZoom:4.9});

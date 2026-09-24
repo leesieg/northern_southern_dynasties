@@ -1,0 +1,37 @@
+import {CONTENT_VERSION,siteById} from '../data/scenario';
+import {expandedSeats} from '../data/expandedGeography';
+import {expandedPeople} from '../data/expandedPeople';
+import {relationshipPeople} from '../data/relationships';
+import {newCourt} from './court';
+import {prestigeMembers} from './family';
+import {regionalEconomy} from '../data/regionalEconomy';
+import {healthCapacity,ageAt} from './lifeState';
+import type {World} from './types';
+const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
+/** One-shot additive upgrade before normal validation. Existing values are never
+ * defaulted or overwritten: missing/corrupt old fields must still fail validation. */
+export function upgradeContent(value:unknown){
+ if(!object(value)||value.version!==2||value.contentVersion!=='546-map-0.1')return;
+ if(!Number.isSafeInteger(value.day)||Number(value.day)<0||Number(value.day)>365000)return;
+ const day=Number(value.day),w=value as unknown as World;
+ if(object(value.realm)&&object(value.realm.cities))for(const [id] of expandedSeats){
+  if(Object.hasOwn(value.realm.cities,id))throw new Error('旧版存档包含新版地点，无法安全升级。');
+  const s=siteById[id];value.realm.cities[id]={owner:s.polity,controller:s.polity,governor:null,population:regionalEconomy(id).initialPopulation,grain:0,irrigation:0,order:70,prosperity:50,tax:'normal'};
+ }
+ for(const p of expandedPeople){
+  if(object(value.life)&&object(value.life.people)&&!Object.hasOwn(value.life.people,p.id))value.life.people[p.id]={health:healthCapacity(ageAt(w,p.id)??18),illness:null,careUntil:0,death:null};
+  if(object(value.relationships)){
+   if(object(value.relationships.reserves)&&!Object.hasOwn(value.relationships.reserves,p.id))value.relationships.reserves[p.id]=0;
+   if(object(value.relationships.maritalBasis)&&!Object.hasOwn(value.relationships.maritalBasis,p.id))value.relationships.maritalBasis[p.id]=p.fictional?'free':'unknown';
+  }
+  if(object(value.mobility)&&object(value.mobility.residences)&&!Object.hasOwn(value.mobility.residences,p.id))value.mobility.residences[p.id]={site:p.home,journey:null};
+ }
+ // Only previously untracked members gain zero-valued prestige accounts.
+ if(object(value.families)&&object(value.families.prestige))for(const p of prestigeMembers){
+  if(p.id==='fictional'||relationshipPeople.find(r=>r.id===p.id)?.status==='roster')continue;
+  if(!Object.hasOwn(value.families.prestige,p.id))value.families.prestige[p.id]=0;
+ }
+ if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const court=w.realm.governments.realms[r].court;if(court?.members&&object(court.members)){const fresh=newCourt(w,r);for(const p of expandedPeople.filter(p=>p.realm===r))if(!Object.hasOwn(court.members,p.id))court.members[p.id]=fresh.members[p.id];}}
+ value.contentVersion=CONTENT_VERSION;
+ if(Array.isArray(value.chronicle)){value.chronicle.push({day,person:'player',text:'州郡与人物名录已增补。既有地点人口、钱粮及进行中事项保留；新增县域人口为剧本估计，未追溯结算收入。'});if(value.chronicle.length>100)value.chronicle.shift();}
+}

@@ -1,5 +1,9 @@
+import {expandedSeats} from './expandedGeography.ts';
 // Facts are sourced separately from geometry. No polygon in this dataset is a surveyed county boundary.
 export const historySources={
+  weiMid:{title:'《魏书》卷一百六中·地形志',url:'https://zh.wikisource.org/wiki/魏書/卷106中',period:'东魏及北魏旧簿，西魏沿革另核'},
+  sui31:{title:'《隋书》卷三十一·地理下',url:'https://zh.wikisource.org/wiki/隋書/卷31',period:'后代沿革追述，不直接采用隋代隶属'},
+  zhou31:{title:'《周书》卷三十一·韦孝宽传',url:'https://zh.wikisource.org/wiki/周書/卷31',period:'玉壁守战与置州沿革'},
   qi14:{title:'《南齐书》卷十四·州郡上',url:'https://zh.wikisource.org/wiki/南齊書/卷14',period:'南齐基底，须校核梁代变更'},
   qi15:{title:'《南齐书》卷十五·州郡下',url:'https://zh.wikisource.org/wiki/南齊書/卷15',period:'南齐基底，须校核梁代变更'},
   weiUp:{title:'《魏书》卷一百六上·地形志',url:'https://zh.wikisource.org/wiki/魏書/卷106上',period:'以东魏武定年间为主'},
@@ -44,3 +48,21 @@ for(const [id,name,,,parent] of countySeats){
   administration[id]={...administration[parent],county:name.endsWith('县')?name:name+'县',note:administration[parent].note+' 城址位置约略，县界为示意。'};
 }
 export function administrationPath(id:string){const a=administration[id];return a?`${a.province} / ${a.prefecture} / ${a.county}`:'州郡县归属待核';}
+
+// Complete the pre-existing mainland anchors before adding seats; preserve all old IDs.
+const regionalAnchors:[string,string,string,string,string][]=[
+ ['shouchun','豫州','南汝阴郡','寿春县','nanruyin'],['hefei','南豫州','汝阴郡','汝阴县','ruyin-liang'],
+ ['xunyang','江州','寻阳郡','柴桑县','xunyang'],['xiangyang','雍州','襄阳郡','襄阳县','xiangyang'],
+ ['changsha','湘州','长沙郡','临湘县','changsha'],['nanchang','江州','豫章郡','南昌县','yuzhang'],
+ ['guangzhou','广州','南海郡','番禺县','nanhai'],['chengdu','益州','蜀郡','成都县','shujun'],
+ ['bajun','楚州','巴郡','江州县','bajun'],['hanzhong','梁州','汉中郡','南郑县','hanzhong'],
+ ['tianshui','秦州','天水郡','上邽县','tianshui'],['jincheng','河州','金城郡','金城县','jincheng'],
+ ['wuwei','凉州','武威郡','姑臧县','wuwei'],['zhangye','甘州','张掖郡','觻得县','zhangye'],
+ ['dunhuang','瓜州','敦煌郡','敦煌县','dunhuang'],['luoyang','洛州','河南郡','洛阳县','henan'],
+ ['pingcheng','恒州','代郡','平城县','daijun'],['jicheng','幽州','燕郡','蓟县','yanjun'],
+ ['qingzhou','青州','齐郡','益都县','qijun'],['pengcheng','徐州','彭城郡','彭城县','pengcheng'],
+ ['ningzhou','宁州','建宁郡','味县','jianning'],
+];
+const southern=new Set(['shouchun','hefei','xunyang','xiangyang','changsha','nanchang','guangzhou','chengdu','bajun','hanzhong','ningzhou']);
+for(const [id,province,prefecture,county,group] of regionalAnchors) administration[id]=record(province,prefecture,county,group,southern.has(id)?['qi14','qi15','liang3','sui31']:['weiUp','weiMid','weiDown'],'earlier-source','治所采用约略定位；州郡层级依据地志及沿革推定，非完整 546 年实测辖界。');
+for(const [id,,,,,realm,,province,prefecture,county,group] of expandedSeats) administration[id]=record(province,prefecture,county,group,id==='yubi'?['zhou31']:realm==='liang'?['qi14','qi15','liang3','sui31']:['weiUp','weiMid','weiDown'],realm==='east'?'period-source':'earlier-source','县治与交通锚点约略；地方沿革采用史籍基底，个别梁、西魏隶属尚待逐年校核，县界仅示意。');

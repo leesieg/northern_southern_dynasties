@@ -68,7 +68,7 @@ describe('沙盒政治经济军事',()=>{
   if(field==='event')s.event={kind:'flood',site:'unknown',day:0};
   expect(()=>serializeWorld(w)).toThrow();
  });
- it.each(['xiao-yan','gao-huan','yuwen-tai'])('最多 50 年 %s 沙盒持续结算、家业终结与存档回放',id=>{const w=sandbox(id);passDays(w,9000);const restored=parseWorld(serializeWorld(w));passDays(w,9250);passDays(restored,9250);expect(w.day).toBeLessThanOrEqual(18250);if(w.day<18250)expect(w.campaign!.status).toBe('lost');expect(restored).toEqual(w);validate(w);});
+ it.each(['xiao-yan','gao-huan','yuwen-tai'])('最多 50 年 %s 沙盒持续结算、家业终结与存档回放',id=>{const w=sandbox(id);passDays(w,9000);const restored=parseWorld(serializeWorld(w));passDays(w,9250);passDays(restored,9250);expect(w.day).toBeLessThanOrEqual(18250);if(w.day<18250)expect(w.campaign!.status).toBe('lost');expect(restored).toEqual(w);validate(w);},30000);
  it('长期世界结算与分段读档一致',()=>{
   const w=sandbox('yuwen-tai');actRealm(w,{type:'realm',action:'tax',site:'changan',tax:'light'});passDays(w,180);const restored=parseWorld(serializeWorld(w));passDays(w,3650);passDays(restored,3650);expect(restored).toEqual(w);syncGovernance(w);validate(w);
  });

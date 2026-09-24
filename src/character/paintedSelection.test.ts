@@ -9,7 +9,7 @@ import {validatePaintedRecipe} from './paintedLayers';
 
 it('全部开局、关系与架空人物接入绘制肖像，独立身份保留独立组合',()=>{
  const ids=[...new Set([...historicalCharacters.map(p=>p.id),...relationshipPeople.map(p=>p.id),'fictional'])];
- expect(ids).toHaveLength(23);const recipes=new Set<string>();
+ expect(ids.length).toBeGreaterThan(75);const recipes=new Set<string>();
  for(const id of ids){const r=approvedPaintedRecipe(id,portraitContext(id));expect(validatePaintedRecipe(r)).toHaveLength(8);recipes.add(JSON.stringify(r));}
  expect(recipes.size).toBe(ids.length);
 });

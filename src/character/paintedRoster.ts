@@ -4,6 +4,7 @@ import {adjustPaintedFeature,validatePaintedRecipe,type PaintedPart,type Painted
 import type {PortraitContext} from './composition';
 
 export function rosterRigId(id:string|undefined,context:PortraitContext):PaintedRigId {
+ if((context.life?.age??18)<16)return 'child';
  let assigned=id?paintedRosterRigs[id]:undefined;
  if(assigned==='child'&&(context.life?.age??0)>=16)assigned=context.identity.culture==='southern'?'fictional':'yuan-qin';
  if(context.identity.sex==='female')return assigned&&paintedFemaleRigs.has(assigned)?assigned:context.identity.culture==='northern'?'female-north':'female';

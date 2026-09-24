@@ -21,8 +21,8 @@ export function careReason(w:World,id:string){
  if(w.people[0].journey)return '抵达后才能延医';
  const actor=w.characterId??'fictional';
  const marriage=w.relationships?.marriages.some(m=>m.until===null&&(m.a===actor&&m.b===id||m.b===actor&&m.a===id));
- const family=characterById[actor]?.family;
- if(id!==actor&&!marriage&&(!family||characterById[id]?.family!==family))return '仅可为自己、配偶或同族延医';
+ const family=relationshipPersonById[actor]?.family;
+ if(id!==actor&&!marriage&&(!family||relationshipPersonById[id]?.family!==family))return '仅可为自己、配偶或同族延医';
  if(p.careUntil>w.day)return `医者正在照料，余 ${p.careUntil-w.day} 日`;
  if(!p.illness&&p.health>=healthCapacity(ageAt(w,id)!))return '当前无需延医';
  return w.people[0].coins<30?'延医需 30 钱':'';

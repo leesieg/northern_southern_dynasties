@@ -1,3 +1,4 @@
+import {expandedPersonById} from '../data/expandedPeople';
 import {expressGenome} from './genetics';
 import {snapshotInfluence,restoreInfluence} from './personalInfluence';
 import {lifestyleFocuses,lifestylePerks} from '../data/lifestyles';
@@ -29,7 +30,7 @@ export interface Social {
 }
 export type SocialCommand={type:'interact';target:string;action:Interaction}|{type:'rest'}|{type:'legacy';branch:Legacy}|{type:'heir';target:string}|{type:'handover'}|{type:'cancel-scheme'};
 const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,n));
-export function defaultTraits(id:string):Trait[]{if(!characterById[id])return [];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
+export function defaultTraits(id:string):Trait[]{if(!characterById[id])return expandedPersonById[id]?(expandedPersonById[id].role==='commander'?['diligent','steadfast']:expandedPersonById[id].role==='scholar'?['frugal','diligent']:['gregarious','generous']):[];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
 export const pair=(a:string,b:string)=>a+'|'+b;
 export function houseMembers(id:string){
   const c=characterById[id];return historicalCharacters.filter(p=>p.family===c.family&&p.polity===c.polity);
@@ -50,7 +51,7 @@ export function abilityBreakdown(w:World,id=w.characterId){
  const c=id?characterById[id]:null,t=traitsFor(w,id),p=w.lifestyles?.people[id??'fictional'],focus=p?.focus?lifestyleFocuses[p.focus].branch:null;
  return Object.fromEntries((Object.keys(abilityNames) as Ability[]).map(skill=>{
  const branch=skill==='intrigue'?null:skill,genome=id?w.identities?.people[id]?.genome:undefined;
- const parts=[{label:'基础能力',value:8},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'人物经历',value:skill==='martial'&&c?.role==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch?2:0},{label:'已学技能',value:branch?(p?.perks.filter(id=>lifestylePerks[id].branch===branch).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/360)):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
+ const parts=[{label:'基础能力',value:8},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch?2:0},{label:'已学技能',value:branch?(p?.perks.filter(id=>lifestylePerks[id].branch===branch).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/360)):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
  return [skill,{value:Math.max(0,Math.min(40,parts.reduce((n,p)=>n+p.value,0))),parts:parts.filter(p=>p.value!==0)}];
  })) as Record<Ability,{value:number;parts:{label:string;value:number}[]}>;
 }

@@ -90,7 +90,7 @@ export function WorldMap(props:Props){
       }
       for(const {marker,data} of labels){
         const point=map.project([data.lon,data.lat]);
-        const hidden=zoom<data.minZoom||zoom>data.maxZoom||data.kind==='realm'&&!['political','diplomacy'].includes(current.current.mode)||data.kind==='prefecture'&&current.current.mode!=='domains'||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y)<38);
+        const hidden=zoom<data.minZoom||zoom>data.maxZoom||data.kind==='realm'&&!['political','diplomacy'].includes(current.current.mode)||(data.kind==='prefecture'||data.kind==='province')&&current.current.mode!=='domains'||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y)<38);
         marker.getElement().hidden=hidden;if(data.kind==='realm'){const r:RealmId=data.text.includes('东')?'east':data.text.includes('西')?'west':'liang';marker.getElement().textContent=regimeName(current.current.world,r);}
         if(data.kind==='realm'){const id=data.text==='梁'?'liang':data.text==='东 魏'?'east':'west';marker.getElement().textContent=regimeName(current.current.world,id);}
       }

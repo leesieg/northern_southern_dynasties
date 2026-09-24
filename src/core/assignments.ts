@@ -205,7 +205,7 @@ export function advanceService(w:World){
    if(t.progress>=t.required){phase(w,t,'report');log(w,t,'办理完成，呈报考绩。');continue;}
   }
   if(w.day-t.changed<2)continue;
-  if(t.phase==='proposal'&&t.officer!==w.characterId&&!t.helper&&!t.invitation&&!t.invited.length){const candidate=serviceCandidates(w,t.realm,t.id).find(c=>c.id!==t.officer&&!humanPause(w,c.id)&&relationOpinion(w,t.officer,c.id)>=0);if(candidate)actService(w,{type:'service',action:'invite',id:t.id,person:candidate.id},t.officer);}
+  if(t.phase==='proposal'&&t.officer!==w.characterId&&!t.helper&&!t.invitation&&!t.invited.length){const candidate=serviceCandidates(w,t.realm,t.id).sort((a,b)=>Number(b.id===w.characterId)-Number(a.id===w.characterId)).find(c=>c.id!==t.officer&&!humanPause(w,c.id)&&relationOpinion(w,t.officer,c.id)>=0);if(candidate)actService(w,{type:'service',action:'invite',id:t.id,person:candidate.id},t.officer);}
   let action:ServiceCommand|undefined,actor:string|undefined;
   if(['petition','approval'].includes(t.phase)&&chief!==w.characterId){actor=chief;action={type:'service',action:'approve',id:t.id};}
   else if(t.phase==='proposal'&&t.officer!==w.characterId){actor=t.officer;action={type:'service',action:'plan',id:t.id,plan:chooseNPCPlan(w,t)};}

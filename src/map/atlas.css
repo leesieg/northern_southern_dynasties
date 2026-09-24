@@ -133,3 +133,5 @@
 button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cursor:pointer}button.atlas-geographic-label.realm:focus-visible{outline:2px solid #d1b674;outline-offset:6px}
 
 .atlas-traveler[hidden]{display:none!important}
+
+.atlas-geographic-label.province{font-size:22px;letter-spacing:5px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.85}

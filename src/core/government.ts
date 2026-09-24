@@ -1,3 +1,4 @@
+import {expandedPersonById} from '../data/expandedPeople';
 import {enactPoliticalAction} from './politicalActions';
 import {officeName,allegianceRealm} from './officeEligibility';
 import {clanStanding} from './clans';
@@ -142,7 +143,7 @@ export function advanceGovernments(w:World){
 }
 export function politicalTitle(w:World|undefined,id:string){
  if(w&&!isAlive(w,id))return '已故 · '+(characterById[id]?.title??politicalName(id));
- const c=characterById[id];if(!c)return politicalFigures[id]?'政权沿革人物':'未录人物';
+ const c=characterById[id];if(!c){const e=expandedPersonById[id];return e?e.fictional?'地方士人':({'commander':'将领','scholar':'文士','prince':'宗室'} as const)[e.role]:politicalFigures[id]?'政权沿革人物':'未录人物';}
  const g=w?.realm?.governments?.realms[c.polity];if(!g||!w?.life?.successions.some(e=>e.realm===c.polity)&&!g.stages.length&&g.dynasty===c.polity&&(!validRegency(w!,c.polity)||validRegency(w!,c.polity)?.origin==='scenario'))return c.title;
  if(g.ruler===id)return regimeName(w,c.polity)+'君主'+(governingExecutives(w!,c.polity).includes(id)?' · 实际执政':'');
  if(governingExecutives(w!,c.polity).includes(id))return regimeName(w,c.polity)+'实际执政';

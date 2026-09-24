@@ -1,3 +1,4 @@
+import {expandedPeople} from './expandedPeople';
 /** Birth years only: no fictitious birthday or predetermined historical death date.
  * Unknown years are explicit game estimates, never historical claims. */
 export interface BirthRecord {year:number;basis:'year'|'estimate'|'fictional';source?:string}
@@ -26,3 +27,5 @@ export const birthRecords:Record<string,BirthRecord>={
  'guest-liang':{year:524,basis:'fictional'},'guest-east':{year:521,basis:'fictional'},'guest-west':{year:523,basis:'fictional'},
  merchant:{year:511,basis:'fictional'},messenger:{year:518,basis:'fictional'},traveler:{year:520,basis:'fictional'},
 };
+
+for(const p of expandedPeople)birthRecords[p.id]={year:p.birth,basis:p.fictional?'fictional':'estimate',source:p.source.url||undefined};

@@ -23,7 +23,7 @@ export function advanceFamilies(w:World){
  const s=w.families??=newFamilyState(w.day);if(w.day%30!==0||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
  // This is a transparent game rule, not an inferred historical assessment of fame.
  const retired=new Set(w.social?.lineage.slice(0,-1).map(p=>p.id));
- for(const p of prestigeMembers)if(!retired.has(p.id)&&(p.status!=='fictional'||!w.characterId))awardPrestige(w,p.id,'monthly');
+ for(const p of prestigeMembers)if(!retired.has(p.id)&&(p.id!=='fictional'||!w.characterId))awardPrestige(w,p.id,'monthly');
 }
 export function validFamilies(value:unknown,day:number):boolean{
  if(!value||typeof value!=='object'||Array.isArray(value))return false;const s=value as FamilyState;

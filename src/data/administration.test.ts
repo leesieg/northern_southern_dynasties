@@ -14,10 +14,10 @@ describe('546 gazetteer boundaries and references',()=>{
     }
   });
   it('maps only documented county names, with missing seats kept out of the geometry',()=>{
-    expect(countySeats).toHaveLength(19);expect(sites).toHaveLength(53);
+    expect(countySeats).toHaveLength(19);expect(sites.length).toBeGreaterThan(100);
     for(const [id] of countySeats){const a=administration[id];expect(countyGroups[a.group as keyof typeof countyGroups] as readonly string[]).toContain(a.county.replace(/县$/,''));}
     expect(countyGroups.weiyin).toHaveLength(13);
-    expect(sites.some(s=>s.id==='yiyang-weiyin')).toBe(false);
+    expect(sites.some(s=>s.id==='yiyang-weiyin')).toBe(true);
     expect(prefectures.features).toHaveLength(new Set(Object.values(administration).map(a=>a.group)).size);
   });
 });

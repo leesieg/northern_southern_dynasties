@@ -1,3 +1,4 @@
+import {upgradeContent} from './contentMigration';
 import {ensurePopulation} from './population';
 import {ensureFiscal} from './treasury';
 import {validFiscal} from './treasurySave';
@@ -124,6 +125,7 @@ function checksum(value: string): string {
   return (hash >>> 0).toString(16);
 }
 export function serializeWorld(world: World): string {
+  upgradeContent(world);
   validateWorld(world);
   const payload = JSON.stringify(world);
   return JSON.stringify({ format:'fynbc-save', version:1, checksum:checksum(payload), payload });
@@ -139,6 +141,7 @@ export function parseWorld(source: string): World {
     if(Object.hasOwn(world,'holdings'))throw new Error('旧版存档含不合法的家产字段。');
     world={...world,version:2,holdings:newHoldings()};
   }
+  upgradeContent(world);
   validateWorld(world);
   if(world.characterId&&!world.social)world.social=newSocial(world.characterId);
   world.scriptId??=DEFAULT_SCRIPT;

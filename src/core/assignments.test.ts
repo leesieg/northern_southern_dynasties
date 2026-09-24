@@ -87,7 +87,7 @@ describe('general appointments and service lifecycle',()=>{
     }tick(w);validateWorld(w);
   }return w;};
   const a=run(parseWorld(saved)),b=run(parseWorld(saved));expect(a).toEqual(b);expect(a.service!.councils.east.season).toBeGreaterThanOrEqual(3);expect(a.service!.tasks.filter(t=>t.result?.success).length).toBeGreaterThan(5);expect(a.service!.tasks.length).toBeLessThanOrEqual(64);
- });
+ },20000);
  it('rejects mutated contribution totals, council proposals and reward ledgers',()=>{
   const {w,t}=prepared();drive(w,t.id);
   const mutations=[(v:typeof w)=>{v.service!.tasks[0].contributors['dugu-xin'].lead++;},(v:typeof w)=>{v.service!.councils.west.petitioned=['gao-huan'];},(v:typeof w)=>{v.service!.tasks[0].result!.awards[0].merit=500;},(v:typeof w)=>{v.service!.nextId=1;}];

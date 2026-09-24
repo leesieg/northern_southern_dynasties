@@ -20,8 +20,8 @@ describe('independent territorial hierarchy',()=>{
     expect(new Set(ids).size).toBe(sites.length);
   });
   it('leaves unresolved hierarchy absent instead of inventing counties',()=>{
-    expect(ancestorsOf('city:chengdu').map(n=>n.level)).toEqual(['realm','city']);
-    expect(nodeForSite('chengdu','county').basis).toBe('unresolved');
+    expect(ancestorsOf('city:gaochang').map(n=>n.level)).toEqual(['realm','city']);
+    expect(nodeForSite('gaochang','county').basis).toBe('unresolved');
     expect(nodesForYear(546).length).toBeGreaterThan(0);
     expect(nodesForYear(554)).toEqual([]);
   });

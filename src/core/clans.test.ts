@@ -25,7 +25,7 @@ describe('本国世族评定与行动收益',()=>{
  it('同分同名次，贡献保留、名次变动实时改变加成并通知',()=>{
   const w=start();w.families!.prestige['yuan-qin']=100;w.families!.prestige['yuwen-tai']=100;expect(clanStanding(w,'yuan-qin')?.rank).toBe(1);expect(clanStanding(w,'yuwen-tai')?.rank).toBe(1);
   const before=pauseSnapshot(w);w.families!.prestige['yuwen-tai']=101;expect(clanStanding(w,'yuan-qin')?.rank).toBe(2);expect(clanStanding(w,'yuan-qin')?.petition).toBe(8);expect(pauseEvents(before,w).some(e=>e.kind==='clan')).toBe(true);
-  lifeOf(w,'yuwen-tai')!.death={day:0,cause:'age'};expect(familyPrestige(w,'yuwen')).toBe(101);expect(realmClans(w,'west').some(r=>r.family.id==='yuwen')).toBe(false);
+  lifeOf(w,'yuwen-tai')!.death={day:0,cause:'age'};expect(familyPrestige(w,'yuwen')).toBe(101);expect(realmClans(w,'west').find(r=>r.family.id==='yuwen')?.members.some(p=>p.id==='yuwen-tai')).toBe(false);expect(realmClans(w,'west').some(r=>r.family.id==='yuwen')).toBe(true);
  });
  it('门第降低文官功绩门槛，不降低军务功绩门槛',()=>{
   const w=start();governmentOf(w)!.type='meritocratic';governmentOf(w)!.merit['yuan-qin']=14;

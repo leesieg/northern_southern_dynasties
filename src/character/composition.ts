@@ -1,3 +1,4 @@
+import {expandedPersonById} from '../data/expandedPeople';
 import {ageOf,ageAt,lifeOf} from '../core/lifeState';
 import type {PortraitLife} from './portraitLife';
 import { portraitProfiles,applyPortraitProfile } from '../data/portraitProfiles';
@@ -15,13 +16,13 @@ export function portraitContext(id:string,world?:World):PortraitContext {
  const c=characterById[id],extra=relationshipPersonById[id];
  const fallback=():CharacterIdentity=>c||id==='fictional'?initialIdentity(id):{sex:extra?.sex??'male',culture:extra?.realm==='liang'?'southern':'northern',genome:founderGenome(id)};
  const stored=world?.identities?.people[id]??fallback(),identity=stored.genome.facial?stored:{...stored,genome:applyPortraitProfile({...stored.genome,facial:fallback().genome.facial},id)};
- let office:PortraitOffice=c?.role==='ruler'?'ruler':c?.role==='commander'?'commander':c?.role==='regent'?'governor':'civilian';
+ let office:PortraitOffice=c?.role==='ruler'?'ruler':(c?.role??expandedPersonById[id]?.role)==='commander'?'commander':c?.role==='regent'?'governor':'civilian';
  const retired=world?.social?.lineage.slice(0,-1).some(p=>p.id===id);
  if(retired)office='civilian';
  else if(world?.realm&&world.characterId===id&&world.realm.mandate&&world.realm.armies.some(a=>a.realm===c?.polity))office='commander';
  else if(office==='civilian'&&world?.realm&&Object.values(world.realm.cities).some(city=>city.governor===id))office='governor';
  const age=ageOf(world,id),life=lifeOf(world,id);
- return {life:age===null?undefined:{age,baselineAge:ageAt(undefined,id)!,sickness:life?.illness?.severity??0,deceased:!!life?.death,beard:identity.sex==='male'&&!!portraitProfiles[id]?.beard&&portraitProfiles[id].beard!=='none'},identity,office,headwear:portraitProfiles[id]?.headwear,maturity:age===null?portraitProfiles[id]?.maturity??.35:Math.max(0,Math.min(1,(age-12)/75)),beard:portraitProfiles[id]?.beard??'none',traits:c?(world?.social?.traits[id]??defaultTraits(id)):[],stress:world?.characterId===id?world.social?.stress??0:0};
+ return {life:age===null?undefined:{age,baselineAge:ageAt(undefined,id)!,sickness:life?.illness?.severity??0,deceased:!!life?.death,beard:identity.sex==='male'&&!!portraitProfiles[id]?.beard&&portraitProfiles[id].beard!=='none'},identity,office,headwear:portraitProfiles[id]?.headwear,maturity:age===null?portraitProfiles[id]?.maturity??.35:Math.max(0,Math.min(1,(age-12)/75)),beard:portraitProfiles[id]?.beard??'none',traits:world?.social?.traits[id]??defaultTraits(id),stress:world?.characterId===id?world.social?.stress??0:0};
 }
 export function composePortrait(context:PortraitContext){
  const phenotype=expressGenome(context.identity.genome),northern=context.identity.culture==='northern';

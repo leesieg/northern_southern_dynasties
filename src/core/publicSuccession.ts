@@ -1,24 +1,21 @@
-import {characterById,characterRelations,historicalCharacters} from '../data/characters';
-import {politicalFigures} from '../data/governments';
+import {relationshipPeople,relationshipPersonById} from '../data/relationships';
+import {parentLinks} from '../data/families';
+import {characterById} from '../data/characters';
 import {ageAt,isAlive} from './lifeState';
 import type {World} from './types';
 import type {RealmId} from './realm';
 export type PublicOffice='ruler'|'executive';
 export interface PublicHeirs {ruler:string|null;executive:string|null;dynasty:string|null}
 export type NominateCommand={type:'government';action:'nominate';office:PublicOffice;candidate:string|null;name?:string};
-export function publicFamily(id:string):string|undefined {
- const recorded=characterById[id]?.family;if(recorded)return recorded;
- const families:Record<string,string>={'yuan-kuo':'yuan-baoju','xiao-fangzhi':'xiao-yan','yuwen-hu':'yuwen-tai','yuwen-jue':'yuwen-tai'};
- return families[id]?characterById[families[id]].family:Object.hasOwn(politicalFigures,id)?'house:'+id:undefined;
-}
-export function successionCandidates(w:World,r:RealmId){return [...historicalCharacters.filter(p=>p.polity===r).map(p=>p.id),...Object.entries(politicalFigures).filter(([,p])=>p.realm===r).map(([id])=>id)].filter(id=>isAlive(w,id)&&(ageAt(w,id)??0)>=16);}
+export function publicFamily(id:string):string|undefined {return relationshipPersonById[id]?.family;}
+export function successionCandidates(w:World,r:RealmId){return relationshipPeople.filter(p=>p.realm===r&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=16).map(p=>p.id);}
 /** Recorded children precede collateral kin; stable age ordering is a game succession rule. */
 export function publicSuccessor(w:World,r:RealmId,office:PublicOffice,former?:string):string|null {
  const g=w.realm!.governments!.realms[r],holder=former??(office==='ruler'?g.ruler:g.executives[0]),eligible=successionCandidates(w,r).filter(id=>id!==holder);
  const designated=g.heirs?.[office];if(designated&&eligible.includes(designated))return designated;
  if(office==='executive'){const continuing=g.executives.find(id=>eligible.includes(id));if(continuing)return continuing;}
  const kin=eligible.filter(id=>publicFamily(holder)===publicFamily(id));
- kin.sort((a,b)=>Number(characterRelations.some(l=>l.from===holder&&l.to===b&&l.kind==='父子'))-Number(characterRelations.some(l=>l.from===holder&&l.to===a&&l.kind==='父子'))||(ageAt(w,b)??0)-(ageAt(w,a)??0)||a.localeCompare(b));
+ kin.sort((a,b)=>Number(parentLinks.some(l=>l.parent===holder&&l.child===b))-Number(parentLinks.some(l=>l.parent===holder&&l.child===a))||(ageAt(w,b)??0)-(ageAt(w,a)??0)||a.localeCompare(b));
  return kin[0]??null;
 }
 export function nominationReason(w:World,c:NominateCommand,authority:string|undefined):string {
