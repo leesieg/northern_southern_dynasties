@@ -1,0 +1,44 @@
+import {marriagePrestigePreview} from '../core/family';
+import {marriageClanBonus} from '../core/clans';
+import {MobilityPanel} from './MobilityPanel';
+import {HoverHint} from './HoverHint';
+import {ArtIcon} from './ArtIcon';
+import {DetailTabs} from './DetailTabs';
+import { useState } from 'react';
+import { relationshipPeople,relationshipPersonById,relationshipActionNames,type RelationshipAction } from '../data/relationships';
+import { relationName,relationHooks,relationshipScore,relationshipQuote,activeMarriage,validRegency,type RelationshipCommand } from '../core/relationships';
+import { governmentOf,currentRealm } from '../core/government';
+import { CharacterPortrait } from './CharacterPortrait';
+import { characterById } from '../data/characters';
+import { interactionQuote } from '../core/social';
+import type { World,GameCommand } from '../core/types';
+import './relationships.css';
+const effects:Record<RelationshipAction,string>={
+ gift:'基础好感 +15；历史人物交往叠加特质、世业与技能修正，实付钱转入对方储备；冷却 10 日。',pressure:'消耗 10 家业名望，压力 +15、对方好感 −25，取得 1 份人情（上限 3）。向朋友施压会决裂；冷却 15 日。',befriend:'14 日计谋，按锁定成功率结算。成功后形成双向朋友关系、好感 +20；结束后冷却 30 日，取消不退费。',confidant:'需友谊持续 30 日、接受度 85；成为至交，好感 +10、压力 −10。',rival:'消耗 10 家业名望、压力 +10，双方好感 −30；首次成为仇敌，再次升级为死敌；冷却 30 日。',reconcile:'需接受度 30，消除友敌关系中的仇怨，双方好感 +15；冷却 90 日。',marry:'双方成年、当前无配偶且非近亲／同族，接受度至少 70。婚姻为双向独占关系，好感各 +20；解锁亲友支援，双方保留各自财产。',divorce:'需家业名望 20；双方好感 −40，压力 +15，成为仇敌；婚姻转为历史记录，同一对象再婚冷却 360 日。',aid:'从对方私人储备转入 50 钱，好感 −5；配偶／朋友专用，接受度需 40，冷却 90 日，',pledge:'向军政权力更高者宣誓；接受度 40、初始忠诚 70。一人一位誓约领主，不能形成循环。',recruit:'招纳军政权力较低者；接受度 65、初始忠诚 70。不能用普通誓约收君主为属员。',renounce:'消耗 20 家业名望，双方好感 −35，成为仇敌；对同一领主再宣誓冷却 180 日。公职保留。',release:'解除对方的个人誓约，保留其官职与家产。',control:'需本国名义君主、功绩 40、军政基础和 2 份人情。30 日计谋；成功后取得实际执政、任命与改革权限，君主保留头衔。失败则成为仇敌、压力 +20；冷却 180 日，失败／取消不退成本。',tighten:'控制 +15，但君主合法性 −3、对方好感 −10；冷却 30 日。',emancipate:'名义君主抵抗当前执政者，控制 −25；降至 0 恢复亲政；冷却 30 日。',liberate:'立即归还实际执政权，君主恢复亲政；旧改革、在途任命与中央席位重新核定。',
+};
+const groups={personal:['gift','befriend','confidant','aid','rival','reconcile','pressure'],marriage:['marry','divorce'],political:['pledge','recruit','renounce','release','control','tighten','emancipate','liberate']} as const;
+export function RelationshipPanel({world:w,pending,send,targetId}:{world:World;pending:boolean;send:(c:GameCommand)=>void;targetId:string}){
+ const [tab,setTab]=useState<keyof typeof groups>('personal'),[confirmation,setConfirmation]=useState<string|null>(null),[chosen,setChosen]=useState<RelationshipAction|null>(null);
+ const s=w.relationships,a=w.characterId;if(!s||!a)return <p>此人物暂无可用交往。</p>;
+ const candidates=relationshipPeople.filter(p=>p.id!==a&&!w.social!.lineage.slice(0,-1).some(old=>old.id===p.id));
+ const target=candidates.find(p=>p.id===targetId);
+ if(!target)return <p>此人已退居，不能继续交往。</p>;
+ const scoreParts=[...relationshipScore(w,target.id),...(tab==='marriage'&&marriageClanBonus(w,a,target.id)?[{label:'世族门第',value:marriageClanBonus(w,a,target.id)}]:[])];
+ const active=chosen&&groups[tab].some(k=>k===chosen)?chosen:groups[tab][0];
+ const action=(cmd:RelationshipCommand,label:string,danger=false)=>{const q=relationshipQuote(w,cmd),key=JSON.stringify(cmd);return <div className="relationship-action"><small>{q.cost?q.cost+' 钱':'无需盘缠'}{q.influence?' · '+q.influence+' 影响力':''}{q.days?' · '+q.days+' 日 · 成功率 '+q.chance+'%':''}</small><button className="primary" disabled={pending||!!q.reason} onClick={()=>{if(danger&&confirmation!==key){setConfirmation(key);return;}setConfirmation(null);send(cmd);}}>{confirmation===key?'确认':''}{label}</button>{q.reason&&<small role="status">{q.reason}</small>}{confirmation===key&&<aside><p>{cmd.action==='marital-branch'?'以未婚身份开始本局婚姻经历？':'确认后扣除费用并执行；已付计谋费用不会退还。'}</p><button onClick={()=>setConfirmation(null)}>取消</button></aside>}</div>;};
+ return <div className="relationship-panel"><MobilityPanel world={w} target={targetId} send={send} pending={pending}/>
+ {s.scheme?.target===target.id&&<article className="relationship-task"><h4>{s.scheme.kind==='control'?'筹划挟制':'培养友谊'} · {relationName(s.scheme.target)}</h4><progress aria-label="计谋进度" value={w.day-s.scheme.started} max={s.scheme.due-s.scheme.started}/><p>余 {s.scheme.due-w.day} 日 · 成功率 {s.scheme.chance}%</p>{action({type:'relationship',action:'cancel'},'撤回计谋',true)}</article>}
+ {w.social?.scheme?.target===target.id&&<article><h4>交好 · {relationName(w.social.scheme.target)}</h4><p>余 {w.social.scheme.due-w.day} 日 · 成功率 {w.social.scheme.chance}%</p><button disabled={pending} onClick={()=>send({type:'cancel-scheme'})}>撤回交好 · 不退费</button></article>}
+ <div className="interaction-context"><span><ArtIcon name="influence" size={24}/>人情 {relationHooks(w,a,target.id)}</span><HoverHint label="接受度影响因素" content={<>{scoreParts.map(part=><p key={part.label}>{part.label} {part.value>=0?'+':''}{part.value}</p>)}</>}><span className="opinion-chip"><ArtIcon name="steadfast" size={24}/>接受度 <b>{scoreParts.reduce((n,p)=>n+p.value,0)}</b></span></HoverHint></div>
+ <DetailTabs label="互动类别" value={tab} onChange={key=>{setTab(key);setChosen(null);setConfirmation(null);}} items={[{id:'personal',label:'交往',icon:'gregarious'},{id:'marriage',label:'婚姻',icon:'renown'},{id:'political',label:'效忠权力',icon:'influence'}]}/>
+ {tab==='marriage'&&!!marriageClanBonus(w,a,target.id)&&<HoverHint label="世族联姻" content={`双方门第使婚姻接受度 +${marriageClanBonus(w,a,target.id)}；首次联姻，你的家族可获 ${marriagePrestigePreview(w,a,target.id)[0].amount} 威望，对方家族可获 ${marriagePrestigePreview(w,a,target.id)[1].amount} 威望；同一对人物不重复授予。`}><span className="clan-standing-badge"><ArtIcon name="renown" size={24}/>联姻荫望 +{marriageClanBonus(w,a,target.id)}</span></HoverHint>}
+ {tab==='marriage'&&s.maritalBasis[a]==='unknown'&&<article><p>婚姻不详。可选择以未婚身份开启本局婚姻经历。</p>{action({type:'relationship',action:'marital-branch'},'以未婚身份开始',true)}</article>}
+ {tab==='marriage'&&activeMarriage(w,a)&&<p>配偶：{relationName(activeMarriage(w,a)!.a===a?activeMarriage(w,a)!.b:activeMarriage(w,a)!.a)}</p>}
+ {tab==='political'&&w.realm&&<p>君主：{relationName(governmentOf(w)!.ruler)}{validRegency(w,currentRealm(w))?' · 控制度 '+validRegency(w,currentRealm(w))!.grip+'/100':''}</p>}
+ <div className="interaction-options">{groups[tab].map(kind=>{const q=relationshipQuote(w,{type:'relationship',action:kind,target:target.id});return <HoverHint key={kind} label={relationshipActionNames[kind]} content={<><strong>{relationshipActionNames[kind]}</strong><p>{effects[kind]}</p>{q.reason&&<p>{q.reason}</p>}</>}><button disabled={pending||!!q.reason} aria-pressed={active===kind} onClick={()=>{setChosen(kind);setConfirmation(null);}}><ArtIcon name={tab==='marriage'?'renown':tab==='political'?'influence':'gregarious'} size={28}/><span>{relationshipActionNames[kind]}</span></button></HoverHint>;})}</div>
+ <article className="interaction-decision" aria-live="polite"><h4>{relationshipActionNames[active]}</h4><p>{effects[active]}</p>{action({type:'relationship',action:active,target:target.id},relationshipActionNames[active],['rival','divorce','renounce','control','liberate','marry'].includes(active))}</article>
+ {tab==='personal'&&Object.hasOwn(characterById,target.id)&&<section className="interaction-support"><h4><ArtIcon name="person" size={24}/>请援与委任</h4>{(['aid','advisor','favor'] as const).map(kind=>{const q=interactionQuote(w,target.id,kind);return <article key={kind}><h4>{kind==='aid'?'请求资助':kind==='advisor'?'延请协理':'兑现人情'}</h4><p>{kind==='aid'?'取得 70 钱，好感 −20，冷却 30 日。':kind==='advisor'?'替换当前协理，新工程工期 −10%。':'消耗 1 份人情，取得 50 钱，好感 −10。'}</p><small>{q.cost?q.cost+' 钱':'无需盘缠'} · {q.reason||'可执行'}</small><button disabled={pending||!!q.reason} onClick={()=>send({type:'interact',target:target.id,action:kind})}>确认安排</button></article>;})}</section>}
+ <details><summary>关系往事</summary>{s.history.filter(h=>h.actor===a&&h.target===target.id||h.actor===target.id&&h.target===a).slice(-15).reverse().map((h,i)=><p key={i}>第 {h.day} 日 · {h.text}</p>)}</details>
+ </div>;
+}
+export function RelationshipPortrait({id,world}:{id:string;world?:World}){const p=relationshipPersonById[id];return <div className="relationship-portrait"><CharacterPortrait characterId={id} name={p?.name} world={world} compact/></div>;}

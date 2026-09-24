@@ -1,0 +1,10 @@
+import {realmClans,clanHead,clanStanding,CLAN_PRESTIGE_MIN} from '../core/clans';
+import {FamilyCrest} from './FamilyPanel';
+import {CharacterPortrait} from './CharacterPortrait';
+import {ArtIcon} from './ArtIcon';
+import {HoverHint} from './HoverHint';
+import type {RealmId} from '../core/realm';
+import type {World} from '../core/types';
+import './retinue.css';
+export function ClanBadge({world,person}:{world:World;person:string}){const s=clanStanding(world,person);if(!s?.elite)return null;return <HoverHint label="世族荫望" content={<><p>本国族望第 {s.rank} 位 · {s.prestige}</p><p>首次联姻可为双方参与经营的家族带来 {s.marriage} 威望（取门第较高一方，不叠加）；求官接受度 +{s.petition}，城邑请任功绩门槛 −{s.merit}。</p></>}><span className="clan-standing-badge"><ArtIcon name="renown" size={22}/>世族</span></HoverHint>;}
+export function ClanRanking({world:w,realm,onPerson}:{world:World;realm:RealmId;onPerson:(id:string)=>void}){const rows=realmClans(w,realm);return <section className="clan-ranking"><header><h3><ArtIcon name="renown"/>族望榜</h3><HoverHint label="世族评定" content={`本国有在世族员的家族，按全族累计威望排列。前三名且威望达到 ${CLAN_PRESTIGE_MIN} 为世族；同分同名次。名次随族望变化，先人贡献保留。`}><span>世族 {rows.filter(r=>r.elite).length} 家 ⓘ</span></HoverHint></header>{rows.map(row=>{const head=clanHead(w,row.family.id);return <article key={row.family.id} className={row.elite?'clan-ranked elite':'clan-ranked'}><span className="clan-rank">{row.rank}</span><FamilyCrest family={row.family.id} small/><div className="clan-ranked-name"><strong>{row.family.name}</strong><small>{row.family.origin} · {row.prestige} 威望</small>{row.elite&&<ClanBadge world={w} person={row.members[0].id}/>}</div>{head&&<div className="clan-head"><HoverHint label={'族长 · '+head.name} content={`族长 · ${head.name} · 累计贡献 ${w.families?.prestige[head.id]??0}`}><button className="clan-head-portrait" aria-label={'查看族长'+head.name} onClick={()=>onPerson(head.id)}><CharacterPortrait characterId={head.id} name={head.name} world={w} compact/></button></HoverHint></div>}</article>;})}{!rows.length&&<p>暂无本国家族。</p>}</section>;}

@@ -1,0 +1,7 @@
+import type {Journey} from './types';
+export const activityKinds=['visit','banquet','mentor','audience','tour','family','succession','training'] as const;
+export type ActivityKind=typeof activityKinds[number];
+export interface Activity {id:number;actor:string;kind:ActivityKind;site:string;target:string|null;delegate:string|null;created:number;deadline:number;started:number|null;due:number|null;phase:'travel'|'ready'|'working'|'decision'|'done'|'cancelled';result:string;choice:'measured'|'decisive'|null}
+export interface Residence {site:string;journey:Journey|null}
+export interface MobilityState {version:1;since:number;lastDay:number;nextId:number;residences:Record<string,Residence>;activities:Activity[];appointments:Record<string,{site:string;until:number}>;cooldowns:Record<string,number>;commanders:Partial<Record<'liang'|'east'|'west',string>>;captivity:{captor:'liang'|'east'|'west';site:string;since:number}|null;reported:number;stance?:'balanced'|'attack'|'guard'}
+export type MobilityCommand={type:'mobility';action:'plan';kind:ActivityKind;site:string;target?:string;delegate?:string}|{type:'mobility';action:'begin'|'cancel'|'resolve';id:number;choice?:'measured'|'decisive'}|{type:'mobility';action:'command';person:string}|{type:'mobility';action:'leave-army'}|{type:'mobility';action:'ransom'}|{type:'mobility';action:'stance';stance:'balanced'|'attack'|'guard'};

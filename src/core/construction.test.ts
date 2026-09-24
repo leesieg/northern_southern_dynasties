@@ -1,0 +1,57 @@
+import { describe,expect,it } from 'vitest';
+import { act,advance,newWorld } from './world';
+import { buildQuote, emptyCity, provisionCost } from './construction';
+import { parseWorld,serializeWorld,validateWorld } from './save';
+import type { GameCommand } from './types';
+const estate=(building:'fields'|'hall'|'workshop'|'storehouse')=>({type:'build' as const,scope:'estate' as const,site:'jiankang',building});
+function legacyEnvelope(payload:string){let hash=2166136261;for(let i=0;i<payload.length;i++)hash=Math.imul(hash^payload.charCodeAt(i),16777619);return JSON.stringify({format:'fynbc-save',version:1,payload,checksum:(hash>>>0).toString(16)});}
+describe('city and family construction rules',()=>{
+  it('deducts the real cost, persists an unfinished project and completes once',()=>{
+    const w=newWorld();act(w,estate('fields'));expect(w.people[0].coins).toBe(140);expect(w.holdings.estate.levels.fields).toBe(0);
+    advance(w,9);const restored=parseWorld(serializeWorld(w));advance(restored);expect(restored.holdings.estate.levels.fields).toBe(1);expect(restored.holdings.estate.project).toBeNull();
+    advance(restored,20);expect(restored.people[0].coins).toBe(144);expect(restored.people[0].food).toBe(96);validateWorld(restored);
+  });
+  it('enforces estate slots, project capacity, home location and affordability atomically',()=>{
+    const w=newWorld();act(w,estate('fields'));let before=structuredClone(w);
+    expect(()=>act(w,estate('workshop'))).toThrow('已有工程');expect(w).toEqual(before);
+    advance(w,10);before=structuredClone(w);expect(()=>act(w,estate('workshop'))).toThrow('建筑位已满');expect(w).toEqual(before);
+    expect(()=>act(w,{...estate('fields'),site:'ye'})).toThrow('家族庄园位于');
+    expect(()=>act(w,estate('hall'))).toThrow('盘缠不足');
+    w.people[0].coins=500;act(w,estate('hall'));advance(w,30);expect(w.holdings.estate.levels.hall).toBe(2);expect(buildQuote(w,estate('workshop')).reason).toBe('');
+  });
+  it('requires city authority and rejects construction on counties, realms or invalid categories',()=>{
+    const w=newWorld(),before=structuredClone(w);
+    for(const command of [
+      {type:'build',scope:'city',site:'jiankang',building:'market'},
+      {type:'build',scope:'city',site:'danyang-prefecture',building:'market'},
+      {type:'build',scope:'county',site:'jiankang',building:'fields'},
+      {type:'build',scope:'estate',site:'jiankang',building:'market'},
+    ]){expect(()=>act(w,command as GameCommand)).toThrow();expect(w).toEqual(before);}
+    w.holdings.governedCities=['jiankang'];act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});advance(w,30);
+    expect(w.holdings.cities.jiankang.levels.market).toBe(1);expect(w.people[0].coins).toBe(112);validateWorld(w);
+  });
+  it('keeps family income without an office, while city bonuses require governance',()=>{
+    const w=newWorld();w.holdings.cities.jiankang=emptyCity();w.holdings.cities.jiankang.levels.hostel=2;
+    expect(provisionCost(w)).toBe(12);w.holdings.governedCities=['jiankang'];expect(provisionCost(w)).toBe(8);
+    act(w,{type:'provision'});expect(w.people[0].coins).toBe(172);
+    w.holdings.governedCities=[];act(w,estate('fields'));act(w,{type:'travel',destination:'changan'});advance(w,30);
+    expect(w.holdings.estate.levels.fields).toBe(1);expect(w.people[0].coins).toBe(136);validateWorld(w);
+  });
+  it('migrates a genuine version-one journey without changing its route or resources',()=>{
+    const w=newWorld();act(w,{type:'travel',destination:'changan'});advance(w,3);
+    const {holdings:_,...base}=w;const legacy={...base,version:1};
+    const migrated=parseWorld(legacyEnvelope(JSON.stringify(legacy)));
+    expect(migrated.version).toBe(2);expect(migrated.people).toEqual(w.people);expect(migrated.day).toBe(w.day);expect(migrated.holdings.estate.levels.hall).toBe(1);validateWorld(migrated);
+  });
+  it('rejects tampered permissions, invalid projects and impossible building states',()=>{
+    const mutations=[
+      (w:ReturnType<typeof newWorld>)=>{w.holdings.governedCities=['unknown'];},
+      (w:ReturnType<typeof newWorld>)=>{w.holdings.governedCities=['ye','ye'];},
+      (w:ReturnType<typeof newWorld>)=>{w.holdings.estate.levels.fields=9;},
+      (w:ReturnType<typeof newWorld>)=>{w.holdings.estate.project!.due++;},
+      (w:ReturnType<typeof newWorld>)=>{w.holdings.estate.project!.cost=1;},
+      (w:ReturnType<typeof newWorld>)=>{w.holdings.estate.levels.fields=1;w.holdings.estate.levels.workshop=1;},
+    ];
+    for(const mutate of mutations){const w=newWorld();act(w,estate('fields'));mutate(w);expect(()=>validateWorld(w)).toThrow();}
+  });
+});

@@ -1,0 +1,45 @@
+import {retinueMembers,postStatus} from './retinue';
+import {clanStanding} from './clans';
+import {relationshipPersonById} from '../data/relationships';
+import {activities} from './mobility';
+import {serviceAttention,serviceChief} from './assignments';
+import {assignmentPhases,assignmentTemplates} from '../data/assignments';
+import {dutyAttention,dutyPhaseNames} from './duties';
+import {lifeOf} from './lifeState';
+import {siteById} from '../data/scenario';
+import type {World} from './types';
+import {playerRealm} from './realm';
+export function pauseHasActions(w:World,event:PauseEvent){
+ if(event.kind==='realm')return !!w.realm?.event;
+ if(event.kind==='diplomacy')return !!w.realm&&!!w.diplomacy?.missions.some(m=>m.status==='audience'&&m.to===playerRealm(w));
+ if(event.kind==='mobility')return !!w.mobility?.captivity||!!w.mobility?.activities.some(a=>(event.activityId===undefined||a.id===event.activityId)&&!['done','cancelled'].includes(a.phase));
+ if(event.kind==='duties')return !!w.duties?.task&&w.duties.task.phase!=='closed';
+ if(event.kind==='service'||event.kind==='arrival'&&event.assignmentId){
+  if(event.assignmentId)return !!w.service?.tasks.some(t=>t.id===event.assignmentId&&t.phase!=='closed');
+  if(!w.realm)return false;const r=playerRealm(w),c=w.service?.councils[r];return !!c&&(!c.decided||!!c.proposal&&serviceChief(w,r)===w.characterId);
+ }
+ return false;
+}
+export interface PauseEvent {id:string;assignmentId?:number;activityId?:number;kind:'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
+export function pauseSnapshot(w:World){return {clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
+export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):PauseEvent[]{
+ const events:PauseEvent[]=[];
+ const add=(kind:PauseEvent['kind'],title:string,body:string,extra:Partial<PauseEvent>={})=>events.push({id:`${w.day}:${kind}:${events.length}`,kind,title,body,...extra});
+ for(const a of w.mobility?.activities??[])if(before.mobility.get(a.id)!==a.phase&&['ready','decision','done','cancelled'].includes(a.phase))add('mobility',activities[a.kind].name,a.result||`${siteById[a.site].name} · ${a.phase==='ready'?'参加者已到齐，可以开始办理。':'驻留事务已有进展，请决定下一步。'}`,{activityId:a.id,site:a.site});
+ if(w.mobility?.captivity&&(w.mobility.reported>before.reported))add('mobility','统帅被俘','所部溃散，可筹措赎金。');
+ if(w.mobility&&w.mobility.reported>before.reported&&!events.some(e=>e.kind==='mobility'))add('mobility','军中急报','所部溃散，你负伤脱离军队，请安排休养。');
+ for(const old of before.retinue){const m=w.retinue?.members[old.id],name=relationshipPersonById[old.id]?.name??old.id;if(!m||m.host!==w.characterId)add('retinue','幕府人事有变',name+'已离开幕府，请查看空缺职位。');else if(m.arrears>old.arrears)add('retinue','幕府欠俸',name+'俸钱未付，职务暂停；请备足钱财，下期结清。');else if(m.post&&!old.ready&&!postStatus(w,m.post,m.site??undefined).reason)add('retinue','幕职就绪',name+'已可履职。');}
+ const standing=clanStanding(w,w.characterId??'');if(before.actor===w.characterId&&standing&&(standing.elite!==!!before.clan?.elite||standing.elite&&standing.rank!==before.clan?.rank))add('clan','门第有变',standing.family.name+(standing.elite?'跻身本国世族，族望第 '+standing.rank+' 位。':'不再位列本国世族。'));
+ const serviceKeys=serviceAttention(w).filter(key=>!before.service.includes(key));
+ const announced=new Set<number>();
+ for(const key of serviceKeys){if(key.startsWith('council')){add('service',key.startsWith('council-reply:')?'议事批复送达':'本季评议',key.startsWith('council-reply:')?'你的议事上书已有批复，请阅朝廷文书。':'请议定本季重心，或裁决呈上的议事文书。');continue;}const id=Number(key.split(':')[1]),task=w.service?.tasks.find(t=>t.id===id);if(task&&!announced.has(id)){announced.add(id);add('service',siteById[task.site].name+' · '+assignmentTemplates[task.kind].name,key.startsWith('invite:')?'同僚邀你协办，请答复。':'差事进展：'+assignmentPhases[task.phase]+'。',{assignmentId:id});}}
+ for(const task of w.service?.tasks??[])if(task.phase==='closed'&&!before.closedTasks.has(task.id)&&(task.officer===w.characterId||serviceChief(w,task.realm)===w.characterId||Object.hasOwn(task.contributors,w.characterId??'')))add('service','考绩文书送达',siteById[task.site].name+assignmentTemplates[task.kind].name+'已结案。',{assignmentId:task.id});
+ if(before.actor!==w.characterId)add('inheritance','家业有继',`家业已由${w.people[0].name}承继。请查看新身份与家族。`,{person:w.characterId});
+ if(!before.ill&&lifeOf(w,w.characterId)?.illness)add('health','身体有恙','你身体有恙，可查看病情并安排延医休养。',{person:w.characterId});
+ if(dutyAttention(w)&&dutyAttention(w)!==before.attention||!before.closed&&w.duties?.task?.phase==='closed')add('duties','天水粮务有报',`粮务进展：${dutyPhaseNames[w.duties!.task!.phase]}。请阅文书。`);
+ if(w.diplomacy?.missions.some(m=>m.status==='audience'&&!before.audiences.has(m.id)))add('diplomacy','使团抵达','使团已经抵达，等待你的答复。');
+ if(w.realm?.event&&JSON.stringify(w.realm.event)!==before.event)add('realm','政务待决','有新的政务呈报，请作出裁决。');
+ if(w.campaign&&w.campaign.status!=='active'&&w.campaign.status!==before.status)add('outcome','此段生涯已终','本局已经结束，请查看生涯结果。');
+ if(before.destination&&!w.people[0].journey&&before.actor===w.characterId&&!events.some(e=>e.kind==='mobility'&&e.site===w.people[0].location)){const arrived=w.people[0].location===before.destination;add(arrived?'arrival':'journey',arrived?'抵达目的地':'行程中止',arrived?`你已抵达${siteById[w.people[0].location].name}，可以拜访当地人物或安排下一步行程。`:'行程因局势变化中止，请查看当前所在地与纪事。',{site:w.people[0].location,assignmentId:w.service?.tasks.find(t=>t.site===w.people[0].location&&(t.officer===w.characterId||t.helper===w.characterId)&&!['report','closed'].includes(t.phase))?.id});}
+ return events;
+}

@@ -1,0 +1,135 @@
+.atlas-map{background:#c9c7b0}
+.atlas-canvas .maplibregl-canvas{filter:sepia(.07) saturate(.9) contrast(1.025);outline:none}
+.atlas-paper{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,transparent 45%,#65503419 100%);z-index:1;box-shadow:inset 0 0 70px #68533815}
+.atlas-place{pointer-events:none;z-index:3}
+.atlas-place-label{pointer-events:auto;border:0;padding:3px 7px;font-family:var(--serif);font-size:14px;font-weight:600;letter-spacing:2px;background:transparent;color:#383b2c;text-shadow:0 0 3px #fff4d7,0 0 7px #f5edca,0 1px 1px #f7efce;white-space:nowrap}
+.atlas-place-label.capital{font-size:20px;color:#39392b;letter-spacing:4px}
+.atlas-place-label:hover:not(:disabled),.atlas-place-label.is-selected{background:#24392ce8;color:#f5e5b5;text-shadow:none;box-shadow:0 1px 8px #24322230}
+.atlas-place-label.is-selected{outline:1px solid #e3ce8a77;outline-offset:2px;border-radius:1px}
+.atlas-geographic-label{font-family:var(--serif);color:#536049;white-space:nowrap;pointer-events:none;user-select:none;font-size:17px;letter-spacing:5px;text-shadow:0 1px 4px #e6dfbc90;z-index:1}
+.atlas-geographic-label.realm{color:#4b4b35;font-size:clamp(34px,3.7vw,56px);font-weight:500;letter-spacing:16px;opacity:.75}
+.atlas-geographic-label.range{font-size:14px;color:#666b51;letter-spacing:7px}
+.atlas-geographic-label.water{font-size:15px;color:#426f75;letter-spacing:6px;font-style:italic}
+.atlas-traveler{display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:4;gap:4px;filter:drop-shadow(0 2px 2px #22332955)}
+.atlas-traveler>span{font-family:var(--serif);font-size:10px;white-space:nowrap;color:#e7e3cb;background:#33463be8;padding:3px 6px;letter-spacing:1px}
+.traveler-pennant{display:block;width:12px;height:16px;background:#4c5d45;border-left:2px solid #dbceb0;clip-path:polygon(0 0,100% 0,75% 40%,100% 70%,12% 70%,12% 100%,0 100%)}
+.atlas-traveler.player{z-index:6;transform-origin:bottom}
+.atlas-traveler.player .traveler-pennant{width:24px;height:33px;border-left:2px solid #ecddad;background:#9b5539;font-family:var(--serif);font-style:normal;font-size:14px;color:#f8e6b6;padding:1px 0 0 5px;line-height:21px;clip-path:polygon(0 0,100% 0,88% 32%,100% 65%,9% 65%,9% 100%,0 100%)}
+.atlas-traveler.player>span{background:#493d2cf2;color:#f5dda4;font-size:11px;box-shadow:0 0 0 1px #ecd39666}
+.atlas-map .maplibregl-marker-covered{pointer-events:none}
+.atlas-map .maplibregl-ctrl-bottom-right{right:0;bottom:0;z-index:5;max-width:100%}
+.atlas-map .maplibregl-ctrl-attrib{font:9px/15px "PingFang SC",sans-serif;background:#e4e0cae8;color:#576452;margin:0!important;padding:1px 6px;max-width:100%;box-shadow:none;border-radius:0}
+.atlas-map .maplibregl-ctrl-attrib a{color:#475c51;text-decoration:none}
+.atlas-map .maplibregl-ctrl-attrib a:hover{text-decoration:underline}
+.atlas-scale-indicator{position:absolute;left:24px;top:125px;font-family:var(--serif);font-size:12px;letter-spacing:3px;color:#425540;pointer-events:none;text-shadow:0 0 5px #e5ddc3;z-index:2}
+.atlas-scale-indicator span{font-family:"PingFang SC",sans-serif;font-size:9px;letter-spacing:1px;margin-left:12px;color:#66745d}
+.atlas-network-notice{position:absolute;left:20px;right:20px;top:155px;z-index:7;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#283a30ec;border:1px solid #e7ce8c66;color:#e5d7ad;font-size:11px;line-height:1.6}
+.atlas-network-notice button{padding:4px 9px;flex-shrink:0;font-size:11px}
+.map-stage:not(.journal-expanded) .map-legend{bottom:100px}
+.map-stage:not(.journal-expanded) .zoom-tools{bottom:95px}
+.map-stage:not(.journal-expanded) .map-bottomline{bottom:72px}
+.map-stage .journal{bottom:22px}
+.map-stage .journal.collapsed{background:#21372be6}
+.atlas-view-toggle{font-size:11px;padding:7px 11px;background:#20342ce6;border-color:#b6b4956b;color:#ded7b5;white-space:nowrap}
+.atlas-view-toggle.active{color:#f1dfab;background:#364a35e8}
+.map-stage .map-toolbox{gap:6px}
+@media(max-width:1180px){.atlas-scale-indicator{left:16px;top:120px}.atlas-view-toggle{font-size:10px;padding:6px 8px}.atlas-scale-indicator span{display:none}}
+@media(max-width:900px){.atlas-scale-indicator{top:102px}.atlas-network-notice{top:128px;left:12px;right:12px}.atlas-map .maplibregl-ctrl-attrib{font-size:8px}.map-toolbox{flex-wrap:wrap;right:15px}.atlas-view-toggle{font-size:9px;padding:5px 7px}.atlas-geographic-label.realm{font-size:32px}}
+/* Territory inspection keeps the map visible while exposing one clear next action. */
+.territory-tooltip,.territory-menu{position:absolute;z-index:9;width:224px;background:#24372ff5;color:#eadfc2;border:1px solid #c3ae748c;box-shadow:0 8px 25px #17251c55;text-align:left}
+.territory-tooltip{pointer-events:none;padding:13px 15px}
+.territory-kicker{display:block;font-size:10px;letter-spacing:2px;color:#c6bc9b;margin-bottom:5px}
+.territory-tooltip>strong{font:23px var(--serif);letter-spacing:3px;color:#f6e7be}
+.territory-tooltip p{font-size:11px;line-height:1.6;margin:5px 0;color:#dbd4bb}
+.territory-tooltip small,.territory-menu>small{display:block;font-size:10px;color:#b0b7a0;border-top:1px solid #b0a67f40;padding-top:8px;margin-top:9px;line-height:1.6}
+.territory-menu{width:212px;padding:6px}
+.territory-menu header{display:flex;align-items:center;justify-content:space-between;padding:5px 6px 8px;font-family:var(--serif);border-bottom:1px solid #b0a67f40}
+.territory-menu header button{border:0;padding:0 6px;font-size:20px;background:transparent}
+.territory-menu>button{display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 9px;background:transparent;border:0;border-radius:0;text-align:left;font-size:12px;color:#e8dfc2}
+.territory-menu>button:hover:not(:disabled),.territory-menu>button:focus-visible{background:#56634a;outline:1px solid #d7bc7a}
+.territory-menu>button:disabled{opacity:.4;cursor:not-allowed}
+.territory-menu>small{margin:4px 5px;padding-top:7px}
+.place-focus{font-size:10px;border:0;background:transparent;color:#d7c690;padding:3px}
+.territory-connections{padding:0 22px 18px}
+.territory-connections>div{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.territory-connections button{display:flex;align-items:center;gap:7px;font-size:11px;padding:6px 9px;background:#ffffff06;border:1px solid #aab99430;border-radius:1px}
+.territory-connections button i{width:6px;height:6px;display:inline-block;transform:rotate(45deg)}
+.territory-connections button span{color:#b4b99b}
+.territory-connections small{font-size:10px;color:#a0ad96;line-height:1.5}
+.map-stage .map-toolbox{right:15px;flex-wrap:wrap}
+@media(max-width:1180px){.territory-connections{padding-inline:17px}.territory-tooltip{width:210px}.atlas-scale-indicator{top:142px}.atlas-network-notice{top:169px}}
+.atlas-place-label.county{font-size:11px;letter-spacing:1px;font-weight:400}
+.atlas-geographic-label.prefecture{font-size:19px;letter-spacing:4px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.9}
+.atlas-estate-marker{font:11px var(--serif);color:#fae5b5;background:#614834eb;border:1px solid #c9a972;box-shadow:0 2px 6px #24322244;padding:4px 7px;z-index:4;white-space:nowrap}
+.location-development{margin:0 18px 20px;border-top:1px solid #b5bb9540;border-bottom:1px solid #b5bb9540;padding-bottom:12px}
+.development-tabs{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #b5bb9525;margin-bottom:12px}
+.development-tabs button{border:0;background:transparent;font-size:12px;padding:5px 0;border-bottom:2px solid transparent}
+.development-tabs button[aria-pressed=true]{border-bottom-color:#d6ba78;color:#f1d9a3}
+.history-card{font-size:11px;line-height:1.8;color:#abb69b}
+.history-card .admin-path{font-family:var(--serif);font-size:14px;color:#e7d7ae;line-height:1.8;margin:0 0 8px}
+.source-status{font-size:9px;color:#c8b988;border:1px solid #bba97450;padding:3px 5px}
+.county-register>span{display:block;font-size:10px;letter-spacing:1px;margin:13px 0 6px;color:#c6c9ac}
+.county-register>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.county-register button,.unmapped-county{display:flex;align-items:center;justify-content:space-between;gap:3px;font-size:11px;padding:6px;background:#ffffff05;border:1px solid #aab99425}
+.county-register button.active{border-color:#d3b774;color:#f0d79f;background:#d0b06b12}
+.county-register small{font-size:8px;color:#a4ab90}
+.unmapped-county{opacity:.55}
+.history-card details{margin-top:12px;font-size:10px}
+.history-card summary{cursor:pointer;color:#c8bf9f}
+.history-card a{display:block;color:#d4c08b;text-underline-offset:3px;margin-top:4px}
+.estate-entry{display:flex;justify-content:space-between;margin:12px 16px;padding:12px 9px;font-family:var(--serif);font-size:12px;border-color:#bba26c80;background:#ac834b15;color:#e6c891}
+.estate-entry span{font-family:var(--sans);font-size:10px;opacity:.8}
+.construction-note{font-size:10px;color:#aab69a;line-height:1.8;margin:10px 0}
+.building-list{display:grid;gap:8px}
+.building-row{padding:10px;border:1px solid #a8b48930;background:#ffffff03}
+.building-row h4{margin:0;font-family:var(--serif);font-size:15px;color:#e6d5ac;display:flex;justify-content:space-between}
+.building-row h4 span{font-family:var(--sans);font-size:10px;font-weight:400;color:#a8b696}
+.building-row p{font-size:10px;line-height:1.7;color:#afbba0;margin:7px 0}
+.building-row>small{display:block;font-size:10px;color:#d8c18b;margin:8px 0}
+.building-row>button{font-size:11px;padding:7px;width:100%;border-color:#bba06b70;background:#c5a56712}
+.building-row>button:disabled{color:#a1a891;opacity:.55;cursor:not-allowed}
+.estate-overview{display:flex;align-items:center;gap:20px;padding:16px 0 24px;border-bottom:1px solid #b6af8733}
+.estate-seal{display:grid;place-items:center;width:68px;height:82px;border:1px double #c3a56c;outline:1px solid #c3a56c77;outline-offset:-5px;font:40px var(--serif);color:#e6cf98;background:#513f2b70}
+.estate-overview h3{font:24px var(--serif);color:#e9d9b2;letter-spacing:2px;margin:10px 0}
+.estate-overview p{font-size:12px;color:#b6bf9f;margin:0}
+.estate-development .building-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+.estate-development .building-row{padding:16px}
+.construction-progress{display:grid;gap:8px;padding:12px;border:1px solid #c1ab6f70;background:#a3853d15;margin:12px 0;font-size:11px;color:#dbca9a}
+.construction-progress progress{width:100%;height:6px;accent-color:#c5a569}
+.hierarchy-explorer{padding:16px 18px 20px;border-bottom:1px solid #b8ae793d}
+.hierarchy-levels{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+.hierarchy-levels button{padding:6px 8px;font-size:10px;background:#c3b2800a;border-color:#b3ad773b}
+.hierarchy-levels button[aria-pressed=true]{background:#8b754545;color:#f2d99f;border-color:#c5a971}
+.hierarchy-explorer nav{display:flex;flex-wrap:wrap;align-items:center;gap:3px}
+.hierarchy-explorer nav button{border:0;background:transparent;display:flex;align-items:center;gap:4px;padding:3px;font-size:11px;color:#d4c49b}
+.hierarchy-explorer nav small{font-size:8px;color:#9bab91}
+.hierarchy-explorer nav span{opacity:.45}
+.hierarchy-explorer nav button[aria-current]{color:#ffe1a5}
+.hierarchy-heading{margin:20px 0 10px}.hierarchy-heading>span{font-size:10px;color:#aeb897;letter-spacing:1px}.hierarchy-heading h3{font:30px var(--serif);letter-spacing:4px;color:#eedcb3;margin:9px 0}.hierarchy-heading p,.hierarchy-note{font-size:10px;color:#9faa91;line-height:1.8}
+.hierarchy-up{font-size:10px;padding:6px 0;margin-bottom:10px;border:0;background:transparent;color:#c7bb95}
+.hierarchy-children{display:grid;gap:5px;max-height:270px;overflow:auto}
+.hierarchy-children button{display:flex;justify-content:space-between;align-items:center;text-align:left;padding:10px 8px;font-size:12px;background:#e9d5a408;border-color:#a1b08a26;gap:8px}
+.hierarchy-children small{display:block;font-size:8px;color:#9bab91;margin-bottom:4px}.hierarchy-children button>span+span{font-size:9px;color:#c0bc97}
+.hierarchy-realms,.history-events{margin-top:15px;font-size:11px;color:#c4bea1}.hierarchy-realms summary,.history-events summary{cursor:pointer;line-height:1.7}.hierarchy-realms button{margin:6px 5px 0 0;padding:5px;font-size:10px}
+.history-events p{font-size:10px;line-height:1.8;color:#a8b499}.history-events button{margin-top:7px;padding:7px;font-size:10px;width:100%;text-align:left}.history-events button[aria-pressed=true]{border-color:#c6a368;color:#f2dba5}.history-events a{display:block;margin:5px 0;color:#bfab77;font-size:9px}
+.history-map-notice{position:absolute;z-index:8;left:15px;right:15px;top:175px;background:#3b2d21ed;border:1px solid #b98b55;padding:10px 13px;pointer-events:none}.history-map-notice strong{font:15px var(--serif);color:#f2d6a1}.history-map-notice span{display:block;font-size:10px;color:#d0bda0;line-height:1.7;margin-top:5px}
+
+/* City details put the model before optional historical context. */
+.city-detail-panel>div.panel-heading{padding-block:10px;min-height:36px}
+.city-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px 14px;flex-shrink:0}
+.city-detail-heading h2{font:26px var(--serif);letter-spacing:3px;color:#e6d6ae;margin:0 0 5px}
+.city-detail-heading span{font-size:10px;color:#aab79b;line-height:1.5}
+.city-detail-heading button{font-size:10px;padding:6px 8px;white-space:nowrap;border-color:#c6ae7245}
+.city-detail-panel .location-development{padding-top:0}
+.city-detail-panel .city-viewport{height:clamp(190px,34vh,280px)}
+.city-detail-panel .city-model-loading{min-height:clamp(190px,34vh,280px)}
+.city-detail-more{margin:0 16px 12px;border-top:1px solid #c6ae7233;font-size:11px;color:#b9c2a4}
+.city-detail-more>summary{padding:12px 0;cursor:pointer;color:#d0c39e}
+.city-detail-more .place-description{margin:0 0 12px;font-size:12px;line-height:1.8}
+.city-detail-more .place-facts{margin:0;border-bottom:0}
+.city-detail-more .hierarchy-explorer{padding:0 0 12px;border-bottom:0}
+.atlas-army-marker{background:#322b20;color:#eee0b9;border:2px solid #bc9c63;border-radius:2px;padding:5px 10px;font-size:12px;font-weight:bold;box-shadow:0 3px 9px #0006;cursor:pointer}.atlas-army-marker[hidden]{display:none}
+
+button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cursor:pointer}button.atlas-geographic-label.realm:focus-visible{outline:2px solid #d1b674;outline-offset:6px}
+
+.atlas-traveler[hidden]{display:none!important}

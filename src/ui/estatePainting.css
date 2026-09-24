@@ -1,0 +1,30 @@
+.modal.estate-modal{width:min(1120px,96vw);padding:22px 26px;max-height:94vh}
+.estate-painting{margin:0 0 22px;border:1px solid #c4ad7359;background:#17251e;position:relative}
+.estate-painting-stage{position:relative;aspect-ratio:3/2;overflow:hidden;isolation:isolate}
+.estate-landscape{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.estate-asset-preload{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.estate-scene-title{position:absolute;left:4%;top:5%;display:grid;gap:9px;color:#f1e4bc;text-shadow:0 2px 8px #17251e;font-family:var(--serif);pointer-events:none;z-index:2}
+.estate-scene-title>span{font-size:clamp(22px,3vw,37px);letter-spacing:6px}.estate-scene-title small{font-size:12px;letter-spacing:3px}
+.estate-plot{position:absolute;aspect-ratio:1;display:block;padding:0;border:0;border-radius:0;background:transparent!important;box-shadow:none!important;cursor:pointer;isolation:isolate;color:#f3e2b7;transition:filter .2s}
+.plot-hall{left:35%;top:22%;width:32%;z-index:4}.plot-storehouse{left:10%;top:30%;width:23%;z-index:3}.plot-workshop{left:65%;top:37%;width:26%;z-index:5}.plot-fields{left:25%;top:54%;width:28%;z-index:6}
+.estate-painted-building{position:absolute;inset:0;background-image:url('/art/estate/buildings-clean.png');background-size:400% 400%;background-position:var(--sprite-x) var(--sprite-y);background-repeat:no-repeat;pointer-events:none;animation:estate-appear .6s ease-out;filter:saturate(.78) contrast(.95);transform:translateZ(0)}
+.estate-worksite.is-expansion{width:49%;height:49%;inset:auto -2% 2% auto;filter:saturate(.65) brightness(.94)}
+.estate-plot:hover,.estate-plot:focus-visible{filter:drop-shadow(0 0 5px #f8df8fa3)}
+.estate-plot:focus-visible{outline:2px solid #f5da91;outline-offset:3px}
+.estate-plot-caption{position:absolute;left:50%;bottom:0;transform:translateX(-50%);padding:6px 10px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;white-space:nowrap;background:#25372ae8;border:1px solid #b9a56e80;box-shadow:0 2px 8px #14211955;min-width:84px;pointer-events:none}
+.estate-plot-caption strong{font:13px var(--serif);letter-spacing:2px}.estate-plot-caption small{font-size:10px;color:#c6cfb0;font-weight:400}
+.estate-plot.is-selected .estate-plot-caption{border-color:#edcb82;background:#493d28eb;color:#ffe7af}
+.estate-plot.is-building .estate-plot-caption{border-style:dashed}
+.estate-work-meter{width:100%;height:3px;background:#0c1718;overflow:hidden}.estate-work-meter i{display:block;height:100%;background:#e1bb6c;transition:width .3s}
+.estate-empty-land{position:absolute;left:39%;top:52%;width:22%;aspect-ratio:1;display:grid;place-items:center;border:1px dashed #ede2b0aa;border-radius:50%;background:#4c533346;font-size:22px;color:#f1e4c0;font-weight:300}
+.estate-scene-light{position:absolute;inset:0;pointer-events:none;z-index:7;box-shadow:inset 0 0 50px #18291b45;background:linear-gradient(155deg,#f8d4810b,transparent 55%,#26382818)}
+.estate-painting figcaption{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;font-size:10px;color:#b9c2a6;line-height:1.6}
+.estate-screenreader{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.estate-art-error{position:absolute;z-index:10;left:15px;right:15px;top:15px;padding:12px;background:#302821;color:#f0d5aa;font-size:12px}
+.estate-modal .estate-development .building-list{grid-template-columns:repeat(4,minmax(0,1fr))}
+.estate-development .building-row.is-selected{border-color:#d1b471;background:#c0a66b12}
+.estate-development .estate-overview{padding-top:0;gap:14px}.estate-development .estate-seal{width:44px;height:53px;font-size:29px}.estate-development .estate-overview h3{font-size:21px}
+.estate-building-picker{padding:0;border:0;background:transparent;text-align:left;width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;font:inherit;color:inherit}
+@keyframes estate-appear{from{opacity:.2}to{opacity:1}}
+@media(max-width:900px){.modal.estate-modal{padding:16px}.estate-modal .estate-development .building-list{grid-template-columns:repeat(2,minmax(0,1fr))}.estate-plot-caption{padding:4px 6px;min-width:65px;gap:3px}.estate-plot-caption strong{font-size:11px}.estate-plot-caption small{font-size:8px}.estate-painting figcaption{font-size:9px}.estate-scene-title small{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.estate-painted-building{animation:none}.estate-plot,.estate-work-meter i{transition:none}}

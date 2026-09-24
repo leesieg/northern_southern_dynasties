@@ -1,0 +1,65 @@
+/* One active detail drawer; the map remains the persistent center of play. */
+.focused-shell .topbar{height:68px;gap:20px;padding:0 18px}
+.focused-shell .brand{width:auto;gap:12px}.focused-shell .brand h1{font-size:19px;letter-spacing:2px}.focused-shell .brand div>span{display:none}
+.realm-resources{display:flex;align-items:center;gap:20px;margin-left:15px}.realm-resources>span{display:flex;align-items:baseline;gap:7px;white-space:nowrap;font-size:10px;color:#a6b39b}.realm-resources strong{font:22px Georgia,serif;color:#e9ce92}.realm-resources small{font-size:9px}
+.focused-shell .world-date{margin-left:auto;gap:10px}.focused-shell .world-date>.eyebrow{display:none}.focused-shell .world-date strong{font-size:16px}.focused-shell .time-state{font-size:10px}.focused-shell .header-actions{margin-left:0}
+.focused-shell .game-body{grid-template-columns:68px minmax(0,1fr);grid-template-rows:minmax(0,1fr);position:relative}
+.focused-shell .game-body.place-open{grid-template-columns:68px minmax(300px,1fr) 350px}
+.focused-shell .game-body.character-open{grid-template-columns:68px 270px minmax(300px,1fr)}
+.command-rail{grid-column:1;grid-row:1;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px 7px;background:#17241f;border-right:1px solid #c4b27d44;z-index:4}
+.command-rail button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:57px;padding:9px 4px;background:transparent;border-color:transparent;color:#aeb59a;font-size:10px}
+.command-rail button:hover,.command-rail button[aria-expanded=true]{border-color:#cfb16d70;background:#bca37118;color:#ead4a0}
+.command-rail .rail-person{margin-bottom:10px}.rail-person strong{font:27px var(--serif);color:#e9cf96;border:1px solid #c1a477;padding:4px 8px;background:#69503730}
+.focused-shell .character-panel{grid-column:2;grid-row:1}.focused-shell .map-stage{grid-row:1;grid-column:2;min-width:0}.focused-shell .character-open .map-stage{grid-column:3}.focused-shell .place-panel{grid-row:1;grid-column:3}
+.focused-shell .character-art{height:125px;min-height:125px}.focused-shell .character-surname{font-size:85px}.focused-shell .character-footer{display:none}.focused-shell .character-panel .panel-heading button{display:flex;padding:4px;border:0}
+.drawer-actions{display:flex;align-items:center;gap:10px}.drawer-actions button{display:flex;align-items:center;border:0;padding:4px;font-size:10px}
+.focused-shell .map-topline{top:18px;left:22px;right:22px}.focused-shell .atlas-title{font-size:16px}.focused-shell .atlas-title small{font-size:9px}
+.journey-chip{padding:8px 12px;background:#233c30ed;border-color:#cbb77a88;color:#e4d3a3;font-size:11px;box-shadow:0 3px 14px #15271930}
+.focused-shell .map-toolbox{top:auto;left:auto;bottom:62px;right:18px;gap:8px;flex-wrap:nowrap;align-items:center}
+.focused-shell .map-modes{background:#203027f5;border-color:#bca37180}.focused-shell .map-modes button{padding:8px 11px}
+.map-options-toggle{padding:8px 10px;font-size:10px;background:#203027f5;color:#d8c89c;border-color:#bca37180;white-space:nowrap}
+.map-options{position:absolute;right:0;bottom:45px;display:grid;gap:8px;min-width:150px;padding:12px;background:#203027fa;border:1px solid #bca37170;box-shadow:0 4px 18px #17271b33}
+.map-options button{width:100%;font-size:11px}
+.focused-shell .map-legend{left:20px;bottom:19px;max-width:calc(100% - 40px);font-size:9px;gap:12px;flex-wrap:wrap}.focused-shell .map-bottomline{display:none}
+.focused-shell .zoom-tools{bottom:118px;right:18px}.focused-shell .compass-rose{display:none}
+.focused-shell .journal{left:20px;right:auto;bottom:110px;width:min(460px,calc(100% - 82px))}.focused-shell .journal-entries{max-height:240px}
+.focused-shell .development-tabs{position:sticky;top:0;z-index:2;background:#24312c;padding-block:8px;gap:4px;border-bottom:1px solid #bba47150;margin-bottom:14px}
+.focused-shell .development-tabs button{flex:1;padding:8px;font-size:12px}.focused-shell .development-tabs button[aria-pressed=true]{background:#bca37124;color:#ecd49f;border-color:#c5aa6e}
+.focused-shell .location-development .route-section{padding:0}.focused-shell .location-development .city-detail-more{margin-inline:0}.focused-shell .route-metrics{margin-top:12px}.focused-shell .city-view{margin-bottom:8px}.focused-shell .city-view-hint{margin-bottom:10px}
+.focused-shell button:focus-visible,.focused-shell summary:focus-visible{outline:2px solid #d6b576;outline-offset:3px}
+@media(max-width:1100px){.focused-shell .topbar{gap:10px;padding-inline:12px}.realm-resources{gap:12px;margin-left:0}.realm-resources strong{font-size:18px}.focused-shell .time-state{display:none}.focused-shell .brand h1{display:none}.focused-shell .game-body.place-open{grid-template-columns:60px minmax(300px,1fr) 320px}.focused-shell .game-body,.focused-shell .game-body.character-open{grid-template-columns:60px minmax(0,1fr)}.focused-shell .character-open .map-stage{grid-column:2}.focused-shell .character-panel{position:absolute;left:60px;top:0;bottom:0;width:270px;z-index:6;box-shadow:12px 0 24px #111b183d}.focused-shell .map-toolbox{right:12px}.focused-shell .map-modes button{padding-inline:8px}.command-rail{padding-inline:4px}.focused-shell .world-date strong{font-size:14px}}
+.focused-shell .map-stage .map-legend{bottom:26px}
+.focused-shell .map-stage .zoom-tools{bottom:118px}
+.focused-shell .map-stage .map-toolbox{flex-wrap:nowrap}
+.focused-shell .route-section .provision-button{margin:12px 0 0;width:100%;justify-content:center;gap:12px}
+
+/* All in-game detail and management panels share the left drawer slot. Estate remains modal. */
+.focused-shell{--rail-width:68px;--detail-width:440px}
+.focused-shell .game-body.character-open,.focused-shell .game-body.place-open,.focused-shell .game-body.utility-open{grid-template-columns:var(--rail-width) var(--detail-width) minmax(0,1fr)}
+.focused-shell .character-open .map-stage,.focused-shell .place-open .map-stage,.focused-shell .utility-open .map-stage{grid-column:3}
+.focused-shell .character-panel,.focused-shell .place-panel,.utility-drawer-host{grid-column:2;grid-row:1;min-width:0;min-height:0;border-left:0;border-right:1px solid #c4b28070}
+.utility-drawer-host{overflow:hidden;background:#24312c}
+.focused-shell .modal.left-utility-drawer{width:100%!important;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none;padding:0 20px 24px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.left-utility-drawer>header{position:sticky;top:0;z-index:8;background:#24312c;padding:18px 0 14px;margin-bottom:18px;border-bottom:1px solid #c4b28044;gap:10px}
+.left-utility-drawer>header h2{font-size:21px;letter-spacing:2px;margin-top:6px}
+.left-utility-drawer>header .eyebrow{font-size:9px}
+.left-utility-drawer>header .drawer-actions{flex-shrink:0}
+.left-utility-drawer .roster-columns{grid-template-columns:minmax(0,1fr);gap:12px}
+.left-utility-drawer .roster-list{display:flex;flex-direction:row;max-height:115px;overflow:auto;padding-bottom:8px}
+.left-utility-drawer .roster-list>button{flex:0 0 155px;padding:8px;gap:8px}
+.left-utility-drawer .roster-seal{min-width:30px;height:38px;font-size:16px}
+.left-utility-drawer .roster-list strong{font-size:16px}.left-utility-drawer .roster-list small{font-size:9px}
+.left-utility-drawer .roster-profile{padding:14px}.left-utility-drawer .roster-heading{flex-wrap:wrap}
+.left-utility-drawer .social-cards{grid-template-columns:minmax(0,1fr)}
+.left-utility-drawer .realm-summary{gap:12px;flex-wrap:wrap}.left-utility-drawer .realm-summary strong{font-size:21px}
+.left-utility-drawer .realm-city-list article header{flex-wrap:wrap}.left-utility-drawer .save-actions{flex-wrap:wrap}
+.left-utility-drawer .save-row{gap:10px}.left-utility-drawer .save-row>div{min-width:0}
+.focused-shell .character-panel>.panel-heading,.focused-shell .place-panel>.panel-heading{position:sticky;top:0;z-index:8;background:#24312c;flex-shrink:0}
+@media(max-width:1100px){
+ .focused-shell{--rail-width:60px;--detail-width:min(440px,calc(100vw - 76px))}
+ .focused-shell .game-body,.focused-shell .game-body.character-open,.focused-shell .game-body.place-open,.focused-shell .game-body.utility-open{grid-template-columns:var(--rail-width) minmax(0,1fr)}
+ .focused-shell .character-open .map-stage,.focused-shell .place-open .map-stage,.focused-shell .utility-open .map-stage{grid-column:2}
+ .focused-shell .character-panel,.focused-shell .place-panel,.utility-drawer-host{position:absolute;left:0;top:0;bottom:0;width:var(--detail-width);z-index:6;box-shadow:12px 0 24px #111b184d}
+}
+
+.focused-shell .situation-drawer-host{position:absolute;inset:0 0 0 auto;grid-column:auto;grid-row:auto;width:min(440px,calc(100% - var(--rail-width)));z-index:7;border-left:1px solid #c4b28070;border-right:0;box-shadow:-12px 0 24px #111b184d}.situation-map-button{position:absolute;right:18px;bottom:16px;z-index:4;display:flex;align-items:center;gap:6px;padding:4px 9px;background:#203027f5;border:1px solid #bca37180;color:#e6d2a4;font-size:11px}.situation-map-button b{color:#e9b079}.focused-shell .map-stage .map-legend{max-width:calc(100% - 150px)}

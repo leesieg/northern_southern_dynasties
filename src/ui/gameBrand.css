@@ -1,0 +1,6 @@
+/* Transparent source art includes breathing room; cover trims only that padding. */
+.focused-shell .brand.game-brand{width:250px;flex:0 0 250px;align-self:center}
+.focused-shell .brand.game-brand .game-brand-title{display:block;width:100%;height:62px;margin:0;line-height:0;font-size:0;overflow:hidden}
+.game-brand-title img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;pointer-events:none}
+@media(max-width:1100px){.focused-shell .brand.game-brand{width:172px;flex-basis:172px}.focused-shell .brand.game-brand .game-brand-title{height:46px}}
+@media(max-width:900px){.focused-shell .brand.game-brand{width:128px;flex-basis:128px}.focused-shell .brand.game-brand .game-brand-title{height:36px}}

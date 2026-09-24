@@ -1,0 +1,110 @@
+{
+  "gao-huan": {
+    "source": "/art/portraits/painted-c/roster/gao-huan-base.png",
+    "width": 1024,
+    "height": 1536,
+    "paired": false
+  },
+  "xiao-yan": {
+    "source": "/art/portraits/painted-c/roster/xiao-yan-base.png",
+    "width": 1024,
+    "height": 1536,
+    "paired": false
+  },
+  "female": {
+    "source": "/art/portraits/painted-c/roster/female-base.png",
+    "width": 1024,
+    "height": 1536,
+    "paired": false
+  },
+  "dugu-xin": {
+    "source": "/art/portraits/painted-c/roster/dugu-xin.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "yuwen-tai": {
+    "source": "/art/portraits/painted-c/roster/yuwen-tai.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "xiao-gang": {
+    "source": "/art/portraits/painted-c/roster/xiao-gang.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "xiao-yi": {
+    "source": "/art/portraits/painted-c/roster/xiao-yi.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "gao-cheng": {
+    "source": "/art/portraits/painted-c/roster/gao-cheng.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "gao-yang": {
+    "source": "/art/portraits/painted-c/roster/gao-yang.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "yuan-baoju": {
+    "source": "/art/portraits/painted-c/roster/yuan-baoju.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "yuan-qin": {
+    "source": "/art/portraits/painted-c/roster/yuan-qin.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "fictional": {
+    "source": "/art/portraits/painted-c/roster/fictional.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "child": {
+    "source": "/art/portraits/painted-c/roster/child.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "female-north": {
+    "source": "/art/portraits/painted-c/roster/female-north.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "lou-zhaojun": {
+    "source": "/art/portraits/painted-c/roster/lou-zhaojun.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "wang-lingbin": {
+    "source": "/art/portraits/painted-c/roster/wang-lingbin.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "xu-zhaopei": {
+    "source": "/art/portraits/painted-c/roster/xu-zhaopei.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  },
+  "chen-baxian": {
+    "source": "/art/portraits/painted-c/roster/chen-baxian.png",
+    "width": 1448,
+    "height": 1086,
+    "paired": true
+  }
+}
