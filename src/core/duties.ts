@@ -75,7 +75,7 @@ function finish(w:World,t:Duty,success:boolean,reason:string){
  const chief=chiefOfDuty(w),merit=success?20:0,opinion=success?12:-8;
  fiscalRecord(w,'west','task:0',t.started?'expense':centralAccount('west'),t.funds.coins,t.started?'天水粮务结算':'天水粮务退回结余');
  if(!t.started){const treasury=w.realm!.treasuries.west;treasury.coins=Math.min(1_000_000,treasury.coins+t.funds.coins);treasury.grain=Math.min(1_000_000,treasury.grain+t.funds.grain);}
- if(success){const city=w.realm!.cities.tianshui;city.order=Math.min(100,city.order+12);city.prosperity=Math.min(100,city.prosperity+4);const army=w.realm!.armies.find(a=>a.realm==='west'&&a.location==='tianshui');if(army)army.supply=Math.min(120,army.supply+60);}
+ if(success){const city=w.realm!.cities.tianshui;city.order=Math.min(100,city.order+12);city.prosperity=Math.min(100,city.prosperity+4);const army=w.realm!.armies.find(a=>a.realm==='west'&&a.location==='tianshui');if(army)army.supply=Math.min(600,army.supply+60);}
  else w.realm!.cities.tianshui.order=Math.max(0,w.realm!.cities.tianshui.order-8);
  if(isAlive(w,t.officer)){const g=governmentOf(w,'west')!;g.merit[t.officer]=Math.min(100,g.merit[t.officer]+merit);if(chief&&chief!==t.officer){changeRelationOpinion(w,chief,t.officer,opinion);changeRelationOpinion(w,t.officer,chief,opinion);}}
  t.result={day:w.day,success,reason,merit,opinion,returned:!t.started};phase(w,t,'closed');

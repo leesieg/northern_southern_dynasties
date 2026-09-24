@@ -38,9 +38,9 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
   const target='xiao-yi';w.social!.opinions[['xiao-gang',target].sort().join('|')]=90;act(w,{type:'court',action:'convince',target});expect(courtOf(w)!.members[target]).toBe('reform');expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('玩家执政奏议可明确批准，逾期否决；政体停用时也清理到期奏议',()=>{
-  const w=start();resources(w);act(w,{type:'court',action:'petition'});act(w,{type:'court',action:'resolve',accept:true});expect(courtOf(w)!.petition).toBeNull();expect(governmentOf(w)!.legitimacy).toBe(73);pass(w,90);
-  act(w,{type:'court',action:'petition'});const support=governmentOf(w)!.support;pass(w,15);expect(governmentOf(w)!.support).toBe(support-5);expect(courtOf(w)!.petition).toBeNull();
-  pass(w,75);act(w,{type:'court',action:'petition'});governmentOf(w)!.type='feudal';pass(w,15);expect(courtOf(w)!.petition).toBeNull();expect(parseWorld(serializeWorld(w))).toEqual(w);
+  const w=start();resources(w);courtOf(w)!.petition={group:'dynastic',sponsor:'xiao-gang',due:w.day+15};act(w,{type:'court',action:'resolve',accept:true});expect(courtOf(w)!.petition).toBeNull();expect(governmentOf(w)!.legitimacy).toBe(73);pass(w,90);
+  courtOf(w)!.petition={group:'dynastic',sponsor:'xiao-gang',due:w.day+15};const support=governmentOf(w)!.support;pass(w,15);expect(governmentOf(w)!.support).toBe(support-5);expect(courtOf(w)!.petition).toBeNull();
+  pass(w,75);courtOf(w)!.petition={group:'dynastic',sponsor:'xiao-gang',due:w.day+15};governmentOf(w)!.type='feudal';pass(w,15);expect(courtOf(w)!.petition).toBeNull();expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('财政枯竭与天命受疑推动危局，影响真实收益并暂停改革；整饬可恢复',()=>{
   const w=start();resources(w);act(w,{type:'government',action:'adopt',government:'feudal'});const c=courtOf(w)!,g=governmentOf(w)!;c.tension=70;g.legitimacy=20;w.realm!.treasuries.liang.coins=0;w.realm!.treasuries.liang.grain=0;w.day=30;advanceCourts(w);expect(c.phase).toBe('chaos');expect(courtBonus(w,'liang').tax).toBe(-25);expect(governmentTaskPause(w,'liang')).toContain('危局');const tension=c.tension;advanceCourts(w);expect(c.tension).toBe(tension);resources(w);g.legitimacy=90;g.support=90;act(w,{type:'court',action:'audit'});for(let i=0;i<15;i++){w.day+=30;advanceCourts(w);}expect(c.phase).toBe('stable');expect(courtBonus(w,'liang').tax).toBe(0);
@@ -52,7 +52,7 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
   expect(Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,[c.owner,c.controller]]))).toEqual(controls);expect(officeHierarchy(w).some(n=>n.id.startsWith('office:546:')&&n.realm==='liang')).toBe(false);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('拥立途中失去集团支持或都城暂停；撤回不返款，不能并行改革',()=>{
-  const w=claimant();act(w,{type:'court',action:'found',mode:'usurp',name:'燕'});pass(w,5);courtOf(w)!.members['xiao-gang']='dynastic';governmentOf(w)!.merit['xiao-yan']=100;courtOf(w)!.boosts={};expect(foundingPause(w,'liang')).toContain('集团');pass(w,10);expect(courtOf(w)!.founding!.progress).toBe(5);
+  const w=claimant();act(w,{type:'court',action:'found',mode:'usurp',name:'燕'});pass(w,5);courtOf(w)!.members['xiao-gang']='dynastic';governmentOf(w)!.merit['xiao-gang']=100;courtOf(w)!.ministries.finance='xiao-gang';courtOf(w)!.boosts={};expect(foundingPause(w,'liang')).toContain('集团');pass(w,10);expect(courtOf(w)!.founding!.progress).toBe(5);
   expect(governmentReason(w,{type:'government',action:'succession',stage:'chen-regency'})).toContain('已有');const coins=w.realm!.treasuries.liang.coins;act(w,{type:'court',action:'cancel'});expect(w.realm!.treasuries.liang.coins).toBe(coins);expect(courtOf(w)!.founding).toBeNull();
  });
  it('75%实控且高天命的统一路线可以建朝并采用天朝制，未改动其他政权实体',()=>{

@@ -107,3 +107,5 @@ export const diplomaticColor=(w:World,to:Polity)=>{if(!w.realm||!w.characterId||
 
 export function commissionedEnvoyReason(w:World,from:RealmId,to:RealmId){if(!w.diplomacy||!governingAuthority(w,from))return '无可用外交机关';if(atWar(w,from,to))return '两国交战';if(w.diplomacy.missions.length>=6||w.diplomacy.missions.some(m=>m.from===from&&m.to===to))return '已有使团在途，请等候答复';if((diplomaticPair(w,from,to)?.cooldowns[from+'|improve']??0)>w.day)return '上次修好交涉后须间隔六十日';return '';}
 export function dispatchCommissionedEnvoy(w:World,from:RealmId,to:RealmId){const reason=commissionedEnvoyReason(w,from,to);if(reason)throw new Error(reason);diplomaticPair(w,from,to)!.cooldowns[from+'|improve']=w.day+60;dispatch(w,from,to,'improve');}
+/** Population raids worsen the existing war relationship without inventing a treaty. */
+export function recordRaid(w:World,from:RealmId,to:RealmId){const p=diplomaticPair(w,from,to);if(p)changeOpinion(p,-10,'war');if(w.diplomacy)w.diplomacy.credit[from]=Math.max(0,w.diplomacy.credit[from]-5);}

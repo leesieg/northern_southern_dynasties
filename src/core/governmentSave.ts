@@ -1,3 +1,4 @@
+import {relationshipPersonById} from '../data/relationships';
 import {publicFamily} from './publicSuccession';
 import {ageAt,isAlive} from './lifeState';
 import { validCourt,validDynastyName } from './courtSave';
@@ -20,7 +21,7 @@ export function validGovernments(w:World):boolean {
  if(!Array.isArray(state.regimes)||state.regimes.length<3||state.regimes.length>36||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
  if(!state.regimes.every(v=>obj(v)&&ids.includes(v.realm as never)))return false;
  for(const r of ids){const g=state.realms[r];if(!obj(g)||!governmentTypes.includes(g.type as never)||!text(g.dynasty)||!text(g.regimeId)||!person(g.ruler,r)||!unique(g.executives)||g.executives.length>2||!g.executives.every(id=>person(id,r))||!int(g.legitimacy,100)||!int(g.support,100)||!int(g.herd,1000)||!site(g.camp)||!int(g.lastCamp,w.day+90)||!obj(g.merit)||!obj(g.contracts)||!obj(g.cooldowns)||!unique(g.laws)||!unique(g.stages))return false;
- const roster=historicalCharacters.filter(c=>c.polity===r);if(Object.keys(g.merit).length!==roster.length||!roster.every(p=>Object.hasOwn(g.merit as object,p.id)&&int((g.merit as Record<string,unknown>)[p.id],100)))return false;
+ const roster=historicalCharacters.filter(c=>c.polity===r);if(Object.entries(g.merit).some(([id,n])=>!relationshipPersonById[id]||!int(n,100))||!roster.every(p=>Object.hasOwn(g.merit as object,p.id)&&int((g.merit as Record<string,unknown>)[p.id],100)))return false;
  if(!g.laws.every(id=>reformIds.includes(id as ReformId)&&reformDefinitions[id as ReformId].realm===r)||!reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial).every(id=>(g.laws as string[]).includes(id)))return false;
  if(!g.laws.every(id=>(reformDefinitions[id as ReformId].requires as readonly string[]).every(parent=>(g.laws as string[]).includes(parent))))return false;
  const route=successionIds.filter(id=>successionDefinitions[id].realm===r);if(!g.stages.every((id,i)=>id===route[i]))return false;

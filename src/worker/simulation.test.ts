@@ -100,11 +100,11 @@ describe('worker menu and save lifecycle without browser UI',()=>{
     await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(accepted.world);
   });
   it('persists court membership atomically and retains the original faction when saving fails',async()=>{
-    await request({type:'init'});const before=await request({type:'new',characterId:'xiao-yan',mode:'sandbox'});
+    await request({type:'init'});const before=await request({type:'new',characterId:'xiao-gang',mode:'sandbox'});
     const spy=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});
     const failed=await request({type:'command',command:{type:'court',action:'join',group:'reform'}});spy.mockRestore();expect(failed.world).toEqual(before.world);
     const accepted=await request({type:'command',command:{type:'court',action:'join',group:'reform'}});
-    expect(accepted.world.realm?.governments?.realms.liang.court?.members['xiao-yan']).toBe('reform');
+    expect(accepted.world.realm?.governments?.realms.liang.court?.members['xiao-gang']).toBe('reform');
     expect(accepted.world.realm!.influence).toBe(before.world.realm!.influence-10);
     await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(accepted.world);
   });

@@ -1,3 +1,4 @@
+import {allegianceRealm} from './officeEligibility';
 import {retinueDestination,retinueBusy} from './retinue';
 import {lifestyleFocuses} from '../data/lifestyles';
 import {characterById} from '../data/characters';
@@ -79,7 +80,7 @@ export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>
  return {reason,cost:d?.cost??0,days:c.delegate?(npcRoute(w,c.delegate,c.site)?.days??0):(route?.days??0),food:route?.food??0,duration:d?.days??0};
 }
 function npcRoute(w:World,id:string,to:string){const from=personResidence(w,id).site,r=relationshipPersonById[id]?.realm??characterById[id]?.polity;if(from===to)return {days:0,route:[from],durations:[]};return r?planRoute(from,to,site=>!w.realm||canEnter(w,r,w.realm.cities[site].controller,id)):null;}
-function dispatchNPC(w:World,id:string,to:string){const s=w.mobility?.residences[id],route=npcRoute(w,id,to);if(!s||s.journey||!route||s.site===to)return;s.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}
+export function dispatchNPC(w:World,id:string,to:string){const s=w.mobility?.residences[id],route=npcRoute(w,id,to);if(!s||s.journey||!route||s.site===to)return;s.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}
 export function mobilityReason(w:World,c:MobilityCommand):string{
  if(!w.mobility||!w.realm||!w.characterId||w.campaign?.status!=='active')return '此局没有行旅事务';
  if(c.action==='plan')return activityQuote(w,c).reason;
@@ -127,7 +128,7 @@ function resolve(w:World,a:Activity,choice:'measured'|'decisive'){
  if(['tour','training','audience'].includes(a.kind)){const n=personal?6:3;g.merit[id]=clamp((g.merit[id]??0)+n);result.push(politicalName(id)+'功绩 +'+n);}
  if(a.kind==='tour'){const delta=Math.min(100-city.order,(bold?9:6)+Math.floor(score.stewardship/5));city.order+=delta;city.prosperity=clamp(city.prosperity+(bold?1:3));result.push('秩序 +'+delta+'，繁荣 +'+(bold?1:3));if(bold&&g.court){g.court.corruption=clamp(g.court.corruption-3);result.push('积弊 −3');}}
  if(a.kind==='succession'&&w.service&&a.target){const career=w.service.careers[a.target];if(career){career.economy=Math.min(100000,career.economy+1);result.push('继任者治理历练 +1');}}
- if(a.kind==='training'){const army=w.realm!.armies.find(b=>b.realm===r&&b.location===a.site&&!b.journey);if(army){const morale=Math.min(100-army.morale,gain),troops=Math.min(600-army.troops,bold?30:15);army.morale+=morale;army.troops+=Math.max(0,troops);result.push('士气 +'+morale+'，兵员 +'+Math.max(0,troops));}else result.push('驻军已离开，未产生军队增益');}
+ if(a.kind==='training'){const army=w.realm!.armies.find(b=>b.realm===r&&b.location===a.site&&!b.journey);if(army){const morale=Math.min(100-army.morale,gain),troops=Math.max(0,Math.min(600-army.troops,bold?30:15,city.population-100));army.morale+=morale;army.troops+=troops;city.population-=troops;result.push('士气 +'+morale+'，兵员 +'+Math.max(0,troops));}else result.push('驻军已离开，未产生军队增益');}
  if(['family','succession'].includes(a.kind)){for(const person of [id,a.target].filter((v):v is string=>!!v)){const before=w.families?.prestige[person]??0;awardPrestige(w,person,'friendship');const gain=(w.families?.prestige[person]??0)-before;if(gain)result.push(politicalName(person)+'家族威望 +'+gain);}}
  if(personal&&w.social){const delta=bold?6:-8;const before=w.social.stress;w.social.stress=clamp(before+delta);const actual=w.social.stress-before;result.push('压力 '+(actual>0?'+':'')+actual);}
  end(w,a,'done',result.join('；'));
@@ -137,11 +138,12 @@ export function advanceMobility(w:World){
  const offices=officeHierarchy(w),executives=Object.fromEntries(realms.map(r=>[r,governingExecutives(w,r)]));
  for(const [id,location] of Object.entries(s.residences)){
   if(id===w.characterId||!isAlive(w,id)||commandArmy(w,id)||lifeOf(w,id)?.illness?.severity===3)continue;
-  const j=location.journey;if(j){const realm=relationshipPersonById[id]?.realm;if(realm&&!canEnter(w,realm,w.realm.cities[j.route[j.leg+1]].controller,id)){location.journey=null;continue;}j.elapsed++;if(j.elapsed>=j.durations[j.leg]){location.site=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)location.journey=null;}continue;}
+  const j=location.journey;if(j){const realm=allegianceRealm(w,id);if(realm&&!canEnter(w,realm,w.realm.cities[j.route[j.leg+1]].controller,id)){location.journey=null;continue;}j.elapsed++;if(j.elapsed>=j.durations[j.leg]){location.site=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)location.journey=null;}continue;}
+  const posting=w.realm.offices.find(o=>o.candidate===id);if(posting&&posting.due<=w.day+1){dispatchNPC(w,id,posting.site);continue;}
   const appointment=s.appointments[id];if(appointment&&appointment.until>=w.day){dispatchNPC(w,id,appointment.site);continue;}
   const task=w.service?.tasks.find(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id));const duty=w.duties?.task;
   const pendingActivity=s.activities.find(a=>a.delegate===id&&!['done','cancelled'].includes(a.phase));
-  const held=offices.filter(n=>n.holder===id&&n.active),office=held.find(n=>n.kind==='city'&&n.site===location.site)??held.find(n=>n.kind==='city')??held.find(n=>n.kind==='office');const realm=relationshipPersonById[id]?.realm;
+  const held=offices.filter(n=>n.holder===id&&n.active),office=held.find(n=>n.kind==='city'&&n.site===location.site)??held.find(n=>n.kind==='city')??held.find(n=>n.kind==='office');const realm=allegianceRealm(w,id);
   const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??(office&&realm?capital(realm):undefined))??(realm&&executives[realm].includes(id)?capital(realm):characterById[id]?.home);
   if(destination&&!commandArmy(w,id))dispatchNPC(w,id,destination);
  }

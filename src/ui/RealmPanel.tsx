@@ -17,7 +17,6 @@ import { GovernmentPanel } from './GovernmentPanel';
 import { politicalName,governingAuthority } from '../core/government';
 import { Resource } from './ArtIcon';
 import { useState,useEffect } from 'react';
-import { characterById } from '../data/characters';
 import { siteById } from '../data/scenario';
 import { eventDefinitions,executive,playerRealm,realmReason } from '../core/realm';
 import type { World,GameCommand } from '../core/types';
@@ -41,7 +40,7 @@ export function RealmPanel({world:w,pending,send,onCity,onPerson,tab,onTab,court
  {tab==='court'&&<CourtPanel tab={courtTab} onTab={onCourtTab} world={w} pending={pending} send={send} onPerson={onPerson}/>}
  {tab==='hierarchy'&&<OfficeHierarchy send={send} pending={pending} world={w} onPerson={onPerson}/>}
  {tab==='government'&&<GovernmentPanel onPerson={onPerson} world={w} pending={pending} send={send}/>}
- {tab==='politics'&&<><section><h3>授权与任职</h3><p>{executive(w)?'你拥有本政权的任命权。':'本政权任命权掌握在'+politicalName(governingAuthority(w,r))+'手中。可通过执政者接受度 60，或功绩（请任按门第调整／军务 40）请求授权。'}</p><p>任命需要影响力，文书送达后权限生效，前任权限撤销；城市失守则文书失效。官僚制家业交接不继承公职；封建制领有按政体传承。</p></section><label>城市 <select value={friendly.some(([id])=>id===selected)?selected:''} onChange={e=>setSelected(e.target.value)}><option value="" disabled>选择本国城市</option>{friendly.map(([id,c])=><option key={id} value={id}>{siteById[id].name} · {c.governor?characterById[c.governor].name:'官署代管'}</option>)}</select></label>{city?.owner===r&&<CityOfficeSeat key={selected} world={w} site={selected} pending={pending} send={send} onPerson={onPerson}/>}{action({type:'realm',action:'mandate'},s.mandate?'已有军务授权':'请求军务授权 · 40 影响力')}<h3>在途任命文书</h3>{s.offices.length?s.offices.map(o=><p key={o.site}><button onClick={()=>onPerson(o.candidate)}>{characterById[o.candidate].name} →</button> {siteById[o.site].name} · 余 {o.due-w.day} 日</p>):<p>暂无在途文书。</p>}</>}
+ {tab==='politics'&&<><section><h3>授权与任职</h3><p>{executive(w)?'你拥有本政权的任命权。':'本政权任命权掌握在'+politicalName(governingAuthority(w,r))+'手中。可通过执政者接受度 60，或功绩（请任按门第调整／军务 40）请求授权。'}</p><p>任命需要影响力，文书送达后权限生效，前任权限撤销；城市失守则文书失效。官僚制家业交接不继承公职；封建制领有按政体传承。</p></section><label>城市 <select value={friendly.some(([id])=>id===selected)?selected:''} onChange={e=>setSelected(e.target.value)}><option value="" disabled>选择本国城市</option>{friendly.map(([id,c])=><option key={id} value={id}>{siteById[id].name} · {c.governor?politicalName(c.governor):'官署代管'}</option>)}</select></label>{city?.owner===r&&<CityOfficeSeat key={selected} world={w} site={selected} pending={pending} send={send} onPerson={onPerson}/>}{action({type:'realm',action:'mandate'},s.mandate?'已有军务授权':'请求军务授权 · 40 影响力')}<h3>在途任命文书</h3>{s.offices.length?s.offices.map(o=><p key={o.site}><button onClick={()=>onPerson(o.candidate)}>{politicalName(o.candidate)} →</button> {siteById[o.site].name} · 余 {o.due-w.day} 日</p>):<p>暂无在途文书。</p>}</>}
 
  </div>;
 }

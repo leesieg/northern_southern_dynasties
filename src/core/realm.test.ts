@@ -48,7 +48,7 @@ describe('沙盒政治经济军事',()=>{
   w.people[0].home=origin; // Army starting position is configured below; restore identity home for valid saves.
   act(w,{type:'realm',action:'muster'});w.people[0].home='jiankang';act(w,{type:'realm',action:'war',site:target});
   // Isolate siege from field battle in this rule test.
-  s.treasuries.east.coins=0;s.treasuries.east.grain=0;s.treasuries.liang.grain=10000;
+  s.treasuries.east.coins=0;s.treasuries.east.grain=0;s.treasuries.liang.grain=10000;s.cities[origin].grain=10000;
   act(w,{type:'realm',action:'march',site:target});for(let d=0;d<100&&s.cities[target].controller!=='liang';d++){s.treasuries.east.coins=0;s.treasuries.east.grain=0;advance(w);if(s.event)act(w,{type:'realm',action:'event',choice:'decline'});}
   expect(s.cities[target].controller).toBe('liang');expect(s.cities[target].owner).toBe('east');validate(w);
   act(w,{type:'realm',action:'peace'});expect(s.cities[target].owner).toBe('liang');expect(s.war).toBeNull();expect(s.truces['east|liang']).toBe(w.day+360);validate(w);
@@ -63,7 +63,7 @@ describe('沙盒政治经济军事',()=>{
   if(field==='treasury')s.treasuries.liang.coins=-1;
   if(field==='governance')w.holdings.governedCities.push('changan');
   if(field==='army')s.armies.push({realm:'liang',location:'jiankang',troops:600,morale:100,supply:999,journey:null,siege:0});
-  if(field==='city')s.cities.jiankang.households=0;
+  if(field==='city')s.cities.jiankang.population=0;
   if(field==='war')s.war={attacker:'liang',defender:'liang',target:'jiankang',started:0,score:0};
   if(field==='event')s.event={kind:'flood',site:'unknown',day:0};
   expect(()=>serializeWorld(w)).toThrow();

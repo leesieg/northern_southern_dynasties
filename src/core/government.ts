@@ -1,3 +1,5 @@
+import {enactPoliticalAction} from './politicalActions';
+import {officeName,allegianceRealm} from './officeEligibility';
 import {clanStanding} from './clans';
 import {nominationReason,type NominateCommand,type PublicHeirs} from './publicSuccession';
 import {isAlive} from './lifeState';
@@ -24,14 +26,14 @@ const cap=(n:number,max=100)=>Math.max(0,Math.min(max,n));
 const capital:Record<RealmId,string>={liang:'jiankang',east:'ye',west:'changan'};
 const initialRulers:Record<RealmId,string>={liang:'xiao-yan',east:'yuan-shanjian',west:'yuan-baoju'};
 const initialExecutives:Record<RealmId,string[]>={liang:['xiao-yan'],east:['gao-huan','gao-cheng'],west:['yuwen-tai']};
-export const currentRealm=(w:World)=>characterById[w.characterId!].polity as RealmId;
+export const currentRealm=(w:World)=>allegianceRealm(w,w.characterId!)??characterById[w.characterId!].polity as RealmId;
 export function newGovernments(w:World):GovernmentState{
  const day=w.day;const make=(r:RealmId):Government=>({type:'meritocratic',dynasty:r,regimeId:r+'-0',ruler:initialRulers[r],executives:[...initialExecutives[r]],legitimacy:65,support:65,merit:Object.fromEntries(historicalCharacters.filter(c=>c.polity===r).map(c=>[c.id,20])),herd:0,camp:capital[r],lastCamp:0,contracts:{},laws:reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial),stages:[],task:null,cooldowns:{}});const realms={liang:make('liang'),east:make('east'),west:make('west')};
  return {version:1,since:day,lastMonthly:Math.floor(day/30)*30,realms,regimes:realmIds.map(r=>({id:r+'-0',realm:r,dynasty:r,ruler:initialRulers[r],from:day,until:null,predecessor:null,source:null,cities:Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r)})),history:[]};
 }
 export function governmentOf(w:World,r=currentRealm(w)){return w.realm?.governments?.realms[r];}
 export function regimeName(w:World|undefined,r:Polity){return r==='frontier'?polities.frontier.name:(w?.realm?.governments?.regimes.find(v=>v.id===w.realm?.governments?.realms[r]?.regimeId)?.name??dynastyNames[w?.realm?.governments?.realms[r]?.dynasty??r]);}
-export const politicalName=(id:string)=>characterById[id]?.name??politicalFigures[id]?.name??'未录人物';
+export function politicalName(id:string){return officeName(id);}
 export function governingExecutives(w:World,r=currentRealm(w)):string[]{const g=governmentOf(w,r);const c=validRegency(w,r);return (c&&c.origin!=='scenario'?[c.controller]:g?.executives??initialExecutives[r]).filter(id=>isAlive(w,id));}
 export function governmentExecutive(w:World){if(!w.characterId)return false;return governingExecutives(w).includes(w.characterId);}
 export function governingAuthority(w:World,r=currentRealm(w)){return governingExecutives(w,r)[0];}
@@ -46,9 +48,9 @@ export function governmentBonus(w:World,r:Polity,site?:string){
  const court=courtBonus(w,r as RealmId);return {tax:tax+court.tax,pay:pay+court.pay,attack:attack+court.attack+allegianceBonus(w,r as RealmId)};
 }
 export function appointmentReason(w:World,candidate:string,site:string){
- if(!isAlive(w,candidate))return '不能任命已故人物';const g=governmentOf(w);if(!g)return '';if(['meritocratic','celestial','khanate'].includes(g.type)&&(g.merit[candidate]??0)<20-(clanStanding(w,candidate)?.merit??0))return `候选人功绩需达到 ${20-(clanStanding(w,candidate)?.merit??0)}${clanStanding(w,candidate)?.elite?'（已计世族荫望）':''}，可先考课或治理城市`;
+ if(!isAlive(w,candidate))return '不能任命已故人物';const g=governmentOf(w);if(!g)return '';if(!governmentExecutive(w)&&['meritocratic','celestial','khanate'].includes(g.type)&&(g.merit[candidate]??0)<20-(clanStanding(w,candidate)?.merit??0))return `候选人功绩需达到 ${20-(clanStanding(w,candidate)?.merit??0)}${clanStanding(w,candidate)?.elite?'（已计世族荫望）':''}，可先考课或治理城市`;
  const incumbent=w.realm!.cities[site].governor;
- if(g.type==='feudal'&&incumbent&&characterById[incumbent].family!==characterById[candidate]?.family)return '封建领有不得直接改授异族：需先改革政体';
+ if(g.type==='feudal'&&incumbent&&characterById[incumbent]?.family!==characterById[candidate]?.family)return '封建领有不得直接改授异族：需先改革政体';
  return '';
 }
 export function meritAccess(w:World,kind:'office'|'military'){
@@ -96,6 +98,7 @@ export function governmentReason(w:World,c:GovernmentCommand):string{
 function log(w:World,r:RealmId,kind:string,target:string,text:string){const s=w.realm!.governments!;s.history.push({day:w.day,realm:r,kind,target,text});s.history=s.history.slice(-80);w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 export function actGovernment(w:World,c:GovernmentCommand){
  const reason=governmentReason(w,c);if(reason)throw new Error(reason);const s=w.realm!,r=currentRealm(w),g=governmentOf(w)!,t=s.treasuries[r],id=w.characterId!;
+ if(c.action==='adopt'||c.action==='law')enactPoliticalAction(w,r,'reform');
  if(c.action==='nominate'){const heirs=g.heirs??={ruler:null,executive:null,dynasty:null};heirs[c.office]=c.candidate;if(c.office==='ruler')heirs.dynasty=c.candidate?c.name?.trim()||null:null;if(c.candidate)s.influence-=20;log(w,r,'council',c.office,c.candidate?politicalName(c.candidate)+'被定为'+(c.office==='ruler'?'君位继承人':'执政继任人')+'。':'撤销指定继承，依亲属关系承继。');return;}
  if(c.action==='appraise'){w.people[0].coins-=20;g.merit[id]=cap((g.merit[id]??0)+10);g.cooldowns[id+'|appraise']=w.day+30;log(w,r,'appraise',id,politicalName(id)+'完成考课，功绩 +10（玩法结算）。');return;}
  if(c.action==='council'){s.influence-=15;t.coins-=40;g.support=cap(g.support+12);g.legitimacy=cap(g.legitimacy+5);g.cooldowns.council=w.day+30;log(w,r,'council',g.type,'议政争取支持：支持 +12、合法性 +5。');return;}
@@ -117,7 +120,7 @@ function completeTask(w:World,r:RealmId){
  if(task.kind==='succession'){
  const d=successionDefinitions[task.target as SuccessionId];delete g.heirs;g.stages.push(task.target as SuccessionId);g.ruler=d.ruler;g.executives=[...d.executives];
  // Withdraw old authority and pending appointments; a new court requires fresh investiture.
- s.offices=s.offices.filter(o=>characterById[o.candidate].polity!==r);
+ s.offices=s.offices.filter(o=>allegianceRealm(w,o.candidate)!==r);
  for(const city of Object.values(s.cities))if(city.owner===r){city.governor=null;city.order=cap(city.order-10);}
  if(d.nextDynasty){const state=s.governments!,old=state.regimes.find(v=>v.id===g.regimeId)!;old.until=w.day;g.dynasty=d.nextDynasty;g.regimeId=r+'-'+g.dynasty;state.regimes.push({id:g.regimeId,realm:r,dynasty:g.dynasty,ruler:g.ruler,from:w.day,until:null,predecessor:old.id,source:d.source.url,cities:nativeCities(w,r)});g.legitimacy=50;g.support=55;s.treasuries[r].coins=Math.floor(s.treasuries[r].coins*.85);const army=s.armies.find(a=>a.realm===r);if(army)army.morale=cap(army.morale-20);}
  if(r===currentRealm(w)){s.mandate=governmentExecutive(w);w.holdings.governedCities=[];}

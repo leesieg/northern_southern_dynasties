@@ -49,9 +49,9 @@ describe('生活重心',()=>{
   act(d,{type:'interact',target:'xiao-gang',action:'gift'});expect(d.people[0].coins).toBe(coins-24);expect(d.social!.opinions['xiao-yan|xiao-gang']).toBe(opinion+20);
  });
  it('军事军粮和军饷实际降低，敌军不会获得玩家技能',()=>{
-  const w=trained('martial'),a=army('liang'),b=army('east','ye');w.realm!.armies=[a,b];expect(armyDailyFood(w,a)).toBe(26);expect(armyMonthlyPay(w,a)).toBe(51);expect(armyDailyFood(w,b)).toBe(30);
-  advanceRealm(w);expect(a.supply).toBe(94);expect(b.supply).toBe(90);
-  w.realm!.mandate=false;expect(armyDailyFood(w,a)).toBe(30);
+  const w=trained('martial'),a=army('liang'),b=army('east','ye');w.realm!.armies=[a,b];expect(armyDailyFood(w,a)).toBe(9);expect(armyMonthlyPay(w,a)).toBe(51);expect(armyDailyFood(w,b)).toBe(10);
+  advanceRealm(w);expect(a.supply).toBe(111);expect(b.supply).toBe(110);
+  w.realm!.mandate=false;expect(armyDailyFood(w,a)).toBe(10);
  });
  it('军事技能提高实际野战伤害并缩短围城',()=>{
   const w=trained('martial');w.realm!.war={attacker:'liang',defender:'east',target:'ye',started:w.day,score:0};w.realm!.armies=[army('liang','ye'),army('east','ye')];advanceRealm(w);

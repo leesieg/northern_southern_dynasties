@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ArtIcon } from './ArtIcon';
 import { ministries,ministryIds,type MinistryId } from '../data/court';
 import { dynastyNames } from '../data/governments';
-import { historicalCharacters } from '../data/characters';
+import {officeCandidates} from '../core/officeEligibility';
 import { governmentOf,governingExecutives,currentRealm,politicalName,governmentExecutive } from '../core/government';
 import { courtOf,courtEnabled,courtReason,ministryCompetent,foundingPause,courtSalary,type CourtCommand } from '../core/court';
 import {PositionSeat,PersonSelectionDialog} from './PersonSelection';
@@ -18,7 +18,7 @@ export type CourtTab='succession'|'situation'|'movements'|'ministries'|'dynasty'
 function LegacyCourtPanel({world:w,pending,send,onPerson,tab,onTab}:{world:World;pending:boolean;send:(c:GameCommand)=>void;onPerson:(id:string)=>void;tab:CourtTab;onTab:(tab:CourtTab)=>void}){
  const [confirmation,setConfirmation]=useState<string|null>(null),[name,setName]=useState(''),[candidate,setCandidate]=useState(w.characterId!),[office,setOffice]=useState<MinistryId|null>(null);
  const r=currentRealm(w),g=governmentOf(w)!,c=courtOf(w);if(!c)return <p>重新读取存档后可启用朝廷系统。</p>;
- const eligible=historicalCharacters.filter(p=>p.polity===r&&isAlive(w,p.id)),enabled=courtEnabled(w,r);
+ const eligible=officeCandidates(w,r).filter(p=>isAlive(w,p.id)),enabled=courtEnabled(w,r);
  const person=(id:string)=><button className="court-person" onClick={()=>onPerson(id)}>{politicalName(id)} ↗</button>;
  const action=(command:CourtCommand,label:string,consequence?:string)=>{const reason=courtReason(w,command),key=JSON.stringify(command);return <div className="court-action"><button disabled={pending||!!reason} onClick={()=>{if(consequence&&confirmation!==key){setConfirmation(key);return;}setConfirmation(null);send(command);}}>{confirmation===key?'确认：':''}{label}</button>{reason&&<small>{reason}</small>}{confirmation===key&&<aside role="status"><p>{consequence}</p><button onClick={()=>setConfirmation(null)}>取消</button></aside>}</div>;};
  return <div className="court-panel">

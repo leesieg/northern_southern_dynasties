@@ -17,7 +17,7 @@ export interface Holdings {
 }
 export const cityBuildings:Record<CityBuilding,{name:string;cost:number;days:number;effect:string}>={
   market:{name:'市肆',cost:80,days:15,effect:'每级每 30 日营建收益 +8 钱'},
-  granary:{name:'城仓',cost:60,days:12,effect:'每级每 30 日可用行粮 +10 日份'},
+  granary:{name:'城仓',cost:60,days:12,effect:'公粮仓容每级 +200，降低保管损耗；教学局每期行粮 +10'},
   hostel:{name:'驿舍',cost:70,days:14,effect:'每级使本城整备行粮少花 2 钱'},
 };
 export const estateBuildings:Record<EstateBuilding,{name:string;cost:number;days:number;effect:string}>={

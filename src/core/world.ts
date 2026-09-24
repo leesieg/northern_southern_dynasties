@@ -1,8 +1,10 @@
+import {reconcileOfficeAllegiance} from './officeEligibility';
+import {ensurePopulation,actPopulation,advancePopulation} from './population';
 import {ensureFiscal,actFiscal,advanceFiscal,fiscalSnapshot,reconcileFiscal} from './treasury';
 import {ensurePersonalInfluence,snapshotInfluence,restoreInfluence,advancePersonalInfluence} from './personalInfluence';
 import {ensureRetinue,actRetinue,advanceRetinue} from './retinue';
 import {ensureMobility,actMobility,departureReason,advanceMobility,syncArmyTravel} from './mobility';
-import {ensureService,actService,advanceService} from './assignments';
+import {ensureService,actService,advanceService,reconcileServiceAllegiance} from './assignments';
 import {ensureDuties,actDuty,advanceDuties} from './duties';
 import {ensureLife,advanceLife,actLife} from './life';
 import {isAlive,lifeOf,newLifeState} from './lifeState';
@@ -88,7 +90,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   ensureDiplomacy(w);
   ensureLifestyle(w);
   ensureLife(w);
-  ensureMobility(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);
+  ensureMobility(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);ensurePopulation(w);
   return w;
 }
 function record(world: World, person: Person, text: string) {
@@ -96,7 +98,7 @@ function record(world: World, person: Person, text: string) {
   world.chronicle = world.chronicle.slice(-100);
 }
 export function act(world: World, command: GameCommand): void {
- const before=fiscalSnapshot(world);actCommand(world,command);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
+ const before=fiscalSnapshot(world);actCommand(world,command);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
 }
 function actCommand(world: World, command: GameCommand): void {
   const person = world.people[0];
@@ -117,6 +119,7 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='lifestyle'){actLifestyle(world,command);return;}
   if(command.type==='court'){actCourt(world,command);syncDiplomacy(world);return;}
   if(command.type==='government'){actGovernment(world,command);syncDiplomacy(world);return;}
+  if(command.type==='population'){actPopulation(world,command);return;}
   if(command.type==='realm'){actRealm(world,command);return;}
   if(world.realm?.event)throw new Error('请先在政务中处理待决事务。');
   if(command.type==='commission'){commission(world);evaluateCampaign(world);return;}
@@ -178,6 +181,7 @@ export function advance(world: World, days = 1): void {
     advanceFamilies(world);
     advanceSocial(world);
     advanceGovernments(world);
+    advancePopulation(world);
     advanceRealm(world);
     advanceFiscal(world);
     syncArmyTravel(world);

@@ -31,12 +31,12 @@ describe('general appointments and service lifecycle',()=>{
   expect(()=>act(w,{type:'service',action:'open',kind:'relief',site:'ye',officer:'dugu-xin'})).toThrow('本国');
   expect(()=>act(w,{type:'service',action:'open',kind:'commerce',site:'tianshui',officer:'yuan-qin'})).toThrow('自荐');
  });
- it('keeps public funds separate, refuses repeated payment and refunds only before starting',()=>{
+ it('keeps public funds separate, refuses repeated payment and refunds unspent allocations',()=>{
   const w=start(),t=open(w);actService(w,{type:'service',action:'approve',id:t.id},'yuwen-tai');act(w,{type:'service',action:'plan',id:t.id,plan:'thorough'});
   const personal=w.people[0].coins,b=assignmentBudget('relief','thorough'),money=w.realm!.treasuries.west.coins;
   actService(w,{type:'service',action:'approve',id:t.id},'yuwen-tai');expect(w.realm!.treasuries.west.coins).toBe(money-b.coins);expect(w.people[0].coins).toBe(personal);
   expect(()=>actService(w,{type:'service',action:'approve',id:t.id},'yuwen-tai')).toThrow();actService(w,{type:'service',action:'cancel',id:t.id},'yuwen-tai');expect(w.realm!.treasuries.west.coins).toBe(money);
-  const next=prepared();const balance=next.w.realm!.treasuries.west.coins;actService(next.w,{type:'service',action:'cancel',id:next.t.id},'yuwen-tai');expect(next.w.realm!.treasuries.west.coins).toBe(balance);validateWorld(next.w);
+  const next=prepared();const balance=next.w.realm!.treasuries.west.coins;actService(next.w,{type:'service',action:'cancel',id:next.t.id},'yuwen-tai');expect(next.w.realm!.treasuries.west.coins).toBe(balance+next.t.funds.coins);validateWorld(next.w);
  });
  it('refuses insufficient budget without mutation',()=>{const w=start(),t=open(w);actService(w,{type:'service',action:'approve',id:t.id},'yuwen-tai');act(w,{type:'service',action:'plan',id:t.id,plan:'urgent'});w.realm!.treasuries.west.coins=0;const before=structuredClone(w);expect(()=>actService(w,{type:'service',action:'approve',id:t.id},'yuwen-tai')).toThrow('公库');expect(w).toEqual(before);});
  it('lets helpers accept, makes abilities and relationships affect actual progress, and records contribution',()=>{

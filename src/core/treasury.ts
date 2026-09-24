@@ -1,7 +1,7 @@
 import {courtSalary} from './court';
 import {ancestorsOf,territoryNodes} from '../data/territorialHierarchy';
 import {siteById} from '../data/scenario';
-import {characterById} from '../data/characters';
+import {allegianceRealm} from './officeEligibility';
 import {cityYield,armyMonthlyPay,realms,type RealmId} from './realm';
 import {governmentOf,governingAuthority,governingExecutives} from './government';
 import {officeHierarchy,superiorOffice} from './offices';
@@ -27,13 +27,13 @@ export function spendLocal(w:World,site:string,amount:number,reason:string,to='e
 export function fundAssignment(w:World,site:string,r:RealmId,amount:number,id:number,reason:string){routeGrant(w,site,amount,reason,r);spendLocal(w,site,amount,reason,'task:'+id);}
 export function superiorForCity(w:World,site:string){const nodes=officeHierarchy(w),node=nodes.find(n=>n.site===site&&n.kind==='city');return node&&superiorOffice(nodes,node)?.holder||governingAuthority(w,w.realm!.cities[site].owner as RealmId);}
 export function grantFactors(w:World,q:GrantRequest){const city=w.realm!.cities[q.site],g=governmentOf(w,q.realm)!;return [{label:'日常拨款',value:35},{label:'上级交情',value:Math.round(relationOpinion(w,q.approver,q.actor)/4)},{label:'历年功绩',value:Math.min(20,Math.floor((g.merit[q.actor]??0)/4))},{label:'地方急需',value:q.purpose==='relief'?Math.max(0,70-city.order):q.purpose==='military'&&w.realm!.war?20:q.purpose==='construction'?Math.floor((100-city.prosperity)/5):0},{label:'国库余力',value:w.realm!.treasuries[q.realm].coins>=q.amount*3?15:-20},{label:'申请规模',value:-Math.floor(q.amount/20)}];}
-export function fiscalReason(w:World,c:FiscalCommand,actor=w.characterId!){if(!w.realm||!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前不能办理公款';const r=characterById[actor]?.polity as RealmId;if(!realms.includes(r))return '无所属政权';
+export function fiscalReason(w:World,c:FiscalCommand,actor=w.characterId!){if(!w.realm||!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前不能办理公款';const r=allegianceRealm(w,actor) as RealmId;if(!realms.includes(r))return '无所属政权';
  if(c.action==='relief'){const city=w.realm.cities[c.site];return !city||city.controller!==r||city.owner!==r||city.governor!==actor?'需要本城治理权':city.order>=100?'本城秩序已满':localBalance(w,c.site)<20?'本城公库不足 20 钱':'';}
  if(c.action==='request'||c.action==='allocate'){const city=w.realm.cities[c.site];if(!city||city.owner!==r||city.controller!==r)return '仅限本国控制的本国城邑';if(!Number.isSafeInteger(c.amount)||c.amount<20||c.amount>400)return '拨款须为 20 至 400 钱';if(localBalance(w,c.site)+c.amount>1_000_000)return '本城公库容量不足';if(c.action==='allocate')return !governingExecutives(w,r).includes(actor)?'须由实际执政者拨款':w.realm.treasuries[r].coins<c.amount?'中央国库不足':'';
  if(!Object.hasOwn(grantPurposes,c.purpose))return '无效用途';if(city.governor!==actor)return '须由本城领主提出申请';if(governingExecutives(w,r).includes(actor))return '执政者可直接安排拨款';if(w.realm.fiscal?.requests.some(q=>q.site===c.site&&q.status==='pending'))return '本城已有待批拨款';if(w.realm.fiscal?.requests.some(q=>q.actor===actor&&q.site===c.site&&q.status!=='pending'&&w.day-q.changed<30))return '本城再次申请须间隔 30 日';return '';}
  const q=w.realm.fiscal?.requests.find(q=>q.id===c.id);if(!q||q.status!=='pending')return '申请已结案';if(c.action==='cancel')return q.actor!==actor?'只能撤回自己的申请':'';if(!['approve','reject'].includes(c.action))return '无效拨款操作';if(q.approver!==actor)return '须由当前上级批示';if(w.realm.cities[q.site].governor!==q.actor||w.realm.cities[q.site].owner!==q.realm||w.realm.cities[q.site].controller!==q.realm)return '任职或领土已变化';return c.action==='approve'?(localBalance(w,q.site)+q.amount>1_000_000?'本城公库容量不足':w.realm.treasuries[q.realm].coins<q.amount?'中央国库不足':''):'';
 }
-export function actFiscal(w:World,c:FiscalCommand,actor=w.characterId!){const reason=fiscalReason(w,c,actor);if(reason)throw new Error(reason);const s=ensureFiscal(w)!,r=characterById[actor].polity as RealmId;
+export function actFiscal(w:World,c:FiscalCommand,actor=w.characterId!){const reason=fiscalReason(w,c,actor);if(reason)throw new Error(reason);const s=ensureFiscal(w)!,r=allegianceRealm(w,actor) as RealmId;
  if(c.action==='relief'){spendLocal(w,c.site,20,'平粜赈济');w.realm!.cities[c.site].order=Math.min(100,w.realm!.cities[c.site].order+8);return;}
  if(c.action==='request'){s.requests=s.requests.filter(q=>q.status==='pending').concat(s.requests.filter(q=>q.status!=='pending').slice(-59));s.requests.push({id:s.nextRequest++,realm:r,site:c.site,actor,amount:c.amount,purpose:c.purpose,created:w.day,changed:w.day,approver:superiorForCity(w,c.site)!,status:'pending',reply:''});return;}
  if(c.action==='allocate'){routeGrant(w,c.site,c.amount,'执政拨付地方预算');return;}

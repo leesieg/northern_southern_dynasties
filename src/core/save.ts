@@ -1,3 +1,4 @@
+import {ensurePopulation} from './population';
 import {ensureFiscal} from './treasury';
 import {validFiscal} from './treasurySave';
 import {ensurePersonalInfluence} from './personalInfluence';
@@ -49,7 +50,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.identities!==undefined&&!validIdentities(value.identities))return fail();
   if(value.families!==undefined&&!validFamilies(value.families,Number(value.day)))return fail();
   if(value.duties!==undefined&&!validDuties(value.duties,Number(value.day),value.mode))return fail();
-  if(value.service!==undefined&&!validService(value.service,Number(value.day),value.mode))return fail();
+  if(value.service!==undefined&&!validService(value.service,Number(value.day),value.mode,value as unknown as World))return fail();
   if(value.mobility!==undefined&&(value.mode!=='sandbox'||!validMobility(value.mobility,Number(value.day))))return fail();
   if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day))))return fail();
   const h=value.holdings;
@@ -145,6 +146,8 @@ export function parseWorld(source: string): World {
   const identityDefaults=initialIdentities();
   for(const [id,identity] of Object.entries(world.identities.people))if(!identity.genome.facial)identity.genome.facial=identityDefaults.people[id].genome.facial;
   world.families??=newFamilyState(world.day);
+  if(world.realm)for(const c of Object.values(world.realm.cities)){const old=c as typeof c & {households?:number};if(c.population===undefined&&old.households!==undefined){c.population=old.households*5;delete old.households;}}
+  ensurePopulation(world);
   ensureLife(world);ensureDuties(world);
   if(world.realm&&!world.realm.governments)world.realm.governments=newGovernments(world);
   ensureRelationships(world);syncRelationships(world);
