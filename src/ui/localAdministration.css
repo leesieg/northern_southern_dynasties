@@ -1,1 +1,13 @@
 .local-territory-head{display:flex;align-items:center;gap:16px;margin:12px 0}.local-territory-head>.local-office{flex:0 0 150px}.local-territory-head>div:last-child{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.local-territory-head small{flex-basis:100%}.local-seats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:12px;max-height:54vh;overflow:auto;padding:8px 0}.local-office{min-width:0}.local-office .position-seat{width:100%;box-sizing:border-box}.local-office-options{display:flex;gap:8px;flex-wrap:wrap}.local-requests article,.local-budget-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 0;border-bottom:1px solid #a48a5144}.local-requests small{display:block;width:100%}.local-budget-row small{flex-basis:100%}.local-seats-grid>article>button{width:100%;margin-top:6px}.local-career p,.local-territory p{font-size:.85rem;color:var(--muted,#b8baa7)}.local-territory input{max-width:110px}
+/* Shared county, prefecture and province shell. */
+.territory-navigation{padding:8px 0;border-bottom:1px solid #bba47140;margin-bottom:10px;flex-shrink:0}
+.territory-navigation nav{display:flex;align-items:center;gap:5px;overflow-x:auto;scrollbar-width:thin}
+.territory-navigation button{display:inline-flex;align-items:center;gap:4px;flex:none;min-height:32px;padding:4px 8px;font-size:12px;white-space:nowrap}
+.territory-navigation button[aria-current]{opacity:1;color:#efd9a5;border-color:#bca371;background:#bca37120}
+.territory-navigation .realm-flag{width:30px;min-width:30px}
+.territory-navigation .territory-peers{margin-top:6px}.territory-peers button{min-height:28px;font-size:11px}
+.local-territory .local-seats-grid{max-height:none;overflow:visible}
+.local-territory .city-summary-identity>.city-office-seat{flex:0 0 auto;max-width:48%}
+.local-territory .local-office-options{margin:8px 0}.local-territory .local-budget-row>span{margin-right:auto}
+.local-territory .district-counties button>span:first-of-type{flex:1;text-align:left}.local-territory .district-counties small{display:block;color:#b9bea8}
+.territory-navigation button:focus-visible{outline:2px solid #edd79d;outline-offset:-2px}

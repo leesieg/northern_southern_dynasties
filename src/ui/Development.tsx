@@ -1,3 +1,4 @@
+import {TerritoryTabs} from './TerritoryNavigation';
 import {EstateWorkshop} from './EstateWorkshop';
 import {localBalance} from '../core/treasury';
 import {CitySummary} from './CitySummary';
@@ -10,7 +11,7 @@ import {TravelStatus} from './MobilityPanel';
 import {HoverHint} from './HoverHint';
 import {CityManagement} from './CityManagement';
 import './cityNavigation.css';
-import { ArtIcon,type ArtName } from './ArtIcon';
+import { ArtIcon } from './ArtIcon';
 import { buildingModifiers,traitsFor } from '../core/social';
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { siteById } from '../data/scenario';
@@ -25,7 +26,7 @@ export function LocationDevelopment({world,selected,onSelect,onPerson,onRetinue,
 
   return <section className="location-development">
     <CitySummary world={world} site={selected} pending={pending} send={send} onPerson={onPerson} onDiplomacy={onDiplomacy} onDistrict={()=>onTab('history')}/>
-    <nav className="development-tabs city-icon-tabs" aria-label="城市操作">{([['model','城景','city'],['build','营建','estate'],['governance','政务','influence'],['people','人物','person'],['travel','出行','world'],['history','区划','influence']] as [CityTab,string,ArtName][]).filter(([id])=>!!world.realm||!['governance','military'].includes(id)).map(([id,label,icon])=><button key={id} aria-pressed={(tab==='military'?'governance':tab)===id} title={id==='model'?'城市模型':id==='people'?`驻留人物 ${peopleCount} 人`:label} onClick={()=>onTab(id)}><ArtIcon name={icon} size={26}/><span>{label}{id==='people'&&<small>{peopleCount}</small>}</span></button>)}</nav>
+    <TerritoryTabs tab={tab} onTab={onTab} peopleCount={peopleCount} governance={!!world.realm}/>
     {tab==='model'&&<Suspense fallback={<div className="city-model-loading">正在载入城市模型…</div>}><CityViewport key={selected} holding={world.holdings.cities[selected]??emptyCity()} day={world.day} name={siteById[selected].name} capital={!!siteById[selected].capital} selected={cityBuilding} onSelect={id=>{setCityBuilding(id);onTab('build');}}/></Suspense>}
     {(tab==='governance'||tab==='military')&&<CityManagement localTasks={localTasks} onPerson={onPerson} key={selected} world={world} selected={selected} pending={pending} send={send}/>}
     {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}</>:tab==='history'?<><CityDistrict site={selected} onTerritory={onTerritory} onCity={onSelect}/>{overview}</>:tab==='build'?<ConstructionPanel world={world} scope="city" site={selected} send={send} onRetinue={onRetinue} selectedCityBuilding={cityBuilding}/>:null}
