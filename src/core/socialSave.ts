@@ -8,8 +8,8 @@ export function validSocial(w:World):boolean {
  if(!obj(s)||!w.characterId||s.version!==1||typeof s.founder!=='string'||!Object.hasOwn(characterById,s.founder))return false;
  if(!int(s.stress,0,100)||!int(s.renown,0,999)||!int(s.seed,0,4294967295))return false;
  const base=newSocial(s.founder);
- if(!obj(s.traits)||Object.keys(s.traits).length!==historicalCharacters.length||historicalCharacters.some(c=>JSON.stringify(s.traits[c.id])!==JSON.stringify(defaultTraits(c.id))))return false;
- for(const field of ['opinions','hooks'] as const){if(!obj(s[field])||Object.keys(s[field]).length!==Object.keys(base[field]).length)return false;for(const key of Object.keys(base[field]))if(!int(s[field][key],field==='opinions'?-100:0,field==='opinions'?100:3))return false;}
+ if(!obj(s.traits)||Object.entries(s.traits).some(([id,traits])=>!characterById[id]||JSON.stringify(traits)!==JSON.stringify(defaultTraits(id)))||historicalCharacters.some(c=>JSON.stringify(s.traits[c.id])!==JSON.stringify(defaultTraits(c.id))))return false;
+ for(const field of ['opinions','hooks'] as const){if(!obj(s[field])||Object.entries(s[field]).some(([key,n])=>{const ids=key.split('|');return ids.length!==2||ids[0]===ids[1]||ids.some(id=>!characterById[id])||!int(n,field==='opinions'?-100:0,field==='opinions'?100:3);}))return false;for(const key of Object.keys(base[field]))if(!int(s[field][key],field==='opinions'?-100:0,field==='opinions'?100:3))return false;}
  if(!obj(s.legacies)||Object.keys(s.legacies).length!==3||Object.keys(base.legacies).some(k=>!int(s.legacies[k as keyof typeof s.legacies],0,2)))return false;
  const members=new Set(houseMembers(s.founder).map(c=>c.id));
  if(!Array.isArray(s.lineage)||!s.lineage.length||s.lineage.length>members.size)return false;

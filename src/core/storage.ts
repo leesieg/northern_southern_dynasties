@@ -22,7 +22,7 @@ async function remote(path = '', options?: RequestInit): Promise<{saves?:SaveInf
   catch { throw new Error('无法连接存档服务，请检查网络后重试。'); }
   if (response.status===401||response.status===409) throw new Error('账号会话已变更，请刷新页面后重新进入游戏。');
   if (!response.ok) throw new Error(response.status===413?'存档超过服务器大小限制，请导出备份。':'存档服务暂不可用，请稍后重试。');
-  return response.json();
+  return response.status===204?{}:response.json();
 }
 function database(): Promise<IDBDatabase> {
   return new Promise((resolve,reject) => {
@@ -77,4 +77,11 @@ export async function loadWorld(slot?: string): Promise<World | null> {
   const records = (await readRecords()).sort((a,b)=>b.savedAt-a.savedAt);
   const record = slot ? records.find(r=>r.id === slot) : records[0];
   return record ? parseWorld(record.data) : null;
+}
+
+export async function deleteSave(slot:string):Promise<void>{
+ if(!['manual','previous-run','auto-1','auto-2','auto-3'].includes(slot))throw new Error('无效存档槽位。');
+ if(REMOTE){await remote('/'+encodeURIComponent(slot),{method:'DELETE',headers:{'X-Li-Client':'1'}});return;}
+ const db=await database();
+ return new Promise((resolve,reject)=>{const tx=db.transaction('saves','readwrite');tx.objectStore('saves').delete(slot);tx.oncomplete=()=>{db.close();resolve();};tx.onerror=tx.onabort=()=>{db.close();reject(new Error('删除存档失败，请重试。'));};});
 }

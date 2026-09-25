@@ -47,6 +47,7 @@ export type Request =
   | { type: 'command'; command: GameCommand }
   | { type: 'save' }
   | { type: 'load'; slot: string }
+  | { type: 'delete-save'; slot: string }
   | { type: 'export' }
   | { type: 'import'; text: string };
 export interface SaveInfo { mode?:'sandbox'; scriptId?:string; characterName?:string; id: string; savedAt: number; day: number }

@@ -1,5 +1,6 @@
+import {additionalStarts} from './additionalStarts';
 import type { Polity } from '../core/types';
-export type CharacterRole='ruler'|'regent'|'prince'|'commander';
+export type CharacterRole='ruler'|'regent'|'prince'|'commander'|'scholar';
 export interface HistoricalCharacter {
   id:string;name:string;family:string;polity:Exclude<Polity,'frontier'>;title:string;role:CharacterRole;home:string;
   biography:string;sources:{title:string;url:string}[];
@@ -21,10 +22,10 @@ export const historicalCharacters:HistoricalCharacter[]=[
   {id:'yuwen-tai',name:'宇文泰',family:'yuwen',polity:'west',title:'西魏执政',role:'regent',home:'changan',biography:'辅佐西魏、主持军政与制度整顿。546 年仍属西魏，不能以北周已经建立的身份开局。长安是玩法锚点，不断言其开局当日驻地。',sources:[zhou2]},
   {id:'yuan-qin',name:'元钦',family:'yuan',polity:'west',title:'西魏皇太子',role:'prince',home:'changan',biography:'元宝炬长子，535 年被立为皇太子。546 年仍在储位，尚未即位。',sources:[bei5]},
 ];
-export const characterById:Record<string,HistoricalCharacter>=Object.fromEntries(historicalCharacters.map(c=>[c.id,c]));
+export const characterById:Record<string,HistoricalCharacter>=Object.fromEntries([...historicalCharacters,...additionalStarts].map(c=>[c.id,c]));
 export const familyNames:Record<string,string>={shen:'沈',xiao:'萧',yuan:'元',gao:'高',yuwen:'宇文',dugu:'独孤'};
 export const familyName=(id:string)=>familyNames[id]??'家族';
-export const roleNames:Record<CharacterRole,string>={ruler:'君主',regent:'执政',prince:'宗室',commander:'将领'};
+export const roleNames:Record<CharacterRole,string>={ruler:'君主',regent:'执政',prince:'宗室',commander:'将领',scholar:'士人'};
 // Only sourced relations among the current roster. Absence does not assert no kinship.
 export const characterRelations=[
   {from:'yuan-shanjian',to:'gao-huan',kind:'辅政',source:qi2},

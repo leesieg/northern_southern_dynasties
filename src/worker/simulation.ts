@@ -1,6 +1,6 @@
 import {pauseSnapshot,pauseEvents,type PauseEvent} from '../core/pauseEvents';
 import { act, advance, newWorld, newCampaignWorld } from '../core/world';
-import { loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
+import { deleteSave, loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
 import { parseWorld, serializeWorld } from '../core/save';
 import type { Reply, Request, SaveInfo } from '../core/types';
 
@@ -49,6 +49,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
         }else{act(world,request.command);await save(true);}
       }
       else if (request.type === 'save') { await save(); notice('当前行程已保存。'); }
+      else if(request.type==='delete-save'){speed=0;await deleteSave(request.slot);slots=await listSaves();lastSaved=slots[0]?.savedAt??null;notice('存档已删除；当前游玩进度未改变，后续保存将生成新存档。');}
       else if (request.type === 'load') {
         const loaded = await loadWorld(request.slot);
         if (!loaded) throw new Error('没有找到这个存档。');

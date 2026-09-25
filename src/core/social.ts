@@ -30,10 +30,10 @@ export interface Social {
 }
 export type SocialCommand={type:'interact';target:string;action:Interaction}|{type:'rest'}|{type:'legacy';branch:Legacy}|{type:'heir';target:string}|{type:'handover'}|{type:'cancel-scheme'};
 const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,n));
-export function defaultTraits(id:string):Trait[]{if(!characterById[id])return expandedPersonById[id]?(expandedPersonById[id].role==='commander'?['diligent','steadfast']:expandedPersonById[id].role==='scholar'?['frugal','diligent']:['gregarious','generous']):[];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
+export function defaultTraits(id:string):Trait[]{if(expandedPersonById[id])return expandedPersonById[id]?(expandedPersonById[id].role==='commander'?['diligent','steadfast']:expandedPersonById[id].role==='scholar'?['frugal','diligent']:['gregarious','generous']):[];if(!characterById[id])return [];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
 export const pair=(a:string,b:string)=>a+'|'+b;
 export function houseMembers(id:string){
-  const c=characterById[id];return historicalCharacters.filter(p=>p.family===c.family&&p.polity===c.polity);
+  const c=characterById[id];return Object.values(characterById).filter(p=>p.family===c.family&&p.polity===c.polity);
 }
 export function kin(a:string,b:string){
   const parents=(id:string)=>characterRelations.filter(r=>r.kind==='父子'&&r.to===id).map(r=>r.from);
@@ -42,7 +42,7 @@ export function kin(a:string,b:string){
 export function newSocial(id:string):Social{
   const opinions:Record<string,number>={},hooks:Record<string,number>={};
   for(const a of historicalCharacters)for(const b of historicalCharacters)if(a.id!==b.id){const key=pair(a.id,b.id);opinions[key]=kin(a.id,b.id)?25:a.polity===b.polity?10:-25;hooks[key]=0;}
-  return {version:1,founder:id,traits:Object.fromEntries(historicalCharacters.map(c=>[c.id,defaultTraits(c.id)])),opinions,hooks,cooldowns:{},stress:0,renown:40,legacies:{stewardship:0,kinship:0,learning:0},heir:null,advisor:null,lineage:[{id,day:0}],seed:546,scheme:null};
+  return {version:1,founder:id,traits:{...Object.fromEntries(historicalCharacters.map(c=>[c.id,defaultTraits(c.id)])),[id]:defaultTraits(id)},opinions,hooks,cooldowns:{},stress:0,renown:40,legacies:{stewardship:0,kinship:0,learning:0},heir:null,advisor:null,lineage:[{id,day:0}],seed:546,scheme:null};
 }
 export function traitsFor(w:World,id=w.characterId){return id?(w.social?.traits[id]??defaultTraits(id)):[];}
 export const abilityNames={diplomacy:'外交',martial:'军事',stewardship:'管理',intrigue:'谋略'} as const;
@@ -93,7 +93,7 @@ export function interactionQuote(w:World,target:string,action:Interaction){
 }
 export function heirs(w:World){if(!w.social||!w.characterId)return [];const seen=new Set(w.social.lineage.map(p=>p.id));return houseMembers(w.social.founder).filter(c=>isAlive(w,c.id)&&ageAt(w,c.id)!>=16&&!seen.has(c.id)&&kin(w.characterId!,c.id)&&!characterRelations.some(r=>r.kind==='父子'&&r.from===c.id&&r.to===w.characterId));}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
-function opinion(w:World,target:string,delta:number){const s=w.social!,key=pair(w.characterId!,target);s.opinions[key]=clamp(s.opinions[key]+delta,-100,100);}
+function opinion(w:World,target:string,delta:number){const s=w.social!,key=pair(w.characterId!,target);s.opinions[key]=clamp((s.opinions[key]??(characterById[w.characterId!].polity===characterById[target].polity?10:-25))+delta,-100,100);}
 export function applySocial(w:World,command:SocialCommand){
   const s=w.social;if(!s||!w.characterId)throw new Error('此系统用于历史人物开局。');
   if(w.campaign?.status!=='active')throw new Error('本局已结束。');
@@ -106,7 +106,7 @@ export function applySocial(w:World,command:SocialCommand){
       case 'befriend':s.scheme={target:command.target,started:w.day,due:w.day+q.days,chance:q.chance};break;
       case 'aid':if(w.relationships)w.relationships.reserves[command.target]-=70;p.coins=Math.min(1_000_000,p.coins+70);opinion(w,command.target,-20);s.stress=clamp(s.stress+(t.includes('generous')?8:0),0,100);s.cooldowns[key+'|aid']=w.day+30;break;
       case 'advisor':s.advisor=command.target;break;
-      case 'pressure':if(['friend','confidant'].includes(friendship(w,w.characterId!,command.target)??''))setFriendship(w,w.characterId!,command.target,'rival');s.renown-=10;opinion(w,command.target,-25);s.stress=clamp(s.stress+15,0,100);s.hooks[key]++;s.cooldowns[key+'|pressure']=w.day+15;break;
+      case 'pressure':if(['friend','confidant'].includes(friendship(w,w.characterId!,command.target)??''))setFriendship(w,w.characterId!,command.target,'rival');s.renown-=10;opinion(w,command.target,-25);s.stress=clamp(s.stress+15,0,100);s.hooks[key]=(s.hooks[key]??0)+1;s.cooldowns[key+'|pressure']=w.day+15;break;
       case 'favor':if(w.relationships)w.relationships.reserves[command.target]-=50;s.hooks[key]--;opinion(w,command.target,-10);p.coins=Math.min(1_000_000,p.coins+50);break;
     }
     log(w,`${p.name}对${characterById[command.target].name}安排「${interactionNames[command.action]}」${q.cost?'，支出 '+q.cost+' 钱':''}${q.days?'，预计 '+q.days+' 日':''}。`);return;

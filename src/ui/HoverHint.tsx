@@ -1,11 +1,11 @@
-import {useEffect,useId,useRef,useState,type ReactNode} from 'react';
+import {useEffect,useId,useLayoutEffect,useRef,useState,type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 export function HoverHint({children,content,label}:{children:ReactNode;content:ReactNode;label:string}){
- const id=useId(),timer=useRef<ReturnType<typeof setTimeout>|null>(null),[position,setPosition]=useState<{left:number;top:number;width:number}|null>(null);
- const keep=()=>{if(timer.current)clearTimeout(timer.current);};
- const hide=()=>{keep();timer.current=setTimeout(()=>setPosition(null),160);};
- useEffect(()=>()=>{if(timer.current)clearTimeout(timer.current);},[]);
- useEffect(()=>{if(!position)return;const close=()=>setPosition(null),escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.stopPropagation();close();}};const scroll=(e:Event)=>{if(!(e.target instanceof Element&&e.target.closest('.diplomacy-tooltip')))close();};window.addEventListener('scroll',scroll,true);window.addEventListener('resize',close);window.addEventListener('keydown',escape,true);return()=>{window.removeEventListener('scroll',scroll,true);window.removeEventListener('resize',close);window.removeEventListener('keydown',escape,true);};},[position]);
- const show=(el:HTMLElement)=>{keep();const b=el.getBoundingClientRect(),width=Math.min(300,window.innerWidth-24);setPosition({width,left:Math.max(12,Math.min(b.left,window.innerWidth-width-12)),top:Math.max(12,Math.min(b.bottom+6,window.innerHeight-260))});};
- return <span className="hover-hint" tabIndex={0} aria-label={label} aria-describedby={position?id:undefined} onMouseEnter={e=>show(e.currentTarget)} onMouseLeave={hide} onFocus={e=>show(e.currentTarget)} onBlur={hide}>{children}{position&&createPortal(<div id={id} role="tooltip" className="diplomacy-tooltip" style={position} onMouseEnter={keep} onMouseLeave={hide}>{content}</div>,document.body)}</span>;
+ const id=useId(),anchor=useRef<HTMLSpanElement>(null),tip=useRef<HTMLDivElement>(null),[open,setOpen]=useState(false),[position,setPosition]=useState({left:12,top:12,width:300,maxHeight:240});
+ useLayoutEffect(()=>{if(!open||!anchor.current||!tip.current)return;const b=anchor.current.getBoundingClientRect(),width=Math.min(300,window.innerWidth-24),height=Math.min(tip.current.scrollHeight,window.innerHeight-24),right=window.innerWidth-b.right-12,left=b.left-12,below=window.innerHeight-b.bottom-12,above=b.top-12;let x=b.left,y=b.bottom+8,maxHeight=height;
+  if(right>=width+8){x=b.right+8;y=b.top;}else if(left>=width+8){x=b.left-width-8;y=b.top;}else if(below>=height+8){y=b.bottom+8;}else if(above>=height+8){y=b.top-height-8;}else if(below>=above){y=b.bottom+8;maxHeight=Math.max(0,below-8);}else{maxHeight=Math.max(0,above-8);y=12;}
+  setPosition({width,left:Math.max(12,Math.min(x,window.innerWidth-width-12)),top:Math.max(12,Math.min(y,window.innerHeight-maxHeight-12)),maxHeight});
+ },[open,content]);
+ useEffect(()=>{if(!open)return;const close=()=>setOpen(false),escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};window.addEventListener('scroll',close,true);window.addEventListener('resize',close);window.addEventListener('pointerdown',close,true);window.addEventListener('keydown',escape,true);return()=>{window.removeEventListener('scroll',close,true);window.removeEventListener('resize',close);window.removeEventListener('pointerdown',close,true);window.removeEventListener('keydown',escape,true);};},[open]);
+ return <span ref={anchor} className="hover-hint" tabIndex={0} aria-label={label} aria-describedby={open?id:undefined} onMouseEnter={()=>setOpen(true)} onMouseLeave={()=>setOpen(false)} onFocus={()=>setOpen(true)} onBlur={()=>setOpen(false)}>{children}{open&&createPortal(<div ref={tip} id={id} role="tooltip" className="diplomacy-tooltip" style={{...position,pointerEvents:'none'}}>{content}</div>,document.body)}</span>;
 }

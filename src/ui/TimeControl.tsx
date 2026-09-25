@@ -2,15 +2,15 @@ import {useEffect,useRef} from 'react';
 export function TimeControl({date,day,speed,locked,lockReason,onSpeed,onStep,onMenu,onSave}:{date:string;day:number;speed:number;locked:boolean;lockReason:string;onSpeed:(speed:number)=>void;onStep:()=>void;onMenu:()=>void;onSave:()=>void}){
  const lastSpeed=useRef(1);useEffect(()=>{if(speed)lastSpeed.current=speed;},[speed]);
  useEffect(()=>{
+  const editing=(event:KeyboardEvent)=>event.target instanceof Element&&!!event.target.closest('input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),textarea,[contenteditable="true"],[role="textbox"],[role="combobox"]');
   const onKeyDown=(event:KeyboardEvent)=>{
-   if(event.code!=='Space'||event.repeat||event.isComposing||event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
-   const target=event.target;
-   if(target instanceof HTMLElement&&(target.isContentEditable||target.closest('input,textarea,select,button,a[href],summary,[role="button"],[role="textbox"],[role="combobox"],[role="slider"],[role="checkbox"],[role="switch"]')))return;
-   event.preventDefault();
-   if(!locked)onSpeed(speed?0:lastSpeed.current);
+   if(event.code!=='Space'||event.isComposing||editing(event))return;
+   event.preventDefault();event.stopImmediatePropagation();
+   if(!event.repeat&&!event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!locked)onSpeed(speed?0:lastSpeed.current);
   };
-  window.addEventListener('keydown',onKeyDown);
-  return()=>window.removeEventListener('keydown',onKeyDown);
+  const onKeyUp=(event:KeyboardEvent)=>{if(event.code==='Space'&&!editing(event)){event.preventDefault();event.stopImmediatePropagation();}};
+  window.addEventListener('keydown',onKeyDown,true);window.addEventListener('keyup',onKeyUp,true);
+  return()=>{window.removeEventListener('keydown',onKeyDown,true);window.removeEventListener('keyup',onKeyUp,true);};
  },[locked,speed,onSpeed]);
  return <section className="chronicle-control" aria-label="日期与时间控制">
   <div className="chronicle-date"><strong>{date}</strong><div><span>第 {day+1} 日</span><span className={speed?'clock-running':'clock-paused'} role="status">{locked?lockReason:speed?'时间推进':'已暂停'}</span></div></div>

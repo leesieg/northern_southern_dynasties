@@ -20,7 +20,7 @@ import { initialIdentities } from '../data/characterIdentities';
 import { newRealm,actRealm,advanceRealm } from './realm';
 import { DEFAULT_SCRIPT,getScript } from '../data/scripts';
 import { newSocial, applySocial, advanceSocial } from './social';
-import { characterById,startRules } from '../data/characters';
+import { characterById,historicalCharacters,startRules } from '../data/characters';
 import { commission,evaluateCampaign } from './campaign';
 import { newHoldings, beginConstruction, advanceConstruction, provisionCost } from './construction';
 import { CONTENT_VERSION, roads, siteById, sites } from '../data/scenario';
@@ -86,7 +86,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
     w.campaign={id:'stewardship',deadline:120,appointed:true,status:'active',finishedDay:null};
     w.chronicle=[{day:0,person:'player',text:c.name+'以'+c.title+'身份启程，经营地方与家业。'}];
   }else w.campaign={id:'jiangzuo',deadline:120,appointed:false,status:'active',finishedDay:null};
-  if(mode==='sandbox'){w.mode='sandbox';w.realm=newRealm(w);w.realm.governments=newGovernments(w);ensureCourts(w);ensureDuties(w);ensureService(w);}
+  if(mode==='sandbox'){w.mode='sandbox';w.realm=newRealm(w);if(!historicalCharacters.some(c=>c.id===characterId)){for(const city of Object.values(w.realm.cities))if(city.governor===characterId)city.governor=null;w.holdings.governedCities=[];}w.realm.governments=newGovernments(w);ensureCourts(w);ensureDuties(w);ensureService(w);}
   ensureRelationships(w);
   ensureDiplomacy(w);
   ensureLifestyle(w);

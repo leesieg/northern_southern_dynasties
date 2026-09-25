@@ -2,7 +2,7 @@ import {expandedPersonById} from '../data/expandedPeople';
 import {ageOf,ageAt,lifeOf} from '../core/lifeState';
 import type {PortraitLife} from './portraitLife';
 import { portraitProfiles,applyPortraitProfile } from '../data/portraitProfiles';
-import { characterById } from '../data/characters';
+import { characterById,historicalCharacters } from '../data/characters';
 import { initialIdentity,type CharacterIdentity } from '../data/characterIdentities';
 import { defaultTraits,type Trait } from '../core/social';
 import { expressGenome } from '../core/genetics';
@@ -14,7 +14,7 @@ export const officeNames:Record<PortraitOffice,string>={civilian:'常服',govern
 export interface PortraitContext {life?:PortraitLife;identity:CharacterIdentity;office:PortraitOffice;traits:Trait[];stress:number;maturity?:number;beard?:'none'|'short'|'long';headwear?:'tall-cap'}
 export function portraitContext(id:string,world?:World):PortraitContext {
  const c=characterById[id],extra=relationshipPersonById[id];
- const fallback=():CharacterIdentity=>c||id==='fictional'?initialIdentity(id):{sex:extra?.sex??'male',culture:extra?.realm==='liang'?'southern':'northern',genome:founderGenome(id)};
+ const fallback=():CharacterIdentity=>historicalCharacters.some(p=>p.id===id)||id==='fictional'?initialIdentity(id):{sex:extra?.sex??'male',culture:extra?.realm==='liang'?'southern':'northern',genome:founderGenome(id)};
  const stored=world?.identities?.people[id]??fallback(),identity=stored.genome.facial?stored:{...stored,genome:applyPortraitProfile({...stored.genome,facial:fallback().genome.facial},id)};
  let office:PortraitOffice=c?.role==='ruler'?'ruler':(c?.role??expandedPersonById[id]?.role)==='commander'?'commander':c?.role==='regent'?'governor':'civilian';
  const retired=world?.social?.lineage.slice(0,-1).some(p=>p.id===id);
