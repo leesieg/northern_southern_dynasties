@@ -1,3 +1,4 @@
+import {appointmentPauses} from '../core/appointmentCycle';
 import {pauseSnapshot,pauseEvents,type PauseEvent} from '../core/pauseEvents';
 import { act, advance, newWorld, newCampaignWorld } from '../core/world';
 import { deleteSave, loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
@@ -41,9 +42,9 @@ self.onmessage = (event: MessageEvent<Request>) => {
       }else if(request.type==='menu'){speed=0;await save();reply({type:'screen',page:'menu'});}
       else if(request.type==='background'){if(speed)paused([{id:`${world.day}:background`,kind:'background',title:'暂歇片刻',body:'你离开了游戏页面，时间已暂停。回来后可继续安排事务。'}]);}
       else if (request.type === 'speed') speed = [0,1,3,7].includes(request.speed) ? request.speed : 0;
-      else if (request.type === 'step') { advance(world);speed=0;await save(true); }
+      else if (request.type === 'step') { if(appointmentPauses(world).length)throw new Error('请先审批三年铨选名单。');advance(world);speed=0;await save(true); }
       else if (request.type === 'command') {
-        if(request.command.type==='retinue'||request.command.type==='build'||request.command.type==='mobility'||request.command.type==='service'||request.command.type==='duty'||request.command.type==='health'||request.command.type==='lifestyle'||request.command.type==='government'||request.command.type==='court'||request.command.type==='diplomacy'||request.command.type==='travel'||request.command.type==='realm'||request.command.type==='relationship'||request.command.type==='interact'||request.command.type==='handover'){
+        if(request.command.type==='appointments'||request.command.type==='local'||request.command.type==='retinue'||request.command.type==='build'||request.command.type==='mobility'||request.command.type==='service'||request.command.type==='duty'||request.command.type==='health'||request.command.type==='lifestyle'||request.command.type==='government'||request.command.type==='court'||request.command.type==='diplomacy'||request.command.type==='travel'||request.command.type==='realm'||request.command.type==='relationship'||request.command.type==='interact'||request.command.type==='handover'){
           const next=structuredClone(world);act(next,request.command);
           const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;slots=await listSaves();if(request.command.type==='travel'||request.command.type==='mobility'&&request.command.action==='plan'&&world.people[0].journey)speed=1;
         }else{act(world,request.command);await save(true);}
@@ -62,7 +63,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
         lastSaved=await saveWorld(imported);world = imported;hasCurrentWorld=true;speed = 0;slots=await listSaves(); notice('导入成功，原进度保留在自动存档中。');reply({type:'screen',page:'play'});
       }
     } catch (error) { notice(error instanceof Error ? error.message : '操作失败。',true); }
-    finally { if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish(); }
+    finally { if(['init','load','import','resume'].includes(request.type))paused(appointmentPauses(world));if(request.type==='speed'&&request.speed>0)paused(appointmentPauses(world));if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish(); }
   });
 };
 setInterval(() => {

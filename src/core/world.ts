@@ -1,3 +1,4 @@
+import {actAppointments} from './appointmentCycle';
 import {actLocal,ensureLocalAdministration} from './localAdministration';
 import {reconcileOfficeAllegiance} from './officeEligibility';
 import {ensurePopulation,actPopulation,advancePopulation} from './population';
@@ -109,7 +110,8 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='health'){actLife(world,command);return;}
   if(command.type==='travel'&&lifeOf(world,world.characterId??'fictional')?.illness?.severity===3)throw new Error('重病期间无法远行，请先延医休养。');
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
-  if(command.type==='local'){actLocal(world,command);return;}
+  if(command.type==='appointments'){actAppointments(world,command);return;}
+ if(command.type==='local'){actLocal(world,command);return;}
   if(command.type==='fiscal'){actFiscal(world,command);return;}
   if(command.type==='retinue'){actRetinue(world,command);return;}
   if(command.type==='mobility'){actMobility(world,command);return;}

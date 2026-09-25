@@ -1,6 +1,7 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {routeGrant} from './treasury';
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld,act,advance,remainingDays} from './world';
+import {act,advance,remainingDays} from './world';
 import {ongoingItems} from './ongoing';
 import {pauseHasActions,type PauseEvent} from './pauseEvents';
 import {parseWorld,serializeWorld} from './save';

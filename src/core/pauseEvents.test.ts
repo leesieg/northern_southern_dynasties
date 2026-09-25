@@ -1,5 +1,6 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld,act,advance} from './world';
+import {act,advance} from './world';
 import {pauseSnapshot,pauseEvents} from './pauseEvents';
 import {lifeOf} from './lifeState';
 import {die} from './life';

@@ -14,8 +14,10 @@ beforeEach(async()=>{
 });
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();});
 describe('worker menu and save lifecycle without browser UI',()=>{
+
+ it('三年铨选恢复时暂停，保存失败不批准或扣费，审批前不能推进',async()=>{await request({type:'init'});const {newCampaignWorld}=await import('../core/world');const {advanceAppointments}=await import('../core/appointmentCycle');const {serializeWorld}=await import('../core/save');const w=newCampaignWorld('xiao-yan',undefined,'sandbox');advanceAppointments(w);w.day=1096;advanceAppointments(w);const imported=await request({type:'import',text:serializeWorld(w)});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='appointments'))).toBe(true);expect((await request({type:'speed',speed:7})).speed).toBe(0);expect((await request({type:'step'})).world.day).toBe(1096);const command={type:'appointments',action:'reject',realm:'liang',year:549} as const;const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});expect((await request({type:'command',command})).world).toEqual(imported.world);fault.mockRestore();const result=await request({type:'command',command});expect(result.world.realm!.local!.cycle!.rounds.liang!.status).toBe('rejected');expect((await request({type:'step'})).world.day).toBe(1097);});
  it('幕僚延聘存储失败不扣钱；任职及在建工程随存档恢复',async()=>{
-  await request({type:'init'});const before=await request({type:'new',characterId:'xiao-gang',mode:'sandbox'});
+  await request({type:'init'});const {newGovernedCampaignWorld}=await import('../core/governedTestWorld');const {serializeWorld}=await import('../core/save');const before=await request({type:'import',text:serializeWorld(newGovernedCampaignWorld('xiao-gang',undefined,'sandbox'))});
   const command={type:'retinue',action:'recruit',person:'guest-liang'} as const;
   const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});
   const failed=await request({type:'command',command});fault.mockRestore();expect(failed.world).toEqual(before.world);
@@ -133,7 +135,7 @@ describe('worker menu and save lifecycle without browser UI',()=>{
   });
 
   it('saves sandbox economics, automatically pauses for decisions and resumes unchanged',async()=>{
-    await request({type:'init'});await request({type:'new',characterId:'xiao-yan',mode:'sandbox'});
+    await request({type:'init'});const {newGovernedCampaignWorld}=await import('../core/governedTestWorld');const {serializeWorld:encode}=await import('../core/save');await request({type:'import',text:encode(newGovernedCampaignWorld('xiao-yan',undefined,'sandbox'))});
     const after=await request({type:'command',command:{type:'realm',action:'tax',site:'jiankang',tax:'heavy'}});expect(after.world.realm?.cities.jiankang.tax).toBe('heavy');
     await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(after.world);
     const {serializeWorld}=await import('../core/save');const {advance}=await import('../core/world');const world=structuredClone(after.world);advance(world,89);await request({type:'import',text:serializeWorld(world)});await request({type:'speed',speed:7});

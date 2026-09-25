@@ -111,11 +111,12 @@ export function actRetinue(w:World,c:RetinueCommand,host=w.characterId!){
 function release(w:World,id:string,why:string){const m=w.retinue!.members[id];if(!m)return;delete w.retinue!.members[id];w.retinue!.cooldowns[m.host+'|hire|'+id]=w.day+90;log(w,m.host,id,politicalName(id)+why+'。');}
 export function retinueDestination(w:World,id:string){const m=w.retinue?.members[id];if(!m||!isAlive(w,m.host))return undefined;return m.site??personResidence(w,m.host).site;}
 export function advanceRetinue(w:World){const s=w.retinue;if(!s)return;
+ const publicHolders=new Set(Object.keys(s.members).length?officeHierarchy(w).filter(n=>n.holder&&n.active&&['city','office','executive','sovereign'].includes(n.kind)).map(n=>n.holder):[]);
  for(const [id,m] of Object.entries(s.members)){
   if(isSovereign(w,m.host)){release(w,id,'因主公使用中央官职而解除幕府编制，可由朝廷重新任官');continue;}
-  if(!isAlive(w,id)||!isAlive(w,m.host)||hasPublicDuties(w,id)||w.social?.lineage.slice(0,-1).some(p=>p.id===m.host)){release(w,id,!isAlive(w,id)?'去世，幕职出缺':!isAlive(w,m.host)?'因主公去世离幕':'因任职或主公退居离幕');continue;}
+  if(!isAlive(w,id)||!isAlive(w,m.host)||publicHolders.has(id)||w.social?.lineage.slice(0,-1).some(p=>p.id===m.host)){release(w,id,!isAlive(w,id)?'去世，幕职出缺':!isAlive(w,m.host)?'因主公去世离幕':'因任职或主公退居离幕');continue;}
   const r=relationshipPersonById[m.host].realm;if(atWar(w,r,relationshipPersonById[id].realm)){release(w,id,'因两国交战离幕');continue;}
-  if(m.post&&retinuePosts[m.post].official&&!isOfficial(w,m.host)){m.post=null;m.site=null;log(w,m.host,id,'主公卸任，'+politicalName(id)+'解去幕职。');}
+  if(m.post&&retinuePosts[m.post].official&&!publicHolders.has(m.host)){m.post=null;m.site=null;log(w,m.host,id,'主公卸任，'+politicalName(id)+'解去幕职。');}
  }
  const month=Math.floor(w.day/30)*30;if(month<=s.lastMonth)return;s.lastMonth=month;
  for(const [id,m] of Object.entries(s.members)){const wage=m.post?4:2,due=wage*(1+m.arrears);if(money(w,m.host)>=due){pay(w,m.host,due);creditPersonalCoins(w,id,due);m.arrears=0;}else{m.arrears++;log(w,m.host,id,politicalName(id)+'俸钱未付，职务暂停。');if(m.arrears>=2)release(w,id,'因连续欠俸离幕');}}

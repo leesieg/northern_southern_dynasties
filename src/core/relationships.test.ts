@@ -1,6 +1,7 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {personResidence} from './residence';
 import { describe,it,expect } from 'vitest';
-import { newCampaignWorld,act,advance } from './world';
+import {act,advance} from './world';
 import { relationshipQuote,activeMarriage,spouseOf,friendship,relationOpinion,relationHooks,closeKin,setFriendship,advanceRelationships,syncRelationships,allegianceBonus } from './relationships';
 import { governmentOf,governmentExecutive,governingExecutives,governingAuthority,governmentReason,politicalTitle } from './government';
 import { realmReason } from './realm';

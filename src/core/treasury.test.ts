@@ -1,5 +1,6 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld,act,advance} from './world';
+import {act,advance} from './world';
 import {parseWorld,serializeWorld} from './save';
 import {collectFiscal,distributeFiscal,routeGrant,localBalance,fiscalPath,fiscalSnapshot,reconcileFiscal,actFiscal,advanceFiscal,grantFactors,spendLocal} from './treasury';
 import {cityYield} from './realm';

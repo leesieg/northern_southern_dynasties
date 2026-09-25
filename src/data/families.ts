@@ -1,3 +1,5 @@
+import {countyOfficials} from './localOfficials';
+import {siteById} from './scenario';
 import {expandedPeople,expandedAncestors,expandedParentPairs} from './expandedPeople';
 import {relationshipPeople} from './relationships';
 import { historicalCharacters,characterRelations } from './characters';
@@ -35,6 +37,7 @@ const extraHouses:[string,string,string,string,Family['originKind']][]=[
  ['fictional-house-liang','顾','建康顾氏','建康（架空）','设定'],['fictional-house-east','韩','邺城韩氏','邺城（架空）','设定'],['fictional-house-west','陆','长安陆氏','长安（架空）','设定'],
 ];
 for(const [id,surname,name,origin,originKind] of extraHouses)families.push({id,surname,name,origin,originKind,color:originKind==='设定'?'#9b8876':'#7ea99e',note:originKind==='设定'?'架空独立家系，不挂接历史谱系。':'仅连接已录史料可证的亲属，不推定同姓者的世系。',sources:[...new Map(relationshipPeople.filter(p=>p.family===id&&p.source).map(p=>[p.source!.url,p.source!])).values()]});
+for(const p of countyOfficials)families.push({id:p.family,surname:p.name[0],name:siteById[p.home].name+p.name[0]+'氏',origin:siteById[p.home].name,originKind:'设定',color:'#9b8876',note:'架空县官家系，不接入同姓历史名门。',sources:[]});
 export const familyById:Record<string,Family>=Object.fromEntries(families.map(f=>[f.id,f]));
 export interface FamilyPerson {id:string;name:string;family:string;status:'ancestor'|'roster'|'reference'|'fictional';description:string;sources:FamilySource[]}
 const ancestor=(id:string,name:string,family:string,source:FamilySource):FamilyPerson=>({id,name,family,status:'ancestor',description:'546 年开局前的先人，仅用于追溯家谱，不参与本局行动。',sources:[source]});

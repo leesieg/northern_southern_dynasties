@@ -1,6 +1,7 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {routeGrant,localBalance} from './treasury';
 import { describe,it,expect } from 'vitest';
-import { act,advance,newCampaignWorld } from './world';
+import {act,advance} from './world';
 import { ensureLifestyle,lifestyleProgress,lifestylePoints,lifestyleLearning,lifestyleBonuses,lifestyleMasteries } from './lifestyle';
 import { lifestylePerks,branchPerks,type LifestyleBranch } from '../data/lifestyles';
 import { buildingModifiers,interactionQuote,acceptance } from './social';

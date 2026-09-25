@@ -1,6 +1,7 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {historicalCharacters} from '../data/characters';
 import { describe,it,expect } from 'vitest';
-import { newCampaignWorld,act,advance } from './world';
+import {act,advance} from './world';
 import { courtOf,courtReason,movementSummary,movementPower,courtBonus,advanceCourts,foundingPause,controlledShare,courtSalary } from './court';
 import { governmentOf,regimeName,governmentReason,governmentTaskPause } from './government';
 import { officeHierarchy,superiorOffice } from './offices';
@@ -8,7 +9,7 @@ import { cityYield,realmForecast,armyMonthlyPay } from './realm';
 import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
 // Isolate these court-mechanism fixtures from demographic roster size; expanded politics has dedicated coverage.
-const start=(id='xiao-yan')=>{const w=newCampaignWorld(id,undefined,'sandbox');for(const g of Object.values(w.realm!.governments!.realms))for(const id of Object.keys(g.court!.members))if(!historicalCharacters.some(p=>p.id===id))delete g.court!.members[id];return w;};
+const start=(id='xiao-yan')=>{const w=newCampaignWorld(id,undefined,'sandbox');for(const city of Object.values(w.realm!.cities))if(city.governor?.startsWith('county-official-'))city.governor=null;for(const g of Object.values(w.realm!.governments!.realms))for(const id of Object.keys(g.court!.members))if(!historicalCharacters.some(p=>p.id===id))delete g.court!.members[id];return w;};
 function pass(w:World,days:number){for(let i=0;i<days;i++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w,1);}if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});}
 function resources(w:World){w.realm!.influence=600;for(const t of Object.values(w.realm!.treasuries)){t.coins=10000;t.grain=10000;}}
 function claimant(){const w=start('xiao-yi');resources(w);const g=governmentOf(w)!,c=courtOf(w)!;g.merit['xiao-yi']=80;g.legitimacy=35;g.support=90;c.members['xiao-gang']='conservative';act(w,{type:'court',action:'debate'});return w;}

@@ -1,6 +1,7 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import { describe,it,expect } from 'vitest';
 import { officeHierarchy,superiorOffice,directSubordinates,officeChain } from './offices';
-import { newCampaignWorld,act,advance } from './world';
+import {act,advance} from './world';
 import { governmentOf } from './government';
 import { parseWorld,serializeWorld } from './save';
 import { historicalCharacters } from '../data/characters';

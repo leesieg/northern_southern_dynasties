@@ -81,7 +81,7 @@ export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>
  return {reason,cost:d?.cost??0,days:c.delegate?(npcRoute(w,c.delegate,c.site)?.days??0):(route?.days??0),food:route?.food??0,duration:d?.days??0};
 }
 function npcRoute(w:World,id:string,to:string){const from=personResidence(w,id).site,r=relationshipPersonById[id]?.realm??characterById[id]?.polity;if(from===to)return {days:0,route:[from],durations:[]};return r?planRoute(from,to,site=>!w.realm||canEnter(w,r,w.realm.cities[site].controller,id)):null;}
-export function dispatchNPC(w:World,id:string,to:string){const s=w.mobility?.residences[id],route=npcRoute(w,id,to);if(!s||s.journey||!route||s.site===to)return;s.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}
+export function dispatchNPC(w:World,id:string,to:string){const s=w.mobility?.residences[id];if(!s||s.journey||s.site===to)return;const route=npcRoute(w,id,to);if(!route)return;s.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}
 export function mobilityReason(w:World,c:MobilityCommand):string{
  if(!w.mobility||!w.realm||!w.characterId||w.campaign?.status!=='active')return '此局没有行旅事务';
  if(c.action==='plan')return activityQuote(w,c).reason;
@@ -136,7 +136,8 @@ function resolve(w:World,a:Activity,choice:'measured'|'decisive'){
 }
 export function advanceMobility(w:World){
  const s=w.mobility;if(!s||!w.realm||s.lastDay>=w.day)return;s.lastDay=w.day;
- const offices=officeHierarchy(w),executives=Object.fromEntries(realms.map(r=>[r,governingExecutives(w,r)]));
+ const offices=officeHierarchy(w),heldOffices=new Map<string,typeof offices>(),executives=Object.fromEntries(realms.map(r=>[r,governingExecutives(w,r)]));
+ for(const office of offices)if(office.holder&&office.active){const list=heldOffices.get(office.holder)??[];list.push(office);heldOffices.set(office.holder,list);}
  for(const [id,location] of Object.entries(s.residences)){
   if(id===w.characterId||!isAlive(w,id)||commandArmy(w,id)||lifeOf(w,id)?.illness?.severity===3)continue;
   const j=location.journey;if(j){const realm=allegianceRealm(w,id);if(realm&&!canEnter(w,realm,w.realm.cities[j.route[j.leg+1]].controller,id)){location.journey=null;continue;}j.elapsed++;if(j.elapsed>=j.durations[j.leg]){location.site=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)location.journey=null;}continue;}
@@ -144,7 +145,7 @@ export function advanceMobility(w:World){
   const appointment=s.appointments[id];if(appointment&&appointment.until>=w.day){dispatchNPC(w,id,appointment.site);continue;}
   const task=w.service?.tasks.find(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id));const duty=w.duties?.task;
   const pendingActivity=s.activities.find(a=>a.delegate===id&&!['done','cancelled'].includes(a.phase));
-  const held=offices.filter(n=>n.holder===id&&n.active),office=held.find(n=>n.kind==='city'&&n.site===location.site)??held.find(n=>n.kind==='city')??held.find(n=>n.kind==='office');const realm=allegianceRealm(w,id);
+  const held=heldOffices.get(id)??[],office=held.find(n=>n.kind==='city'&&n.site===location.site)??held.find(n=>n.kind==='city')??held.find(n=>n.kind==='office');const realm=allegianceRealm(w,id);
   const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??office?.seatSite??(office&&realm?capital(realm):undefined))??(realm&&executives[realm].includes(id)?capital(realm):characterById[id]?.home);
   if(destination&&!commandArmy(w,id))dispatchNPC(w,id,destination);
  }

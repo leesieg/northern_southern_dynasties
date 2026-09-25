@@ -1,5 +1,6 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld,act,advance} from './world';
+import {act,advance} from './world';
 import {governmentOf} from './government';
 import {serviceReason,serviceTask,actService,type ServiceCommand} from './assignments';
 import {isSovereign,officialDutyReason} from './officialDuties';

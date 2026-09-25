@@ -1,3 +1,4 @@
+import {familyById} from '../data/families';
 import {migrateCountyAccounts} from './treasury';
 import {ensureLocalAdministration} from './localAdministration';
 import {validLocalAdministration} from './localAdministrationSave';
@@ -31,7 +32,7 @@ import { validRealm } from './realmSave';
 import { DEFAULT_SCRIPT,getScript } from '../data/scripts';
 import { validSocial } from './socialSave';
 import { newSocial } from './social';
-import { characterById,familyNames } from '../data/characters';
+import { characterById } from '../data/characters';
 import { campaignGoals } from './campaign';
 import { cityBuildings, estateBuildings, newHoldings } from './construction';
 import { CONTENT_VERSION, siteById } from '../data/scenario';
@@ -59,7 +60,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day))))return fail();
   const h=value.holdings;
   if(!obj(h)||!Array.isArray(h.governedCities)||!h.governedCities.every(site)||new Set(h.governedCities).size!==h.governedCities.length||!obj(h.cities)||!obj(h.estate))return fail();
-  if(typeof h.estate.family!=='string'||!Object.hasOwn(familyNames,h.estate.family)||!site(h.estate.location))return fail();
+  if(typeof h.estate.family!=='string'||!Object.hasOwn(familyById,h.estate.family)||!site(h.estate.location))return fail();
   const checkHolding=(holding:unknown,scope:'city'|'estate')=>{
     if(!obj(holding)||!obj(holding.levels))return false;
     const definitions=scope==='city'?cityBuildings:estateBuildings;

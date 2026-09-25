@@ -1,6 +1,7 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {routeGrant} from './treasury';
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld,act,advance} from './world';
+import {act,advance} from './world';
 import {actRetinue,advanceRetinue,retinueQuote,postStatus,retinueMembers,recommendationBonus,isOfficial} from './retinue';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 import {buildQuote} from './construction';

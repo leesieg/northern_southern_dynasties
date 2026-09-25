@@ -1,5 +1,6 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import { describe,it,expect } from 'vitest';
-import { act,advance,newCampaignWorld } from './world';
+import {act,advance} from './world';
 import { governmentOf,governmentYear,governmentBonus,governmentTaskPause,regimeName,advanceGovernments } from './government';
 import { executive,cityYield,armyMonthlyPay,realmReason,playerRealm } from './realm';
 import { governmentTypes,type GovernmentType } from '../data/governments';

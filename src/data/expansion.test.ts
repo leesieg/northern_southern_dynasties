@@ -41,7 +41,7 @@ describe('546 content enrichment',()=>{
  });
  it('new NPCs can be appointed, travel to office and persist without losing their identity',()=>{
   const w=start(),cmd={type:'realm',action:'appoint',site:'wucheng',candidate:'xu-ling'} as const;expect(realmReason(w,cmd)).toBe('');act(w,cmd);
-  for(let i=0;i<100&&!w.realm!.cities.wucheng.governor;i++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w);}
+  for(let i=0;i<100&&w.realm!.cities.wucheng.governor!=='xu-ling';i++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w);}
   expect(w.realm!.cities.wucheng.governor).toBe('xu-ling');expect(personResidence(w,'xu-ling').site).toBe('wucheng');expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('expanded heirs participate in designation, death resolution and validated saves',()=>{

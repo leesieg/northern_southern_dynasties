@@ -1,7 +1,8 @@
+import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {actService,serviceCandidates} from './assignments';
 import {actRetinue,advanceRetinue} from './retinue';
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld,advance,act} from './world';
+import {advance,act} from './world';
 import {advancePopulation} from './population';
 import {advanceArmyLogistics} from './armyLogistics';
 import {advanceRealm,actRealm,realmReason} from './realm';

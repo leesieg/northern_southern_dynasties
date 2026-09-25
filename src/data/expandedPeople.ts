@@ -1,3 +1,4 @@
+import {countyOfficials} from './localOfficials';
 /** 546 roster enrichment. Residences, traits and abilities are scenario choices;
  * unknown birthdays are estimates. Later offices/empires are not backdated. */
 export interface ExpandedPerson {id:string;name:string;realm:'liang'|'east'|'west';family:string;home:string;birth:number;sex:'male'|'female';role:'commander'|'scholar'|'prince';source:{title:string;url:string};note:string;fictional?:boolean}
@@ -61,6 +62,7 @@ for(const [id,name,realm,home,family,birth] of [
  ['guest-east-clerk','韩朔','east','xindu','fictional-han',521],['guest-east-elder','韩岑','east','xindu','fictional-han',496],
  ['guest-west-clerk','陆峤','west','anding','fictional-lu',520],['guest-west-elder','陆恪','west','anding','fictional-lu',494],
 ] as const)expandedPeople.push({id,name,realm,home,family,birth,role:'scholar',sex:'male',fictional:true,note:'架空地方士人；独立家系，不属于同姓历史名门。',source:{title:'剧本架空家系',url:''}});
+expandedPeople.push(...countyOfficials);
 export const expandedPersonById:Record<string,ExpandedPerson>=Object.fromEntries(expandedPeople.map(p=>[p.id,p]));
 // Each edge has its own source; common surnames never imply a blood relationship.
 export const expandedParentPairs:[string,string,string,number][]=[
