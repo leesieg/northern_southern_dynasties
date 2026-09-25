@@ -1,3 +1,4 @@
+import {awardDeed} from './deeds';
 import {expandedPersonById} from '../data/expandedPeople';
 import {enactPoliticalAction} from './politicalActions';
 import {officeName,allegianceRealm} from './officeEligibility';
@@ -68,7 +69,7 @@ export function validCamp(w:World,r:RealmId,site:string){const c=w.realm!.cities
 export function governmentReason(w:World,c:GovernmentCommand):string{
  if(!w.realm||!w.characterId||w.campaign?.status!=='active')return '仅历史沙盒可用';const g=governmentOf(w),s=w.realm,r=currentRealm(w);if(!g)return '此档尚未完成政体迁移，请重新读取';
  if(s.event)return '先处理待决事务';if(c.action==='nominate')return nominationReason(w,c,governingAuthority(w));const t=s.treasuries[r];
- if(c.action==='appraise')return (g.cooldowns[w.characterId+'|appraise']??0)>w.day?'考课每 30 日一次':w.people[0].coins<20?'考课需个人钱 20':(g.merit[w.characterId]??0)>=100?'功绩已满':'';
+ if(c.action==='appraise')return '考课依据在任治理与差事成果，不再收取私财生成功绩';
  if(c.action==='council')return (g.cooldowns['council']??0)>w.day?'议政每 30 日一次':s.influence<15||t.coins<40?'议政需影响力 15、公款 40':'';
  // A house may support a claimant without pretending that the old emperor is the recipient of abdication.
  if(c.action!=='succession'&&!governmentExecutive(w))return '需要实际执政权';
@@ -101,7 +102,7 @@ export function actGovernment(w:World,c:GovernmentCommand){
  const reason=governmentReason(w,c);if(reason)throw new Error(reason);const s=w.realm!,r=currentRealm(w),g=governmentOf(w)!,t=s.treasuries[r],id=w.characterId!;
  if(c.action==='adopt'||c.action==='law')enactPoliticalAction(w,r,'reform');
  if(c.action==='nominate'){const heirs=g.heirs??={ruler:null,executive:null,dynasty:null};heirs[c.office]=c.candidate;if(c.office==='ruler')heirs.dynasty=c.candidate?c.name?.trim()||null:null;if(c.candidate)s.influence-=20;log(w,r,'council',c.office,c.candidate?politicalName(c.candidate)+'被定为'+(c.office==='ruler'?'君位继承人':'执政继任人')+'。':'撤销指定继承，依亲属关系承继。');return;}
- if(c.action==='appraise'){w.people[0].coins-=20;g.merit[id]=cap((g.merit[id]??0)+10);g.cooldowns[id+'|appraise']=w.day+30;log(w,r,'appraise',id,politicalName(id)+'完成考课，功绩 +10（玩法结算）。');return;}
+
  if(c.action==='council'){s.influence-=15;t.coins-=40;g.support=cap(g.support+12);g.legitimacy=cap(g.legitimacy+5);g.cooldowns.council=w.day+30;log(w,r,'council',g.type,'议政争取支持：支持 +12、合法性 +5。');return;}
  if(c.action==='cancel'){log(w,r,'cancel',g.task!.target,'撤回议程，已付成本不退；此前阻力和支持变化保留。');g.task=null;return;}
  if(c.action==='camp'){t.coins-=50;t.grain-=60;g.camp=c.site;g.lastCamp=w.day+90;log(w,r,'camp',c.site,'宫帐／驻牧地迁至'+siteById[c.site].name+'；城市本体未移动。');return;}
@@ -136,7 +137,7 @@ export function advanceGovernments(w:World){
  for(const r of realmIds){const g=s.realms[r],t=w.realm!.treasuries[r],order=averageOrder(w,r);
  g.legitimacy=cap(g.legitimacy+(ownsCapital(w,r)&&order>=60&&t.coins>0&&t.grain>0?1:-3));g.support=cap(g.support+(order>=60?1:-3));
  const active=new Set(Object.values(w.realm!.cities).filter(c=>c.owner===r&&c.controller===r&&c.governor&&c.order>=60).map(c=>c.governor!));
- for(const id of active)g.merit[id]=cap((g.merit[id]??0)+(g.laws.includes('east-assessment')?4:2));
+ for(const id of active)awardDeed(w,r,id,'governance:'+Math.floor(w.day/30),(g.laws.includes('east-assessment')?4:2)+(g.court?.ministries.personnel&&(g.merit[g.court.ministries.personnel]??0)>=40?1:0),'本期辖地保持秩序，完成在任治理');
  if(g.type==='nomadic'||g.type==='khanate'){const winter=Math.floor(w.day/30)%12>=9||Math.floor(w.day/30)%12<2;const loss=validCamp(w,r,g.camp)?winter?20:0:40;g.herd=cap(g.herd+(loss?-loss:15),1000);if(g.herd<50)g.support=cap(g.support-4);}
  if(g.type==='celestial'&&g.legitimacy<15){g.type='meritocratic';if(g.task?.kind==='government'&&g.task.target==='meritocratic')g.task=null;log(w,r,'crisis','meritocratic','天命失序，'+regimeName(w,r)+'退为贤能制；已有领土不自动分裂。');}
  }

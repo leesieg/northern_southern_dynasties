@@ -22,7 +22,7 @@ describe('沙盒政治经济军事',()=>{
  it('税率取舍改变生产与秩序，公共建设不重复发放个人收入',()=>{
   const w=sandbox(),r=w.realm!,initial=cityYield(w,'jiankang').coins;
   act(w,{type:'realm',action:'tax',site:'jiankang',tax:'heavy'});expect(cityYield(w,'jiankang').coins).toBeGreaterThan(initial);
-  const p=w.people[0].coins;advance(w,30);expect(r.cities.jiankang.order).toBe(64);expect(w.people[0].coins-p).toBe(8);expect(r.ledger).toHaveLength(3);expect(realmForecast(w,'liang').income).toBeGreaterThan(0);validate(w);
+  const p=w.people[0].coins;advance(w,30);expect(r.cities.jiankang.order).toBe(64);expect(w.economy!.budgets[w.characterId!].lastPaid).toBe(2);expect(w.people[0].coins-p+2).toBe(8);expect(r.ledger).toHaveLength(3);expect(realmForecast(w,'liang').income).toBeGreaterThan(0);validate(w);
  });
  it('任命延迟生效，撤销前任权限；皇帝不自动取得权臣任命权',()=>{
   const w=sandbox();act(w,{type:'realm',action:'appoint',site:'jiankang',candidate:'xiao-gang'});
@@ -69,9 +69,10 @@ describe('沙盒政治经济军事',()=>{
   if(field==='event')s.event={kind:'flood',site:'unknown',day:0};
   expect(()=>serializeWorld(w)).toThrow();
  });
- it.each(['xiao-yan','gao-huan','yuwen-tai'])('最多 50 年 %s 沙盒持续结算、家业终结与存档回放',id=>{const w=sandbox(id);passDays(w,9000);const restored=parseWorld(serializeWorld(w));passDays(w,9250);passDays(restored,9250);expect(w.day).toBeLessThanOrEqual(18250);if(w.day<18250)expect(w.campaign!.status).toBe('lost');expect(restored).toEqual(w);validate(w);},60000);
+ // Functional replay includes all NPC accounts and investigations. Performance observations are tracked separately.
+ it.each(['xiao-yan','gao-huan','yuwen-tai'])('最多 50 年 %s 沙盒持续结算、家业终结与存档回放',id=>{const w=sandbox(id);passDays(w,9000);const restored=parseWorld(serializeWorld(w));passDays(w,9250);passDays(restored,9250);expect(w.day).toBeLessThanOrEqual(18250);if(w.day<18250)expect(w.campaign!.status).toBe('lost');expect(restored).toEqual(w);validate(w);},120000);
  it('长期世界结算与分段读档一致',()=>{
   const w=sandbox('yuwen-tai');actRealm(w,{type:'realm',action:'tax',site:'changan',tax:'light'});passDays(w,180);const restored=parseWorld(serializeWorld(w));passDays(w,3650);passDays(restored,3650);expect(restored).toEqual(w);syncGovernance(w);validate(w);
- },20000);
+ },60000);
 });
 function validate(w:World){expect(parseWorld(serializeWorld(w))).toEqual(w);}

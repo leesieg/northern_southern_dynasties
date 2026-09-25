@@ -1,3 +1,4 @@
+import {cityOperatingExpense} from './realm';
 import {canonicalTerritory,countyTerritory,localHolder,localSuperior,localSeatSite,localSites,localActive,localAncestors,payLocalOfficials} from './localAdministration';
 import {courtSalary,payCourtSalary} from './court';
 import {ancestorsOf,territoryNodes} from '../data/territorialHierarchy';
@@ -50,7 +51,7 @@ export function advanceFiscal(w:World){const s=ensureFiscal(w);if(!s)return;if(w
  for(const q of s.requests.filter(q=>q.status==='pending')){const t=q.territory??countyTerritory(q.site);if(localHolder(w,t,q.realm)!==q.actor||!localActive(w,t,q.realm)||!isAlive(w,q.actor)){q.status='cancelled';q.changed=w.day;q.reply='任职、领土或申请人状态变化';continue;}const superior=localSuperior(w,t,q.realm,q.actor)?.holder;if(superior&&superior!==q.approver){q.approver=superior;q.changed=w.day;}if(w.day-q.created>=60){q.status='rejected';q.changed=w.day;q.reply='逾期未批，申请结案';continue;}if(q.approver===w.characterId||w.day-q.changed<3)continue;const approved=grantFactors(w,q).reduce((n,p)=>n+p.value,0)>=50&&!fiscalReason(w,{type:'fiscal',action:'approve',id:q.id},q.approver);actFiscal(w,{type:'fiscal',action:approved?'approve':'reject',id:q.id},q.approver);}}
 /** Counties retain 35%; each upper tier retains 10% of incoming current-period remittance. */
 export function centralTax(w:World,site:string,coins=cityYield(w,site).coins){let n=coins;n-=Math.floor(n*.35);for(const key of fiscalPath(w,site).slice(1,-1))if(key)n-=Math.floor(n*.1);return n;}
-export function collectFiscal(w:World,r:RealmId){ensureFiscal(w);for(const [site,c] of Object.entries(w.realm!.cities)){if(c.controller!==r)continue;const amount=Math.min(cityYield(w,site).coins,1_000_000-localBalance(w,site)),path=fiscalPath(w,site,r);setBalance(w,path[0],publicBalance(w,path[0])+amount);fiscalRecord(w,r,'tax',path[0],amount,'征收县域税赋');let flow=amount-Math.floor(amount*.35);for(let i=0;i<path.length-1;i++){const sent=Math.min(flow,1_000_000-publicBalance(w,path[i+1]));transfer(w,r,path[i],path[i+1],sent,'逐级上缴税赋');flow=sent-Math.floor(sent*.1);}}}
+export function collectFiscal(w:World,r:RealmId,yields?:ReadonlyMap<string,{coins:number}>){ensureFiscal(w);for(const [site,c] of Object.entries(w.realm!.cities)){if(c.controller!==r)continue;const amount=Math.min((yields?.get(site)??cityYield(w,site)).coins,1_000_000-localBalance(w,site)),path=fiscalPath(w,site,r);setBalance(w,path[0],publicBalance(w,path[0])+amount);fiscalRecord(w,r,'tax',path[0],amount,'征收县域税赋');let flow=amount-Math.floor(amount*.35);for(let i=0;i<path.length-1;i++){const sent=Math.min(flow,1_000_000-publicBalance(w,path[i+1]));transfer(w,r,path[i],path[i+1],sent,'逐级上缴税赋');flow=sent-Math.floor(sent*.1);}}}
 export function distributeFiscal(_w:World,_r:RealmId){/* 留用在征收时完成，不再重复回拨同一笔预算。 */}
 export function fiscalSnapshot(w:World){return {net:{...(w.realm?.fiscal?.net??{liang:0,east:0,west:0})},balances:Object.fromEntries(realms.map(r=>[centralAccount(r),w.realm?.treasuries[r].coins??0]))};}
 /** Legacy central actions are reconciled to the same ledger, without double-booking transfers. */
@@ -58,7 +59,7 @@ export function reconcileFiscal(w:World,before:ReturnType<typeof fiscalSnapshot>
 
 export function payFiscalOperations(w:World,r:RealmId){
  const t=w.realm!.treasuries[r];
- for(const [site,c] of Object.entries(w.realm!.cities)){if(c.controller!==r)continue;const amount=Math.min(t.coins,cityYield(w,site).expense,grantRoom(w,site,r));routeGrant(w,site,amount,'地方行政经费',r);spendLocal(w,site,amount,'地方行政支出');if(c.governor)creditPersonalCoins(w,c.governor,Math.max(0,amount-Math.ceil(c.population/900)));}
+ for(const [site,c] of Object.entries(w.realm!.cities)){if(c.controller!==r)continue;const amount=Math.min(t.coins,cityOperatingExpense(w,site),grantRoom(w,site,r));routeGrant(w,site,amount,'地方行政经费',r);spendLocal(w,site,amount,'地方行政支出');if(c.governor)creditPersonalCoins(w,c.governor,Math.max(0,amount-Math.ceil(c.population/900)));}
  payLocalOfficials(w,r,(key,want,reason)=>{const amount=Math.min(publicBalance(w,key),want);setBalance(w,key,publicBalance(w,key)-amount);fiscalRecord(w,r,key,'expense',amount,reason);return amount;});
  const army=w.realm!.armies.find(a=>a.realm===r);for(const [name,want] of [['军饷',army?armyMonthlyPay(w,army):0],['中央官员俸禄',courtSalary(w,r)]] as const){const amount=Math.min(t.coins,want);t.coins-=amount;fiscalRecord(w,r,centralAccount(r),'expense',amount,name);if(name==='中央官员俸禄')payCourtSalary(w,r,amount);}
 }

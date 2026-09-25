@@ -1,3 +1,4 @@
+import {economyPending} from './personalEconomyAdapter';
 import {appointmentPauses} from './appointmentCycle';
 import type {RealmId} from './realm';
 import {localTitle} from './localAdministration';
@@ -17,6 +18,7 @@ import {siteById} from '../data/scenario';
 import type {World} from './types';
 import {playerRealm} from './realm';
 export function pauseHasActions(w:World,event:PauseEvent){
+ if(event.kind==='economy')return economyPending(w).some(q=>q.id===event.economyId);
  if(event.kind==='appointments')return w.campaign?.status==='active'&&!!event.appointmentRealm&&w.realm?.local?.cycle?.rounds[event.appointmentRealm]?.status==='pending'&&w.realm.local.cycle.rounds[event.appointmentRealm]?.approver===w.characterId;
  if(event.kind==='local')return !!w.realm?.local?.requests.some(q=>q.id===event.localId&&q.status==='pending'&&q.approver===w.characterId);
  if(event.kind==='court')return !!w.characterId&&!!courtOf(w)?.petition&&courtOf(w)?.petition?.due===event.courtDue&&governmentExecutive(w);
@@ -31,10 +33,10 @@ export function pauseHasActions(w:World,event:PauseEvent){
  }
  return false;
 }
-export interface PauseEvent {id:string;appointmentRealm?:RealmId;localId?:number;courtDue?:number;fiscalId?:number;assignmentId?:number;activityId?:number;kind:'appointments'|'local'|'court'|'fiscal'|'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
-export function pauseSnapshot(w:World){return {appointments:new Set(appointmentPauses(w).map(e=>e.id)),local:new Map(w.realm?.local?.requests.map(q=>[q.id,q.status+'|'+q.approver])),transfers:new Map(w.realm?.population?.transfers.map(t=>[t.id,t.status])),courtDue:w.characterId?courtOf(w)?.petition?.due:undefined,fiscal:new Map(w.realm?.fiscal?.requests.map(q=>[q.id,q.status+'|'+q.approver])),clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
+export interface PauseEvent {id:string;economyId?:number;appointmentRealm?:RealmId;localId?:number;courtDue?:number;fiscalId?:number;assignmentId?:number;activityId?:number;kind:'economy'|'appointments'|'local'|'court'|'fiscal'|'retinue'|'clan'|'mobility'|'service'|'arrival'|'journey'|'duties'|'health'|'inheritance'|'diplomacy'|'realm'|'outcome'|'background'|'error';title:string;body:string;site?:string;person?:string}
+export function pauseSnapshot(w:World){return {economy:new Set(economyPending(w).map(q=>q.id)),appointments:new Set(appointmentPauses(w).map(e=>e.id)),local:new Map(w.realm?.local?.requests.map(q=>[q.id,q.status+'|'+q.approver])),transfers:new Map(w.realm?.population?.transfers.map(t=>[t.id,t.status])),courtDue:w.characterId?courtOf(w)?.petition?.due:undefined,fiscal:new Map(w.realm?.fiscal?.requests.map(q=>[q.id,q.status+'|'+q.approver])),clan:clanStanding(w,w.characterId??''),retinue:retinueMembers(w).map(m=>({id:m.id,arrears:m.arrears,ready:!!m.post&&!postStatus(w,m.post,m.site??undefined).reason})),mobility:new Map(w.mobility?.activities.map(a=>[a.id,a.phase])),reported:w.mobility?.reported??0,service:serviceAttention(w),closedTasks:new Set(w.service?.tasks.filter(t=>t.phase==='closed').map(t=>t.id)),day:w.day,actor:w.characterId,ill:!!lifeOf(w,w.characterId)?.illness,destination:w.people[0].journey?.route.at(-1),attention:dutyAttention(w),closed:w.duties?.task?.phase==='closed',audiences:new Set(w.diplomacy?.missions.filter(m=>m.status==='audience').map(m=>m.id)),event:JSON.stringify(w.realm?.event??null),status:w.campaign?.status};}
 export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):PauseEvent[]{
- const events:PauseEvent[]=[];
+ const events:PauseEvent[]=economyPauses(w).filter(e=>!before.economy.has(e.economyId!));
  const add=(kind:PauseEvent['kind'],title:string,body:string,extra:Partial<PauseEvent>={})=>events.push({id:`${w.day}:${kind}:${events.length}`,kind,title,body,...extra});
  for(const t of w.realm?.population?.transfers??[])if(t.realm===(w.characterId?currentRealm(w):null)&&t.status!=='traveling'&&before.transfers.get(t.id)==='traveling')add('background',t.kind==='grain'?'公粮抵达':'迁民抵达',`${siteById[t.to].name}接收 ${t.arrived}${t.kind==='grain'?'粮':'人'}，损耗 ${t.lost}。`,{site:t.to});
  for(const e of appointmentPauses(w))if(!before.appointments.has(e.id))events.push(e);
@@ -59,3 +61,5 @@ export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):Pau
  const petition=w.characterId?courtOf(w)?.petition:null;if(petition&&petition.due!==before.courtDue&&governmentExecutive(w))add('court',movements[petition.group].name+'奏议',movements[petition.group].goal+' 请决定批准或否决。',{courtDue:petition.due});
  return events;
 }
+
+export function economyPauses(w:World):PauseEvent[]{return economyPending(w).map(q=>({id:'economy:'+q.id,kind:'economy',economyId:q.id,title:'查核呈报',body:'监察人已呈报查核结果，请审议证据并决定是否追缴。'}));}

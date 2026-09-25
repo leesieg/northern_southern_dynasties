@@ -1,3 +1,4 @@
+import {validDeeds} from './deeds';
 import {familyById} from '../data/families';
 import {migrateCountyAccounts} from './treasury';
 import {ensureLocalAdministration} from './localAdministration';
@@ -38,6 +39,7 @@ import { cityBuildings, estateBuildings, newHoldings } from './construction';
 import { CONTENT_VERSION, siteById } from '../data/scenario';
 import { legDays } from './world';
 import type { World } from './types';
+import {validEconomyWorld} from './personalEconomySave';
 
 const integer = (n: unknown, min: number, max: number): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= min && n <= max;
 const text = (value: unknown, max: number): value is string => typeof value === 'string' && value.length > 0 && value.length <= max;
@@ -119,6 +121,7 @@ export function validateWorld(value: unknown): asserts value is World {
   }
   if(!validRelationships(value as unknown as World)||!validLife(value as unknown as World))return fail();
   if(!validLocalAdministration(value as unknown as World)||!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
+  if(!validEconomyWorld(value as unknown as World)||!validDeeds(value as unknown as World))return fail();
   for (const event of value.chronicle) {
     if (!obj(event) || !integer(event.day,0,value.day) || !text(event.text,400) || !expected.includes(String(event.person))) return fail();
   }

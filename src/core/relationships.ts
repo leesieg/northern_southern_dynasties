@@ -13,6 +13,7 @@ import { governmentOf,currentRealm,governingExecutives,governmentExecutive } fro
 import { syncCourt } from './court';
 import { realms,type RealmId } from './realm';
 import type { World } from './types';
+import {localPoliticalBasis} from './officePower';
 export type Friendship='friend'|'confidant'|'rival'|'nemesis';
 export interface Marriage {id:string;a:string;b:string;from:number;until:number|null;origin:'historical'|'simulation'}
 export interface Regency {realm:RealmId;regimeId:string;basis:string;ruler:string;controller:string;since:number;grip:number;origin:'scenario'|'scheme'|'restored'}
@@ -79,7 +80,7 @@ export function relationshipScore(w:World,target:string){
 function log(w:World,actor:string,target:string|null,text:string){const s=w.relationships!;s.history.push({day:w.day,actor,target,text});s.history=s.history.slice(-100);w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 export function setFriendship(w:World,a:string,b:string,kind:Friendship){if(!w.relationships)return;w.relationships.bonds[bondKey(a,b)]={a,b,kind,since:w.day};}
 export function oathCycle(w:World,follower:string,lord:string){const seen=new Set([follower]);let next:string|undefined=lord;while(next){if(seen.has(next))return true;seen.add(next);next=w.relationships?.oaths[next]?.lord;}return false;}
-export function authorityScore(w:World,id:string){const p=relationshipPersonById[id];if(!p||!w.realm)return 0;const g=governmentOf(w,p.realm)!;return (governingExecutives(w,p.realm).includes(id)?60:0)+(g.ruler===id?30:0)+(Object.values(g.court?.ministries??{}).includes(id)?20:0)+Object.values(w.realm.cities).filter(c=>c.owner===p.realm&&c.controller===p.realm&&c.governor===id).length*10+Math.floor((g.merit[id]??0)/5);}
+export function authorityScore(w:World,id:string){const p=relationshipPersonById[id];if(!p||!w.realm)return 0;const g=governmentOf(w,p.realm)!;return (governingExecutives(w,p.realm).includes(id)?60:0)+(g.ruler===id?30:0)+(Object.values(g.court?.ministries??{}).includes(id)?20:0)+localPoliticalBasis(w,id,p.realm)+Math.floor((g.merit[id]??0)/5);}
 export function validRegency(w:World,r:RealmId){const p=w.relationships?.regencies?.[r];return p&&p.basis===powerBasis(w,r)&&p.regimeId===governmentOf(w,r)?.regimeId?p:undefined;}
 export function allegianceBonus(w:World,r:RealmId){const chiefs=governingExecutives(w,r);return Math.min(9,Object.entries(w.relationships?.oaths??{}).filter(([id,o])=>relationshipPersonById[id]?.realm===r&&o.loyalty>=70&&chiefs.includes(o.lord)).length*3);}
 export function relationshipQuote(w:World,command:RelationshipCommand){
@@ -99,7 +100,7 @@ export function relationshipQuote(w:World,command:RelationshipCommand){
  if(legacy)return legacy.reason;
  if(['pledge','recruit'].includes(action)&&relationshipPersonById[a].realm!==relationshipPersonById[target].realm)return '须同一政权人物';
  if(w.mobility&&['befriend','confidant','reconcile','marry','pledge','recruit','control','tighten'].includes(action)&&!together(w,a,target))return '须同城会面，可先约定行程';
- if(action==='gift')return '';
+ if(action==='gift')return s.reserves[target]+30>1_000_000?'对方私财已达容量':'';
  if(action==='pressure')return w.social.renown<10?'需家业名望 10':relationHooks(w,a,target)>=3?'最多保留 3 份人情':'';
  if(action==='befriend')return s.scheme||w.social.scheme?'已有长期交往或权力计谋':kind==='friend'||kind==='confidant'?'已经是朋友':kind==='rival'||kind==='nemesis'?'先调解仇怨':'';
  if(action==='confidant')return kind!=='friend'?'先成为朋友':score<85?'成为至交需接受度 85':w.day-(s.bonds[bondKey(a,target)]?.since??w.day)<30?'友谊至少持续 30 日':'';
@@ -107,7 +108,7 @@ export function relationshipQuote(w:World,command:RelationshipCommand){
  if(action==='reconcile')return kind!=='rival'&&kind!=='nemesis'?'没有需要调解的仇怨':score<30?'调解接受度需达到 30':'';
  if(action==='marry')return s.marriages.length>=300?'本局婚姻记录已达 300 条上限':(ageAt(w,a)??0)<18||(ageAt(w,target)??0)<18?'双方须成年':relationshipPersonById[a].sex===p.sex?'当前婚姻规则需成年异性':closeKin(a,target)?'不得与已录近亲或同族结婚':activeMarriage(w,a)||activeMarriage(w,target)?'一方已有主要配偶，请先解除婚姻':s.maritalBasis[a]==='unknown'||s.maritalBasis[target]==='unknown'?'婚姻资料未录，不视为单身；本人可建立架空婚姻起点':kind==='rival'||kind==='nemesis'?'仇怨未解':score<70?'婚姻接受度需达到 70':'';
  if(action==='divorce')return spouseOf(w,a)!==target?'此人不是当前配偶':w.social.renown<20?'解除婚姻需家业名望 20':'';
- if(action==='aid')return !['friend','confidant'].includes(kind??'')&&spouseOf(w,a)!==target?'仅配偶或朋友可请求支援':score<40?'亲友支援接受度需达到 40':s.reserves[target]<50?'对方私人储备不足 50':'';
+ if(action==='aid')return !['friend','confidant'].includes(kind??'')&&spouseOf(w,a)!==target?'仅配偶或朋友可请求支援':score<40?'亲友支援接受度需达到 40':s.reserves[target]<50?'对方私人储备不足 50':w.people[0].coins+50>1_000_000?'个人钱包容量不足':'';
  if(!w.realm)return '政治关系仅历史沙盒可用';const r=currentRealm(w),g=governmentOf(w,r)!,control=validRegency(w,r);
  if(p.realm!==r)return '效忠与朝廷控制限同一政权，不自动转移领土';
  if(action==='pledge')return w.retinue?.members[a]?'已入幕府，须先离幕再宣誓':s.oaths[a]?'已有个人誓约，须先解除':g.ruler===a?'君主不能宣誓成为个人属员':authorityScore(w,target)<=authorityScore(w,a)?'对方须有更高的军政权力':oathCycle(w,a,target)?'效忠关系会形成循环':kind==='rival'||kind==='nemesis'?'不能向仇敌宣誓':score<40?'效忠接受度需达到 40':'';
@@ -132,7 +133,7 @@ export function actRelationship(w:World,command:RelationshipCommand){const q=rel
  w.people[0].coins-=q.cost;if(q.influence)w.realm!.influence-=q.influence;
  switch(action){
  case 'pressure':{const hook=pair(a,b);if(Object.hasOwn(w.social!.hooks,hook))w.social!.hooks[hook]++;else s.hooks[hook]=(s.hooks[hook]??0)+1;w.social!.renown-=10;w.social!.stress=cap(w.social!.stress+15);changeRelationOpinion(w,a,b,-25);if(['friend','confidant'].includes(friendship(w,a,b)??''))setFriendship(w,a,b,'rival');s.cooldowns[key]=w.day+15;break;}
- case 'gift':changeRelationOpinion(w,a,b,15);s.reserves[b]=cap(s.reserves[b]+30,1000);s.cooldowns[key]=w.day+10;break;
+ case 'gift':changeRelationOpinion(w,a,b,15);s.reserves[b]=cap(s.reserves[b]+30,1_000_000);s.cooldowns[key]=w.day+10;break;
  case 'befriend':s.scheme={kind:'befriend',actor:a,target:b,started:w.day,due:w.day+14,chance:q.chance,basis:null};break;
  case 'confidant':setFriendship(w,a,b,'confidant');changeRelationOpinion(w,a,b,10);w.social!.stress=cap(w.social!.stress-10);break;
  case 'rival':setFriendship(w,a,b,friendship(w,a,b)==='rival'?'nemesis':'rival');changeRelationOpinion(w,a,b,-30);changeRelationOpinion(w,b,a,-30);w.social!.renown-=10;w.social!.stress=cap(w.social!.stress+10);s.cooldowns[key]=w.day+30;break;
@@ -160,7 +161,7 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
  }else {const r=relationshipPersonById[task.actor].realm,g=governmentOf(w,r)!;if(success&&authorityScore(w,task.actor)>=20){s.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:task.target,controller:task.actor,since:w.day,grip:65,origin:'scheme'};resetAuthority(w,r);setFriendship(w,task.actor,task.target,'rival');log(w,task.actor,task.target,'挟制成功：名义君主保留，实际执政权转交'+relationName(task.actor)+'。');}else {changeRelationOpinion(w,task.actor,task.target,-30);setFriendship(w,task.actor,task.target,'rival');w.social!.stress=cap(w.social!.stress+20);log(w,task.actor,task.target,'挟制失败或权力基础丢失，君主成为仇敌，压力 +20。');}}
  }
  if(w.day%30||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
- for(const id of Object.keys(s.reserves))s.reserves[id]=cap(s.reserves[id]+5,1000);
+ for(const id of Object.keys(s.reserves))if(id!==w.characterId&&isAlive(w,id))s.reserves[id]=cap(s.reserves[id]+5,1_000_000);
  const personal=Object.values(s.bonds).filter(b=>isAlive(w,b.a)&&isAlive(w,b.b)&&(b.a===w.characterId||b.b===w.characterId)),friends=personal.filter(b=>b.kind==='friend'||b.kind==='confidant').length,rivals=personal.filter(b=>b.kind==='rival'||b.kind==='nemesis').length;
  w.social!.stress=cap(w.social!.stress-Math.min(6,friends*2)+(spouseOf(w,w.characterId!)?-2:0)+Math.min(9,rivals*3));
  for(const [id,o] of Object.entries(s.oaths)){const kind=friendship(w,id,o.lord);o.loyalty=cap(o.loyalty+(kind==='rival'||kind==='nemesis'?-15:relationshipBonus(w,id,o.lord)>10?3:relationOpinion(w,o.lord,id)>=40?2:-1));if(o.loyalty===0){delete s.oaths[id];log(w,id,o.lord,'效忠者离心，誓约自动解除。');}}
@@ -169,4 +170,4 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
 }
 
 /** Personal receipts use the same wallet whether the holder is playable or an NPC. */
-export function creditPersonalCoins(w:World,id:string,amount:number){if(!Number.isSafeInteger(amount)||amount<0)throw new Error('无效个人入账');if(id===w.characterId)w.people[0].coins=Math.min(1_000_000,w.people[0].coins+amount);else if(w.relationships&&Object.hasOwn(w.relationships.reserves,id))w.relationships.reserves[id]=Math.min(1000,w.relationships.reserves[id]+amount);}
+export function creditPersonalCoins(w:World,id:string,amount:number){if(!Number.isSafeInteger(amount)||amount<0)throw new Error('无效个人入账');if(id===w.characterId)w.people[0].coins=Math.min(1_000_000,w.people[0].coins+amount);else if(w.relationships&&Object.hasOwn(w.relationships.reserves,id))w.relationships.reserves[id]=Math.min(1_000_000,w.relationships.reserves[id]+amount);}

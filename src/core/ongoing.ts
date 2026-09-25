@@ -12,7 +12,7 @@ import {playerRealm} from './realm';
 import {diplomacyActions} from './diplomacy';
 import {cityBuildings,estateBuildings} from './construction';
 export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue';
-export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'};
+export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'};
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;
 const name=(id:string)=>relationshipPersonById[id]?.name??id;
@@ -23,6 +23,8 @@ export function ongoingItems(w:World):OngoingItem[]{
  const add=(item:OngoingItem)=>items.push(item);
  const timed=(id:string,kind:OngoingKind,title:string,started:number,due:number,target:OngoingTarget,status='进行中')=>add({id,kind,title,started,progress:ratio(w.day-started,due-started),days:Math.max(0,due-w.day),clock:'remaining',status,target});
  for(const t of w.realm?.population?.transfers??[]){if(t.realm!==r||t.status!=='traveling')continue;const total=t.durations.reduce((n,d)=>n+d,0),done=t.durations.slice(0,t.leg).reduce((n,d)=>n+d,0)+t.elapsed,blocked=w.realm!.cities[t.route[t.leg+1]].controller!==r||w.realm!.cities[t.to].controller!==r;add({id:'population:'+t.id,kind:t.kind==='raid'?'military':'travel',title:(t.kind==='grain'?'转运公粮':'迁送人口')+' · '+siteById[t.to].name,started:t.created,progress:ratio(done,total),days:blocked?null:total-done,clock:blocked?'waiting':'remaining',status:blocked?'道路受阻':t.returning?'返还中':'在途',target:{page:'city',site:t.from,tab:'military'}});}
+ for(const p of w.economy?.programmes??[])if(p.actor===actor&&p.status==='active')add({id:'economy-activity:'+p.id,kind:'activity',title:p.kind==='study'?'延师研习':'私人宴请',started:p.started,progress:null,days:Math.max(0,p.due-w.day),clock:'estimate',status:'驻留办理，公务出行顺延',target:{page:'person',person:actor,tab:'economy'}});
+ for(const q of w.economy?.investigations??[])if((q.commissioner===actor||q.inspector===actor)&&q.phase!=='closed')add({id:'economy-case:'+q.id,kind:'service',title:'公库查核',started:q.started,progress:null,days:q.phase==='report'?null:Math.max(0,q.due-w.day),clock:q.phase==='report'?'waiting':'estimate',status:q.phase==='report'?'待裁决':'赴任与查核',target:{page:'person',person:actor,tab:'economy'}});
  const active=w.mobility?.activities.filter(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===actor||a.delegate===actor))??[];
  const ledArmy=r&&w.mobility?.commanders[r]===actor?w.realm?.armies.find(a=>a.realm===r&&a.journey):undefined;
  const journey=ledArmy?.journey??w.people[0].journey;

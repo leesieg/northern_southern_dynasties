@@ -1,0 +1,21 @@
+.personal-economy {display:grid;gap:.75rem;min-width:0;}
+.personal-economy header,.personal-economy nav {display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;justify-content:space-between;}
+.personal-economy h3,.personal-economy h4,.personal-economy p {margin:.25rem 0;}
+.personal-economy label {display:grid;gap:.35rem;}
+.personal-economy input,.personal-economy select {max-width:100%;min-width:0;}
+.economy-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;}
+.economy-action {display:grid;gap:.3rem;}
+.economy-action small {line-height:1.5;overflow-wrap:anywhere;}
+.personal-economy article,.economy-confirm {border:1px solid currentColor;border-radius:6px;padding:.75rem;display:grid;gap:.5rem;}
+.economy-warning {border-left:3px solid currentColor;padding-left:.75rem;}
+.economy-records {padding-left:1.3rem;display:grid;gap:.4rem;}
+.economy-confirm {position:sticky;bottom:0;background:var(--panel-bg,#f1ead9);box-shadow:0 -4px 20px #0002;}
+.personal-economy article,.economy-cases article{border:1px solid #b5a47766;background:#172a24;padding:12px;border-radius:5px;display:grid;gap:8px;margin-block:8px;}
+.personal-economy h4,.personal-economy header>span,.economy-action button{display:flex;gap:8px;align-items:center;}
+.economy-action .hover-hint,.economy-action button{width:100%;}
+.economy-case-heading{display:flex;align-items:center;gap:12px;min-width:0;}
+.economy-case-heading>.painted-portrait{width:64px;flex:0 0 64px;aspect-ratio:1;}
+.economy-case-heading>div:not(.painted-portrait){display:grid;gap:5px;}
+.economy-confirm{position:static;background:#172a24;color:#e5d9bc;border-color:#b5a477;}
+
+.economy-action button[aria-pressed="true"]{border-color:#c7b174;background:#514b32;color:#f3dfaa;}

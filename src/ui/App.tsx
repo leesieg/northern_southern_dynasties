@@ -103,6 +103,7 @@ export function App(){
   const navigatePause=(event:PauseEvent)=>{
     game.dismissPause();game.dismiss();
     if(event.kind==='arrival'||event.kind==='journey'){if(event.site){chooseCity(event.site);focus('selected');}}
+    else if(event.kind==='economy'){openPerson(game.world!.characterId!,false);setPersonTab('economy');}
     else if(event.kind==='mobility')openPerson(game.world!.characterId!,false);
     else if(event.kind==='health'||event.kind==='inheritance')openPerson(event.person??game.world!.characterId!,false);
     else if(event.kind==='retinue'){openPerson(game.world!.characterId!,false);setPersonTab('retinue');}
@@ -118,7 +119,7 @@ export function App(){
   const openOngoing=(item:OngoingItem)=>{
     const target=item.target;
     if(target.page==='city'){chooseCity(target.site);setCityTab(target.tab);focus('selected');}
-    else if(target.page==='person'){openPerson(target.person,false);setPersonTab(target.person===game.world!.characterId?'overview':'interaction');}
+    else if(target.page==='person'){openPerson(target.person,false);setPersonTab(target.tab??(target.person===game.world!.characterId?'overview':'interaction'));}
     else if(target.page==='territory')chooseTerritory(target.territory);
     else if(target.page==='retinue'){openPerson(game.world!.characterId!,false);setPersonTab('retinue');}
     else if(target.page==='estate')openModal('estate');

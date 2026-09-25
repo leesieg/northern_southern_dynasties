@@ -62,6 +62,7 @@ const offense=(w:World,r:RealmId)=>tactic(w,r)==='attack'?1.2:tactic(w,r)==='gua
 const exposure=(w:World,r:RealmId)=>tactic(w,r)==='attack'?1.15:tactic(w,r)==='guard'?.8:1;
 export const armyDailyFood=(w:World,a:Army)=>Math.ceil(a.troops/60*(100-armyLifestyle(w,a.realm).supply)/100);
 export const armyMonthlyPay=(w:World,a:Army)=>Math.ceil(a.troops/10*(100-armyLifestyle(w,a.realm).armyExpense+governmentBonus(w,a.realm).pay)/100);
+export function cityOperatingExpense(w:World,id:string){const c=w.realm!.cities[id];return Math.ceil(c.population/900)+(c.governor?4:0);}
 export function cityYield(w:World,id:string){
  const c=w.realm!.cities[id],b=w.holdings.cities[id]?.levels,rate=c.tax==='light'?0.7:c.tax==='heavy'?1.4:1,region=regionalEconomy(id);
  const bonus=c.governor?lifestyleBonuses(w,c.governor):emptyLifestyleBonus();
@@ -70,9 +71,9 @@ export function cityYield(w:World,id:string){
  const management=c.governor?Math.max(-10,Math.min(20,(attributes(w,c.governor).stewardship-8)*2)):0;
  const capacity=region.capacity*(1+c.irrigation*.15),effective=Math.min(c.population,capacity)+Math.max(0,c.population-capacity)*.25;
  const grain=Math.floor(effective/100*region.fertility*(1+c.irrigation*.1)*labor*(.75+c.order/400)*(100+bonus.grain+management)/100);
- return {coins:Math.floor((c.population/600+c.population/600*region.trade*access+(b?.market??0)*8*access)*rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+localEfficiency(w,id)+governmentBonus(w,c.controller,id).tax)/100),grain,expense:Math.ceil(c.population/900)+(c.governor?4:0),food:civilianFood(w,id),labor,capacity,region,management,access};
+ return {coins:Math.floor((c.population/600+c.population/600*region.trade*access+(b?.market??0)*8*access)*rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+localEfficiency(w,id)+governmentBonus(w,c.controller,id).tax)/100),grain,expense:cityOperatingExpense(w,id),food:civilianFood(w,id),labor,capacity,region,management,access};
 }
-export function realmForecast(w:World,id:RealmId){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=cityYield(w,site);income+=centralTax(w,site,y.coins);expense+=y.expense;food+=y.grain-y.food;}const a=w.realm!.armies.find(a=>a.realm===id);if(a){expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id);return {income,expense,food};}
+export function realmForecast(w:World,id:RealmId,yields?:ReadonlyMap<string,ReturnType<typeof cityYield>>){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=yields?.get(site)??cityYield(w,site);income+=centralTax(w,site,y.coins);expense+=y.expense;food+=y.grain-y.food;}const a=w.realm!.armies.find(a=>a.realm===id);if(a){expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id);return {income,expense,food};}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 const connected=(w:World,id:string,r:RealmId)=>roads.some(e=>e.from===id&&w.realm!.cities[e.to].controller===r||e.to===id&&w.realm!.cities[e.from].controller===r);
 export function realmReason(w:World,c:RealmCommand):string {
@@ -134,9 +135,9 @@ export function advanceRealm(w:World){
  advanceLocal(w);
  s.offices=s.offices.filter(o=>o.due>w.day||!completeLocalAppointment(w,o));syncGovernance(w);
  if(w.day%30===0){
- for(const r of realms){const t=s.treasuries[r],f=realmForecast(w,r);t.lastIncome=f.income;t.lastExpense=f.expense;t.lastFood=f.food;collectFiscal(w,r);payFiscalOperations(w,r);distributeFiscal(w,r);
+ for(const r of realms){const yields=new Map(Object.entries(s.cities).filter(([,c])=>c.controller===r).map(([id])=>[id,cityYield(w,id)]));const t=s.treasuries[r],f=realmForecast(w,r,yields);t.lastIncome=f.income;t.lastExpense=f.expense;t.lastFood=f.food;collectFiscal(w,r,yields);payFiscalOperations(w,r);distributeFiscal(w,r);
  // Army consumption is daily, so only civilian production/consumption is booked here.
- settleLocalGrain(w,r,id=>cityYield(w,id).grain);
+ settleLocalGrain(w,r,id=>yields.get(id)!.grain);
  s.ledger.push({day:w.day,realm:r,...f});
  for(const city of Object.values(s.cities))if(city.controller===r){city.order=clamp(city.order+(city.tax==='light'?4:city.tax==='heavy'?-6:1)-(t.coins===0?6:0),0,100);city.prosperity=clamp(city.prosperity+(city.order>=60?1:-2),0,100);city.population=clamp(city.population+(city.order>=70?Math.max(1,Math.floor(city.population*.002)):city.order<30?-Math.max(1,Math.floor(city.population*.003)):0),100,1_000_000);}
  if(r!==playerRealm(w))for(const city of Object.values(s.cities))if(city.controller===r)city.tax=city.order<45?'light':t.coins<100?'heavy':'normal';

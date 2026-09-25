@@ -1,3 +1,4 @@
+import {awardDeed} from './deeds';
 import {relationshipPersonById,relationshipPeople} from '../data/relationships';
 import {serviceNeed,servicePolitics,serviceDomain,incidentChoices} from './serviceNeeds';
 import {enactPoliticalAction} from './politicalActions';
@@ -21,6 +22,7 @@ import {officeHierarchy} from './offices';
 import {commissionedEnvoyReason,dispatchCommissionedEnvoy,atWar} from './diplomacy';
 import {planRoute} from './world';
 import type {World} from './types';
+import {assignmentIncidentRisk} from './assignmentIncidentRisk';
 export interface Council {season:number;priority:ServicePriority;decided:boolean;petitioned:string[];proposal:{actor:string;priority:ServicePriority;day:number}|null;completed:number;lastResult:string;reply:{actor:string;day:number;text:string}|null}
 export interface Assignment {
  id:number;realm:RealmId;kind:AssignmentKind;site:string;target:RealmId|null;officer:string;credential:string|null;
@@ -47,7 +49,7 @@ function newCouncil(day:number):Council{return {season:Math.floor(day/90),priori
 export function ensureService(w:World){if(w.mode!=='sandbox')return;return w.service??={version:1,since:w.day,lastDay:w.day,enabled:false,nextId:1,councils:{liang:newCouncil(w.day),east:newCouncil(w.day),west:newCouncil(w.day)},tasks:[],careers:Object.fromEntries(relationshipPeople.map(c=>[c.id,{economy:0,stability:0,military:0,diplomacy:0}])),used:[]};}
 export const serviceTask=(w:World,id:number)=>w.service?.tasks.find(t=>t.id===id);
 export function careerStanding(w:World,id:string,category:ServicePriority){const count=w.service?.careers[id]?.[category]??0,tier=count>=16?3:count>=8?2:count>=3?1:0;return {count,tier,name:careerNames[category][tier],bonus:tier*2};}
-export function serviceBusy(w:World,id:string,except?:number){return retinueBusy(w,id)||!!w.mobility?.appointments[id]||!!w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id&&!a.delegate||a.delegate===id))||Object.values(w.mobility?.commanders??{}).includes(id)||!!w.service?.tasks.some(t=>t.id!==except&&t.phase!=='closed'&&(t.officer===id||t.helper===id))||!!(w.duties?.task&&w.duties.task.phase!=='closed'&&w.duties.task.officer===id);}
+export function serviceBusy(w:World,id:string,except?:number){return !!w.economy?.investigations.some(q=>q.inspector===id&&q.phase==='investigating')||retinueBusy(w,id)||!!w.mobility?.appointments[id]||!!w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id&&!a.delegate||a.delegate===id))||Object.values(w.mobility?.commanders??{}).includes(id)||!!w.service?.tasks.some(t=>t.id!==except&&t.phase!=='closed'&&(t.officer===id||t.helper===id))||!!(w.duties?.task&&w.duties.task.phase!=='closed'&&w.duties.task.officer===id);}
 export function serviceCandidates(w:World,r:RealmId,except?:number){const chief=serviceChief(w,r);return officeCandidates(w,r).filter(c=>c.id!==chief&&isAlive(w,c.id)&&(ageAt(w,c.id)??0)>=16&&!w.social?.lineage.slice(0,-1).some(p=>p.id===c.id)&&!serviceBusy(w,c.id,except));}
 export function recommendedPriority(w:World,r:RealmId):ServicePriority {const cities=Object.values(w.realm!.cities).filter(c=>c.owner===r);if(cities.some(c=>c.controller!==r)||w.realm!.war&&[w.realm!.war.attacker,w.realm!.war.defender].includes(r))return 'military';if(cities.some(c=>c.order<55))return 'stability';if(w.realm!.treasuries[r].coins<300||cities.some(c=>c.prosperity<60))return 'economy';return 'diplomacy';}
 export function serviceCredential(w:World,id:string){return officeHierarchy(w,id).find(n=>n.active&&n.holder===id&&(n.kind==='office'||n.kind==='city'))?.id??null;}
@@ -137,7 +139,7 @@ function finish(w:World,t:Assignment,success:boolean,reason:string){
  for(const [person,contribution] of Object.entries(t.contributors)){
   if(!isAlive(w,person)||contribution.lead+contribution.support<=0)continue;
   const base=Math.round((s.councils[t.realm].priority===d.category?24:20)*(t.quality??100)/100),merit=success?Math.floor(base*contribution.lead/totalLead+6*contribution.support/totalSupport):-Math.ceil(4*contribution.lead/totalLead),old=g.merit[person]??0;
-  g.merit[person]=clamp(old+merit);const memoryBefore=chief?opinionBreakdown(w,person,chief).parts[1].value:0,opinion=success?8:-5;
+  awardDeed(w,t.realm,person,'assignment:'+t.id,merit,assignmentTemplates[t.kind].name+'结案；质量 '+(t.quality??100)+'，承担主办 '+contribution.lead+'、协办 '+contribution.support);const memoryBefore=chief?opinionBreakdown(w,person,chief).parts[1].value:0,opinion=success?8:-5;
   if(chief&&chief!==person){changeRelationOpinion(w,person,chief,opinion);changeRelationOpinion(w,chief,person,opinion);}
   const prestigeBefore=w.families?.prestige[person]??0;
   if(success){awardInfluence(w,person,Math.max(1,Math.floor(merit/2)));awardPrestige(w,person,'service');(s.careers[person]??={economy:0,stability:0,military:0,diplomacy:0})[d.category]=clamp((s.careers[person]??={economy:0,stability:0,military:0,diplomacy:0})[d.category]+1,100000);}
@@ -201,7 +203,8 @@ export function advanceService(w:World){
    const effort=assignmentEffort(w,t),step=Math.min(effort.total,t.required-t.progress),helperPoints=Math.min(step,effort.parts.find(p=>p.label==='同伴协作')!.value);t.progress+=step;t.spent={coins:Math.max(t.spent?.coins??0,Math.ceil(t.funds.coins*t.progress/t.required)),grain:Math.max(t.spent?.grain??0,Math.ceil(t.funds.grain*t.progress/t.required))};
    (t.contributors[effort.executor]??={lead:0,support:0}).lead+=step-helperPoints;
    if(effort.helper)(t.contributors[effort.helper]??={lead:0,support:0}).support+=helperPoints;
-   if(!t.incidentDone&&t.progress>=Math.ceil(t.required/2)){phase(w,t,'incident');log(w,t,t.kind==='envoy'?'使节礼仪与国书措辞尚待协调。':t.kind==='inspection'?'地方官吏推诿，巡察受阻。':t.kind==='training'?'军伍调度不齐，操练受阻。':incidentChoices(t.kind).spend+'；'+incidentChoices(t.kind).delay+'；'+incidentChoices(t.kind).strain);continue;}
+   if(!t.incidentDone&&t.progress>=Math.ceil(t.required/2)&&assignmentIncidentRisk(t,w.realm!.cities[t.site].order)){phase(w,t,'incident');log(w,t,t.kind==='envoy'?'使节礼仪与国书措辞尚待协调。':t.kind==='inspection'?'地方官吏推诿，巡察受阻。':t.kind==='training'?'军伍调度不齐，操练受阻。':incidentChoices(t.kind).spend+'；'+incidentChoices(t.kind).delay+'；'+incidentChoices(t.kind).strain);continue;}
+   if(!t.incidentDone&&t.progress>=Math.ceil(t.required/2))t.incidentDone=true;
    if(t.progress>=t.required){phase(w,t,'report');log(w,t,'办理完成，呈报考绩。');continue;}
   }
   if(w.day-t.changed<2)continue;

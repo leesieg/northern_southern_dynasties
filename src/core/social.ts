@@ -10,7 +10,12 @@ import { lifestyleBonuses,ensureLifestyle } from './lifestyle';
 import { handoverOffice } from './realm';
 import { characterById,characterRelations,historicalCharacters } from '../data/characters';
 import type { World } from './types';
+import {relationshipPersonById} from '../data/relationships';
+import {educationBonus, stableEconomicTraits} from './personalEconomyRules';
 export const traitDefinitions={
+  greedy:{name:'贪婪',effect:'更重视积财；NPC 可能侵吞经管公款，捐输压力 +5；'},
+  honest:{name:'正直',effect:' NPC 不主动侵吞；本人选择侵吞时压力 +18；'},
+  ambitious:{name:'野心',effect:'更重视储备和长期学习；有余钱时安排研习；'},
   diligent:{name:'勤勉',effect:'新工程工期 -20%；每次动工压力 +6'},
   frugal:{name:'节俭',effect:'新工程造价 -10%；赠礼压力 +8'},
   generous:{name:'慷慨',effect:'赠礼额外 +10 好感、压力 -5；请援压力 +8'},
@@ -44,14 +49,14 @@ export function newSocial(id:string):Social{
   for(const a of historicalCharacters)for(const b of historicalCharacters)if(a.id!==b.id){const key=pair(a.id,b.id);opinions[key]=kin(a.id,b.id)?25:a.polity===b.polity?10:-25;hooks[key]=0;}
   return {version:1,founder:id,traits:{...Object.fromEntries(historicalCharacters.map(c=>[c.id,defaultTraits(c.id)])),[id]:defaultTraits(id)},opinions,hooks,cooldowns:{},stress:0,renown:40,legacies:{stewardship:0,kinship:0,learning:0},heir:null,advisor:null,lineage:[{id,day:0}],seed:546,scheme:null};
 }
-export function traitsFor(w:World,id=w.characterId){return id?(w.social?.traits[id]??defaultTraits(id)):[];}
+export function traitsFor(w:World,id=w.characterId):Trait[]{const base=id?(w.social?.traits[id]??defaultTraits(id)):[];return id&&w.economy?[...new Set<Trait>([...base,...stableEconomicTraits(id,relationshipPersonById[id]?.status==='fictional')])]:base;}
 export const abilityNames={diplomacy:'外交',martial:'军事',stewardship:'管理',intrigue:'谋略'} as const;
 export type Ability=keyof typeof abilityNames;
 export function abilityBreakdown(w:World,id=w.characterId){
  const c=id?characterById[id]:null,t=traitsFor(w,id),p=w.lifestyles?.people[id??'fictional'],focus=p?.focus?lifestyleFocuses[p.focus].branch:null;
  return Object.fromEntries((Object.keys(abilityNames) as Ability[]).map(skill=>{
  const branch=skill==='intrigue'?null:skill,genome=id?w.identities?.people[id]?.genome:undefined;
- const parts=[{label:'基础能力',value:8},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch?2:0},{label:'已学技能',value:branch?(p?.perks.filter(id=>lifestylePerks[id].branch===branch).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/360)):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
+ const parts=[{label:'基础能力',value:8},{label:'私人研习',value:skill==='stewardship'?educationBonus(w.economy,id??''):0},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch?2:0},{label:'已学技能',value:branch?(p?.perks.filter(id=>lifestylePerks[id].branch===branch).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/360)):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
  return [skill,{value:Math.max(0,Math.min(40,parts.reduce((n,p)=>n+p.value,0))),parts:parts.filter(p=>p.value!==0)}];
  })) as Record<Ability,{value:number;parts:{label:string;value:number}[]}>;
 }
@@ -88,6 +93,8 @@ export function interactionQuote(w:World,target:string,action:Interaction){
   else if(action==='pressure'&&w.social.renown<10)reason='需 10 家业名望';
   else if(action==='pressure'&&w.social.hooks[pair(w.characterId,target)]>=3)reason='最多保留 3 份人情';
   else if((action==='aid'||action==='favor')&&w.relationships&&w.relationships.reserves[target]<(action==='aid'?70:50))reason='对方私人储备不足';
+  else if(action==='gift'&&w.relationships&&w.relationships.reserves[target]+cost>1_000_000)reason='对方私财已达容量';
+  else if((action==='aid'||action==='favor')&&w.people[0].coins+(action==='aid'?70:50)>1_000_000)reason='个人钱包容量不足';
   else if(action==='favor'&&!w.social.hooks[pair(w.characterId,target)])reason='没有可兑现的人情';
   return {cost,days,score,chance,reason};
 }
@@ -102,7 +109,7 @@ export function applySocial(w:World,command:SocialCommand){
     const q=interactionQuote(w,command.target,command.action);if(q.reason)throw new Error(q.reason);
     const key=pair(w.characterId,command.target);p.coins-=q.cost;
     switch(command.action){
-      case 'gift':if(w.relationships)w.relationships.reserves[command.target]=Math.min(1000,w.relationships.reserves[command.target]+q.cost);opinion(w,command.target,15+(t.includes('generous')?10:0)+s.legacies.kinship*5+lifestyleBonuses(w).giftOpinion);s.stress=clamp(s.stress+(t.includes('frugal')?8:0)-(t.includes('generous')?5:0),0,100);s.cooldowns[key+'|gift']=w.day+10;break;
+      case 'gift':if(w.relationships)w.relationships.reserves[command.target]=Math.min(1_000_000,w.relationships.reserves[command.target]+q.cost);opinion(w,command.target,15+(t.includes('generous')?10:0)+s.legacies.kinship*5+lifestyleBonuses(w).giftOpinion);s.stress=clamp(s.stress+(t.includes('frugal')?8:0)-(t.includes('generous')?5:0),0,100);s.cooldowns[key+'|gift']=w.day+10;break;
       case 'befriend':s.scheme={target:command.target,started:w.day,due:w.day+q.days,chance:q.chance};break;
       case 'aid':if(w.relationships)w.relationships.reserves[command.target]-=70;p.coins=Math.min(1_000_000,p.coins+70);opinion(w,command.target,-20);s.stress=clamp(s.stress+(t.includes('generous')?8:0),0,100);s.cooldowns[key+'|aid']=w.day+30;break;
       case 'advisor':s.advisor=command.target;break;
@@ -127,6 +134,13 @@ export function applySocial(w:World,command:SocialCommand){
     if(p.journey)throw new Error('请先抵达，再交接家业。');const c=heirs(w).find(c=>c.id===s.heir);if(!c)throw new Error('请先指定合格继任者。');
     log(w,p.name+'的家业交予'+c.name+'，钱粮、工程与目标继续保留。');
     if(w.mobility){const place=personResidence(w,c.id),next=w.mobility.residences[c.id];w.mobility.residences[w.characterId!]={site:p.location,journey:null};p.location=place.site;p.journey=next?.journey?structuredClone(next.journey):null;for(const a of w.mobility.activities)if(!['done','cancelled'].includes(a.phase)){a.phase='cancelled';a.result='家业交接，旧行程作罢';if(a.target)delete w.mobility.appointments[a.target];}for(const [realm,leader] of Object.entries(w.mobility.commanders))if(leader===w.characterId)delete w.mobility.commanders[realm as 'liang'|'east'|'west'];w.mobility.captivity=null;}
+    if(w.economy&&w.relationships){
+      // Keep unpaid public liability backed by the former holder's assets. No asset duplication on succession.
+      const due=w.economy.misconduct.filter(m=>m.person===w.characterId).reduce((sum,m)=>sum+m.amount-m.recovered,0);
+      const retained=Math.min(p.coins,due),own=w.relationships.reserves[c.id],inherited=Math.min(p.coins-retained,1_000_000-own);
+      w.relationships.reserves[w.characterId]=p.coins-inherited;
+      p.coins=own+inherited;w.relationships.reserves[c.id]=0;
+    }
     const former=snapshotInfluence(w);w.characterId=c.id;p.name=c.name;p.home=c.home;s.lineage.push({id:c.id,day:w.day});s.heir=null;s.advisor=null;s.scheme=null;s.stress=20;handoverOffice(w);syncRelationships(w);ensureLifestyle(w);restoreInfluence(w,former);return;
   }
 }

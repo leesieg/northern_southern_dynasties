@@ -1,9 +1,10 @@
+import {awardDeed} from './deeds';
 import {grainCapacity} from './population';
 import {fundAssignment,fiscalRecord,centralAccount} from './treasury';
 import {presentAt} from './residence';
 import {serviceBusy} from './assignments';
 import {characterById,historicalCharacters} from '../data/characters';
-import {governmentOf,governingExecutives,politicalName} from './government';
+import {governingExecutives,politicalName} from './government';
 import {ageAt,isAlive,lifeOf} from './lifeState';
 import {changeRelationOpinion} from './relationships';
 import {planRoute} from './world';
@@ -78,7 +79,7 @@ function finish(w:World,t:Duty,success:boolean,reason:string){
  if(!t.started){const treasury=w.realm!.treasuries.west;treasury.coins=Math.min(1_000_000,treasury.coins+t.funds.coins);treasury.grain=Math.min(1_000_000,treasury.grain+t.funds.grain);}
  if(success){const city=w.realm!.cities.tianshui;city.order=Math.min(100,city.order+12);city.prosperity=Math.min(100,city.prosperity+4);const army=w.realm!.armies.find(a=>a.realm==='west'&&a.location==='tianshui'),cargo=t.plan==='convoy'?t.funds.grain:90,toArmy=army?Math.min(60,cargo,600-army.supply):0;if(army)army.supply+=toArmy;city.grain=Math.min(grainCapacity(w,'tianshui'),city.grain+cargo-toArmy);log(w,t,'粮务交割：军粮 '+toArmy+'，余粮 '+(cargo-toArmy)+' 入本地仓（超仓损耗）。');}
  else w.realm!.cities.tianshui.order=Math.max(0,w.realm!.cities.tianshui.order-8);
- if(isAlive(w,t.officer)){const g=governmentOf(w,'west')!;g.merit[t.officer]=Math.min(100,g.merit[t.officer]+merit);if(chief&&chief!==t.officer){changeRelationOpinion(w,chief,t.officer,opinion);changeRelationOpinion(w,t.officer,chief,opinion);}}
+ if(isAlive(w,t.officer)){awardDeed(w,'west',t.officer,'duty:'+t.created,merit,'天水粮务结案');if(chief&&chief!==t.officer){changeRelationOpinion(w,chief,t.officer,opinion);changeRelationOpinion(w,t.officer,chief,opinion);}}
  t.result={day:w.day,success,reason,merit,opinion,returned:!t.started};phase(w,t,'closed');
  log(w,t,reason+(success?'；考绩上等，承办人功绩最多 +20，双方交往积累各最多 +12，天水秩序最多 +12、繁荣最多 +4。':'；天水秩序最多 −8，在世承办人与执政者的交往积累各最多 −8。')+(!t.started?'未动用预算退回公库。':'已投入钱粮不退回。'));
 }

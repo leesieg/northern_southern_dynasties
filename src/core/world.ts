@@ -26,24 +26,32 @@ import { commission,evaluateCampaign } from './campaign';
 import { newHoldings, beginConstruction, advanceConstruction, provisionCost } from './construction';
 import { CONTENT_VERSION, roads, siteById, sites } from '../data/scenario';
 import type { GameCommand, Person, RoutePlan, World } from './types';
+import {ensureEconomy, actPersonalEconomy, advancePersonalEconomy} from './personalEconomyAdapter';
 
 export function distanceBetween(a: string, b: string): number {
   const p = siteById[a], q = siteById[b];
   const lat = (p.lat + q.lat) * Math.PI / 360;
   return Math.hypot((p.lon - q.lon) * Math.cos(lat), p.lat - q.lat) * 111;
 }
+// Static road topology; permissions are still evaluated against live world state for every route.
+const roadLinks=new Map<string,Map<string,number>>();
+for(const edge of roads){
+  const days=Math.max(1,Math.ceil(distanceBetween(edge.from,edge.to)*edge.factor/40));
+  for(const [from,to] of [[edge.from,edge.to],[edge.to,edge.from]]){
+    const links=roadLinks.get(from)??new Map<string,number>();if(!links.has(to))links.set(to,days);roadLinks.set(from,links);
+  }
+}
 export function legDays(a: string, b: string): number {
-  const edge = roads.find(r => r.from === a && r.to === b || r.to === a && r.from === b);
-  if (!edge) throw new Error('这两处地点之间没有已开放的道路。');
-  return Math.max(1, Math.ceil(distanceBetween(a, b) * edge.factor / 40));
+  const days=roadLinks.get(a)?.get(b);if(days===undefined)throw new Error('这两处地点之间没有已开放的道路。');return days;
 }
 export function planRoute(from: string, to: string,allowed:(id:string)=>boolean=()=>true): RoutePlan | null {
   if (!siteById[from] || !siteById[to] || from === to) return null;
   const cost: Record<string, number> = { [from]: 0 }, prev: Record<string, string> = {};
   const unvisited = new Set(sites.map(s => s.id));
   while (unvisited.size) {
-    const current = [...unvisited].sort((a, b) => (cost[a] ?? Infinity) - (cost[b] ?? Infinity))[0];
-    if (cost[current] === undefined) break;
+    let current:string|undefined,best=Infinity;
+    for(const id of unvisited)if((cost[id]??Infinity)<best){current=id;best=cost[id];}
+    if(current===undefined)break;
     if (current === to) {
       const route = [to];
       while (route[0] !== from) route.unshift(prev[route[0]]);
@@ -52,10 +60,9 @@ export function planRoute(from: string, to: string,allowed:(id:string)=>boolean=
       return {route, durations, days, food: days, distance: Math.round(route.slice(1).reduce((sum,id,i) => sum + distanceBetween(route[i],id),0))};
     }
     unvisited.delete(current);
-    for (const edge of roads) {
-      const next = edge.from === current ? edge.to : edge.to === current ? edge.from : null;
-      if (!next || !unvisited.has(next)||!allowed(next)) continue;
-      const nextCost = cost[current] + legDays(current,next);
+    for (const [next,days] of roadLinks.get(current)??[]) {
+      if (!unvisited.has(next)||!allowed(next)) continue;
+      const nextCost = cost[current] + days;
       if (nextCost < (cost[next] ?? Infinity)) { cost[next] = nextCost; prev[next] = current; }
     }
   }
@@ -112,6 +119,7 @@ function actCommand(world: World, command: GameCommand): void {
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
   if(command.type==='appointments'){actAppointments(world,command);return;}
  if(command.type==='local'){actLocal(world,command);return;}
+  if(command.type==='economy'){actPersonalEconomy(world,command);return;}
   if(command.type==='fiscal'){actFiscal(world,command);return;}
   if(command.type==='retinue'){actRetinue(world,command);return;}
   if(command.type==='mobility'){actMobility(world,command);return;}
@@ -151,6 +159,7 @@ export function advance(world: World, days = 1): void {
     if(world.campaign&&world.campaign.status!=='active')break;
     if(world.realm?.event)break;
     ensureLife(world);
+    ensureEconomy(world);
     const previous=snapshotInfluence(world);
     const fiscalBefore=fiscalSnapshot(world);
     world.day++;
@@ -198,6 +207,7 @@ export function advance(world: World, days = 1): void {
     advanceMobility(world);
     advanceDuties(world);
     advanceService(world);
+    advancePersonalEconomy(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);
     evaluateCampaign(world);
     reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');

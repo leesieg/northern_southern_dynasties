@@ -13,6 +13,7 @@ import { realms,type RealmId } from './realm';
 import { familyStanding } from './family';
 import { traitsFor,acceptance } from './social';
 import type { World } from './types';
+import {localPoliticalBasis} from './officePower';
 export interface CourtState {
  version:1;since:number;lastMonthly:number;regimeId:string;tenure:string;phase:CourtPhase;policy:CourtPolicy;tension:number;corruption:number;
  ministries:Record<MinistryId,string|null>;members:Record<string,MovementId>;favored:MovementId|null;
@@ -94,7 +95,7 @@ export function courtReason(w:World,cmd:CourtCommand):string{
   if(c.founding||g.task)return '已有改革或拥立议程';if(w.realm.governments!.regimes.filter(v=>v.realm===r).length>=12)return '本局已达 12 个政权版本上限';
   if(g.support<70||(g.merit[id]??0)<60)return '需朝野支持 70、本人功绩 60';
   if(cmd.mode==='usurp'&&(g.ruler===id||g.legitimacy>40&&c.phase!=='chaos'))return '拥立需当前君主失德（合法性 ≤40 或危局），且你不是在位君主';
-  if(cmd.mode==='usurp'&&(!Object.values(c.ministries).includes(id)&&!Object.values(w.realm.cities).some(city=>city.owner===r&&city.controller===r&&city.governor===id)&&!governingExecutives(w,r).includes(id)))return '需中央任官、在任辖地或实际执政基础';
+  if(cmd.mode==='usurp'&&(!Object.values(c.ministries).includes(id)&&!(localPoliticalBasis(w,id,r)>0)&&!governingExecutives(w,r).includes(id)))return '需中央任官、在任辖地或实际执政基础';
   if(cmd.mode==='usurp'&&(group==='unaligned'||movementSummary(w,r,group).leader!==id||movementSummary(w,r,group).share<50))return '需领衔势力至少 50% 的政治集团';
   if(cmd.mode==='unify'&&(!governmentExecutive(w)||controlledShare(w,r)<75||g.legitimacy<80))return '重建天朝需实际执政、实控 75% 已录非边疆城市、天命 80';
   if(w.realm.war&&[w.realm.war.attacker,w.realm.war.defender].includes(r))return '战争期间不能建朝';const capital=w.realm.cities[capitals[r]];if(capital.owner!==r||capital.controller!==r)return '需控制本国都城';
@@ -153,7 +154,7 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
  for(const [id,b] of Object.entries(c.boosts))if(b.until<=w.day)delete c.boosts[id];
  const employed=Object.values(c.ministries).filter((id):id is string=>id!==null);
  if(ministryCompetent(w,r,'secretariat'))g.support=cap(g.support+2);
- if(ministryCompetent(w,r,'personnel'))for(const id of Object.keys(g.merit))g.merit[id]=cap(g.merit[id]+1);
+ // Personnel improves administration; it does not create achievements for every person.
  c.corruption=cap(c.corruption+employed.filter(id=>(g.merit[id]??0)<40).length*3-(ministryCompetent(w,r,'censorate')?5:0)-(c.phase==='stable'&&c.policy==='consolidation'?1:0));
  const powers=movementPowers(w,r),moods=movementIds.map(group=>({group,...movementMood(w,r,group,powers)}));
  const supportDelta=moods.reduce((n,m)=>n+m.support,0);g.support=cap(g.support+supportDelta);

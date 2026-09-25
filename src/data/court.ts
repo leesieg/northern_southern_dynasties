@@ -8,7 +8,7 @@ export const movements:Record<MovementId,{name:string;goal:string}>={
 export const ministryIds=['secretariat','personnel','finance','military','censorate'] as const;
 export type MinistryId=typeof ministryIds[number];
 export const ministries:Record<MinistryId,{name:string;duty:string;effect:string}>={
- secretariat:{name:'中枢统筹',duty:'协调朝政',effect:'称职时每月朝野支持 +2'},personnel:{name:'选官职掌',duty:'选任与考课',effect:'称职时每月已录本国人物功绩 +1'},
+ secretariat:{name:'中枢统筹',duty:'协调朝政',effect:'称职时每月朝野支持 +2'},personnel:{name:'选官职掌',duty:'选任与考课',effect:'称职时，在任善治的月度考绩 +1'},
  finance:{name:'度支职掌',duty:'财政与公库',effect:'称职时公库税收 +8%'},military:{name:'军务职掌',duty:'军备与军饷',effect:'称职时军饷 −8%'},censorate:{name:'监察职掌',duty:'纠察与清议',effect:'称职时每月积弊 −5'},
 };
 export const phaseIds=['stable','strained','chaos'] as const;

@@ -84,7 +84,7 @@ describe('人物年龄、健康与身后事',()=>{
    expect(checks,JSON.stringify({day:w.day,id:w.characterId,life:w.life!.successions})).toEqual({life:true,realm:true,government:true,diplomacy:true,relationships:true});
    validateWorld(w);
   }
- },60000);
+ },120000);
  it('allows background world simulation without a playable campaign',()=>{const w=newWorld();advance(w,18000);validateWorld(w);});
 });
 

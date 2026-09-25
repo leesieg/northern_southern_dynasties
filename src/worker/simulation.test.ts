@@ -56,10 +56,10 @@ describe('worker menu and save lifecycle without browser UI',()=>{
 
   it('explains a forced pause when automatic saving fails',async()=>{
     await request({type:'init'});await request({type:'new'});await request({type:'speed',speed:7});
-    const first=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);await first;
+    const first=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const before=await first;
     const spy=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});
     const next=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const paused=await next;spy.mockRestore();
-    expect(paused.speed).toBe(0);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='error'))).toBe(true);
+    expect(paused.speed).toBe(0);expect(paused.world).toEqual(before.world);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='error'))).toBe(true);
   });
   it('reports background pauses only when time was running',async()=>{
     await request({type:'init'});await request({type:'new'});await request({type:'background'});expect(replies.some(r=>r.type==='paused')).toBe(false);

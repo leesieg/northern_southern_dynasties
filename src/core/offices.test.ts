@@ -9,7 +9,7 @@ import type { World } from './types';
 const start=(id='xiao-yan')=>newCampaignWorld(id,undefined,'sandbox');
 const node=(w:World,id:string)=>officeHierarchy(w).find(n=>n.id===id)!;
 function pass(w:World,days:number){for(let i=0;i<days;i++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w,1);}}
-function ready(w:World,year:number){w.day=Math.round((Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000);w.realm!.influence=300;w.realm!.treasuries.liang.coins=10000;governmentOf(w)!.support=80;governmentOf(w)!.legitimacy=90;}
+function ready(w:World,year:number){w.day=Math.round((Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000);if(w.economy)w.economy.lastDay=w.day;w.realm!.influence=300;w.realm!.treasuries.liang.coins=10000;governmentOf(w)!.support=80;governmentOf(w)!.legitimacy=90;}
 describe('官爵与科层图',()=>{
  it.each(historicalCharacters.map(c=>c.id))('%s 开局关系唯一、无环且职位都有有效父节点',id=>{
   const w=start(id),nodes=officeHierarchy(w);expect(new Set(nodes.map(n=>n.id)).size).toBe(nodes.length);expect(nodes.some(n=>n.holder===id)).toBe(true);

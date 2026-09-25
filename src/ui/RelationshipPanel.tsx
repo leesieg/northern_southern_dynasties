@@ -1,3 +1,4 @@
+import {PrivateBanquet} from './PersonalEconomyPanel';
 import {retinueQuote,recruitmentScore} from '../core/retinue';
 import {marriagePrestigePreview} from '../core/family';
 import {marriageClanBonus} from '../core/clans';
@@ -35,6 +36,7 @@ export function RelationshipPanel({world:w,pending,send,targetId}:{world:World;p
  return <div className="relationship-panel"><MobilityPanel world={w} target={targetId} send={send} pending={pending}/>
  {s.scheme?.target===target.id&&<article className="relationship-task"><h4>{s.scheme.kind==='control'?'筹划挟制':'培养友谊'} · {relationName(s.scheme.target)}</h4><progress aria-label="计谋进度" value={w.day-s.scheme.started} max={s.scheme.due-s.scheme.started}/><p>余 {s.scheme.due-w.day} 日 · 成功率 {s.scheme.chance}%</p>{action({type:'relationship',action:'cancel'},'撤回计谋',true)}</article>}
  {w.social?.scheme?.target===target.id&&<article><h4>交好 · {relationName(w.social.scheme.target)}</h4><p>余 {w.social.scheme.due-w.day} 日 · 成功率 {w.social.scheme.chance}%</p><button disabled={pending} onClick={()=>send({type:'cancel-scheme'})}>撤回交好 · 不退费</button></article>}
+ {tab==='personal'&&<PrivateBanquet world={w} pending={pending} send={send} target={targetId}/>}
  <div className="interaction-context"><span><ArtIcon name="influence" size={24}/>人情 {relationHooks(w,a,target.id)}</span><HoverHint label="接受度影响因素" content={<>{scoreParts.map(part=><p key={part.label}>{part.label} {part.value>=0?'+':''}{part.value}</p>)}</>}><span className="opinion-chip"><ArtIcon name="steadfast" size={24}/>接受度 <b>{scoreParts.reduce((n,p)=>n+p.value,0)}</b></span></HoverHint></div>
  <DetailTabs label="互动类别" value={tab} onChange={key=>{setTab(key);setChosen(null);setConfirmation(null);}} items={[{id:'personal',label:'交往',icon:'gregarious'},{id:'marriage',label:'婚姻',icon:'renown'},{id:'employment',label:'幕府委任',icon:'person'},{id:'political',label:'效忠权力',icon:'influence'}]}/>
  {tab==='marriage'&&!!marriageClanBonus(w,a,target.id)&&<HoverHint label="世族联姻" content={`双方门第使婚姻接受度 +${marriageClanBonus(w,a,target.id)}；首次联姻，你的家族可获 ${marriagePrestigePreview(w,a,target.id)[0].amount} 威望，对方家族可获 ${marriagePrestigePreview(w,a,target.id)[1].amount} 威望；同一对人物不重复授予。`}><span className="clan-standing-badge"><ArtIcon name="renown" size={24}/>联姻荫望 +{marriageClanBonus(w,a,target.id)}</span></HoverHint>}

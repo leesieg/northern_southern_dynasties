@@ -9,7 +9,7 @@ import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
 const start=(id='xiao-yan')=>newCampaignWorld(id,undefined,'sandbox');
 function pass(w:World,days:number){for(let i=0;i<days;i++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w,1);}}
-function atYear(w:World,year:number){w.day=Math.round((Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000);}
+function atYear(w:World,year:number){w.day=Math.round((Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000);if(w.economy)w.economy.lastDay=w.day;}
 function capitalReady(w:World){w.realm!.influence=300;w.realm!.treasuries[playerRealm(w)].coins=10000;governmentOf(w)!.support=80;governmentOf(w)!.legitimacy=90;}
 function finish(w:World){const required=governmentOf(w)!.task!.required;pass(w,required);expect(governmentOf(w)!.task).toBeNull();expect(parseWorld(serializeWorld(w))).toEqual(w);}
 describe('政体、改革与政权实体沿革',()=>{
