@@ -1,3 +1,5 @@
+import {roadEncounters} from './battlefield';
+import {activeWars,ensureWars,bilateralWar,selectedWar,peaceQuote,advanceReparations,type PeaceTerms,type War} from './wars';
 import {ensureArmyOrganization,reconcileRegiments,armyPayFactor,armyCombatFactor,consumeArmyFood} from './armyOrganization';
 import {completeLocalAppointment,advanceLocal,localEfficiency,localCanAppoint,countyTerritory} from './localAdministration';
 import {advanceArmyLogistics,returnArmyConvoy,type ArmyConvoy} from './armyLogistics';
@@ -25,7 +27,7 @@ export type RealmId=typeof realms[number];
 export type Tax='light'|'normal'|'heavy';
 export interface Province {owner:Polity;controller:Polity;governor:string|null;population:number;grain:number;irrigation:number;order:number;prosperity:number;tax:Tax}
 export interface Treasury {coins:number;grain:number;lastIncome:number;lastExpense:number;lastFood:number}
-export interface Army {trainingStarted?:number;trainingUntil?:number;id?:number;payer?:string;arrears?:number;foodRemainder?:number;regiments?:import('./armyOrganization').Regiment[];convoy?:ArmyConvoy|null;realm:RealmId;location:string;troops:number;morale:number;supply:number;journey:Journey|null;siege:number}
+export interface Army {withdrawalUntil?:number;trainingStarted?:number;trainingUntil?:number;id?:number;payer?:string;arrears?:number;foodRemainder?:number;regiments?:import('./armyOrganization').Regiment[];convoy?:ArmyConvoy|null;realm:RealmId;location:string;troops:number;morale:number;supply:number;journey:Journey|null;siege:number}
 export interface RealmState {
  traffic?:import('./roadCapacity').RoadTraffic;nextArmyId?:number;armyDebts?:{realm:RealmId;account:string;coins:number}[];
  local?:import('./localAdministration').LocalAdministration;
@@ -33,11 +35,11 @@ export interface RealmState {
  fiscal?:import('./treasury').FiscalState;
  version:1;personalInfluence?:Record<string,number>;governments?:GovernmentState;cities:Record<string,Province>;treasuries:Record<RealmId,Treasury>;influence:number;mandate:boolean;
  offices:{site:string;candidate:string;due:number;territory?:string;realm?:RealmId;issuer?:string;acting?:boolean;concurrent?:boolean;issued?:number}[];armies:Army[];
- war:{attacker:RealmId;defender:RealmId;target:string;started:number;score:number}|null;
+ reparations?:import('./wars').Reparation[];wars?:War[];nextWarId?:number;war:War|null;
  truces:Record<string,number>;event:{kind:EventKind;site:string;day:number}|null;lastEvent:number;
  ledger:{day:number;realm:RealmId;income:number;expense:number;food:number}[];
 }
-export type RealmCommand={type:'realm';action:'tax';site:string;tax:Tax}|{type:'realm';action:'relief';site:string}|{type:'realm';action:'appoint';site:string;candidate:string}|{type:'realm';action:'petition';site:string}|{type:'realm';action:'mandate'}|{type:'realm';action:'muster'|'disband'|'peace';army?:number;}|{type:'realm';action:'march'|'war';site:string;army?:number}|{type:'realm';action:'event';choice:'fund'|'decline'};
+export type RealmCommand={type:'realm';action:'tax';site:string;tax:Tax}|{type:'realm';action:'relief';site:string}|{type:'realm';action:'appoint';site:string;candidate:string}|{type:'realm';action:'petition';site:string}|{type:'realm';action:'mandate'}|{type:'realm';action:'muster'|'disband'|'peace';army?:number;war?:number;terms?:PeaceTerms;}|{type:'realm';action:'march'|'war';site:string;army?:number;goal?:War['goal']}|{type:'realm';action:'event';choice:'fund'|'decline'};
 export const eventDefinitions={
  flood:{title:'水患来报',body:'治下水渠受损，地方请求拨粮赈济。此为模拟事件。',cost:'公粮 60',effect:'赈济：秩序 +12；搁置：秩序 -10'},
  market:{title:'商旅请修道路',body:'商旅愿留驻集市，请求公款修补通路。',cost:'公款 50',effect:'资助：繁荣 +10；搁置：繁荣 -4'},
@@ -75,7 +77,7 @@ export function cityYield(w:World,id:string){
  const grain=Math.floor(effective/100*region.fertility*(1+c.irrigation*.1)*labor*(.75+c.order/400)*(100+bonus.grain+management)/100);
  return {coins:Math.floor((c.population/600+c.population/600*region.trade*access+(b?.market??0)*8*access)*rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+localEfficiency(w,id)+governmentBonus(w,c.controller,id).tax)/100),grain,expense:cityOperatingExpense(w,id),food:civilianFood(w,id),labor,capacity,region,management,access};
 }
-export function realmForecast(w:World,id:RealmId,yields?:ReadonlyMap<string,ReturnType<typeof cityYield>>){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=yields?.get(site)??cityYield(w,site);income+=centralTax(w,site,y.coins);expense+=y.expense;food+=y.grain-y.food;}for(const a of w.realm!.armies.filter(a=>a.realm===id)){expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id);return {income,expense,food};}
+export function realmForecast(w:World,id:RealmId,yields?:ReadonlyMap<string,ReturnType<typeof cityYield>>){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=yields?.get(site)??cityYield(w,site);income+=centralTax(w,site,y.coins);expense+=y.expense;food+=y.grain-y.food;}for(const a of w.realm!.armies.filter(a=>a.realm===id)){if(!a.payer||a.payer==='central:'+id)expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id);return {income,expense,food};}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 const connected=(w:World,id:string,r:RealmId)=>roads.some(e=>e.from===id&&w.realm!.cities[e.to].controller===r||e.to===id&&w.realm!.cities[e.from].controller===r);
 export function realmReason(w:World,c:RealmCommand):string {
@@ -92,9 +94,9 @@ export function realmReason(w:World,c:RealmCommand):string {
  case 'mandate':return s.mandate?'已有军务授权':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'military')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?'需执政者接受度 60 或官僚功绩 40':'';
  case 'muster':{const home=s.cities[w.people[0].home]?.controller===r?w.people[0].home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;return !s.mandate?'需要军务授权':s.armies.filter(a=>a.realm===r).length>=16?'本国军队编制已满':!Object.values(s.cities).some(c=>c.controller===r)?'已无控制城市':!executive(w)&&s.cities[home].governor!==w.characterId?'地方动员须有本城治理权，或由朝廷委派征募':s.cities[home].population<700?'本城人口不足以动员 600 人':(executive(w)?t.coins:localBalance(w,home))<120||t.grain<120?'动员需要'+(executive(w)?'中央':'本城')+'公款 120、公粮 120':governmentMusterReason(w);}
  case 'disband':return !s.mandate?'需要军务授权':!a?'尚未动员':(a.arrears??0)>0?'须结清军饷后遣散':a.journey?'抵达后方可遣散':s.cities[a.location].controller!==r?'请回到己方控制城市':'';
- case 'war':return foreignWarReason(w,city!.owner as RealmId)||(!s.mandate?'需要军务授权':s.war?'当前已有战争':city!.owner===r||city!.owner==='frontier'?'请选择其他三国政权的城市':city!.owner!==city!.controller?'目标处于占领中':!connected(w,c.site,r)?'只能对相邻控制城市发起边境争夺':(s.truces[[r,city!.owner].sort().join('|')]??0)>w.day?'停战协议仍有效':s.influence<40?'需影响力 40':'');
- case 'march':{if(!s.mandate)return '需要军务授权';if(!a)return '请先动员';if((a.trainingUntil??0)>w.day)return '新兵尚在集训，余 '+(a.trainingUntil!-w.day)+' 日';if(a.journey)return '军队正在行军';if(a.location===c.site)return '军队已在此地';const p=planRoute(a.location,c.site,id=>canEnter(w,r,s.cities[id].controller,undefined,true));return p?'':'道路经过未获通行权的第三方';}
- case 'peace':return !s.mandate?'需要军务授权':!s.war||![s.war.attacker,s.war.defender].includes(r)?'没有本国参与的战争':'';
+ case 'war':if(c.goal!==undefined&&!['territory','reparations','tributary'].includes(c.goal))return '无效战争目标';return foreignWarReason(w,city!.owner as RealmId)||(!s.mandate?'需要军务授权':bilateralWar(w,r,city!.owner as RealmId)?'已与该国交战':city!.owner===r||city!.owner==='frontier'?'请选择其他三国政权的城市':city!.owner!==city!.controller?'目标处于占领中':!connected(w,c.site,r)?'只能对相邻控制城市发起边境争夺':(s.truces[[r,city!.owner].sort().join('|')]??0)>w.day?'停战协议仍有效':s.influence<40?'需影响力 40':'');
+ case 'march':{if(!s.mandate)return '需要军务授权';if(!a)return '请先动员';if(a.withdrawalUntil)return '军队正在依和约撤离';if((a.trainingUntil??0)>w.day)return '新兵尚在集训，余 '+(a.trainingUntil!-w.day)+' 日';if(a.journey)return '军队正在行军';if(a.location===c.site)return '军队已在此地';const p=planRoute(a.location,c.site,id=>canEnter(w,r,s.cities[id].controller,undefined,true));return p?'':'道路经过未获通行权的第三方';}
+ case 'peace':return !executive(w)?'须由实际执政者议定国家和约':!s.mandate?'需要军务授权':!selectedWar(w,r,c.war)?'请在对应战事中议和':peaceQuote(w,selectedWar(w,r,c.war)!,r,c.terms??'white').reason;
  default:return '无效政务行动';
  }
 }
@@ -107,23 +109,34 @@ export function actRealm(w:World,c:RealmCommand){
  case 'mandate':s.influence-=40;s.mandate=true;log(w,'获得本局军务授权，可以动员与发动边境争夺。');break;
  case 'muster':{enactPoliticalAction(w,r,'military');spendGovernmentMuster(w);const home=w.people[0].home,location=s.cities[home].controller===r?home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;if(executive(w))t.coins-=120;else spendLocal(w,location,120,'地方动员');t.grain-=120;s.cities[location].population-=600;s.armies.push({realm:r,location,troops:600,morale:100,supply:120,journey:null,siege:0});const army=s.armies.at(-1)!;log(w,regimeName(w,r)+`动员 600 人，每 30 日军饷 ${armyMonthlyPay(w,army)} 钱，每日消耗军粮 ${armyDailyFood(w,army)}。`);break;}
  case 'disband':{if(w.mobility&&(!c.army||s.armies.find(a=>a.realm===r)?.id===c.army)){const leader=w.mobility.commanders[r];if(leader===w.characterId)w.people[0].journey=null;else if(leader&&w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.commanders[r];}const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;s.cities[a.location].grain=Math.min(grainCapacity(w,a.location),s.cities[a.location].grain+a.supply);returnArmyConvoy(w,a);s.cities[a.location].population=Math.min(1_000_000,s.cities[a.location].population+a.troops);s.armies=s.armies.filter(other=>other!==a);log(w,'军队遣散，剩余随军粮食归还驻地粮仓（超出仓容损耗）；动员费用不退。');break;}
- case 'war':s.influence-=40;s.war={attacker:r,defender:s.cities[c.site].owner as RealmId,target:c.site,started:w.day,score:0};diplomaticWar(w,r,s.cities[c.site].owner as RealmId);log(w,regimeName(w,r)+'发起对'+siteById[c.site].name+'的边境争夺（模拟分歧）。');break;
+ case 'war':ensureWars(w);s.influence-=40;s.wars!.push({id:s.nextWarId!++,goal:c.goal??'territory',demand:300,battles:0,attacker:r,defender:s.cities[c.site].owner as RealmId,target:c.site,started:w.day,score:0});s.war=s.wars![0];diplomaticWar(w,r,s.cities[c.site].owner as RealmId);log(w,regimeName(w,r)+'发起对'+siteById[c.site].name+'的边境争夺（模拟分歧）。');break;
  case 'march':{const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;march(a,c.site,w.day,w);log(w,regimeName(w,r)+'军前往'+siteById[c.site].name+'，依道路逐日行军。');break;}
- case 'peace':settleWar(w);break;
+ case 'peace':settleWar(w,selectedWar(w,r,c.war)!,c.terms??'white',r);break;
  case 'event':resolveEvent(w,c.choice);break;
  }
  ensureArmyOrganization(w);
 }
 function march(a:Army,target:string,day:number,w:World){const p=planRoute(a.location,target,id=>canEnter(w,a.realm,w.realm!.cities[id].controller,undefined,true));if(p)a.journey={route:p.route,durations:p.durations,leg:0,elapsed:0,started:day};a.siege=0;}
-function settleWar(w:World){
- const s=w.realm!,war=s.war!;
- // Only the contested city can change legal owner. Other occupation is returned.
- const target=s.cities[war.target],won=target.controller===war.attacker&&war.score>=50;
- if(won){target.owner=war.attacker;target.governor=null;log(w,siteById[war.target].name+'依据本局议和转归'+regimeName(w,war.attacker)+'，州郡法理边界不随之推断。');}else log(w,'议和恢复战前城市归属，无领土割让。');
- for(const city of Object.values(s.cities))if([war.attacker,war.defender].includes(city.owner as RealmId))city.controller=city.owner;
+export function settleWar(w:World,war:War,terms:PeaceTerms='white',actor:RealmId=war.attacker){
+ const s=w.realm!;ensureWars(w);
+ if(!s.wars!.includes(war))return;
+ const q=peaceQuote(w,war,actor,terms),target=s.cities[war.target],won=q.takesLand&&target.owner===war.defender&&target.controller===war.attacker;
+ if(won){target.owner=war.attacker;target.governor=null;log(w,siteById[war.target].name+'依据议和转归'+regimeName(w,war.attacker)+'。');}else log(w,terms==='white'?'双方议定白和平，无新增割地赔款。':'双方接受议和条件。');
+ if(q.coins){const from=s.treasuries[q.loser],to=s.treasuries[q.beneficiary],paid=Math.min(from.coins,q.coins,1_000_000-to.coins);from.coins-=paid;to.coins+=paid;if(paid<q.coins)(s.reparations??=[]).push({war:war.id!,from:q.loser,to:q.beneficiary,remaining:q.coins-paid,instalment:50,next:w.day+30});}
+ if(q.tributary&&w.diplomacy)w.diplomacy.subjects[q.loser]=q.beneficiary;
+ // Only bilateral occupation belongs to this settlement. Third-party control survives.
+ for(const city of Object.values(s.cities))if(city.owner===war.attacker&&city.controller===war.defender||city.owner===war.defender&&city.controller===war.attacker)city.controller=city.owner;
  s.truces[[war.attacker,war.defender].sort().join('|')]=w.day+360;
- for(const a of s.armies){a.journey=null;a.siege=0;if(s.cities[a.location].controller!==a.realm){const home=Object.keys(s.cities).find(id=>s.cities[id].controller===a.realm);if(home)a.location=home;else a.troops=0;}}
- s.armies=s.armies.filter(a=>a.troops>0);s.war=null;syncGovernance(w);
+ s.wars=s.wars!.filter(v=>v!==war);s.war=s.wars[0]??null;
+ for(const a of s.armies){if(![war.attacker,war.defender].includes(a.realm))continue;
+ const foreign=s.cities[a.location].controller;
+ if(foreign!==a.realm&&[war.attacker,war.defender].includes(foreign as RealmId)){
+ const paths=Object.keys(s.cities).filter(id=>s.cities[id].controller===a.realm).map(id=>planRoute(a.location,id,node=>[war.attacker,war.defender].includes(s.cities[node].controller as RealmId))).filter(p=>p!==null).sort((a,b)=>a.days-b.days);
+ const path=paths[0];a.siege=0;a.journey=path?{route:path.route,durations:path.durations,leg:0,elapsed:0,started:w.day}:null;
+ a.withdrawalUntil=w.day+(path?.days??30)+30;
+ }else if(a.journey&&a.journey.route.slice(a.journey.leg+1).some(id=>!canEnter(w,a.realm,s.cities[id].controller,undefined,true))){a.journey=null;a.siege=0;}
+ }
+ syncGovernance(w);
 }
 function resolveEvent(w:World,choice:'fund'|'decline'){
  const s=w.realm!,event=s.event!,city=s.cities[event.site],t=s.treasuries[playerRealm(w)],k=event.kind;
@@ -134,7 +147,7 @@ function resolveEvent(w:World,choice:'fund'|'decline'){
  log(w,eventDefinitions[k].title+'：'+(choice==='fund'?'已拨付处理。':'暂缓处理，后果已结算。'));s.event=null;
 }
 export function advanceRealm(w:World){
- const s=w.realm;if(!s)return;ensurePopulation(w);ensureArmyOrganization(w);
+ const s=w.realm;if(!s)return;ensurePopulation(w);ensureArmyOrganization(w);ensureWars(w);advanceReparations(w);
  advanceLocal(w);
  s.offices=s.offices.filter(o=>o.due>w.day||!completeLocalAppointment(w,o));syncGovernance(w);
  if(w.day%30===0){
@@ -148,28 +161,32 @@ export function advanceRealm(w:World){
  s.ledger=s.ledger.slice(-36);s.influence=clamp(s.influence+5,0,999);
 
  }
- const war=s.war;
- if(war){const enemy=war.attacker===playerRealm(w)?war.defender:war.attacker,t=s.treasuries[enemy];let a=s.armies.find(a=>a.realm===enemy);
+ for(const war of activeWars(w)){const enemy=war.attacker===playerRealm(w)?war.defender:war.attacker,t=s.treasuries[enemy];let a=s.armies.find(a=>a.realm===enemy);
  if(!a&&t.coins>=120&&t.grain>=120&&!governmentMusterReason(w,enemy)&&w.day-war.started>=5){const location=Object.keys(s.cities).find(id=>s.cities[id].controller===enemy);if(location&&s.cities[location].population>=700){s.cities[location].population-=600;spendGovernmentMuster(w,enemy);t.coins-=120;t.grain-=120;a={realm:enemy,location,troops:600,morale:100,supply:120,journey:null,siege:0};s.armies.push(a);}}
  if(a&&!a.journey&&a.location!==war.target){const path=planRoute(a.location,war.target,id=>canEnter(w,enemy,s.cities[id].controller,undefined,true));if(path)march(a,war.target,w.day,w);}
  }
+ const meetings=roadEncounters(w),engaged=new Set(meetings.flat());
  for(const a of s.armies){
+ if((a.trainingUntil??0)>w.day&&(a.arrears||a.supply<=0))a.trainingUntil!++;
  if((a.trainingUntil??0)>w.day&&!a.arrears&&a.supply>0)for(const u of a.regiments??[])u.experience=Math.min(u.service==='standing'?60:30,u.experience+1);
  advanceArmyLogistics(w,a);
  const t=s.treasuries[a.realm],need=consumeArmyFood(w,a,100-armyLifestyle(w,a.realm).supply);
  if(s.cities[a.location].controller===a.realm){const depot=s.cities[a.location];const local=Math.min(Math.max(0,120-a.supply),depot.grain);a.supply+=local;depot.grain-=local;if(a.location===capital(a.realm)){const refill=Math.min(Math.max(0,120-a.supply),t.grain);a.supply+=refill;t.grain-=refill;}}
  if(a.supply<need){a.troops=Math.max(0,a.troops-Math.ceil(a.troops*.02));a.morale=clamp(a.morale-4,0,100);a.supply=0;}else{a.supply-=need;a.morale=clamp(a.morale+((a.arrears??0)>0?-1:1),0,100);}
- if(a.journey&&!canEnter(w,a.realm,s.cities[a.journey.route[a.journey.leg+1]].controller,undefined,true)){a.journey=null;a.siege=0;log(w,regimeName(w,a.realm)+'军借道许可失效，停止行军。');}
- if(a.journey){const j=a.journey;j.elapsed++;if(j.elapsed>=j.durations[j.leg]){a.location=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)a.journey=null;}}
+ if(a.withdrawalUntil&&(a.location===a.journey?.route.at(-1)||!a.journey&&s.cities[a.location].controller===a.realm||w.day>a.withdrawalUntil))delete a.withdrawalUntil;
+ if(a.journey&&!a.withdrawalUntil&&!canEnter(w,a.realm,s.cities[a.journey.route[a.journey.leg+1]].controller,undefined,true)){a.journey=null;a.siege=0;log(w,regimeName(w,a.realm)+'军借道许可失效，停止行军。');}
+ if(a.journey&&engaged.has(a))a.journey.started++;
+ else if(a.journey){const j=a.journey;j.elapsed++;if(j.elapsed>=j.durations[j.leg]){a.location=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)a.journey=null;}}
  }
- if(war){for(const a of s.armies.filter(a=>a.realm===war.attacker))for(const b of s.armies.filter(b=>b.realm===war.defender)){
- if(a.troops>=100&&b.troops>=100&&!a.journey&&!b.journey&&a.location===b.location){const attack=Math.max(1,Math.round(Math.min(a.troops,siteById[a.location].terrain==='山地'?400:1200)*armyCombatFactor(a,'attack',siteById[a.location].terrain)/armyCombatFactor(b,'defence',siteById[b.location].terrain)*(.4+a.morale/100)*.08*(100+commandPower(w,a.realm)+armyLifestyle(w,a.realm).attack+governmentBonus(w,a.realm).attack)/100)),defend=Math.max(1,Math.round(Math.min(b.troops,siteById[b.location].terrain==='山地'?400:1200)*armyCombatFactor(b,'attack',siteById[b.location].terrain)/armyCombatFactor(a,'defence',siteById[a.location].terrain)*(.4+b.morale/100)*.08*(100+commandPower(w,b.realm)+armyLifestyle(w,b.realm).attack+governmentBonus(w,b.realm).attack)/100));a.troops=Math.max(0,a.troops-Math.round(defend*offense(w,b.realm)*exposure(w,a.realm)));b.troops=Math.max(0,b.troops-Math.round(attack*offense(w,a.realm)*exposure(w,b.realm)));a.morale=clamp(a.morale-3,0,100);b.morale=clamp(b.morale-3,0,100);reconcileRegiments(a);reconcileRegiments(b);if(a.troops<100||a.morale<10){a.troops=0;war.score=clamp(war.score-25,-100,100);log(w,'攻方野战军溃散。');}if(b.troops<100||b.morale<10){b.troops=0;war.score=clamp(war.score+25,-100,100);log(w,'守方野战军溃散。');}}}
- for(const army of s.armies){const city=s.cities[army.location],opponent=army.realm===war.attacker?war.defender:war.attacker;
+ for(const war of [...activeWars(w)]){for(const a of s.armies.filter(a=>a.realm===war.attacker))for(const b of s.armies.filter(b=>b.realm===war.defender)){
+ if(a.troops>=100&&b.troops>=100&&(!a.journey&&!b.journey&&a.location===b.location||meetings.some(pair=>pair.includes(a)&&pair.includes(b)))){const attack=Math.max(1,Math.round(Math.min(a.troops,siteById[a.location].terrain==='山地'?400:1200)*armyCombatFactor(a,'attack',siteById[a.location].terrain)/armyCombatFactor(b,'defence',siteById[b.location].terrain)*(.4+a.morale/100)*.08*(100+commandPower(w,a.realm)+armyLifestyle(w,a.realm).attack+governmentBonus(w,a.realm).attack)/100)),defend=Math.max(1,Math.round(Math.min(b.troops,siteById[b.location].terrain==='山地'?400:1200)*armyCombatFactor(b,'attack',siteById[b.location].terrain)/armyCombatFactor(a,'defence',siteById[a.location].terrain)*(.4+b.morale/100)*.08*(100+commandPower(w,b.realm)+armyLifestyle(w,b.realm).attack+governmentBonus(w,b.realm).attack)/100));a.troops=Math.max(0,a.troops-Math.round(defend*offense(w,b.realm)*exposure(w,a.realm)));b.troops=Math.max(0,b.troops-Math.round(attack*offense(w,a.realm)*exposure(w,b.realm)));a.morale=clamp(a.morale-3,0,100);b.morale=clamp(b.morale-3,0,100);reconcileRegiments(a);reconcileRegiments(b);if(a.troops<100||a.morale<10){a.troops=0;war.battles=clamp((war.battles??0)-10,-25,25);log(w,'攻方野战军溃散。');}if(b.troops<100||b.morale<10){b.troops=0;war.battles=clamp((war.battles??0)+10,-25,25);log(w,'守方野战军溃散。');}}}
+ for(const army of s.armies.filter(a=>[war.attacker,war.defender].includes(a.realm)&&!a.withdrawalUntil)){const city=s.cities[army.location],opponent=army.realm===war.attacker?war.defender:war.attacker;
  if(army.troops>=100&&!army.journey&&army.supply>0&&city.controller===opponent&&!s.armies.some(e=>e.realm===opponent&&e.troops>0&&e.location===army.location)){
  army.siege+=army.regiments?.some(u=>u.kind==='siege'&&u.troops>=50)?2:1;const required=Math.ceil((siteById[army.location].capital?40:20)*(1+(w.holdings.cities[army.location]?.levels.granary??0)*.1)*(100-armyLifestyle(w,army.realm).siege)/100);
- if(army.siege>=required){city.controller=army.realm;city.order=clamp(city.order-20,0,100);army.siege=0;war.score=clamp(war.score+(army.realm===war.attacker?50:-50),-100,100);log(w,siteById[army.location].name+'被'+regimeName(w,army.realm)+'军占领，法理归属暂不变。');syncGovernance(w);}
+ if(army.siege>=required){city.controller=army.realm;city.order=clamp(city.order-20,0,100);army.siege=0;log(w,siteById[army.location].name+'被'+regimeName(w,army.realm)+'军占领，法理归属暂不变。');syncGovernance(w);}
  }else army.siege=0;}
- if(w.day-war.started>=360)settleWar(w);
+ const target=s.cities[war.target],others=Object.entries(s.cities).filter(([id])=>id!==war.target);war.score=clamp((target.controller===war.attacker?40:0)+(war.battles??0)+clamp(others.reduce((n,[,c])=>n+(c.owner===war.defender&&c.controller===war.attacker?5:c.owner===war.attacker&&c.controller===war.defender?-5:0),0),-25,25),-100,100);
+ if(target.owner!==war.defender&&target.owner!==war.attacker)settleWar(w,war);
  }
  for(const a of s.armies){reconcileRegiments(a);if(a.troops<100){returnArmyConvoy(w,a);if(a.arrears){const debts=s.armyDebts??=[],account=a.payer??'central:'+a.realm,old=debts.find(d=>d.realm===a.realm&&d.account===account);if(old)old.coins+=a.arrears;else debts.push({realm:a.realm,account,coins:a.arrears});}}}s.armies=s.armies.filter(a=>a.troops>=100);
  if(!s.event&&w.day-s.lastEvent>=90&&w.holdings.governedCities.length){const kinds=Object.keys(eventDefinitions) as EventKind[];s.event={kind:kinds[(Math.floor(w.day/90)-1)%kinds.length],site:w.holdings.governedCities[0],day:w.day};s.lastEvent=w.day;log(w,'收到待决事务：'+eventDefinitions[s.event.kind].title+'。');}

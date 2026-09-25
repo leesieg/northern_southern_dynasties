@@ -1,3 +1,4 @@
+import {realmAtWar} from './wars';
 import {awardDeed} from './deeds';
 import {expandedPersonById} from '../data/expandedPeople';
 import {enactPoliticalAction} from './politicalActions';
@@ -63,7 +64,7 @@ export function spendGovernmentMuster(w:World,r=currentRealm(w)){const g=governm
 const averageOrder=(w:World,r:RealmId)=>{const cities=Object.values(w.realm!.cities).filter(c=>c.owner===r&&c.controller===r);return cities.length?cities.reduce((n,c)=>n+c.order,0)/cities.length:0;};
 function ownsCapital(w:World,r:RealmId){const c=w.realm!.cities[capital[r]];return c.owner===r&&c.controller===r;}
 function nativeCities(w:World,r:RealmId){return Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r);}
-export function governmentTaskPause(w:World,r:RealmId){const g=governmentOf(w,r);if(!g?.task)return '';if(['celestial','meritocratic','khanate'].includes(g.type)&&g.court?.phase==='chaos')return '朝廷危局，改革暂停';if(w.realm!.war&&[w.realm!.war.attacker,w.realm!.war.defender].includes(r))return '战争期间暂停';if(!ownsCapital(w,r))return '失去都城控制，暂停';if(g.support<40)return '支持低于 40，需议政争取';if(averageOrder(w,r)<40)return '平均秩序低于 40，需先赈济';if(g.task.kind==='government'){const target=g.task.target;if(target==='celestial'&&(g.legitimacy<80||!hasHegemony(w,r)))return '天命或统一程度不足，暂停';if((target==='nomadic'||target==='khanate')&&(!validCamp(w,r,g.camp)||g.herd<(target==='nomadic'?200:100)))return '失去驻牧地，暂停';}return '';}
+export function governmentTaskPause(w:World,r:RealmId){const g=governmentOf(w,r);if(!g?.task)return '';if(['celestial','meritocratic','khanate'].includes(g.type)&&g.court?.phase==='chaos')return '朝廷危局，改革暂停';if(realmAtWar(w,r))return '战争期间暂停';if(!ownsCapital(w,r))return '失去都城控制，暂停';if(g.support<40)return '支持低于 40，需议政争取';if(averageOrder(w,r)<40)return '平均秩序低于 40，需先赈济';if(g.task.kind==='government'){const target=g.task.target;if(target==='celestial'&&(g.legitimacy<80||!hasHegemony(w,r)))return '天命或统一程度不足，暂停';if((target==='nomadic'||target==='khanate')&&(!validCamp(w,r,g.camp)||g.herd<(target==='nomadic'?200:100)))return '失去驻牧地，暂停';}return '';}
 function hasHegemony(w:World,r:RealmId){const cities=Object.values(w.realm!.cities).filter(c=>c.owner!=='frontier');return nativeCities(w,r).length>=Math.ceil(cities.length*.6);}
 export function validCamp(w:World,r:RealmId,site:string){const c=w.realm!.cities[site];return !!c&&c.owner===r&&c.controller===r&&siteById[site].lat>=38;}
 export function governmentReason(w:World,c:GovernmentCommand):string{
@@ -78,7 +79,7 @@ export function governmentReason(w:World,c:GovernmentCommand):string{
  if(c.action==='herd')return !validCamp(w,r,g.camp)?'先在本国北方城市设立驻牧地':t.coins<60?'购入畜群需公款 60':g.herd>=1000?'畜群已达容量':'';
  if(c.action==='contract')return g.type!=='feudal'?'仅封建制可议契约':!Object.hasOwn(s.cities,c.site)||s.cities[c.site].owner!==r||s.cities[c.site].controller!==r?'需本国控制的本国城市':!['balanced','tax','levy'].includes(c.contract)?'无效契约':(g.contracts[c.site]??'balanced')===c.contract?'契约未变化':s.influence<10?'修改契约需影响力 10':(g.cooldowns['contract|'+c.site]??0)>w.day?'契约每 90 日可修改一次':'';
  if(g.task||g.court?.founding)return '已有改革或更替议程，请先完成或取消';
- if(s.war&&[s.war.attacker,s.war.defender].includes(r))return '战争期间不能启动改革或受禅';
+ if(realmAtWar(w,r))return '战争期间不能启动改革或受禅';
  if(!ownsCapital(w,r))return '需要控制本国都城';
  if(g.support<55||g.legitimacy<40)return '需要支持 55、合法性 40，可通过议政改善';
  let cost=160;

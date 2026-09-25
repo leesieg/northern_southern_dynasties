@@ -1,3 +1,4 @@
+import {realmAtWar} from '../core/wars';
 import {plannedReinvestment} from '../core/treasury';
 import {ArtIcon,type ArtName} from './ArtIcon';
 import {officeHierarchy,superiorOffice} from '../core/offices';
@@ -19,5 +20,5 @@ export function RealmOverview({world:w,onTab,onPerson,onCity}:{onCity:(id:string
  <section><div className="realm-section-title"><h3>当前事务</h3><button onClick={()=>onTab('duties')}>差事簿 ›</button></div>{attention>0&&<button className="realm-attention" onClick={()=>onTab('duties')}><ArtIcon name="influence"/>有 {attention} 项文书等你处理 <span>›</span></button>}{tasks.slice(0,3).map(t=><button className="realm-task-row" key={t.id} onClick={()=>onTab('duties')}><ArtIcon name={assignmentTemplates[t.kind].icon}/><span><strong>{siteById[t.site].name} · {assignmentTemplates[t.kind].name}</strong><small>{assignmentPhases[t.phase]} · 余 {Math.max(0,t.deadline-w.day)} 日</small></span><span>›</span></button>)}{!tasks.length&&!attention&&<p className="realm-quiet">暂无待办，可以安排新的差事。</p>}</section>
  <section><h3>我能做什么</h3><div className="realm-entry-grid">{tile('duties','influence',chief?'委任考课':'请命办差',chief?'议事 · 用人 · 考绩':'请命 · 协办 · 履历')}{tile('treasury','coins','国库','预算 · 拨款 · 收支')}{tile('politics','person',chief?'任免官员':'求官请权',chief?'委派治理与授权':'治理权与军务授权')}</div></section>
  <section><h3>政权档案</h3><div className="realm-reference-grid">{tile('court','renown','朝廷','集团 · 官职 · 继承')}{tile('hierarchy','world','科层','君臣与隶属')}{tile('government','estate','制度','政体 · 改革')}{tile('clans','renown','世族','族望 · 门第')}</div></section>
- <div className="realm-outlook"><span>中央下期结余 <b>{forecast.income-forecast.expense-plannedReinvestment(w,r)>=0?'+':''}{forecast.income-forecast.expense-plannedReinvestment(w,r)} 钱</b></span><span>治理 <b>{cities} 城</b></span><span>{w.realm!.war?'战事进行中':'国境和平'}</span></div></div>;
+ <div className="realm-outlook"><span>中央下期结余 <b>{forecast.income-forecast.expense-plannedReinvestment(w,r)>=0?'+':''}{forecast.income-forecast.expense-plannedReinvestment(w,r)} 钱</b></span><span>治理 <b>{cities} 城</b></span><span>{realmAtWar(w,r)?'战事进行中':'国境和平'}</span></div></div>;
 }

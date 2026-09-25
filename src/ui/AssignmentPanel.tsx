@@ -31,6 +31,7 @@ export function AssignmentPanel({world:w,pending,send,onPerson,task:t}:ServicePr
  {pause&&<p className="service-warning" role="status">{pause}；限期继续计算。</p>}
  <DetailTabs label="差事详情" value={chapter} onChange={setChapter} items={[{id:'progress',label:'办理',icon:d.icon},{id:'people',label:'协办人事',icon:'person'},{id:'records',label:'文书',icon:'diligent'}]}/>
  {chapter==='progress'&&<>
+ {t.delivery&&<div className="city-civic-metrics"><span><ArtIcon name="grain" size={24}/>发运 <b>{t.delivery.sent}</b></span><span>{t.delivery.status==='traveling'?'粮队在途':t.delivery.status==='returned'?'粮队已返还':'粮队已交割'} · 抵达 {t.delivery.arrived}</span><span>驻军接收 <b>{t.delivery.delivered}</b></span><span>损耗 {t.delivery.lost}</span></div>}
  {t.result?<section><h4>{t.result.success?'考绩核定':'差事未成'}</h4><p>{t.result.reason}</p>{t.result.effects.map((effect,i)=><p key={i}>{effect}</p>)}{t.result.awards.map(a=><p key={a.person}><button onClick={()=>onPerson(a.person)}>{politicalName(a.person)}</button> · 功绩 {a.merit>=0?'+':''}{a.merit} · 主管交往 {a.opinion>=0?'+':''}{a.opinion} · 家族威望 +{a.prestige}</p>)}</section>:<>
  {t.invitation?.person===w.characterId&&<section className="service-callout"><h4>邀你协办</h4><p>接受后将占用你的差事名额，按实际参与领取考绩。</p><div className="realm-actions">{action('accept','接受协办')}{action('decline','婉拒')}</div></section>}
  {authority&&t.phase==='petition'&&<div className="realm-actions">{action('approve','准予请命')}{action('cancel','不予准许')}</div>}

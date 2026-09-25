@@ -1,3 +1,4 @@
+import {activeWars} from './wars';
 import {validTraffic} from './roadCapacity';
 import {troopKinds} from './armyOrganization';
 import {territoryNodes,descendantSites} from '../data/territorialHierarchy';
@@ -33,6 +34,7 @@ export function validRealm(w:World):boolean {
  if(!validTraffic(w))return false;
  if(!Array.isArray(s.armies)||s.armies.length>48)return false;const seen=new Set<string>();
  for(const a of s.armies){if(!obj(a)||!realm(a.realm)||seen.has(a.id!==undefined?String(a.id):a.realm)||!site(a.location)||!int(a.troops,100,6000)||!int(a.morale,0,100)||!int(a.supply,0,600)||!int(a.siege,0,100))return false;seen.add(a.id!==undefined?String(a.id):a.realm);
+ if(a.withdrawalUntil!==undefined&&!int(a.withdrawalUntil,0,w.day+10000))return false;
  if(a.trainingStarted!==undefined&&(!int(a.trainingStarted,0,w.day)||a.trainingUntil===undefined||Number(a.trainingUntil)<Number(a.trainingStarted)))return false;
  if(a.trainingUntil!==undefined&&!int(a.trainingUntil,0,w.day+60))return false;
  if(a.id!==undefined&&(!int(a.id,1,1000000000)||!int(s.nextArmyId,Number(a.id)+1,1000000000)))return false;
@@ -45,8 +47,15 @@ export function validRealm(w:World):boolean {
  if(j.elapsed>=j.durations[j.leg]||j.durations.slice(0,j.leg).reduce((n:number,d:number)=>n+d,0)+j.elapsed!==w.day-j.started)return false;}
  }
  if(s.armyDebts!==undefined&&(!Array.isArray(s.armyDebts)||s.armyDebts.length>1000||s.armyDebts.some(d=>!obj(d)||!realm(d.realm)||typeof d.account!=='string'||d.account!=='central:'+d.realm&&(!d.account.startsWith(d.realm+'|')||!Object.hasOwn(territoryNodes,d.account.split('|')[1]))||!int(d.coins,1,1000000000))))return false;
- if(s.war!==null){const v=s.war;if(!obj(v)||!realm(v.attacker)||!realm(v.defender)||v.attacker===v.defender||![v.attacker,v.defender].includes(playerRealm(w))||!site(v.target)||s.cities[v.target].owner!==v.defender||!int(v.started,0,w.day)||w.day-v.started>=360||!int(v.score,-100,100))return false;}
- else if(Object.values(s.cities).some(c=>c.owner!==c.controller))return false;
+ if(s.wars!==undefined&&(!Array.isArray(s.wars)||s.wars.length>3||!int(s.nextWarId,1,1000000000)))return false;
+ const wars=activeWars(w),pairs=new Set<string>(),ids=new Set<number>();
+ for(const v of wars){if(!obj(v)||!realm(v.attacker)||!realm(v.defender)||v.attacker===v.defender||!site(v.target)||!int(v.started,0,w.day)||!int(v.score,-100,100))return false;
+ if(v.goal!==undefined&&!['territory','reparations','tributary'].includes(String(v.goal))||v.demand!==undefined&&!int(v.demand,1,10000)||v.battles!==undefined&&!int(v.battles,-25,25))return false;
+ const pair=[v.attacker,v.defender].sort().join('|');if(pairs.has(pair))return false;pairs.add(pair);
+ if(s.wars!==undefined){if(!int(v.id,1,Number(s.nextWarId)-1)||ids.has(v.id))return false;ids.add(v.id);}}
+ if(s.wars!==undefined&&JSON.stringify(s.war)!==JSON.stringify(s.wars[0]??null))return false;
+ if(Object.values(s.cities).some(c=>c.owner!==c.controller&&!wars.some(v=>[v.attacker,v.defender].includes(c.owner as typeof realms[number])&&[v.attacker,v.defender].includes(c.controller as typeof realms[number]))))return false;
+ if(s.reparations!==undefined&&(!Array.isArray(s.reparations)||s.reparations.length>1000||s.reparations.some(d=>!obj(d)||!int(d.war,1,1000000000)||!realm(d.from)||!realm(d.to)||d.from===d.to||!int(d.remaining,1,10000)||!int(d.instalment,1,10000)||!int(d.next,0,w.day+30))))return false;
  if(s.event!==null){const e=s.event;if(!obj(e)||typeof e.kind!=='string'||!Object.hasOwn(eventDefinitions,e.kind)||!site(e.site)||!int(e.day,0,w.day)||e.day!==s.lastEvent)return false;}
  if(!Array.isArray(s.ledger)||s.ledger.length>36)return false;
  for(const l of s.ledger)if(!obj(l)||!realm(l.realm)||!int(l.day,0,w.day)||l.day%30!==0||!int(l.income)||!int(l.expense)||!int(l.food,-1_000_000,1_000_000))return false;

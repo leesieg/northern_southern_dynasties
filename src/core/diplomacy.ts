@@ -1,3 +1,4 @@
+import {bilateralWar,realmAtWar} from './wars';
 import type { World,Polity } from './types';
 import { realms,playerRealm,capital,type RealmId } from './realm';
 import { governmentOf,governingAuthority,governingExecutives,governmentExecutive,regimeName } from './government';
@@ -22,7 +23,7 @@ export function ensureDiplomacy(w:World){if(!w.realm||w.diplomacy)return;w.diplo
 export const diplomaticPair=(w:World,a:RealmId,b:RealmId)=>w.diplomacy?.pairs[diplomaticKey(a,b)];
 export function diplomaticOpinionBreakdown(p:DiplomaticPair){return [{label:p.opinionFactors?'既有关系':'既有关系（未记分项）',value:p.opinionFactors?.base??p.opinion},...Object.entries(p.opinionFactors?.effects??{}).map(([key,value])=>({label:diplomaticFactorNames[key as DiplomaticFactor],value}))];}
 function changeOpinion(p:DiplomaticPair,delta:number,factor:DiplomaticFactor){const f=p.opinionFactors??={base:p.opinion,effects:{}},next=clamp(p.opinion+delta);f.effects[factor]=(f.effects[factor]??0)+next-p.opinion;p.opinion=next;}
-export function atWar(w:World,a:RealmId,b:RealmId){const v=w.realm?.war;return !!v&&[v.attacker,v.defender].includes(a)&&[v.attacker,v.defender].includes(b)&&a!==b;}
+export function atWar(w:World,a:RealmId,b:RealmId){return !!bilateralWar(w,a,b);}
 export function warState(w:World,a:RealmId,b:RealmId){return atWar(w,a,b)?'交战':(w.realm?.truces[diplomaticKey(a,b)]??0)>w.day?'停战期':'和平';}
 export const attitude=(opinion:number)=>opinion>=40?'友善':opinion>=0?'中立':opinion>-40?'猜忌':'敌对';
 export function treaty(w:World,a:RealmId,b:RealmId,kind:TreatyKind,actor?:string){return diplomaticPair(w,a,b)?.treaties.find(t=>t.kind===kind&&t.until>w.day&&(kind==='alliance'||kind==='pact'||t.from===a&&t.to===b)&&(kind!=='safe'||t.actor===actor));}
@@ -54,7 +55,7 @@ export function diplomaticQuote(w:World,c:DiplomacyCommand){
  else if(w.realm.treasuries[r].coins<coins)reason='国库不足 '+coins+' 钱';
  else if(w.realm.influence<10)reason='需影响力 10';
  else if(['safe','transit','military','pact','alliance'].includes(c.action)&&treaty(w,r,c.target,c.action as TreatyKind,w.characterId))reason='已有有效条约';
- else if(c.action==='aid'&&(!treaty(w,r,c.target,'alliance')||!w.realm.war||![w.realm.war.attacker,w.realm.war.defender].includes(r)))reason='仅在本国参战时请求盟国军援';
+ else if(c.action==='aid'&&(!treaty(w,r,c.target,'alliance')||!realmAtWar(w,r)))reason='仅在本国参战时请求盟国军援';
  }
  return {reason,coins,influence:'mission'in c||c.action==='repatriate'?0:10,score,threshold:thresholds[c.action as DiplomacyAction]??0};
 }
@@ -63,7 +64,7 @@ function agreementReason(w:World,m:Envoy){const s=w.diplomacy!;
  if(atWar(w,m.from,m.to))return '两国已交战';
  if(s.subjects[m.from]&&['military','pact','alliance','submit'].includes(m.action))return '出使方已失去独立缔约权';
  if(m.action==='submit'&&(s.subjects[m.from]||cycles(w,m.from,m.to)))return '臣属关系冲突';
- if(m.action==='aid'&&(!treaty(w,m.from,m.to,'alliance')||!w.realm!.war||![w.realm!.war.attacker,w.realm!.war.defender].includes(m.from)))return '援战条件已改变';
+ if(m.action==='aid'&&(!treaty(w,m.from,m.to,'alliance')||!realmAtWar(w,m.from)))return '援战条件已改变';
  if(m.action==='aid'&&(w.realm!.treasuries[m.to].coins<120||w.realm!.treasuries[m.to].grain<120))return '援助需要国库 120 钱、120 粮';
  return '';
 }

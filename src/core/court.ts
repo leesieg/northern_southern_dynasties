@@ -1,3 +1,4 @@
+import {realmAtWar} from './wars';
 import {clearLocalPerson,localActive,localSites} from './localAdministration';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {allegianceRealm,publicOfficeReason} from './officeEligibility';
@@ -61,7 +62,7 @@ export function movementMood(w:World,r:RealmId,group:MovementId,powers?:ReturnTy
  if(occupied.length){const seats=occupied.filter(id=>c.members[id]===group).length;add('中央任职份额',Math.max(-15,Math.min(15,Math.round((seats/occupied.length-m.share/100)*30))));}
  if(group==='dynastic')add('君主合法性',Math.round((g.legitimacy-50)/3));
  if(group==='reform'||group==='conservative')add('官场积弊',-Math.floor(c.corruption/5));
- if(w.realm!.war&&[w.realm!.war.attacker,w.realm!.war.defender].includes(r))add('战争立场',group==='expansion'?10:group==='conservative'?-15:-5);
+ if(realmAtWar(w,r))add('战争立场',group==='expansion'?10:group==='conservative'?-15:-5);
  const satisfaction=cap(factors.reduce((n,v)=>n+v.value,0));
  const tension=satisfaction<40?Math.ceil(m.share*(40-satisfaction)/200):satisfaction>=70?-Math.floor(m.share*(satisfaction-60)/500):0;
  const support=satisfaction<30?-Math.ceil(m.share/25):satisfaction>=70?Math.floor(m.share/25):0;
@@ -73,7 +74,7 @@ export function courtBonus(w:World,r:RealmId){
 }
 export function controlledShare(w:World,r:RealmId){const cities=Object.values(w.realm!.cities).filter(c=>c.owner!=='frontier');return cities.length?Math.floor(cities.filter(c=>c.owner===r&&c.controller===r).length*100/cities.length):0;}
 export function foundingPause(w:World,r:RealmId){const c=courtOf(w,r),f=c?.founding;if(!f)return '';const g=governmentOf(w,r)!;const capital=w.realm!.cities[capitals[r]];
- if(!courtEnabled(w,r))return '当前政体不支持朝廷拥立';if(w.realm!.war&&[w.realm!.war.attacker,w.realm!.war.defender].includes(r))return '战争中暂停';if(capital.owner!==r||capital.controller!==r)return '都城失守，暂停';if(g.support<60)return '朝野支持低于 60';
+ if(!courtEnabled(w,r))return '当前政体不支持朝廷拥立';if(realmAtWar(w,r))return '战争中暂停';if(capital.owner!==r||capital.controller!==r)return '都城失守，暂停';if(g.support<60)return '朝野支持低于 60';
  if(f.mode==='unify')return controlledShare(w,r)<75||g.legitimacy<80?'重建天朝需实控 75% 已录非边疆城市、天命 80':'';
  const group=c!.members[f.sponsor];return group==='unaligned'||movementSummary(w,r,group).leader!==f.sponsor||movementSummary(w,r,group).share<50?'拥立集团需由发起人领衔、势力至少 50%':'';
 }
@@ -98,7 +99,7 @@ export function courtReason(w:World,cmd:CourtCommand):string{
   if(cmd.mode==='usurp'&&(!Object.values(c.ministries).includes(id)&&!(localPoliticalBasis(w,id,r)>0)&&!governingExecutives(w,r).includes(id)))return '需中央任官、在任辖地或实际执政基础';
   if(cmd.mode==='usurp'&&(group==='unaligned'||movementSummary(w,r,group).leader!==id||movementSummary(w,r,group).share<50))return '需领衔势力至少 50% 的政治集团';
   if(cmd.mode==='unify'&&(!governmentExecutive(w)||controlledShare(w,r)<75||g.legitimacy<80))return '重建天朝需实际执政、实控 75% 已录非边疆城市、天命 80';
-  if(w.realm.war&&[w.realm.war.attacker,w.realm.war.defender].includes(r))return '战争期间不能建朝';const capital=w.realm.cities[capitals[r]];if(capital.owner!==r||capital.controller!==r)return '需控制本国都城';
+  if(realmAtWar(w,r))return '战争期间不能建朝';const capital=w.realm.cities[capitals[r]];if(capital.owner!==r||capital.controller!==r)return '需控制本国都城';
   return t.coins<300||w.realm.influence<80?'建朝需公款 300、影响力 80':'';
  }
  if(!governmentExecutive(w))return '需要实际执政权';
@@ -141,9 +142,9 @@ function foundDynasty(w:World,r:RealmId){const g=governmentOf(w,r)!,c=courtOf(w,
 }
 export function courtCatalysts(w:World,r:RealmId,powers=movementPowers(w,r)){const c=courtOf(w,r)!,g=governmentOf(w,r)!,s=w.realm!,t=s.treasuries[r],cities=Object.values(s.cities).filter(c=>c.owner===r),order=cities.length?cities.reduce((n,c)=>n+c.order,0)/cities.length:0;const capital=s.cities[capitals[r]];
  const rows:{label:string;value:number}[]=[];const add=(label:string,value:number)=>rows.push({label,value});
- if(!t.coins||!t.grain)add('公库或公粮见底',10);if(capital.owner!==r||capital.controller!==r)add('都城失守',15);if(s.war&&[s.war.attacker,s.war.defender].includes(r))add('持续战争',5);if(order<45)add('地方失序',8);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
+ if(!t.coins||!t.grain)add('公库或公粮见底',10);if(capital.owner!==r||capital.controller!==r)add('都城失守',15);if(realmAtWar(w,r))add('持续战争',5);if(order<45)add('地方失序',8);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
  for(const group of movementIds){const m=movementMood(w,r,group,powers);if(m.tension)add(movements[group].name+(m.tension>0?'施压':'支持'),m.tension);}
- if(t.coins>0&&t.grain>0&&order>=45&&g.legitimacy>=40&&g.support>=40&&capital.controller===r&&!s.war)add('府库、秩序与天命平稳',-4);if(ministryCompetent(w,r,'censorate'))add('监察履职',-2);
+ if(t.coins>0&&t.grain>0&&order>=45&&g.legitimacy>=40&&g.support>=40&&capital.controller===r&&!realmAtWar(w,r))add('府库、秩序与天命平稳',-4);if(ministryCompetent(w,r,'censorate'))add('监察履职',-2);
  return rows;
 }
 export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const r of realms){syncCourt(w,r);const c=courtOf(w,r);if(!c)continue;const g=governmentOf(w,r)!;
