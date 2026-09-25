@@ -1,3 +1,6 @@
+import {actCivilWar,civilCanAdmin} from './civilWars';
+import {actEnterprise,advanceEnterprises} from './enterprises';
+import {actMilitaryCampaign,advanceMilitaryCampaigns} from './militaryCampaigns';
 import {actArmyOrganization,ensureArmyOrganization} from './armyOrganization';
 import {actAppointments} from './appointmentCycle';
 import {actLocal,ensureLocalAdministration} from './localAdministration';
@@ -6,7 +9,7 @@ import {ensurePopulation,actPopulation,advancePopulation} from './population';
 import {ensureFiscal,actFiscal,advanceFiscal,fiscalSnapshot,reconcileFiscal} from './treasury';
 import {ensurePersonalInfluence,snapshotInfluence,restoreInfluence,advancePersonalInfluence} from './personalInfluence';
 import {ensureRetinue,actRetinue,advanceRetinue} from './retinue';
-import {ensureMobility,actMobility,departureReason,advanceMobility,syncArmyTravel} from './mobility';
+import {ensureMobility,actMobility,commandArmy,departureReason,advanceMobility,syncArmyTravel} from './mobility';
 import {ensureService,actService,advanceService,reconcileServiceAllegiance} from './assignments';
 import {ensureDuties,actDuty,advanceDuties} from './duties';
 import {ensureLife,advanceLife,actLife} from './life';
@@ -118,8 +121,12 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='health'){actLife(world,command);return;}
   if(command.type==='travel'&&lifeOf(world,world.characterId??'fictional')?.illness?.severity===3)throw new Error('重病期间无法远行，请先延医休养。');
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
+  if('site'in command&&typeof command.site==='string'&&['build','fiscal','service','population'].includes(command.type)&&!civilCanAdmin(world,world.characterId!,command.site))throw new Error('该地由内战对方控制，无法办理此项公务');
   if(command.type==='appointments'){actAppointments(world,command);return;}
  if(command.type==='local'){actLocal(world,command);return;}
+  if(command.type==='civilWar'){actCivilWar(world,command);return;}
+  if(command.type==='enterprise'){actEnterprise(world,command);return;}
+  if(command.type==='militaryCampaign'){actMilitaryCampaign(world,command);return;}
   if(command.type==='economy'){actPersonalEconomy(world,command);return;}
   if(command.type==='fiscal'){actFiscal(world,command);return;}
   if(command.type==='retinue'){actRetinue(world,command);return;}
@@ -169,10 +176,10 @@ export function advance(world: World, days = 1): void {
     advanceConstruction(world);
     for (const p of world.people) {
       if(!isAlive(world,p.id==='player'?world.characterId??'fictional':p.id))continue;
-      if(p.id==='player'&&Object.values(world.mobility?.commanders??{}).includes(world.characterId!))continue;
+      if(p.id==='player'&&commandArmy(world))continue;
       if (p.journey) {
         const j = p.journey;
-        if(p.id==='player'&&world.realm&&!world.diplomacy?.returning&&!canEnter(world,playerRealm(world),world.realm.cities[j.route[j.leg+1]].controller,world.characterId)){
+        if(p.id==='player'&&world.realm&&!world.diplomacy?.returning&&(!civilCanAdmin(world,world.characterId!,j.route[j.leg+1])||!canEnter(world,playerRealm(world),world.realm.cities[j.route[j.leg+1]].controller,world.characterId))){
           p.food=Math.min(1_000_000,p.food+remainingDays(p));p.journey=null;record(world,p,'边境局势变化，前方不再允许通行。行程中止，未用行粮退回。');continue;
         }
         if(p.id==='player'&&world.diplomacy?.returning&&world.realm){const controller=world.realm.cities[j.route[j.leg+1]].controller;const destination=world.realm.cities[j.route.at(-1)!].controller;if(controller==='frontier'||atWar(world,playerRealm(world),controller)||destination!==playerRealm(world)){p.food=Math.min(1_000_000,p.food+remainingDays(p));p.journey=null;world.diplomacy.returning=null;record(world,p,'返国路线因战事变化中断，请重新安排。');continue;}}
@@ -210,6 +217,8 @@ export function advance(world: World, days = 1): void {
     advanceDuties(world);
     advanceService(world);
     advancePersonalEconomy(world);
+    advanceEnterprises(world);
+    advanceMilitaryCampaigns(world);
     ensureArmyOrganization(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);
     evaluateCampaign(world);

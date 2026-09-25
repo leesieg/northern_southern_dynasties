@@ -1,3 +1,4 @@
+import {survivingRealm} from './polityLifecycle';
 import {clearLocalPerson} from './localAdministration';
 import {acceptance} from './social';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
@@ -7,12 +8,13 @@ import {governmentOf,governingExecutives} from './government';
 import {presentAt} from './residence';
 import type {RealmId} from './realm';
 import type {World} from './types';
-export function allegianceRealm(w:World,id:string,seen=new Set<string>()):RealmId|undefined {if(seen.has(id))return relationshipPersonById[id]?.realm;seen.add(id);const lord=w.relationships?.oaths[id]?.lord??w.retinue?.members[id]?.host;return lord?allegianceRealm(w,lord,seen):relationshipPersonById[id]?.realm;}
+export function allegianceRealm(w:World,id:string,seen=new Set<string>()):RealmId|undefined {if(seen.has(id))return relationshipPersonById[id]?.realm;seen.add(id);const lord=w.relationships?.oaths[id]?.lord??w.retinue?.members[id]?.host;const original=lord?allegianceRealm(w,lord,seen):relationshipPersonById[id]?.realm;return original?survivingRealm(w,original):undefined;}
 export const officeName=(id:string)=>relationshipPersonById[id]?.name??characterById[id]?.name??id;
 export const officeCandidates=(w:World,r:RealmId)=>relationshipPeople.filter(p=>allegianceRealm(w,p.id)===r);
 export function publicOfficeReason(w:World,id:string){
  if(!relationshipPersonById[id])return '尚未登场的人物';if(!isAlive(w,id))return '不能任命已故人物';if((ageAt(w,id)??(relationshipPersonById[id].adult?18:0))<16)return '须成年后任官';
  if(w.mobility?.captivity&&id===w.characterId)return '被拘禁期间不能赴任';
+ if(w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===id))return '须先交接战役委任';
  if(w.retinue?.members[id])return '须先解除幕府职务';
  if(w.realm?.offices.some(o=>o.candidate===id))return '已有任命在途';
  if(Object.values(w.mobility?.commanders??{}).includes(id)||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id))||w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id||a.delegate===id)))return '须先交接正在执行的军务或差事';

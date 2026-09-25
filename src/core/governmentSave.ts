@@ -1,3 +1,4 @@
+import {allegianceRealm} from './officeEligibility';
 import {relationshipPersonById} from '../data/relationships';
 import {publicFamily} from './publicSuccession';
 import {ageAt,isAlive} from './lifeState';
@@ -12,10 +13,10 @@ const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Ar
 const int=(v:unknown,max:number,min=0):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max;
 const text=(v:unknown,max=100):v is string=>typeof v==='string'&&v.length>0&&v.length<=max;
 const ids=['liang','east','west'] as const;
-const person=(id:unknown,r:string)=>text(id)&&relationshipPersonById[id]?.realm===r;
 const site=(id:unknown)=>text(id)&&Object.hasOwn(siteById,id);
 const unique=(v:unknown):v is string[]=>Array.isArray(v)&&v.every(x=>typeof x==='string')&&new Set(v).size===v.length;
 export function validGovernments(w:World):boolean {
+ const person=(id:unknown,r:string)=>text(id)&&(relationshipPersonById[id]?.realm===r||allegianceRealm(w,id)===r);
  const state:unknown=w.realm?.governments;if(state===undefined)return true;
  if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||state.lastMonthly%30!==0||state.lastMonthly<Math.floor(state.since/30)*30||!obj(state.realms)||Object.keys(state.realms).length!==3)return false;
  if(!Array.isArray(state.regimes)||state.regimes.length<3||state.regimes.length>36||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;

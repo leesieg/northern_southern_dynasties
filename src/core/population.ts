@@ -1,3 +1,4 @@
+import {civilWar} from './civilWars';
 import {receiveServiceGrain} from './serviceTransport';
 import {loadRoad,loadingDays} from './roadCapacity';
 import {attributes} from './social';
@@ -58,7 +59,7 @@ export function advancePopulation(w:World){if(!w.realm)return;ensurePopulation(w
  p.transfers=[...p.transfers.filter(t=>t.status!=='traveling').slice(-60),...p.transfers.filter(t=>t.status==='traveling')];w.chronicle=w.chronicle.slice(-100);
 }
 /** Local harvest after civilian consumption. The capital is the central grain depot. */
-export function settleLocalGrain(w:World,r:RealmId,yieldFor:(id:string)=>number){const s=w.realm!;for(const [id,c] of Object.entries(s.cities)){if(c.controller!==r)continue;const net=yieldFor(id)-civilianFood(w,id);const before=c.grain;c.grain=Math.max(0,c.grain+net);if(before+net<0){const deaths=Math.min(c.population-100,Math.ceil(-(before+net)*10));c.population-=Math.max(0,deaths);c.order=Math.max(0,c.order-8);}const loss=Math.floor(c.grain*Math.max(.005,.03-(w.holdings.cities[id]?.levels.granary??0)*.008));c.grain=Math.min(grainCapacity(w,id),c.grain-loss);if(id===capital(r)&&c.owner===r){const reserve=civilianFood(w,id)*2,transfer=Math.max(0,c.grain-reserve);c.grain-=transfer;s.treasuries[r].grain=Math.min(1_000_000,s.treasuries[r].grain+transfer);}}}
+export function settleLocalGrain(w:World,r:RealmId,yieldFor:(id:string)=>number){const s=w.realm!;for(const [id,c] of Object.entries(s.cities)){if(c.controller!==r)continue;const net=yieldFor(id)-civilianFood(w,id);const before=c.grain;c.grain=Math.max(0,c.grain+net);if(before+net<0){const deaths=Math.min(c.population-100,Math.ceil(-(before+net)*10));c.population-=Math.max(0,deaths);c.order=Math.max(0,c.order-8);}const loss=Math.floor(c.grain*Math.max(.005,.03-(w.holdings.cities[id]?.levels.granary??0)*.008));c.grain=Math.min(grainCapacity(w,id),c.grain-loss);if(id===capital(r)&&c.owner===r&&!civilWar(w,r)?.civil?.cities.includes(id)){const reserve=civilianFood(w,id)*2,transfer=Math.max(0,c.grain-reserve);c.grain-=transfer;s.treasuries[r].grain=Math.min(1_000_000,s.treasuries[r].grain+transfer);}}}
 export function validPopulation(w:World){
  const p=w.realm?.population;if(p===undefined)return true;
  const int=(v:unknown,max=1_000_000):v is number=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;

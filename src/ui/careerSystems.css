@@ -1,0 +1,12 @@
+.career-systems {display:grid;gap:12px;margin-block:16px}
+.career-systems h3,.career-systems h4 {display:flex;align-items:center;gap:8px;margin:0}
+.career-systems article {padding:12px;border:1px solid #84724b;border-radius:5px;background:#172e26;display:grid;gap:10px}
+.career-parameters {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.career-parameters label {min-width:0;display:grid;gap:5px}
+.career-parameters select,.career-parameters input {width:100%;min-width:0}
+.career-commander {display:flex;align-items:center;gap:12px}
+.career-commander> :first-child {width:64px;height:64px;flex:0 0 64px;overflow:hidden}
+.career-commander small {display:block;margin-top:6px}
+.career-supporters {display:flex;flex-wrap:wrap;gap:8px}
+.career-supporters> * {width:48px;height:48px;overflow:hidden}
+.career-systems progress {width:100%;accent-color:#c9ad67}

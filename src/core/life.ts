@@ -46,7 +46,7 @@ export function die(w:World,id:string,cause:'illness'|'age'){
  if(w.realm){
   for(const city of Object.values(w.realm.cities))if(city.governor===id)city.governor=wasPlayer&&next&&w.realm.governments?.realms[characterById[id].polity].type==='feudal'?next.id:null;
   w.realm.offices=w.realm.offices.filter(o=>o.candidate!==id);
-  for(const r of realms){const g=w.realm.governments?.realms[r];if(!g)continue;
+  for(const r of realms){const g=w.realm.governments?.realms[r];if(!g||w.realm.annexed?.[r])continue;
    if(g.heirs?.ruler===id){g.heirs.ruler=null;g.heirs.dynasty=null;}if(g.heirs?.executive===id)g.heirs.executive=null;
    if(g.task?.sponsor===id)g.task=null;
    if(g.court){for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])if(g.court.ministries[m]===id)g.court.ministries[m]=null;if(g.court.founding?.sponsor===id)g.court.founding=null;if(g.court.petition?.sponsor===id)g.court.petition=null;}

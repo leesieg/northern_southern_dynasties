@@ -1,3 +1,4 @@
+import {survivingRealm} from './polityLifecycle';
 import type {World} from './types';
 import type {Assignment} from './assignments';
 import {assignmentTemplates,assignmentPlans,type AssignmentKind} from '../data/assignments';
@@ -59,7 +60,7 @@ export function settleServiceRefund(w:World,t:Assignment){
   if(amount){if(p.account.startsWith('central:'))w.realm!.treasuries[t.realm].coins+=amount;else ensureFiscal(w)!.balances[p.account]=publicBalance(w,p.account)+amount;p.coins-=amount;fiscalRecord(w,t.realm,'task:'+t.id,p.account,amount,'退回原拨款公库');}
   const receiver=p.grainSite?w.realm!.cities[p.grainSite]:w.realm!.treasuries[t.realm];
   // A captured granary cannot silently receive the former owner's escrow.
-  if(p.grainSite&&w.realm!.cities[p.grainSite].controller!==t.realm)continue;
+  if(p.grainSite&&w.realm!.cities[p.grainSite].controller!==survivingRealm(w,t.realm))continue;
   const grain=Math.min(p.grain,1_000_000-receiver.grain);receiver.grain+=grain;p.grain-=grain;
  }
  t.refunds=t.refunds?.filter(p=>p.coins||p.grain);

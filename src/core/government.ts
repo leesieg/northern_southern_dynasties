@@ -37,7 +37,7 @@ export function newGovernments(w:World):GovernmentState{
 export function governmentOf(w:World,r=currentRealm(w)){return w.realm?.governments?.realms[r];}
 export function regimeName(w:World|undefined,r:Polity){return r==='frontier'?polities.frontier.name:(w?.realm?.governments?.regimes.find(v=>v.id===w.realm?.governments?.realms[r]?.regimeId)?.name??dynastyNames[w?.realm?.governments?.realms[r]?.dynasty??r]);}
 export function politicalName(id:string){return officeName(id);}
-export function governingExecutives(w:World,r=currentRealm(w)):string[]{const g=governmentOf(w,r);const c=validRegency(w,r);return (c&&c.origin!=='scenario'?[c.controller]:g?.executives??initialExecutives[r]).filter(id=>isAlive(w,id));}
+export function governingExecutives(w:World,r=currentRealm(w)):string[]{if(w.realm?.annexed?.[r])return [];const g=governmentOf(w,r);const c=validRegency(w,r);return (c&&c.origin!=='scenario'?[c.controller]:g?.executives??initialExecutives[r]).filter(id=>isAlive(w,id));}
 export function governmentExecutive(w:World){if(!w.characterId)return false;return governingExecutives(w).includes(w.characterId);}
 export function governingAuthority(w:World,r=currentRealm(w)){return governingExecutives(w,r)[0];}
 export function governmentYear(w:World,day=w.day){return new Date(Date.UTC(getScript(w.scriptId).year,0,1+day)).getUTCFullYear();}
@@ -133,9 +133,9 @@ function completeTask(w:World,r:RealmId){
 }
 export function advanceGovernments(w:World){
  const s=w.realm?.governments;if(!s)return;
- for(const r of realmIds){const g=s.realms[r];if(g.task?.kind==='succession'){const d=successionDefinitions[g.task.target as SuccessionId];if(![d.ruler,...d.executives].every(id=>isAlive(w,id))){log(w,r,'cancel',g.task.target,'继位人或执政者去世，沿革议程终止。');g.task=null;}}if(g.task&&!governmentTaskPause(w,r)){g.task.progress++;if(g.task.progress>=g.task.required)completeTask(w,r);}}
+ for(const r of realmIds){if(w.realm?.annexed?.[r])continue;const g=s.realms[r];if(g.task?.kind==='succession'){const d=successionDefinitions[g.task.target as SuccessionId];if(![d.ruler,...d.executives].every(id=>isAlive(w,id))){log(w,r,'cancel',g.task.target,'继位人或执政者去世，沿革议程终止。');g.task=null;}}if(g.task&&!governmentTaskPause(w,r)){g.task.progress++;if(g.task.progress>=g.task.required)completeTask(w,r);}}
  if(w.day%30!==0||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
- for(const r of realmIds){const g=s.realms[r],t=w.realm!.treasuries[r],order=averageOrder(w,r);
+ for(const r of realmIds){if(w.realm?.annexed?.[r])continue;const g=s.realms[r],t=w.realm!.treasuries[r],order=averageOrder(w,r);
  g.legitimacy=cap(g.legitimacy+(ownsCapital(w,r)&&order>=60&&t.coins>0&&t.grain>0?1:-3));g.support=cap(g.support+(order>=60?1:-3));
  const active=new Set(Object.values(w.realm!.cities).filter(c=>c.owner===r&&c.controller===r&&c.governor&&c.order>=60).map(c=>c.governor!));
  for(const id of active)awardDeed(w,r,id,'governance:'+Math.floor(w.day/30),(g.laws.includes('east-assessment')?4:2)+(g.court?.ministries.personnel&&(g.merit[g.court.ministries.personnel]??0)>=40?1:0),'本期辖地保持秩序，完成在任治理');
@@ -145,7 +145,7 @@ export function advanceGovernments(w:World){
 }
 export function politicalTitle(w:World|undefined,id:string){
  if(w&&!isAlive(w,id))return '已故 · '+(characterById[id]?.title??politicalName(id));
- const c=characterById[id];if(!c){const e=expandedPersonById[id];return e?e.fictional?'地方士人':({'commander':'将领','scholar':'文士','prince':'宗室'} as const)[e.role]:politicalFigures[id]?'政权沿革人物':'未录人物';}
+ const c=characterById[id];if(c&&w?.realm?.annexed?.[c.polity])return '故国人物';if(!c){const e=expandedPersonById[id];return e?e.fictional?'地方士人':({'commander':'将领','scholar':'文士','prince':'宗室'} as const)[e.role]:politicalFigures[id]?'政权沿革人物':'未录人物';}
  const g=w?.realm?.governments?.realms[c.polity];if(!g||!w?.life?.successions.some(e=>e.realm===c.polity)&&!g.stages.length&&g.dynasty===c.polity&&(!validRegency(w!,c.polity)||validRegency(w!,c.polity)?.origin==='scenario'))return c.title;
  if(g.ruler===id)return regimeName(w,c.polity)+'君主'+(governingExecutives(w!,c.polity).includes(id)?' · 实际执政':'');
  if(governingExecutives(w!,c.polity).includes(id))return regimeName(w,c.polity)+'实际执政';

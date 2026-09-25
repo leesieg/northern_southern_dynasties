@@ -1,3 +1,4 @@
+import {civilCanAdmin} from './civilWars';
 import {bilateralWar,realmAtWar} from './wars';
 import type { World,Polity } from './types';
 import { realms,playerRealm,capital,type RealmId } from './realm';
@@ -41,6 +42,7 @@ export function diplomaticQuote(w:World,c:DiplomacyCommand){
  else if(!governmentExecutive(w))reason='只有实际执政者可以代表国家交涉';
  else if(w.realm.event)reason='先处理待决事务';
  else if('mission'in c){const m=w.diplomacy.missions.find(m=>m.id===c.mission);if(!m||m.to!==r||m.status!=='audience'||m.expires<=w.day)reason='使团已不在朝中';else if(c.action==='accept')reason=agreementReason(w,m);}
+ else if('target'in c&&w.realm.annexed?.[c.target])reason='该政权已被吞并，外交关系已终止';
  else if(!realms.includes(c.target)||c.target===r||!Object.hasOwn(diplomacyActions,c.action))reason='无效外交行动';
  else {const p=diplomaticPair(w,r,c.target)!;
  if(w.diplomacy.subjects[r]&&['military','pact','alliance','submit'].includes(c.action))reason='臣属国不能独立缔结军政条约，须先脱离宗主';
@@ -92,7 +94,7 @@ export function diplomaticWar(w:World,a:RealmId,b:RealmId){if(!w.diplomacy)retur
 export function canEnter(w:World,from:RealmId,to:Polity,actor?:string,military=false){if(!w.diplomacy||from===to)return true;if(to==='frontier')return false;if(military)return atWar(w,from,to)||!!treaty(w,from,to,'military');if(atWar(w,from,to))return false;const important=!!actor&&(governingExecutives(w,from).includes(actor)||governmentOf(w,from)?.ruler===actor||characterById[actor]?.role==='commander');return !!treaty(w,from,to,'safe',actor)||!important&&!!treaty(w,from,to,'transit');}
 export function diplomaticPersonalModifier(w:World,target:RealmId){if(!w.diplomacy||!w.characterId)return 0;const r=playerRealm(w);if(r===target)return 0;return atWar(w,r,target)?-30:Math.round((diplomaticPair(w,r,target)?.opinion??0)/5);}
 export function arriveDiplomacy(w:World){if(!w.diplomacy||!w.characterId||w.people[0].journey)return;w.diplomacy.returning=null;for(const p of Object.values(w.diplomacy.pairs))for(const t of p.treaties)if(t.meeting==='invited'&&t.actor===w.characterId&&t.until>w.day&&w.people[0].location===capital(t.to)&&w.realm?.cities[capital(t.to)].controller===t.to&&!atWar(w,t.from,t.to)){t.meeting='held';changeOpinion(p,15,'meeting');w.diplomacy.credit[t.from]=clamp(w.diplomacy.credit[t.from]+3,0);history(w,t.from,t.to,regimeName(w,t.from)+'执政者抵达'+regimeName(w,t.to)+'朝廷，完成会盟，两国关系 +15。');}}
-export function personalRoute(w:World,to:string){const p=w.people[0];return planRoute(p.location,to,id=>!w.realm||canEnter(w,playerRealm(w),w.realm.cities[id].controller,w.characterId));}
+export function personalRoute(w:World,to:string){const p=w.people[0];return planRoute(p.location,to,id=>!w.realm||civilCanAdmin(w,w.characterId!,id)&&canEnter(w,playerRealm(w),w.realm.cities[id].controller,w.characterId));}
 export function travelDiplomacyReason(w:World,to:string){if(!w.realm||!w.diplomacy)return '';return personalRoute(w,to)?'':'沿途边境未获通行许可；普通通行不适用于君主、执政与统帅，请先申请安全通行或会盟。';}
 export function syncDiplomacy(w:World){const s=w.diplomacy;if(!s)return;
  for(const r of realms)if(s.bases[r]!==governmentOf(w,r)!.regimeId){s.bases[r]=governmentOf(w,r)!.regimeId;for(const p of Object.values(s.pairs))if(p.a===r||p.b===r){p.recognized=false;p.treaties=[];history(w,p.a,p.b,'国号更替，旧条约终止，须重新确认外交关系。');}delete s.subjects[r];for(const sub of realms)if(s.subjects[sub]===r)delete s.subjects[sub];}

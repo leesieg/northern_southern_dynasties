@@ -1,7 +1,9 @@
+import {civilPeaceReason} from './civilWars';
+import {annexationReason} from './polityLifecycle';
 import type {World} from './types';
 import type {RealmId} from './realm';
 
-export interface War {goal?:'territory'|'reparations'|'tributary';demand?:number;battles?:number;id?:number;attacker:RealmId;defender:RealmId;target:string;started:number;score:number}
+export interface War {civil?:import('./civilWars').CivilWar;goal?:'territory'|'reparations'|'tributary'|'annexation';demand?:number;battles?:number;id?:number;attacker:RealmId;defender:RealmId;target:string;started:number;score:number}
 /** Old saves expose a single war until their first authoritative mutation. */
 export function activeWars(w:World):War[]{return w.realm?.wars??(w.realm?.war?[w.realm.war]:[]);}
 export function realmAtWar(w:World,r:RealmId){return activeWars(w).some(v=>v.attacker===r||v.defender===r);}
@@ -23,6 +25,9 @@ export function peaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms){
  if(!reason&&terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker){let next:RealmId|undefined=beneficiary;const seen=new Set<RealmId>();while(next){if(next===loser||seen.has(next)){reason='宗属关系会形成循环，须先重议外交关系';break;}seen.add(next);next=w.diplomacy?.subjects[next];}}
  if(!reason&&terms==='demand'&&parts.reduce((n,p)=>n+p.value,0)<0)reason='对方尚不接受这些条件';
  if(!reason&&terms==='white'&&(days<30||Math.abs(pressure)>20&&parts.reduce((n,p)=>n+p.value,0)<0))reason='对方仍希望继续交战';
- return {reason,parts,beneficiary,loser,takesLand,coins:terms==='white'||(war.goal??'territory')!=='reparations'?0:war.demand??300,tributary:terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker};
+ const annexes=terms!=='white'&&war.goal==='annexation'&&beneficiary===war.attacker;
+ if(!reason&&annexes)reason=annexationReason(w,beneficiary,loser);
+ if(war.civil)reason=civilPeaceReason(w,war,terms);
+ return {annexes,reason,parts,beneficiary,loser,takesLand,coins:terms==='white'||(war.goal??'territory')!=='reparations'?0:war.demand??300,tributary:terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker};
 }
 export function advanceReparations(w:World){const s=w.realm;if(!s)return;for(const d of s.reparations??[]){if(d.remaining<=0||d.next>w.day)continue;const from=s.treasuries[d.from],to=s.treasuries[d.to],paid=Math.min(d.remaining,d.instalment,from.coins,1_000_000-to.coins);from.coins-=paid;to.coins+=paid;d.remaining-=paid;d.next=w.day+30;}s.reparations=s.reparations?.filter(d=>d.remaining>0);}

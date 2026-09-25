@@ -147,7 +147,7 @@ export function courtCatalysts(w:World,r:RealmId,powers=movementPowers(w,r)){con
  if(t.coins>0&&t.grain>0&&order>=45&&g.legitimacy>=40&&g.support>=40&&capital.controller===r&&!realmAtWar(w,r))add('府库、秩序与天命平稳',-4);if(ministryCompetent(w,r,'censorate'))add('监察履职',-2);
  return rows;
 }
-export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const r of realms){syncCourt(w,r);const c=courtOf(w,r);if(!c)continue;const g=governmentOf(w,r)!;
+export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const r of realms){if(w.realm.annexed?.[r])continue;syncCourt(w,r);const c=courtOf(w,r);if(!c)continue;const g=governmentOf(w,r)!;
  if(c.petition&&c.petition.due<=w.day){const mayPay=w.realm.treasuries[r].coins>=80&&(r!==currentRealm(w)||w.realm.influence>=20);const approve=courtEnabled(w,r)&&!governingExecutives(w,r).includes(w.characterId!)&&movementSummary(w,r,c.petition.group).share>=30&&mayPay;resolvePetition(w,r,approve);}
  if(!courtEnabled(w,r))continue;
  if(c.founding&&!foundingPause(w,r)){c.founding.progress++;if(c.founding.progress>=c.founding.required)foundDynasty(w,r);}

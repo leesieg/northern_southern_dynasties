@@ -1,3 +1,5 @@
+import {validCivil} from './civilWars';
+import {validAnnexations} from './polityLifecycle';
 import {activeWars} from './wars';
 import {validTraffic} from './roadCapacity';
 import {troopKinds} from './armyOrganization';
@@ -20,6 +22,7 @@ const character=(id:unknown):id is string=>typeof id==='string'&&Object.hasOwn(c
 export function validRealm(w:World):boolean {
  if(w.mode===undefined)return w.realm===undefined;
  if(w.mode!=='sandbox'||!character(w.characterId)||!w.social||w.campaign?.id!=='stewardship'||!(w.campaign.status==='active'&&w.campaign.finishedDay===null||w.campaign.status==='lost'&&w.campaign.finishedDay===w.day&&!!lifeOf(w,w.characterId)?.death))return false;
+ if(!validAnnexations(w))return false;
  if(!validPopulation(w))return false;
  if(!validGovernments(w))return false;
  const s=w.realm;if(!obj(s)||s.version!==1||!obj(s.cities)||Object.keys(s.cities).length!==sites.length||!obj(s.treasuries))return false;
@@ -47,10 +50,10 @@ export function validRealm(w:World):boolean {
  if(j.elapsed>=j.durations[j.leg]||j.durations.slice(0,j.leg).reduce((n:number,d:number)=>n+d,0)+j.elapsed!==w.day-j.started)return false;}
  }
  if(s.armyDebts!==undefined&&(!Array.isArray(s.armyDebts)||s.armyDebts.length>1000||s.armyDebts.some(d=>!obj(d)||!realm(d.realm)||typeof d.account!=='string'||d.account!=='central:'+d.realm&&(!d.account.startsWith(d.realm+'|')||!Object.hasOwn(territoryNodes,d.account.split('|')[1]))||!int(d.coins,1,1000000000))))return false;
- if(s.wars!==undefined&&(!Array.isArray(s.wars)||s.wars.length>3||!int(s.nextWarId,1,1000000000)))return false;
+ if(s.wars!==undefined&&(!Array.isArray(s.wars)||s.wars.length>6||!int(s.nextWarId,1,1000000000)))return false;
  const wars=activeWars(w),pairs=new Set<string>(),ids=new Set<number>();
- for(const v of wars){if(!obj(v)||!realm(v.attacker)||!realm(v.defender)||v.attacker===v.defender||!site(v.target)||!int(v.started,0,w.day)||!int(v.score,-100,100))return false;
- if(v.goal!==undefined&&!['territory','reparations','tributary'].includes(String(v.goal))||v.demand!==undefined&&!int(v.demand,1,10000)||v.battles!==undefined&&!int(v.battles,-25,25))return false;
+ for(const v of wars){if(!obj(v)||!realm(v.attacker)||!realm(v.defender)||!validCivil(w,v)||!site(v.target)||!int(v.started,0,w.day)||!int(v.score,-100,100))return false;
+ if(v.goal!==undefined&&!['territory','reparations','tributary','annexation'].includes(String(v.goal))||v.demand!==undefined&&!int(v.demand,1,10000)||v.battles!==undefined&&!int(v.battles,-25,25))return false;
  const pair=[v.attacker,v.defender].sort().join('|');if(pairs.has(pair))return false;pairs.add(pair);
  if(s.wars!==undefined){if(!int(v.id,1,Number(s.nextWarId)-1)||ids.has(v.id))return false;ids.add(v.id);}}
  if(s.wars!==undefined&&JSON.stringify(s.war)!==JSON.stringify(s.wars[0]??null))return false;
