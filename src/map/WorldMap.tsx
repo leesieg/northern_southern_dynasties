@@ -6,7 +6,6 @@ import type { RealmId } from '../core/realm';
 import type { ExpressionSpecification } from 'maplibre-gl';
 import { regimeName } from '../core/government';
 import { ArtIcon } from '../ui/ArtIcon';
-import { realms } from '../core/realm';
 import { familyName } from '../data/characters';
 import { territoryNodes,descendantSites,nodeForSite,levelNames,controlEvents,type TerritoryLevel } from '../data/territorialHierarchy';
 import { useEffect, useRef, useState } from 'react';
@@ -136,7 +135,11 @@ export function WorldMap(props:Props){
           if(entry){entry.marker.getElement().setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+(person.journey?' · 在途':'');const pennant=entry.marker.getElement().querySelector('.traveler-pennant');if(pennant&&person.id==='player')pennant.textContent=familyName(p.world.holdings.estate.family).slice(0,1);}
         }
         for(const item of places){const state=p.world.realm?.cities[item.id];if(state){item.button.style.borderColor=polities[state.controller].color;item.button.textContent=siteById[item.id].name+(state.controller!==state.owner?' · 占':'');item.button.title='法理：'+regimeName(p.world,state.owner)+' / 控制：'+regimeName(p.world,state.controller);}}
-        for(const [realm,item] of armyMarkers){const a=p.world.realm?.armies.find(a=>a.realm===realm);item.marker.getElement().hidden=!a;if(a){let {lon,lat}=siteById[a.location];if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],t=j.elapsed/j.durations[j.leg];lon=from.lon+(to.lon-from.lon)*t;lat=from.lat+(to.lat-from.lat)*t;}item.marker.setLngLat([lon,lat]);item.button.textContent=regimeName(p.world,a.realm)+'軍 · '+a.troops;item.button.title='士气 '+a.morale+' / 随军粮 '+a.supply;}}
+        const currentArmies=p.world.realm?.armies??[];
+        for(const [key,item] of armyMarkers)if(!currentArmies.some((a,i)=>String(a.id??a.realm+':'+i)===key)){item.marker.remove();armyMarkers.delete(key);}
+        for(const [i,a] of currentArmies.entries()){const key=String(a.id??a.realm+':'+i);let item=armyMarkers.get(key);if(!item){const button=document.createElement('button');button.className='atlas-army-marker';button.style.borderColor=polities[a.realm].color;button.onclick=()=>{const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(army)current.current.onSelect(army.location);};const marker=new Marker({element:button,anchor:'top',offset:[0,12]}).setLngLat([105,34]).addTo(map);item={marker,button};armyMarkers.set(key,item);}
+         let {lon,lat}=siteById[a.location];if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],t=j.elapsed/j.durations[j.leg];lon=from.lon+(to.lon-from.lon)*t;lat=from.lat+(to.lat-from.lat)*t;}const peers=currentArmies.slice(0,i).filter(b=>b.location===a.location&&!b.journey).length;item.marker.setLngLat([lon,lat]).setOffset([0,12+peers*28]);item.button.textContent=regimeName(p.world,a.realm)+'軍 '+(a.id??'')+' · '+a.troops;item.button.title='士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:'');}
+
         const activityGroups=mapActivities(p.world);
         for(const [site,entry] of activityMarkers)if(!activityGroups.some(g=>g.site===site)){entry.marker.remove();activityMarkers.delete(site);}
         for(const group of activityGroups){let entry=activityMarkers.get(group.site);if(!entry){const button=document.createElement('button');button.className='atlas-activity-marker';const loc=siteById[group.site];const marker=new Marker({element:button,anchor:'left',offset:[18,-22]}).setLngLat([loc.lon,loc.lat]).addTo(map);entry={marker,button};activityMarkers.set(group.site,entry);}
@@ -198,7 +201,7 @@ export function WorldMap(props:Props){
           const marker=new Marker({element,anchor:'bottom',offset:[0,-2],opacityWhenCovered:.5}).setLngLat([pos.lon,pos.lat]).addTo(map);
           people.set(person.id,{marker,label});allMarkers.push(marker);
         }
-        for(const realm of realms){const button=document.createElement('button');button.className='atlas-army-marker';button.style.borderColor=polities[realm].color;button.hidden=true;button.onclick=()=>{const a=current.current.world.realm?.armies.find(a=>a.realm===realm);if(a)current.current.onSelect(a.location);};const marker=new Marker({element:button,anchor:'top',offset:[0,12]}).setLngLat([105,34]).addTo(map);armyMarkers.set(realm,{marker,button});allMarkers.push(marker);}
+
         for(const data of atlasLabels){
           const element=document.createElement(data.kind==='realm'?'button':'span');element.className=`atlas-geographic-label ${data.kind}`;element.textContent=data.text;if(data.kind==='realm'){const realm:RealmId=data.text.includes('东')?'east':data.text.includes('西')?'west':'liang';element.style.pointerEvents='auto';element.onclick=e=>{e.stopPropagation();current.current.onDiplomacy(realm);};element.setAttribute('aria-label','查看'+data.text+'外交');}
           const marker=new Marker({element,anchor:'center',opacityWhenCovered:.4}).setLngLat([data.lon,data.lat]).addTo(map);
@@ -258,7 +261,7 @@ export function WorldMap(props:Props){
     }catch(e){setError(e instanceof Error?e.message:'无法启动 WebGL 2 地图。');}
     return()=>{
       disposed=true;if(slowLoad)clearTimeout(slowLoad);cancelAnimationFrame(frame);observer?.disconnect();
-      activityMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
+      activityMarkers.forEach(e=>e.marker.remove());armyMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
     };
   },[retry]);
 

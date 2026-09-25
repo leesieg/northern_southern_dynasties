@@ -1,3 +1,4 @@
+import {payArmy} from './armyOrganization';
 import {cityOperatingExpense} from './realm';
 import {canonicalTerritory,countyTerritory,localHolder,localSuperior,localSeatSite,localSites,localActive,localAncestors,payLocalOfficials} from './localAdministration';
 import {courtSalary,payCourtSalary} from './court';
@@ -61,7 +62,9 @@ export function payFiscalOperations(w:World,r:RealmId){
  const t=w.realm!.treasuries[r];
  for(const [site,c] of Object.entries(w.realm!.cities)){if(c.controller!==r)continue;const amount=Math.min(t.coins,cityOperatingExpense(w,site),grantRoom(w,site,r));routeGrant(w,site,amount,'地方行政经费',r);spendLocal(w,site,amount,'地方行政支出');if(c.governor)creditPersonalCoins(w,c.governor,Math.max(0,amount-Math.ceil(c.population/900)));}
  payLocalOfficials(w,r,(key,want,reason)=>{const amount=Math.min(publicBalance(w,key),want);setBalance(w,key,publicBalance(w,key)-amount);fiscalRecord(w,r,key,'expense',amount,reason);return amount;});
- const army=w.realm!.armies.find(a=>a.realm===r);for(const [name,want] of [['军饷',army?armyMonthlyPay(w,army):0],['中央官员俸禄',courtSalary(w,r)]] as const){const amount=Math.min(t.coins,want);t.coins-=amount;fiscalRecord(w,r,centralAccount(r),'expense',amount,name);if(name==='中央官员俸禄')payCourtSalary(w,r,amount);}
+ for(const a of w.realm!.armies.filter(a=>a.realm===r))payArmy(w,a,armyMonthlyPay(w,a));
+ for(const debt of w.realm!.armyDebts??[]){if(debt.realm!==r)continue;const paid=Math.min(debt.coins,publicBalance(w,debt.account));setBalance(w,debt.account,publicBalance(w,debt.account)-paid);debt.coins-=paid;fiscalRecord(w,r,debt.account,'expense',paid,'补付溃散军伍欠饷');}if(w.realm!.armyDebts)w.realm!.armyDebts=w.realm!.armyDebts.filter(d=>d.coins>0);
+ for(const [name,want] of [['中央官员俸禄',courtSalary(w,r)]] as const){const amount=Math.min(t.coins,want);t.coins-=amount;fiscalRecord(w,r,centralAccount(r),'expense',amount,name);if(name==='中央官员俸禄')payCourtSalary(w,r,amount);}
 }
 export function plannedReinvestment(_w:World,_r:RealmId){return 0;}
 

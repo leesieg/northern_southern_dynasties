@@ -5,7 +5,7 @@ export const assignmentTemplates={
  relief:{name:'赈济安民',category:'stability',skill:'stewardship',coins:35,grain:70,work:160,icon:'grain',description:'开仓赈济，稳住民心。',effect:'秩序依成果质量提升，消耗专拨赈粮'},
  agriculture:{name:'劝课农桑',category:'economy',skill:'stewardship',coins:65,grain:25,work:200,icon:'grain',description:'修整沟渠，劝课农桑。',effect:'繁荣依成果质量提升，水利 +1'},
  commerce:{name:'整顿市务',category:'economy',skill:'stewardship',coins:60,grain:0,work:180,icon:'coins',description:'查验度量，疏通商路。',effect:'繁荣随质量提升（常额 +8），完成时公款 +85'},
- training:{name:'操练军伍',category:'military',skill:'martial',coins:70,grain:40,work:180,icon:'army',description:'整顿驻军，习练行阵。',effect:'本城驻军士气最多 +18、兵员最多 +60'},
+ training:{name:'操练军伍',category:'military',skill:'martial',coins:70,grain:40,work:180,icon:'army',description:'整顿驻军，习练行阵。',effect:'本城驻军士气最多 +18、兵团经验最多 +10'},
  supply:{name:'军粮转运',category:'military',skill:'martial',coins:40,grain:120,work:180,icon:'grain',description:'从国都向驻军所在城转运军粮。',effect:'本城驻军补给最多 +90'},
  inspection:{name:'巡察吏治',category:'stability',skill:'intrigue',coins:45,grain:10,work:180,icon:'wary',description:'巡视官署，清查积弊。',effect:'秩序最多 +10，朝廷积弊最多 −8'},
  envoy:{name:'通使修好',category:'diplomacy',skill:'diplomacy',coins:65,grain:15,work:180,icon:'gregarious',description:'筹办国书与使团，商议修好。',effect:'派出修好使团，获接纳后两国关系最多 +25；不附带通行权'},

@@ -1,3 +1,4 @@
+import {territoryNodes} from '../data/territorialHierarchy';
 import {historicalCharacters} from '../data/characters';
 import {allegianceRealm} from './officeEligibility';
 import type {World} from './types';
@@ -19,10 +20,16 @@ export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean
  if(historicalCharacters.some(c=>!Object.hasOwn(v.careers as object,c.id)))return false;
  for(const id of Object.keys(v.careers)){const p=v.careers[id];if(!obj(p)||Object.keys(p).length!==4||priorities.some(k=>!int(p[k],0,100000)))return false;}
  if(!Array.isArray(v.used)||v.used.length>6000||new Set(v.used).size!==v.used.length||!v.used.every(k=>{if(!text(k,160))return false;const [season,r,kind,site,target,...rest]=k.split('|');return !rest.length&&int(Number(season),0,Math.floor(day/90))&&realm(r)&&key(kind,assignmentTemplates)&&key(site,siteById)&&(kind==='envoy'?realm(target)&&target!==r:target==='');}))return false;
- if(!Array.isArray(v.tasks)||v.tasks.length>64||!v.enabled&&v.tasks.length)return false;
+ if(!Array.isArray(v.tasks)||v.tasks.length>256)return false;
  const ids=new Set<number>(),busy=new Set<string>(),counts:Record<string,number>={};
  for(const t of v.tasks){
   if(!obj(t)||(t.extended!==undefined&&typeof t.extended!=='boolean')||(t.quality!==undefined&&!int(t.quality,50,130))||!int(t.id,1,v.nextId-1)||ids.has(t.id)||!realm(t.realm)||!key(t.kind,assignmentTemplates)||!key(t.site,siteById)||!person(t.officer)||t.phase!=='closed'&&relationshipPersonById[t.officer].realm!==t.realm&&(!w||allegianceRealm(w,t.officer)!==t.realm))return false;ids.add(t.id);
+  const validFunding=(p:unknown)=>obj(p)&&typeof p.account==='string'&&(p.account==='central:'+t.realm||p.account.split('|').length===2&&p.account.startsWith(t.realm+'|')&&Object.hasOwn(territoryNodes,p.account.split('|')[1]))&&(p.grainSite===null||p.grainSite===t.site)&&int(p.coins,0,400)&&int(p.grain,0,200);
+  if(t.mandate!==undefined&&(!obj(t.mandate)||!person(t.mandate.issuer)||t.mandate.issuer===t.officer||typeof t.mandate.automatic!=='boolean'||t.mandate.orderFloor!==40||t.mandate.qualityFloor!==85||t.mandate.reserve!==0))return false;
+  if(t.funding!==undefined&&(!Array.isArray(t.funding)||t.funding.length>2||!t.funding.every(validFunding)||!obj(t.funds)||t.funding.reduce((n,p)=>n+p.coins,0)!==t.funds.coins||t.funding.reduce((n,p)=>n+p.grain,0)!==t.funds.grain))return false;
+  if(t.refunds!==undefined&&(!Array.isArray(t.refunds)||t.refunds.length>2||!t.refunds.every(validFunding)||t.phase!=='closed'&&t.refunds.length))return false;
+  if(Array.isArray(t.refunds)&&obj(t.funds)&&obj(t.spent)&&(t.refunds.reduce((n,p)=>n+p.coins,0)>Number(t.funds.coins)-Number(t.spent.coins)||t.refunds.reduce((n,p)=>n+p.grain,0)>Number(t.funds.grain)-Number(t.spent.grain)))return false;
+  if(Array.isArray(t.refunds)&&t.refunds.some(p=>!(Array.isArray(t.funding)?t.funding:[{account:'central:'+t.realm,grainSite:null}]).some(f=>f.account===p.account&&f.grainSite===p.grainSite)))return false;
   if(t.kind==='envoy'?(!realm(t.target)||t.target===t.realm):t.target!==null)return false;
   if(t.credential!==null&&(!text(t.credential,160)||!t.credential.startsWith('office:')))return false;
   if(!int(t.created,v.since,day)||!int(t.changed,t.created,day)||t.travelAllowance!==undefined&&!int(t.travelAllowance,0,10000)||![t.created+120+Number(t.travelAllowance??0),t.created+Math.max(120,Math.ceil(assignmentTemplates[t.kind as Assignment['kind']].work/3)+30)+Number(t.travelAllowance??0)].includes(Number(t.deadline)-(t.extended?30:0))||!int(t.season,0,Math.floor(t.created/90))||!key(t.phase,assignmentPhases)||t.plan!==null&&!key(t.plan,assignmentPlans))return false;
@@ -44,7 +51,7 @@ export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean
    const r=t.result;if(!obj(r)||r.day!==t.changed||typeof r.success!=='boolean'||!text(r.reason,300)||!Array.isArray(r.effects)||r.effects.length>12||r.effects.some(e=>!text(e,300))||!Array.isArray(r.awards)||r.awards.length>relationshipPeople.length||t.invitation!==null||t.helper!==null)return false;
    if(r.success&&(!t.started||t.progress!==t.required||!t.incidentDone))return false;
    const seen=new Set<string>();for(const a of r.awards){if(!obj(a)||!person(a.person)||!Object.hasOwn(t.contributors,a.person)||seen.has(a.person)||!int(a.merit,-4,40)||!int(a.opinion,-5,8)||!int(a.prestige,0,5))return false;if(r.success?(a.merit<0||a.opinion<0):(a.merit>0||a.opinion>0||a.prestige!==0))return false;seen.add(a.person);}
-  }else {if(t.result!==null||busy.has(t.officer))return false;busy.add(t.officer);if(t.helper){if(busy.has(t.helper as string))return false;busy.add(t.helper as string);}counts[String(t.realm)]=(counts[String(t.realm)]??0)+1;if(counts[String(t.realm)]>3)return false;}
+  }else {if(t.result!==null||busy.has(t.officer))return false;busy.add(t.officer);if(t.helper){if(busy.has(t.helper as string))return false;busy.add(t.helper as string);}counts[String(t.realm)]=(counts[String(t.realm)]??0)+1;if(counts[String(t.realm)]>128)return false;}
   if(!Array.isArray(t.history)||t.history.length<1||t.history.length>32)return false;let previous=t.created;
   for(const h of t.history){if(!obj(h)||!int(h.day,previous,day)||!text(h.text,500)||!h.text)return false;previous=h.day;}
  }

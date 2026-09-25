@@ -1,3 +1,4 @@
+import {serviceApprover,serviceException} from './serviceMandates';
 import {economyPending} from './personalEconomyAdapter';
 import {appointmentPauses} from './appointmentCycle';
 import type {RealmId} from './realm';
@@ -50,7 +51,7 @@ export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):Pau
  const serviceKeys=serviceAttention(w).filter(key=>!before.service.includes(key));
  const announced=new Set<number>();
  for(const key of serviceKeys){if(key.startsWith('council')){add('service',key.startsWith('council-reply:')?'议事批复送达':'本季评议',key.startsWith('council-reply:')?'你的议事上书已有批复，请阅朝廷文书。':'请议定本季重心，或裁决呈上的议事文书。');continue;}const id=Number(key.split(':')[1]),task=w.service?.tasks.find(t=>t.id===id);if(task&&!announced.has(id)){announced.add(id);add('service',siteById[task.site].name+' · '+assignmentTemplates[task.kind].name,key.startsWith('invite:')?'同僚邀你协办，请答复。':'差事进展：'+assignmentPhases[task.phase]+'。',{assignmentId:id});}}
- for(const task of w.service?.tasks??[])if(task.phase==='closed'&&!before.closedTasks.has(task.id)&&(task.officer===w.characterId||serviceChief(w,task.realm)===w.characterId||Object.hasOwn(task.contributors,w.characterId??'')))add('service','考绩文书送达',siteById[task.site].name+assignmentTemplates[task.kind].name+'已结案。',{assignmentId:task.id});
+ for(const task of w.service?.tasks??[])if(task.phase==='closed'&&!before.closedTasks.has(task.id)&&(task.officer===w.characterId||serviceApprover(w,task)===w.characterId&&serviceException(w,task)||Object.hasOwn(task.contributors,w.characterId??'')))add('service','考绩文书送达',siteById[task.site].name+assignmentTemplates[task.kind].name+'已结案。',{assignmentId:task.id});
  if(before.actor!==w.characterId)add('inheritance','家业有继',`家业已由${w.people[0].name}承继。请查看新身份与家族。`,{person:w.characterId});
  if(!before.ill&&lifeOf(w,w.characterId)?.illness)add('health','身体有恙','你身体有恙，可查看病情并安排延医休养。',{person:w.characterId});
  if(dutyAttention(w)&&dutyAttention(w)!==before.attention||!before.closed&&w.duties?.task?.phase==='closed')add('duties','天水粮务有报',`粮务进展：${dutyPhaseNames[w.duties!.task!.phase]}。请阅文书。`);

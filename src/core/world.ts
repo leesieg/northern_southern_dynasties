@@ -1,3 +1,4 @@
+import {actArmyOrganization,ensureArmyOrganization} from './armyOrganization';
 import {actAppointments} from './appointmentCycle';
 import {actLocal,ensureLocalAdministration} from './localAdministration';
 import {reconcileOfficeAllegiance} from './officeEligibility';
@@ -107,7 +108,7 @@ function record(world: World, person: Person, text: string) {
   world.chronicle = world.chronicle.slice(-100);
 }
 export function act(world: World, command: GameCommand): void {
- const before=fiscalSnapshot(world);actCommand(world,command);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
+ const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
 }
 function actCommand(world: World, command: GameCommand): void {
   const person = world.people[0];
@@ -132,6 +133,7 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='court'){actCourt(world,command);syncDiplomacy(world);return;}
   if(command.type==='government'){actGovernment(world,command);syncDiplomacy(world);return;}
   if(command.type==='population'){actPopulation(world,command);return;}
+  if(command.type==='army'){actArmyOrganization(world,command);return;}
   if(command.type==='realm'){actRealm(world,command);return;}
   if(world.realm?.event)throw new Error('请先在政务中处理待决事务。');
   if(command.type==='commission'){commission(world);evaluateCampaign(world);return;}
@@ -208,6 +210,7 @@ export function advance(world: World, days = 1): void {
     advanceDuties(world);
     advanceService(world);
     advancePersonalEconomy(world);
+    ensureArmyOrganization(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);
     evaluateCampaign(world);
     reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');
