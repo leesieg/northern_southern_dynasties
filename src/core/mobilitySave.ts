@@ -25,5 +25,6 @@ export function validMobility(v:unknown,day:number):v is MobilityState{
  for(const [id,a] of Object.entries(v.appointments))if(!v.activities.some(t=>obj(t)&&t.target===id&&!['done','cancelled'].includes(String(t.phase))&&t.site===(a as Record<string,unknown>).site&&t.deadline===(a as Record<string,unknown>).until))return false;
  const busy=new Set<string>();for(const a of v.activities){const t=a as Record<string,unknown>;if(['done','cancelled'].includes(String(t.phase)))continue;for(const id of [t.delegate??t.actor,t.target].filter(Boolean)){if(busy.has(String(id)))return false;busy.add(String(id));}if(t.target&&!Object.hasOwn(v.appointments,String(t.target)))return false;}
  for(const [r,id] of Object.entries(v.commanders))if(relationshipPersonById[String(id)].realm!==r||busy.has(String(id)))return false;
+ if(v.armyCommanders!==undefined){if(!obj(v.armyCommanders))return false;const assigned=new Set(Object.values(v.commanders));for(const [key,id] of Object.entries(v.armyCommanders)){if(!/^\d+$/.test(key)||!person(id)||assigned.has(id)||busy.has(String(id)))return false;assigned.add(id);}}
  return true;
 }

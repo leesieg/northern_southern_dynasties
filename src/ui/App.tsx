@@ -1,3 +1,4 @@
+import {ArmyDock,type ArmyMove} from './ArmyDock';
 import {TerritoryNavigation} from './TerritoryNavigation';
 import {LocalTerritoryPanel} from './LocalAdministration';
 import {RealmNavigation,RealmBadge} from './RealmBadge';
@@ -58,6 +59,8 @@ function Icon({name,size=18}:{name:IconName;size?:number}){
 
 export function App(){
   const game=useGame();
+  const [armyMove,setArmyMove]=useState<ArmyMove>(null);
+  const [armyFocus,setArmyFocus]=useState<{army:number;seq:number}>({army:0,seq:0});
   const [selected,setSelected]=useState('jiankang'),[mode,setMode]=useState<MapMode>('political'),[showTravelers,setShowTravelers]=useState(true),[tilted,setTilted]=useState(true);
   const [modal,setModal]=useState<'situation'|'diplomacy'|'lifestyle'|'saves'|'directory'|'about'|'estate'|'menu'|'characters'|'realm'|'map-person'|null>(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all');
   const [searchTab,setSearchTab]=useState<'people'|'places'>('people');
@@ -84,8 +87,9 @@ export function App(){
   const showDrawer=(kind:typeof drawer)=>{setModal(null);setPanelTrail([]);setMapOptions(false);if(kind==='character'){setMapPeople([game.world?.characterId??'player']);setPersonTab('overview');setModal('map-person');setDrawer(null);game.send({type:'speed',speed:0});}else setDrawer(kind);};
   const closePanel=()=>{setModal(null);setPanelTrail([]);};
   const backPanel=()=>{const previous=panelTrail.at(-1);if(!previous)return;setModal(previous.modal);setDrawer(previous.drawer);setMapPeople(previous.mapPeople);setPersonTab(previous.personTab);setDiplomacyTarget(previous.diplomacyTarget);setSelected(previous.selected);setTerritory(previous.territory);setLevel(previous.level);setCityTab(previous.cityTab);setRealmTab(previous.realmTab);setCourtTab(previous.courtTab);setPanelTrail(items=>items.slice(0,-1));};
-  const chooseTerritory=(id:string,nested=false)=>{let node=territoryNodes[id];if(!node)return;if(node.level==='county'){id='city:'+descendantSites(id)[0];node=territoryNodes[id];}if(nested||drawer==='place'&&!modal){if(nested||id!==territory)setPanelTrail(items=>[...items,{modal,drawer,mapPeople,personTab,diplomacyTarget,selected,territory,level,cityTab,realmTab,courtTab}]);if(nested){setModal(null);setDrawer('place');setMapOptions(false);}}else{showDrawer('place');setCityTab('model');}setTerritory(id);setLevel(node.level);const city=descendantSites(id)[0];if(city)setSelected(city);setMode('domains');setCameraAction(a=>({type:'selected',seq:a.seq+1}));};
-  const chooseCity=(id:string,nested=false)=>{if(nested||(drawer==='place'&&!modal&&territory!=='city:'+id)){setPanelTrail(items=>[...items,{modal,drawer,mapPeople,personTab,diplomacyTarget,selected,territory,level,cityTab,realmTab,courtTab}]);setModal(null);setDrawer('place');setMapOptions(false);}else if(drawer!=='place'||modal)showDrawer('place');if(drawer!=='place'||modal)setCityTab('model');setSelected(id);setTerritory('city:'+id);setLevel('city');};
+  const chooseTerritory=(id:string,nested=false)=>{if(armyMove){const sites=descendantSites(id);const site=sites.length===1?sites[0]:undefined;if(site)setArmyMove({...armyMove,site});return;}let node=territoryNodes[id];if(!node)return;if(node.level==='county'){id='city:'+descendantSites(id)[0];node=territoryNodes[id];}if(nested||drawer==='place'&&!modal){if(nested||id!==territory)setPanelTrail(items=>[...items,{modal,drawer,mapPeople,personTab,diplomacyTarget,selected,territory,level,cityTab,realmTab,courtTab}]);if(nested){setModal(null);setDrawer('place');setMapOptions(false);}}else{showDrawer('place');setCityTab('model');}setTerritory(id);setLevel(node.level);const city=descendantSites(id)[0];if(city)setSelected(city);setMode('domains');setCameraAction(a=>({type:'selected',seq:a.seq+1}));};
+  useEffect(()=>{if(armyMove&&!game.world?.realm?.armies.some(a=>a.id===armyMove.army))setArmyMove(null);},[armyMove,game.world]);
+  const chooseCity=(id:string,nested=false)=>{if(armyMove){setSelected(id);setArmyMove({...armyMove,site:id});return;}if(nested||(drawer==='place'&&!modal&&territory!=='city:'+id)){setPanelTrail(items=>[...items,{modal,drawer,mapPeople,personTab,diplomacyTarget,selected,territory,level,cityTab,realmTab,courtTab}]);setModal(null);setDrawer('place');setMapOptions(false);}else if(drawer!=='place'||modal)showDrawer('place');if(drawer!=='place'||modal)setCityTab('model');setSelected(id);setTerritory('city:'+id);setLevel('city');};
   const chooseLevel=(value:TerritoryLevel)=>{chooseTerritory(nodeForSite(selected,value).id);};
   const chooseEvent=(id:string|null)=>{setHistoryEvent(id);game.send({type:'speed',speed:0});if(id){const event=controlEvents.find(e=>e.id===id)!;chooseCity(event.site);focus('selected');}};
   const openModal=(kind:typeof modal,nested=false)=>{setMapOptions(false);game.send({type:'speed',speed:0});setPanelTrail(items=>nested?[...items,{modal,drawer,mapPeople,personTab,diplomacyTarget,selected,territory,level,cityTab,realmTab,courtTab}]:[]);if(kind!=='estate')setDrawer(null);setModal(kind);};
@@ -97,7 +101,7 @@ export function App(){
 
   useEffect(()=>{const escape=(event:KeyboardEvent)=>{if(event.key!=='Escape'||event.defaultPrevented||game.pauses.length||document.querySelector('dialog[open]'))return;if(modal){if(panelTrail.length)backPanel();else closePanel();}else if(mapOptions)setMapOptions(false);else if(drawer){if(panelTrail.length)backPanel();else setDrawer(null);}else setJournalOpen(false);};window.addEventListener('keydown',escape);return ()=>window.removeEventListener('keydown',escape);},[modal,mapOptions,drawer,panelTrail,game.pauses.length]);
 
-  useEffect(()=>{placeScroll.current={};setServiceFocus({seq:0});setModal(null);setDrawer(null);setPanelTrail([]);setJournalOpen(false);setMapOptions(false);if(game.world){const home=game.world.people[0].location;setSelected(home);setTerritory('city:'+home);setLevel('city');setHistoryEvent(null);setCameraAction(a=>({type:'player',seq:a.seq+1}));}},[game.entry]);
+  useEffect(()=>{placeScroll.current={};setArmyMove(null);setServiceFocus({seq:0});setModal(null);setDrawer(null);setPanelTrail([]);setJournalOpen(false);setMapOptions(false);if(game.world){const home=game.world.people[0].location;setSelected(home);setTerritory('city:'+home);setLevel('city');setHistoryEvent(null);setCameraAction(a=>({type:'player',seq:a.seq+1}));}},[game.entry]);
 
   if(game.blocked)return <main className="blocking"><div className="brand-seal">风云</div><h1>山河暂歇</h1><p>{game.blocked}</p><button className="primary" onClick={()=>location.reload()}>重新载入</button></main>;
   const navigatePause=(event:PauseEvent)=>{
@@ -117,6 +121,7 @@ export function App(){
     else if(event.kind==='diplomacy')openDiplomacy(playerRealm(game.world!),false);
   };
   const openOngoing=(item:OngoingItem)=>{
+    if(item.id.startsWith('army:')){setArmyMove(null);setModal(null);setArmyFocus(v=>({army:Number(item.id.slice(5)),seq:v.seq+1}));return;}
     const target=item.target;
     if(target.page==='city'){chooseCity(target.site);setCityTab(target.tab);focus('selected');}
     else if(target.page==='person'){openPerson(target.person,false);setPersonTab(target.tab??(target.person===game.world!.characterId?'overview':'interaction'));}
@@ -136,6 +141,7 @@ export function App(){
       <div className="realm-resources" aria-label="人物资源"><Resource name="coins" value={person?.coins??'—'} label="个人盘缠" unit="钱"/><Resource name="grain" value={person?.food??'—'} label="个人行粮" unit="日"/></div>
       </div><OngoingFlags key={game.entry} world={game.world} onOpen={openOngoing}/><TimeControl date={dateLabel(game.world.day,game.world.scriptId)} day={game.world.day} speed={game.speed} locked={!person||timeLocked} lockReason={game.pauses.length?'待处理事件':modal==='estate'?'庄园营建中':modal==='saves'?'管理存档中':'菜单已暂停'} onSpeed={speed=>game.send({type:'speed',speed})} onStep={()=>game.send({type:'step'})} onSave={()=>openModal('saves')} onMenu={()=>openModal('menu')}/>
 
+      <ArmyDock focus={armyFocus} key={game.entry} world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})} onPerson={id=>openPerson(id)} onLocate={id=>{setSelected(id);setCameraAction(a=>({type:'selected',seq:a.seq+1}));}} move={armyMove} onMove={value=>{setArmyMove(value);if(value){setLevel('city');setDrawer(null);setModal(null);}}}/>
     </header>
 
     <div className={`game-body ${drawer==='character'?'character-open':''} ${drawer==='place'?'place-open':''} ${modal&&modal!=='estate'&&modal!=='situation'?'utility-open':''}`}>

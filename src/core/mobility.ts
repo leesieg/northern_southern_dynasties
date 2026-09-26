@@ -1,3 +1,6 @@
+import {authorityGrant} from './authority';
+import {armyCampaign} from './militaryCampaigns';
+import type {Army} from './realm';
 import {civilCanAdmin} from './civilWars';
 import {localSeatSite} from './localAdministration';
 import {awardDeed} from './deeds';
@@ -40,7 +43,8 @@ export function ensureMobility(w:World){
  return w.mobility;
 }
 export function activeActivity(w:World,id=actor(w)){return w.mobility?.activities.find(a=>a.actor===id&&!a.delegate&&!['done','cancelled'].includes(a.phase));}
-export function commandArmy(w:World,id=actor(w)){const mandate=w.militaryCampaigns?.items.find(q=>q.commander===id&&q.status==='active');if(mandate)return w.realm?.armies.find(a=>a.id===mandate.army);const r=realms.find(r=>w.mobility?.commanders[r]===id);return r?w.realm?.armies.find(a=>a.realm===r&&a.troops>0):undefined;}
+export function armyCommander(w:World,a:Army){return armyCampaign(w,a)?.commander??w.mobility?.armyCommanders?.[a.id!]??(w.realm?.armies.find(v=>v.realm===a.realm)===a?w.mobility?.commanders[a.realm]:undefined);}
+export function commandArmy(w:World,id=actor(w)){const mandate=w.militaryCampaigns?.items.find(q=>q.commander===id&&q.status==='active');if(mandate)return w.realm?.armies.find(a=>a.id===mandate.army);const assigned=w.realm?.armies.find(a=>w.mobility?.armyCommanders?.[a.id!]===id);if(assigned)return assigned;const r=realms.find(r=>w.mobility?.commanders[r]===id);return r?w.realm?.armies.find(a=>a.realm===r&&a.troops>0):undefined;}
 export function departureReason(w:World){if(w.diplomacy?.missions.some(m=>m.envoy===w.characterId))return '正在奉使，请待交涉与返程结束';if(w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===w.characterId))return '请先交接战役委任';return w.mobility?.captivity?'身陷囹圄，须先赎返':commandArmy(w)?'正在随军，须先在己方驻地卸任统帅':activeActivity(w)&&['working','decision'].includes(activeActivity(w)!.phase)?'正在参加当地事务，请先结束或取消':'';}
 export function departureImpact(w:World){return (w.service?.tasks??[]).filter(t=>t.phase!=='closed'&&t.officer===w.characterId&&t.started).map(t=>t.helper&&presentAt(w,t.helper,t.site)&&!['training','inspection'].includes(t.kind)?`${siteById[t.site].name}差事由${politicalName(t.helper)}留守，按其贡献核定考绩`:`${siteById[t.site].name}差事将暂停，限期继续计算`);}
 export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>){
@@ -89,11 +93,13 @@ export function dispatchNPC(w:World,id:string,to:string,prepared?:ReturnType<typ
 export function mobilityReason(w:World,c:MobilityCommand):string{
  if(!w.mobility||!w.realm||!w.characterId||w.campaign?.status!=='active')return '此局没有行旅事务';
  if(c.action==='plan')return activityQuote(w,c).reason;
- const id=actor(w),r=playerRealm(w),army=w.realm.armies.find(a=>a.realm===r);
+ const id=actor(w),r=playerRealm(w),army=c.action==='leave-army'?commandArmy(w):w.realm.armies.find(a=>a.realm===r&&(c.action!=='command'||c.army===undefined||a.id===c.army));
+ if(c.action==='dismiss-command'){const a=w.realm.armies.find(a=>a.id===c.army);if(!a)return '军队不存在';const grant=authorityGrant(w,id,'command',{realm:a.realm,site:a.location,army:a});return !grant.allowed?grant.reason:armyCampaign(w,a)?'须先结束战役委任':a.journey?'行军途中不能交接':!armyCommander(w,a)?'将领席位已空缺':'';}
  if(c.action==='stance')return w.mobility.captivity?'被拘押期间不能传令':!commandArmy(w)?'须亲自领军':!['balanced','attack','guard'].includes(c.stance)?'未知军令':'';
  if(c.action==='ransom')return !w.mobility.captivity?'当前未被拘押':w.people[0].coins<80?'赎返需个人钱 80':'';
  if(w.mobility.captivity)return '被拘押期间不能处理此事';
- if(c.action==='command')return w.diplomacy?.missions.some(m=>m.envoy===c.person)?'此人正在奉使': retinueBusy(w,c.person)?'此人已受幕府差遣':!w.realm.mandate?'须有军务授权':!army||army.journey?'须有驻扎的本国军队':!relationshipPersonById[c.person]||allegianceRealm(w,c.person)!==r||!isAlive(w,c.person)?'须选择本国在世将领':lifeOf(w,c.person)?.illness?.severity===3?'重病期间不能接掌军队':!presentAt(w,c.person,army.location)?'统帅须亲赴军营':w.mobility.appointments[c.person]||w.duties?.task?.officer===c.person&&w.duties.task.phase!=='closed'||activeActivity(w,c.person)||w.mobility.activities.some(a=>a.delegate===c.person&&!['done','cancelled'].includes(a.phase))||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===c.person||t.helper===c.person))?'先结束本人事务或差事':(ageAt(w,c.person)??0)<16?'统帅须成年':'';
+ if(c.action==='command'&&army){const grant=authorityGrant(w,id,'command',{realm:r,site:army.location,army});if(!grant.allowed)return grant.reason;if(armyCampaign(w,army))return '须先结束战役委任';if(commandArmy(w,c.person))return '此人已统领军队';}
+ if(c.action==='command')return w.diplomacy?.missions.some(m=>m.envoy===c.person)?'此人正在奉使': retinueBusy(w,c.person)?'此人已受幕府差遣':!army||army.journey?'须有驻扎的本国军队':!relationshipPersonById[c.person]||allegianceRealm(w,c.person)!==r||!isAlive(w,c.person)?'须选择本国在世将领':lifeOf(w,c.person)?.illness?.severity===3?'重病期间不能接掌军队':!presentAt(w,c.person,army.location)?'统帅须亲赴军营':w.mobility.appointments[c.person]||w.duties?.task?.officer===c.person&&w.duties.task.phase!=='closed'||activeActivity(w,c.person)||w.mobility.activities.some(a=>a.delegate===c.person&&!['done','cancelled'].includes(a.phase))||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===c.person||t.helper===c.person))?'先结束本人事务或差事':(ageAt(w,c.person)??0)<16?'统帅须成年':'';
  if(c.action==='leave-army')return !commandArmy(w)?'你未亲自领军':army?.journey?'行军期间不能卸任':army&&w.realm.cities[army.location].controller!==r?'须回到己方控制的驻地才能卸任':'';
  const a=w.mobility.activities.find(a=>a.id===c.id&&a.actor===id);if(!a||['done','cancelled'].includes(a.phase))return '事务已结束';
  if(c.action==='cancel')return '';
@@ -105,10 +111,11 @@ export function mobilityReason(w:World,c:MobilityCommand):string{
 }
 export function actMobility(w:World,c:MobilityCommand){
  const reason=mobilityReason(w,c);if(reason)throw new Error(reason);const s=w.mobility!,id=actor(w),r=playerRealm(w),p=w.people[0];
+ if(c.action==='dismiss-command'){const a=w.realm!.armies.find(a=>a.id===c.army)!,leader=armyCommander(w,a);if(s.armyCommanders)delete s.armyCommanders[c.army];if(w.realm!.armies.find(v=>v.realm===a.realm)===a)delete s.commanders[a.realm];if(leader===w.characterId)p.journey=null;else if(leader&&s.residences[leader])s.residences[leader].journey=null;log(w,'第 '+c.army+' 军将领已交接卸任。');return;}
  if(c.action==='stance'){s.stance=c.stance;log(w,'传令三军：'+({balanced:'稳步交战',attack:'奋勇进击',guard:'结阵固守'})[c.stance]);return;}
  if(c.action==='ransom'){p.coins-=80;const prison=s.captivity!;s.captivity=null;p.location=prison.site;log(w,'支付赎金 80 钱，获释。请依当前通行条件安排返国。');return;}
- if(c.action==='command'){s.commanders[r]=c.person;s.stance='balanced';log(w,politicalName(c.person)+'抵营接掌统军。');return;}
- if(c.action==='leave-army'){delete s.commanders[r];p.journey=null;log(w,'卸任随军统帅，军队仍可接受战略命令。');return;}
+ if(c.action==='command'){const a=w.realm!.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;if(c.army===undefined){s.commanders[r]=c.person;if(s.armyCommanders)delete s.armyCommanders[a.id!];}else{if(w.realm!.armies.find(a=>a.realm===r)===a)delete s.commanders[r];s.armyCommanders??={};s.armyCommanders[a.id!]=c.person;}s.stance='balanced';log(w,politicalName(c.person)+'抵营接掌统军。');return;}
+ if(c.action==='leave-army'){const a=commandArmy(w);if(a&&s.armyCommanders)delete s.armyCommanders[a.id!];if(s.commanders[r]===id)delete s.commanders[r];p.journey=null;log(w,'卸任随军统帅，军队仍可接受战略命令。');return;}
  if(c.action==='plan'){
   const q=activityQuote(w,c),d=activities[c.kind],targetRoute=c.target?npcRoute(w,c.target,c.site):null,delegateRoute=c.delegate?npcRoute(w,c.delegate,c.site):null;
   const a:Activity={id:s.nextId++,actor:id,kind:c.kind,site:c.site,target:c.target??null,delegate:c.delegate??null,created:w.day,deadline:w.day+Math.max(q.days,targetRoute?.days??0,delegateRoute?.days??0)+d.days+30,started:null,due:null,phase:'travel',result:'',choice:null};
@@ -168,9 +175,10 @@ export function advanceMobility(w:World){
 /** Call after the army simulation so an attached ruler cannot move independently. */
 export function syncArmyTravel(w:World){
  const s=w.mobility;if(!s||!w.realm)return;
- for(const realm of realms){const id=s.commanders[realm];if(!id)continue;const army=w.realm.armies.find(a=>a.realm===realm&&a.troops>0),self=id===w.characterId;
-  if(!isAlive(w,id)){delete s.commanders[realm];continue;}
-  if(!army){if(!self&&s.residences[id])s.residences[id].journey=null;if(self){w.people[0].journey=null;const at=w.people[0].location,enemy=w.realm.cities[at].controller,life=lifeOf(w,id);if(life){life.health=clamp(life.health-20,1);life.illness={kind:'wasting',since:w.day,severity:1};}if(enemy!=='frontier'&&enemy!==realm)s.captivity={captor:enemy,site:at,since:w.day};s.reported++;log(w,'所部溃散，统帅负伤'+(s.captivity?'并被拘押，可筹赎返。':'，已脱离军队。'));}delete s.commanders[realm];continue;}
+ const assignments=[...realms.filter(r=>s.commanders[r]).map(realm=>({id:s.commanders[realm]!,realm,army:w.realm!.armies.find(a=>a.realm===realm&&a.troops>0),key:undefined as number|undefined})),...Object.entries(s.armyCommanders??{}).map(([key,id])=>({id,realm:allegianceRealm(w,id)??playerRealm(w),army:w.realm!.armies.find(a=>a.id===Number(key)&&a.troops>0),key:Number(key)}))];
+ for(const {id,realm,army,key} of assignments){const self=id===w.characterId,clear=()=>{if(key!==undefined)delete s.armyCommanders![key];else delete s.commanders[realm];};
+  if(!isAlive(w,id)||army&&allegianceRealm(w,id)!==army.realm){clear();if(s.residences[id])s.residences[id].journey=null;if(self)w.people[0].journey=null;continue;}
+  if(!army){if(!self&&s.residences[id])s.residences[id].journey=null;if(self){w.people[0].journey=null;const at=w.people[0].location,enemy=w.realm.cities[at].controller,life=lifeOf(w,id);if(life){life.health=clamp(life.health-20,1);life.illness={kind:'wasting',since:w.day,severity:1};}if(enemy!=='frontier'&&enemy!==realm)s.captivity={captor:enemy,site:at,since:w.day};s.reported++;log(w,'所部溃散，统帅负伤'+(s.captivity?'并被拘押，可筹赎返。':'，已脱离军队。'));}clear();continue;}
   if(self){w.people[0].location=army.location;w.people[0].journey=army.journey?structuredClone(army.journey):null;}else if(s.residences[id]){s.residences[id].site=army.location;s.residences[id].journey=army.journey?structuredClone(army.journey):null;}
  }
 }

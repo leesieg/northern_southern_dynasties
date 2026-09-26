@@ -18,7 +18,7 @@ export function publicOfficeReason(w:World,id:string){
  if(w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===id))return '须先交接战役委任';
  if(w.retinue?.members[id])return '须先解除幕府职务';
  if(w.realm?.offices.some(o=>o.candidate===id))return '已有任命在途';
- if(Object.values(w.mobility?.commanders??{}).includes(id)||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id))||w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id||a.delegate===id)))return '须先交接正在执行的军务或差事';
+ if((Object.values(w.mobility?.commanders??{}).includes(id)||Object.values(w.mobility?.armyCommanders??{}).includes(id))||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id))||w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id||a.delegate===id)))return '须先交接正在执行的军务或差事';
  return '';
 }
 export function appointmentAuthorityReason(w:World,r:RealmId){const g=governmentOf(w,r)!;if(governingExecutives(w,r).includes(w.characterId!))return '';if(g.ruler===w.characterId){const executive=governingExecutives(w,r)[0];return executive&&acceptance(w,executive).reduce((n,p)=>n+p.value,0)>=60?'':'任命权受实际执政者制约：需执政者接受度 60，或先争取亲政';}return '任命权掌握在本政权实际执政者手中';}

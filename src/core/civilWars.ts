@@ -1,3 +1,4 @@
+import {armyCommander} from './mobility';
 import {personInfluence,awardInfluence} from './personalInfluence';
 import {economyHost} from './personalEconomyAdapter';
 import {personResidence} from './residence';
@@ -27,7 +28,7 @@ export function playerCommandsArmy(w:World,a:Army){const war=civilWar(w,a.realm)
 export function armiesHostile(w:World,a:Army,b:Army){return activeWars(w).some(v=>{const x=warArmySide(w,v,a),y=warArmySide(w,v,b);return x&&y&&x!==y;});}
 export function revoltSupport(w:World,claimant=w.characterId!){const r=allegianceRealm(w,claimant)!,chief=governingAuthority(w,r),supporters=[claimant,...Object.values(w.realm!.cities).map(c=>c.governor).filter((id):id is string=>!!id&&id!==claimant&&id!==chief&&isAlive(w,id)&&allegianceRealm(w,id)===r&&relationOpinion(w,id,claimant)>=40&&relationOpinion(w,id,claimant)>relationOpinion(w,id,chief)+20)];
  const unique=[...new Set(supporters)],cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r&&c.controller===r&&!!c.governor&&unique.includes(c.governor)).map(([id])=>id);
- const armies=w.realm!.armies.filter(a=>a.realm===r&&!a.journey&&cities.includes(a.location)&&((a.payer??'').startsWith(r+'|')||unique.includes(w.mobility?.commanders[r]??''))&&!w.militaryCampaigns?.items.some(q=>q.army===a.id&&q.status==='active')).map(a=>a.id!);
+ const armies=w.realm!.armies.filter(a=>a.realm===r&&!a.journey&&cities.includes(a.location)&&((a.payer??'').startsWith(r+'|')||unique.includes(armyCommander(w,a)??''))&&!w.militaryCampaigns?.items.some(q=>q.army===a.id&&q.status==='active')).map(a=>a.id!);
  return {supporters:unique,cities,armies};
 }
 export function civilReason(w:World,c:CivilCommand,actor=w.characterId!){if(!w.realm||!w.characterId||w.mode!=='sandbox')return '仅历史沙盒可用';const r=allegianceRealm(w,actor)!,g=governmentOf(w,r)!,support=revoltSupport(w,actor),at=personResidence(w,actor),site=at.site;

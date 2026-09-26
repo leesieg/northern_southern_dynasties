@@ -1,3 +1,4 @@
+import {armyCommander} from './mobility';
 import {authorityGrant} from './authority';
 import {civilWar,civilCanAdmin,playerCommandsArmy} from './civilWars';
 import {armyCampaign} from './militaryCampaigns';
@@ -73,6 +74,7 @@ export function armyOrganizationReason(w:World,c:ArmyCommand){
   const u=a.regiments?.find(u=>u.id===c.regiment);return !u||u.troops<100||a.troops-u.troops<100?'两支军队均须至少 100 人':a.convoy?'粮队抵达后再分军':s.armies.length>=48||s.armies.filter(x=>x.realm===r).length>=16?'军队编制已满':'';
  }
  const b=s.armies.find(b=>b.id===c.target&&b.realm===r);
+ if(b&&armyCommander(w,b))return '请先交接拟合入军队的将领';
  return !b||b===a||b.location!==a.location||b.journey?'须选择同城停驻的另一军队':a.convoy||b.convoy?'粮队抵达后再合军':a.payer!==b.payer?'须由同一公库供饷':a.troops+b.troops>6000||a.supply+b.supply>600?'合军超出兵额或随军粮容量':'';
 }
 export function actArmyOrganization(w:World,c:ArmyCommand){

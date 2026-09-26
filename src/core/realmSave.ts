@@ -35,8 +35,10 @@ export function validRealm(w:World):boolean {
  if(!Array.isArray(s.offices)||s.offices.length>Object.keys(territoryNodes).length||new Set(s.offices.map(o=>(o?.realm??s.cities[o?.site]?.owner)+'|'+(o?.territory??'county:'+o?.site))).size!==s.offices.length)return false;
  for(const o of s.offices)if(!obj(o)||!site(o.site)||(typeof o.candidate!=='string'||!relationshipPersonById[o.candidate])||!int(o.due,w.day+1,w.day+1000)||o.territory!==undefined&&(!Object.hasOwn(territoryNodes,String(o.territory))||territoryNodes[String(o.territory)].level==='realm'||!descendantSites(String(o.territory)).includes(o.site as string)||!realm(o.realm)||typeof o.issuer!=='string'||!relationshipPersonById[o.issuer]||typeof o.acting!=='boolean'||o.concurrent!==undefined&&typeof o.concurrent!=='boolean'||!int(o.issued,0,w.day)))return false;
  if(!validTraffic(w))return false;
- if(!Array.isArray(s.armies)||s.armies.length>48)return false;const seen=new Set<string>();
+ if(!Array.isArray(s.armies)||s.armies.length>48)return false;
+ if(Object.keys(w.mobility?.armyCommanders??{}).some(id=>!s.armies!.some(a=>a.id===Number(id))))return false;const seen=new Set<string>();
  for(const a of s.armies){if(!obj(a)||!realm(a.realm)||seen.has(a.id!==undefined?String(a.id):a.realm)||!site(a.location)||!int(a.troops,100,6000)||!int(a.morale,0,100)||!int(a.supply,0,600)||!int(a.siege,0,100))return false;seen.add(a.id!==undefined?String(a.id):a.realm);
+ if(w.mobility?.armyCommanders?.[Number(a.id)]&&allegianceRealm(w,w.mobility.armyCommanders[Number(a.id)])!==a.realm)return false;
  if(a.withdrawalUntil!==undefined&&!int(a.withdrawalUntil,0,w.day+10000))return false;
  if(a.trainingStarted!==undefined&&(!int(a.trainingStarted,0,w.day)||a.trainingUntil===undefined||Number(a.trainingUntil)<Number(a.trainingStarted)))return false;
  if(a.trainingUntil!==undefined&&!int(a.trainingUntil,0,w.day+60))return false;
