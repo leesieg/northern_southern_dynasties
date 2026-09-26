@@ -18,7 +18,7 @@ export const troopKinds={
 } as const;
 export type TroopKind=keyof typeof troopKinds;
 export interface Regiment {id:string;kind:TroopKind;service:'levy'|'standing';origin:string;troops:number;experience:number}
-export type ArmyCommand={type:'army';action:'raise';site:string;kind:TroopKind;service:Regiment['service']}|{type:'army';action:'split';army:number;regiment:string}|{type:'army';action:'merge';army:number;target:number};
+export type ArmyCommand={type:'army';action:'raise';site:string;kind:TroopKind;service:Regiment['service'];target?:number}|{type:'army';action:'split';army:number;regiment:string}|{type:'army';action:'merge';army:number;target:number};
 export function ensureArmyOrganization(w:World){
  const s=w.realm;if(!s)return;
  s.nextArmyId=Math.max(s.nextArmyId??1,...s.armies.map(a=>(a.id??0)+1));
@@ -61,7 +61,8 @@ export function armyOrganizationReason(w:World,c:ArmyCommand){
   const city=s.cities[c.site];if(!civilCanAdmin(w,w.characterId!,c.site))return '不能在内战对方控制地区征募';if(!city||city.owner!==r||city.controller!==r)return '须在本国法理和控制下征募';
   const grant=authorityGrant(w,w.characterId,'levy',{realm:r,site:c.site});if(!grant.allowed)return grant.reason;
   if(!Object.hasOwn(troopKinds,c.kind)||!['levy','standing'].includes(c.service))return '无效兵种或役制';
-  if(s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16)return '军队编制已满';
+  if(c.target===undefined&&(s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16))return '军队编制已满';
+  if(c.target!==undefined){const a=s.armies.find(a=>a.id===c.target);if(!a||a.realm!==r||a.location!==c.site||a.journey||!playerCommandsArmy(w,a))return '须编入本城停驻且可统领的军队';const command=authorityGrant(w,w.characterId,'command',{realm:r,site:c.site,army:a});if(!command.allowed)return command.reason;if(a.convoy||armyCampaign(w,a)||civilWar(w,r))return '运粮、战役或内战期间不能扩编';if(a.payer!==grant.account)return '须由同一公库供饷';if(a.troops+200>6000||a.supply+60>600)return '超过兵额或随军粮容量';}
   if(city.population<300)return '须保留至少 100 名居民';
   const source=authorityGrant(w,w.characterId!,'levy',{realm:r,site:c.site}).account!,cost=troopKinds[c.kind].cost*(c.service==='standing'?2:1);
   return publicBalance(w,source)<cost?'拨付公库不足 '+cost+' 钱':city.grain<60?'驻地粮仓不足 60':governmentMusterReason(w,r);
@@ -81,7 +82,9 @@ export function actArmyOrganization(w:World,c:ArmyCommand){
   enactPoliticalAction(w,r,'military');spendGovernmentMuster(w,r);if(payer.startsWith('central:'))s.treasuries[r].coins-=cost;else ensureFiscal(w)!.balances[payer]=publicBalance(w,payer)-cost;
   fiscalRecord(w,r,payer,'expense',cost,'征募'+troopKinds[c.kind].name);city.population-=200;city.grain-=60;
   const revolt=civilWar(w,r);if(revolt?.civil?.supporters.includes(w.characterId!))revolt.civil.armies.push(id);
-  s.armies.push({id,trainingStarted:w.day,trainingUntil:w.day+(c.service==='standing'?60:30),realm:r,location:c.site,troops:200,morale:60,supply:60,journey:null,siege:0,payer,arrears:0,foodRemainder:0,regiments:[{id:id+':1',kind:c.kind,service:c.service,origin:c.site,troops:200,experience:0}]});
+  const target=c.target===undefined?undefined:s.armies.find(a=>a.id===c.target);
+  if(target){target.morale=Math.floor((target.morale*target.troops+60*200)/(target.troops+200));target.troops+=200;target.supply+=60;target.trainingUntil=Math.max(target.trainingUntil??0,w.day+(c.service==='standing'?60:30));target.trainingStarted=w.day;target.regiments!.push({id:id+':1',kind:c.kind,service:c.service,origin:c.site,troops:200,experience:0});}
+  else s.armies.push({id,trainingStarted:w.day,trainingUntil:w.day+(c.service==='standing'?60:30),realm:r,location:c.site,troops:200,morale:60,supply:60,journey:null,siege:0,payer,arrears:0,foodRemainder:0,regiments:[{id:id+':1',kind:c.kind,service:c.service,origin:c.site,troops:200,experience:0}]});
  }else{
   const a=s.armies.find(a=>a.id===c.army)!;
   if(c.action==='split'){

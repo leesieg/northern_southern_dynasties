@@ -184,7 +184,7 @@ export function advanceRealm(w:World){
  advanceArmyLogistics(w,a);
  const need=consumeArmyFood(w,a,100-armyBonuses(w,a).supply);
 
- if(a.supply<need){takeCasualties(w,a,Math.ceil(a.troops*.02));a.morale=clamp(a.morale-4,0,100);a.supply=0;}else{a.supply-=need;a.morale=clamp(a.morale+((a.arrears??0)>0?-1:1),0,100);}
+ if(a.supply<need){const lost=takeCasualties(w,a,Math.ceil(a.troops*.02));if(a.realm===playerRealm(w))log(w,`第 ${a.id} 军断粮：所需 ${need}，实有 ${a.supply}，减员 ${lost} 人，士气 −4。`);a.morale=clamp(a.morale-4,0,100);a.supply=0;}else{a.supply-=need;a.morale=clamp(a.morale+((a.arrears??0)>0?-1:1),0,100);}
  if(a.withdrawalUntil&&(a.location===a.journey?.route.at(-1)||!a.journey&&s.cities[a.location].controller===a.realm||w.day>a.withdrawalUntil))delete a.withdrawalUntil;
  if(a.journey&&!a.withdrawalUntil&&!canEnter(w,a.realm,s.cities[a.journey.route[a.journey.leg+1]].controller,undefined,true)){a.journey=null;a.siege=0;log(w,regimeName(w,a.realm)+'军借道许可失效，停止行军。');}
  if(a.journey&&engaged.has(a))a.journey.started++;

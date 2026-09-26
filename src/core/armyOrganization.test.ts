@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance} from './world';
 import {payArmy,consumeArmyFood,reconcileRegiments,armyCombatFactor} from './armyOrganization';
-import {realmReason} from './realm';
+import {realmReason,advanceRealm} from './realm';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 function setup(){const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.realm!.cities.jiankang.grain=1000;return w;}
 describe('army organization and conservation',()=>{
@@ -10,6 +10,23 @@ describe('army organization and conservation',()=>{
   act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy'});
   act(w,{type:'army',action:'raise',site:'jiankang',kind:'archer',service:'standing'});
   expect(s.cities.jiankang.population).toBe(population-400);expect(s.treasuries.liang.coins).toBe(coins-110);expect(s.armies.length).toBe(2);expect(s.armies[0].id).not.toBe(s.armies[1].id);expect(parseWorld(serializeWorld(w))).toEqual(w);
+ });
+ it('recruits directly into a selected army with conserved population, grain and unique regiments',()=>{
+  const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy'});
+  const s=w.realm!,a=s.armies[0],population=s.cities.jiankang.population,grain=s.cities.jiankang.grain,coins=s.treasuries.liang.coins;
+  act(w,{type:'army',action:'raise',site:'jiankang',kind:'archer',service:'standing',target:a.id});
+  expect(s.armies).toHaveLength(1);expect(a.troops).toBe(400);expect(a.supply).toBe(120);expect(s.cities.jiankang.population).toBe(population-200);expect(s.cities.jiankang.grain).toBe(grain-60);expect(s.treasuries.liang.coins).toBe(coins-80);
+  expect(new Set(a.regiments!.map(u=>u.id)).size).toBe(2);expect(a.trainingUntil).toBe(w.day+60);expect(parseWorld(serializeWorld(w))).toEqual(w);
+ });
+ it('rejects an invalid reinforcement target before any resource changes',()=>{
+  const w=setup(),before=serializeWorld(w);
+  expect(()=>act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy',target:9999})).toThrow();expect(serializeWorld(w)).toBe(before);
+ });
+ it('reports real starvation losses and stops losing soldiers when food is restored',()=>{
+  const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy'});const a=w.realm!.armies[0];
+  for(const city of Object.values(w.realm!.cities))city.grain=0;w.realm!.treasuries.liang.grain=0;a.supply=0;w.day=1;
+  advanceRealm(w);expect(a.troops).toBe(196);expect(w.chronicle.some(e=>e.text.includes(`第 ${a.id} 军断粮`)&&e.text.includes('减员 4 人'))).toBe(true);
+  a.supply=100;w.day=2;advanceRealm(w);expect(a.troops).toBe(196);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('merges and splits without losing soldiers, supply, arrears or regiment IDs',()=>{
   const w=setup(),s=w.realm!;for(const kind of ['shield','spear'] as const)act(w,{type:'army',action:'raise',site:'jiankang',kind,service:'levy'});
