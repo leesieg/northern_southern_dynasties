@@ -10,3 +10,14 @@
 .career-supporters {display:flex;flex-wrap:wrap;gap:8px}
 .career-supporters> * {width:48px;height:48px;overflow:hidden}
 .career-systems progress {width:100%;accent-color:#c9ad67}
+.career-portrait-link {display:block;padding:0;border:0;background:transparent;cursor:pointer;overflow:hidden;aspect-ratio:1;width:100%;}
+.career-portrait-link .painted-portrait {width:100%;height:100%;margin:0;}
+.career-portrait-link:focus-visible {outline:2px solid #d3bd82;outline-offset:2px;}
+.war-settlement-choice,.army-organization-choice {display:grid;gap:5px;min-width:0;}
+.war-settlement-choice .hover-hint,.army-organization-choice .hover-hint,.war-settlement-choice button,.army-organization-choice button {width:100%;}
+.city-policy-grid .war-settlement-choice .hover-hint>button,.city-policy-grid .army-organization-choice .hover-hint>button {display:flex;align-items:center;gap:8px;min-height:48px;padding:8px 10px;text-align:left;color:#e9d4a3;border:1px solid #bba47155;border-radius:4px;background:#14281f;box-sizing:border-box;}
+.city-policy-grid .war-settlement-choice .hover-hint>button:disabled,.city-policy-grid .army-organization-choice .hover-hint>button:disabled {opacity:.45;}
+.city-policy-grid .war-settlement-choice .hover-hint>button:focus-visible,.city-policy-grid .army-organization-choice .hover-hint>button:focus-visible {outline:2px solid #edd79d;outline-offset:3px;}
+.war-settlement-choice small,.army-organization-choice small {line-height:1.35;overflow-wrap:anywhere;}
+.army-organization-choice button span {display:grid;gap:2px;text-align:left;}
+.war-settlement-heading {display:flex;align-items:center;gap:8px;}

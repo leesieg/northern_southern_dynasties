@@ -22,7 +22,7 @@ import { eventDefinitions,executive,playerRealm,realmReason } from '../core/real
 import type { World,GameCommand } from '../core/types';
 import './realm.css';
 export type RealmTab='overview'|'duties'|'politics'|'government'|'hierarchy'|'court'|'clans'|'treasury';
-export function RealmPanel({world:w,pending,send,onCity,onPerson,tab,onTab,courtTab,onCourtTab,serviceFocus}:{serviceFocus?:{id?:number;seq:number;view?:'council'|'duties'};world:World;pending:boolean;send:(c:GameCommand)=>void;onCity:(id:string)=>void;onPerson:(id:string)=>void;tab:RealmTab;onTab:(tab:RealmTab)=>void;courtTab:CourtTab;onCourtTab:(tab:CourtTab)=>void}){
+export function RealmPanel({world:w,pending,send,onCity,onTerritory,onPerson,onEconomy,tab,onTab,courtTab,onCourtTab,serviceFocus}:{serviceFocus?:{id?:number;seq:number;view?:'council'|'duties'};world:World;pending:boolean;send:(c:GameCommand)=>void;onCity:(id:string)=>void;onTerritory:(id:string)=>void;onPerson:(id:string)=>void;onEconomy:()=>void;tab:RealmTab;onTab:(tab:RealmTab)=>void;courtTab:CourtTab;onCourtTab:(tab:CourtTab)=>void}){
  const [selected,setSelected]=useState(w.people[0].location),[confirm,setConfirm]=useState<string|null>(null);
  const [dutyChapter,setDutyChapter]=useState<'service'|'grain'>(serviceFocus?.view==='duties'?'grain':'service');
  useEffect(()=>{setDutyChapter(serviceFocus?.view==='duties'?'grain':'service');},[serviceFocus?.seq,serviceFocus?.view]);
@@ -32,7 +32,7 @@ export function RealmPanel({world:w,pending,send,onCity,onPerson,tab,onTab,court
  return <div className="realm-panel"><header className="realm-identity"><RealmBadge realm={r} world={w}/><div className="realm-public-funds"><Resource name="coins" value={t.coins} label="公款" caption/><Resource name="grain" value={t.grain} label="公粮" caption/><Resource name="influence" value={s.influence} label="影响力" caption/></div></header>
  {s.event&&<section className="realm-event" role="status"><small>待决事务 · {siteById[s.event.site].name} · 时间已暂停</small><h3>{eventDefinitions[s.event.kind].title}</h3><p>{eventDefinitions[s.event.kind].body}</p><p>{eventDefinitions[s.event.kind].effect}</p><div className="realm-actions">{action({type:'realm',action:'event',choice:'fund'},'拨付处理 · '+eventDefinitions[s.event.kind].cost)}{action({type:'realm',action:'event',choice:'decline'},'暂缓处理')}</div><small>处理后关闭窗口，再继续时间。</small></section>}
  {tab!=='overview'&&<nav className="realm-breadcrumb" aria-label="政务位置"><button onClick={()=>onTab('overview')}>← 政务总览</button><span>{realmPageNames[tab]}</span></nav>}
- {tab==='overview'&&<RealmOverview world={w} onCity={onCity} onTab={next=>{if(next==='court')onCourtTab('ministries');onTab(next);}} onPerson={onPerson}/>}
+ {tab==='overview'&&<RealmOverview world={w} onCity={onCity} onTerritory={onTerritory} onTab={next=>{if(next==='court')onCourtTab('ministries');onTab(next);}} onPerson={onPerson} onEconomy={onEconomy}/>}
  {tab==='politics'&&((clanStanding(w,w.characterId!)?.petition??0)>0||recommendationBonus(w,w.characterId!)>0)&&<HoverHint label="求官影响因素" content={`世族门第：求官接受度 +${clanStanding(w,w.characterId!)?.petition??0}，城邑请任功绩要求 −${clanStanding(w,w.characterId!)?.merit??0}；典签荐书：求官接受度 +${recommendationBonus(w,w.characterId!)}。年龄、治理权与军务门槛仍须满足。`}><span className="clan-standing-badge">求官荫望 ⓘ</span></HoverHint>}
  {tab==='treasury'&&<TreasuryPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}
  {tab==='clans'&&<ClanRanking world={w} realm={r} onPerson={onPerson}/>}
