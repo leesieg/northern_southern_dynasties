@@ -1,3 +1,6 @@
+import {accountName} from '../core/treasury';
+import {RealmBadge} from './RealmBadge';
+import type {RealmId} from '../core/realm';
 import {EnterprisePanel} from './CareerSystems';
 import {useState} from 'react';
 import type {GameCommand, World} from '../core/types';
@@ -16,8 +19,18 @@ function EconomyAction({world,pending,send,command,label,icon='coins',consequenc
  const [confirm,setConfirm]=useState(false),reason=economyCommandReason(world,command);
  return <div className="economy-action"><HoverHint label={label} content={<>{hint||consequence||label}{reason&&<p>{reason}</p>}</>}><button aria-pressed={active} disabled={pending||!!reason} onClick={()=>consequence?setConfirm(true):send(command)}><ArtIcon name={icon} size={26}/>{label}</button></HoverHint>{summary&&<small>{summary}</small>}{confirm&&<div className="economy-confirm" role="group" aria-label="确认操作"><p>{consequence}</p>{reason&&<small>{reason}</small>}<button disabled={pending||!!reason} onClick={()=>{send(command);setConfirm(false);}}>确认</button><button disabled={pending} onClick={()=>setConfirm(false)}>取消</button></div>}</div>;
 }
-export function EconomyCases({world,pending,send,caseId}:Props&{caseId?:number}){
- const p=economyPresentation(world);return <div className="economy-cases">{p.view.investigations.filter(q=>caseId===undefined||q.id===caseId).slice().reverse().map(q=><article key={q.id}><div className="economy-case-heading"><CharacterPortrait characterId={q.inspector} world={world} compact/><div><strong>案 {q.id} · {q.phase==='investigating'?'查核中':q.phase==='report'?'待裁决':'已结案'}</strong><small>{politicalName(q.inspector)} · {q.phase==='investigating'?`驻留查核余 ${Math.max(0,q.due-world.day)} 日，赴任另计`:q.outcome==='substantiated'?'证据确凿':q.outcome==='cancelled'?'查核中止':'未取得足够证据'}</small></div></div>{q.findings.map((m,i)=><p key={i}>{politicalName(m.person)}：查实 {m.amount} 钱，追回 {m.recovered} 钱</p>)}{q.phase==='report'&&<div className="economy-grid"><EconomyAction world={world} pending={pending} send={send} command={{type:'economy',action:'resolve',caseId:q.id,decision:'recover'}} label="追缴" icon="influence" consequence="追缴实际私财，不足部分保留欠责并继续追偿；责任人失去功绩、与你的关系下降。"/><EconomyAction world={world} pending={pending} send={send} command={{type:'economy',action:'resolve',caseId:q.id,decision:'dismiss'}} label="结案不追缴" icon="diligent" consequence="终止本案追缴。已查实的责任记录保留。"/></div>}</article>)}</div>;
+export function EconomyCases({world,pending,send,caseId,onPerson}:Props&{caseId?:number;onPerson?:(id:string)=>void}){
+ const p=economyPresentation(world);
+ const portrait=(id:string)=><button className="audit-person" disabled={!onPerson} aria-label={'查看'+politicalName(id)} onClick={()=>onPerson?.(id)}><CharacterPortrait characterId={id} world={world} compact/><span>{politicalName(id)}</span></button>;
+ return <div className="economy-cases">{p.view.investigations.filter(q=>caseId===undefined||q.id===caseId).slice().reverse().map(q=>{
+ const people=[...new Set(q.findings.map(m=>m.person))].map(id=>({id,amount:q.findings.filter(m=>m.person===id).reduce((n,m)=>n+m.amount,0),recovered:q.findings.filter(m=>m.person===id).reduce((n,m)=>n+m.recovered,0)})),proved=q.outcome==='substantiated';
+ return <article key={q.id} className="audit-report"><header className="audit-heading"><RealmBadge world={world} realm={q.realm as RealmId}/><strong>{accountName(q.account)}</strong><small>{q.phase==='investigating'?'查核中':q.phase==='report'?'待你裁决':'已结案'}</small></header><div className="audit-officers"><div><small>委托人</small>{portrait(q.commissioner)}</div><div><small>查核人</small>{portrait(q.inspector)}</div></div><p className="audit-context">核查第 {q.started} 日及以前的公款支出{q.phase==='investigating'?` · 驻留查核余 ${Math.max(0,q.due-world.day)} 日，另计赴任`:''}</p>
+ <div className="audit-verdict"><ArtIcon name={proved?'stress':'diligent'} size={26}/><strong>{q.phase==='investigating'?'尚未形成结论':proved?'查实侵吞公款':q.outcome==='cancelled'?'查核已中止':'未查得足够证据'}</strong></div>
+ {people.map(m=><div className="audit-finding" key={m.id}>{portrait(m.id)}<div><Resource name="coins" value={m.amount} label="本案查实侵吞公款" unit="钱"/><small>已追回 {m.recovered} · 尚欠 {m.amount-m.recovered}</small></div></div>)}
+ {q.outcome==='inconclusive'&&<p>本次未取得足以认定侵吞的证据，不能据此追缴或处罚。</p>}
+ {q.phase==='closed'&&<p>{q.resolution==='recover'?'已裁定追缴；尚欠部分继续从责任人私财中追偿。':q.resolution==='dismiss'?(proved?'已结案，本案不追缴，责任记录保留。':'已结案，未认定有罪。'):'查核未完成，不作有罪认定。'}</p>}
+ {q.phase==='report'&&<div className="economy-grid audit-decisions">{proved&&<EconomyAction world={world} pending={pending} send={send} command={{type:'economy',action:'resolve',caseId:q.id,decision:'recover'}} label="责令退赔" icon="coins" summary="退赔归还原公库；欠款继续追偿" consequence={`从责任人现有私财中追缴，归还${accountName(q.account)}；不足部分继续追偿。${people.map(m=>politicalName(m.id)+'功绩最多 −'+Math.min(20,5+Math.floor((m.amount-m.recovered)/20))).join('，')}；各责任人与你的关系 −15。`}/>}<EconomyAction world={world} pending={pending} send={send} command={{type:'economy',action:'resolve',caseId:q.id,decision:'dismiss'}} label={proved?'免予追缴':'证据不足，结案'} icon="diligent" summary={proved?'不收回公款，不扣功绩；责任记录保留':'不追缴、不处罚；结束本次查核'} consequence={proved?'本案结案，不追缴、不扣功绩；已查实的侵吞责任仍留档。':undefined}/></div>}</article>;
+ })}</div>;
 }
 export function PersonalEconomyPanel({world,pending,send}:Props){
  const [section,setSection]=useState<'household'|'business'|'accounts'|'cases'>('household'),[account,setAccount]=useState(''),[auditAccount,setAuditAccount]=useState(''),[inspector,setInspector]=useState(''),[amount,setAmount]=useState(20);

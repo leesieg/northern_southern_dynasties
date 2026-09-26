@@ -1,3 +1,4 @@
+import {accountName} from './treasury';
 import {serviceApprover,serviceException} from './serviceMandates';
 import {economyPending} from './personalEconomyAdapter';
 import {appointmentPauses} from './appointmentCycle';
@@ -67,4 +68,4 @@ export function pauseEvents(before:ReturnType<typeof pauseSnapshot>,w:World):Pau
  return events;
 }
 
-export function economyPauses(w:World):PauseEvent[]{return economyPending(w).map(q=>({id:'economy:'+q.id,kind:'economy',economyId:q.id,title:'查核呈报',body:'监察人已呈报查核结果，请审议证据并决定是否追缴。'}));}
+export function economyPauses(w:World):PauseEvent[]{return economyPending(w).map(q=>({id:'economy:'+q.id,kind:'economy',economyId:q.id,title:accountName(q.account)+'查核结果',body:q.outcome==='substantiated'?'已查实公款被侵吞，请裁定是否责令退赔。':'本次查核未取得足够证据，请审阅后结案。'}));}
