@@ -186,6 +186,7 @@ export function advance(world: World, days = 1): void {
     for (const p of world.people) {
       if(!isAlive(world,p.id==='player'?world.characterId??'fictional':p.id))continue;
       if(p.id==='player'&&commandArmy(world))continue;
+      if(p.id==='player'&&world.diplomacy?.missions.some(m=>m.envoy===world.characterId))continue;
       if (p.journey) {
         const j = p.journey;
         if(p.id==='player'&&world.realm&&!world.diplomacy?.returning&&(!civilCanAdmin(world,world.characterId!,j.route[j.leg+1])||!canEnter(world,playerRealm(world),world.realm.cities[j.route[j.leg+1]].controller,world.characterId))){

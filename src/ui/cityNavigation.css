@@ -23,3 +23,7 @@
 .city-management .city-policy-grid button:focus-visible,.city-management .journey-options button:focus-visible,.city-management .city-command-row button:focus-visible{outline:2px solid #edd79d;outline-offset:3px}
 @media(max-width:420px){.city-summary-resources{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .city-management .city-policy-item button.danger{border-color:#ba805c}
+
+/* Flat jurisdiction tabs remain compact as more actions become direct entries. */
+.focused-shell .location-development .city-icon-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:480px){.focused-shell .location-development .city-icon-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
