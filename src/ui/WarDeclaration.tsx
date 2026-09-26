@@ -1,3 +1,6 @@
+import {WarSettlement} from './WarSettlement';
+import {CivilWarPanel} from './CareerSystems';
+import {activeWars} from '../core/wars';
 import {useContext,useEffect,useRef,useState} from 'react';
 import {playerRealm,realmReason,armyDailyFood,armyMonthlyPay,type RealmId} from '../core/realm';
 import type {War} from '../core/wars';
@@ -9,12 +12,14 @@ import {DetailTabs} from './DetailTabs';
 import {ArtIcon,Resource} from './ArtIcon';
 import './warDeclaration.css';
 const goals={territory:{label:'割地',effect:'要求割让所选目标地'},reparations:{label:'赔款',effect:'要求赔款 300 钱，按期偿付'},tributary:{label:'宗属',effect:'迫使对方称臣'},annexation:{label:'吞并',effect:'胜利议和后接管对方政权'}};
-export function WarDeclaration({world:w,target,initialSite,pending,send,onClose}:{world:World;target:RealmId;initialSite?:string;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void}){
+export function WarDeclaration({world:w,target,initialSite,pending,send,onClose,onPerson}:{world:World;target:RealmId;initialSite?:string;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void;onPerson?:(id:string)=>void}){
  const navigation=useContext(RealmNavigation);
  const openRealm=navigation?((id:RealmId)=>{onClose();navigation.open(id);}):undefined;
  const ref=useRef<HTMLDialogElement>(null),[goal,setGoal]=useState<NonNullable<War['goal']>>('territory'),[chosen,setChosen]=useState(initialSite??'');
  useEffect(()=>{const d=ref.current!,prev=document.activeElement as HTMLElement|null;d.showModal();return()=>{d.close();prev?.focus();};},[]);
  const r=playerRealm(w),sites=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===target),site=sites.includes(chosen)?chosen:sites.find(id=>!realmReason(w,{type:'realm',action:'war',site:id,goal}))??sites[0]??'',command={type:'realm',action:'war',site,goal} as const,reason=realmReason(w,command),armies=w.realm!.armies.filter(a=>a.realm===r);
+ const wars=activeWars(w).filter(v=>target===r?[v.attacker,v.defender].includes(r):[v.attacker,v.defender].includes(r)&&[v.attacker,v.defender].includes(target)),wasWar=useRef(wars.length>0);
+ if(wars.length||target===r||wasWar.current)return <dialog ref={ref} className="war-declaration" aria-label="战争与议和" onCancel={e=>{e.preventDefault();onClose();}} onKeyDown={e=>e.stopPropagation()}><DrawerHeader title="战事" onClose={onClose}/><div className="war-declaration-body">{wars.map(war=><WarSettlement key={war.id} world={w} war={war} pending={pending} send={send} onPerson={onPerson?id=>{onClose();onPerson(id);}:undefined}/>)}{!wars.length&&<p className="military-note">当前没有进行中的战争</p>}{target===r&&<CivilWarPanel world={w} pending={pending} send={send} onPerson={onPerson?id=>{onClose();onPerson(id);}:undefined}/>}</div></dialog>;
  return <dialog ref={ref} className="war-declaration" aria-label="宣战议案" onCancel={e=>{e.preventDefault();onClose();}} onKeyDown={e=>e.stopPropagation()}>
  <DrawerHeader title="宣战" onClose={onClose}/><div className="war-declaration-body">
  <div className="war-parties"><article><RealmBadge world={w} realm={r} onOpen={openRealm}/><span><small>进攻方</small><Resource name="person" value={armies.reduce((n,a)=>n+a.troops,0)} label="己方现役" unit="人"/></span></article><ArtIcon name="army" size={36}/><article><RealmBadge world={w} realm={target} onOpen={openRealm}/><span><small>防御方</small><b>兵力待侦察</b></span></article></div>

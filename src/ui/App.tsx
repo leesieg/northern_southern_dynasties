@@ -60,7 +60,7 @@ function Icon({name,size=18}:{name:IconName;size?:number}){
 export function App(){
   const game=useGame();
   const [armyMove,setArmyMove]=useState<ArmyMove>(null);
-  const [armyFocus,setArmyFocus]=useState<{army:number;seq:number}>({army:0,seq:0});
+  const [armyFocus,setArmyFocus]=useState<{army:number;seq:number;tab?:'campaign'}>({army:0,seq:0});
   const [selected,setSelected]=useState('jiankang'),[mode,setMode]=useState<MapMode>('political'),[showTravelers,setShowTravelers]=useState(true),[tilted,setTilted]=useState(true);
   const [modal,setModal]=useState<'situation'|'diplomacy'|'lifestyle'|'saves'|'directory'|'about'|'estate'|'menu'|'characters'|'realm'|'map-person'|null>(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all');
   const [searchTab,setSearchTab]=useState<'people'|'places'>('people');
@@ -122,6 +122,7 @@ export function App(){
   };
   const openOngoing=(item:OngoingItem)=>{
     if(item.id.startsWith('army:')){setArmyMove(null);setModal(null);setArmyFocus(v=>({army:Number(item.id.slice(5)),seq:v.seq+1}));return;}
+    if(item.id.startsWith('campaign:')){const q=game.world?.militaryCampaigns?.items.find(q=>q.id===Number(item.id.slice(9)));if(q){setArmyMove(null);setModal(null);setArmyFocus(v=>({army:q.army,seq:v.seq+1,tab:'campaign'}));return;}}
     const target=item.target;
     if(target.page==='city'){chooseCity(target.site);setCityTab(target.tab);focus('selected');}
     else if(target.page==='person'){openPerson(target.person,false);setPersonTab(target.tab??(target.person===game.world!.characterId?'overview':'interaction'));}
