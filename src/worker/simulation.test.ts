@@ -208,3 +208,6 @@ describe('生命状态的 Worker 持久化',()=>{
   const accepted=await request({type:'command',command:{type:'health',action:'care',target:'gao-huan'}});expect(accepted.world.people[0].coins).toBe(before.world.people[0].coins-30);
  });
 });
+it('同一操作编号在保存恢复后不重复扣款，保存失败后可以用原编号重试',async()=>{await request({type:'init'});const start=await request({type:'new',characterId:'xiao-yan',mode:'sandbox'}),key={session:'receipt-test-session',sequence:1},command={type:'relationship',action:'gift',target:'xiao-gang'} as const;
+ const fail=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});expect((await request({type:'command',key,command})).world).toEqual(start.world);fail.mockRestore();const first=await request({type:'command',key,command});expect(first.world.people[0].coins).toBe(start.world.people[0].coins-30);expect((await request({type:'command',key,command})).world).toEqual(first.world);await request({type:'load',slot:'auto'});expect((await request({type:'command',key,command})).world).toEqual(first.world);
+});

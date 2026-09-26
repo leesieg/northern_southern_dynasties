@@ -28,7 +28,7 @@ export function DutiesPanel({world:w,pending,send,onPerson}:{world:World;pending
  {isChief&&t.phase==='report'&&action({type:'duty',action:'close'},'核定考绩 · 结案')}
  {t.phase==='working'&&<p>粮务正在办理。继续时间以推进差事。</p>}
  {((isChief&&['proposal','ready','incident'].includes(t.phase))||(isOfficer&&['approval','aid','report'].includes(t.phase)))&&<p>等待{isChief?'承办人':'朝廷'}答复，继续时间以接收文书。</p>}
- {isChief&&<details><summary>改派与撤回</summary><p>改派保留预算和进度，由新承办人领取考绩。</p><PersonChoice world={w} title="接任者" value={candidate} onChange={setCandidate} pending={pending} onPerson={onPerson} options={candidates.map(c=>({id:c.id,score:attributes(w,c.id).stewardship,metric:"职务能力",reason:dutyReason(w,{type:'duty',action:'replace',candidate:c.id})}))}/>{action({type:'duty',action:'replace',candidate},'改派此人')}<p>撤回视为未能办结：天水秩序 −8，双方交往积累 −8；启办后不退钱粮。</p>{confirm?action({type:'duty',action:'cancel'},'确认撤回粮务'):<button onClick={()=>setConfirm(true)}>撤回差事</button>}</details>}
+ {isChief&&<section className="detail-record-group"><h4>改派与撤回</h4><p>改派保留预算和进度，由新承办人领取考绩。</p><PersonChoice world={w} title="接任者" value={candidate} onChange={setCandidate} pending={pending} onPerson={onPerson} options={candidates.map(c=>({id:c.id,score:attributes(w,c.id).stewardship,metric:"职务能力",reason:dutyReason(w,{type:'duty',action:'replace',candidate:c.id})}))}/>{action({type:'duty',action:'replace',candidate},'改派此人')}<p>撤回视为未能办结：天水秩序 −8，双方交往积累 −8；启办后不退钱粮。</p>{confirm?action({type:'duty',action:'cancel'},'确认撤回粮务'):<button onClick={()=>setConfirm(true)}>撤回差事</button>}</section>}
  </>}
- <details><summary>往来文书 · {t.history.length}</summary>{t.history.slice().reverse().map((h,i)=><p key={i}>第 {h.day} 日 · {h.text}</p>)}</details></section>;
+ <section className="detail-record-group"><h4>往来文书 · {t.history.length}</h4>{t.history.slice().reverse().map((h,i)=><p key={i}>第 {h.day} 日 · {h.text}</p>)}</section></section>;
 }

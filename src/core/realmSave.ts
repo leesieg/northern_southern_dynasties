@@ -58,7 +58,7 @@ export function validRealm(w:World):boolean {
  if(s.wars!==undefined){if(!int(v.id,1,Number(s.nextWarId)-1)||ids.has(v.id))return false;ids.add(v.id);}}
  if(s.wars!==undefined&&JSON.stringify(s.war)!==JSON.stringify(s.wars[0]??null))return false;
  if(Object.values(s.cities).some(c=>c.owner!==c.controller&&!wars.some(v=>[v.attacker,v.defender].includes(c.owner as typeof realms[number])&&[v.attacker,v.defender].includes(c.controller as typeof realms[number]))))return false;
- if(s.reparations!==undefined&&(!Array.isArray(s.reparations)||s.reparations.length>1000||s.reparations.some(d=>!obj(d)||!int(d.war,1,1000000000)||!realm(d.from)||!realm(d.to)||d.from===d.to||!int(d.remaining,1,10000)||!int(d.instalment,1,10000)||!int(d.next,0,w.day+30))))return false;
+ if(s.reparations!==undefined&&(!Array.isArray(s.reparations)||s.reparations.length>1000||s.reparations.some(d=>!obj(d)||!int(d.war,1,1000000000)||!realm(d.from)||!realm(d.to)||d.from===d.to||!int(d.remaining,1,10000)||!int(d.instalment,1,10000)||!int(d.next,0,w.day+30)||(d.obligation!==undefined&&(!int(d.obligation,1,1000000000)||!w.obligations?.items.some(q=>q.id===d.obligation&&q.remaining===d.remaining&&q.from==='central:'+d.from&&q.to==='central:'+d.to))))))return false;
  if(s.event!==null){const e=s.event;if(!obj(e)||typeof e.kind!=='string'||!Object.hasOwn(eventDefinitions,e.kind)||!site(e.site)||!int(e.day,0,w.day)||e.day!==s.lastEvent)return false;}
  if(!Array.isArray(s.ledger)||s.ledger.length>36)return false;
  for(const l of s.ledger)if(!obj(l)||!realm(l.realm)||!int(l.day,0,w.day)||l.day%30!==0||!int(l.income)||!int(l.expense)||!int(l.food,-1_000_000,1_000_000))return false;

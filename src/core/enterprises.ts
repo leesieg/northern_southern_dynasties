@@ -19,11 +19,12 @@ export function enterpriseReason(w:World,c:EnterpriseCommand){
  const e=w.enterprises?.items.find(e=>e.id===c.id);if(!e||e.closed||e.owner!==id)return '不是你经营的事业';
  if(c.action==='withdraw')return e.capital<100?'事业资本不足 100 钱':wallet.read()>999900?'私财空间不足':'';
  if(c.action==='invest')return wallet.read()<100?'私财不足 100 钱':e.capital>999900?'事业资本空间不足':'';
+ if(c.action==='close'&&(w.commerce?.stocks.some(s=>s.enterprise===e.id&&(s.grain||s.tools||s.production))||w.commerce?.contracts.some(t=>t.enterprise===e.id&&(t.status==='moving'||t.escrow))))return '须先结清商旅合同与商品库存';
  if(c.action==='close')return e.order?'先结清或撤销在办合同':'';
  if(c.action==='cancel')return e.order?'':'没有在办合同';
  if(c.action!=='order'||!['careful','swift'].includes(c.method))return '无效经营行动';
  const city=w.realm.cities[e.site],r=city.owner as RealmId;
- return e.order?'已有在办合同':e.lastOrder+90>w.day?'当地再次发包须相隔 90 日':personResidence(w,id).traveling||personResidence(w,id).site!==e.site?'须亲赴事业所在地承办':!actor.available?'请先交接公务或其他活动':city.controller!==r||r!==actor.realm?'当地失守或效忠发生变化':host.managedAccounts(id).some(a=>a.id===fiscalPath(w,e.site)[0])||host.auditableAccounts(id).some(a=>a.id===fiscalPath(w,e.site)[0])?'不得承接由自己审批或监察的公款合同':e.kind==='workshop'&&city.prosperity>=90?'当地修缮需求已满足':e.kind==='agriculture'&&city.irrigation>=10?'当地水利已完备':localBalance(w,e.site)<100?'地方公库不足合同价款 100 钱':e.capital<(c.method==='careful'?60:30)?'事业资本不足本单成本':'';
+ return w.commerce?.stocks.some(s=>s.enterprise===e.id&&s.production)?'作坊正在制作农具':e.order?'已有在办合同':e.lastOrder+90>w.day?'当地再次发包须相隔 90 日':personResidence(w,id).traveling||personResidence(w,id).site!==e.site?'须亲赴事业所在地承办':!actor.available?'请先交接公务或其他活动':city.controller!==r||r!==actor.realm?'当地失守或效忠发生变化':host.managedAccounts(id).some(a=>a.id===fiscalPath(w,e.site)[0])||host.auditableAccounts(id).some(a=>a.id===fiscalPath(w,e.site)[0])?'不得承接由自己审批或监察的公款合同':e.kind==='workshop'&&city.prosperity>=90?'当地修缮需求已满足':e.kind==='agriculture'&&city.irrigation>=10?'当地水利已完备':localBalance(w,e.site)<100?'地方公库不足合同价款 100 钱':e.capital<(c.method==='careful'?60:30)?'事业资本不足本单成本':'';
 }
 export function actEnterprise(w:World,c:EnterpriseCommand){const why=enterpriseReason(w,c);if(why)throw new Error(why);const s=w.enterprises??={nextId:1,items:[]},wallet=economyHost(w).personal(w.characterId!)!;
  if(c.action==='open'){wallet.write(wallet.read()-120);s.items.push({id:s.nextId++,owner:w.characterId!,site:w.people[0].location,kind:c.kind,capital:120,opened:w.day,lastOrder:w.day-90,earned:0,spent:0,order:null,closed:false});return;}

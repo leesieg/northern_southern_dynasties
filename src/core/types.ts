@@ -29,6 +29,12 @@ export interface Person {
 }
 export interface Chronicle { day: number; text: string; person: string }
 export interface World {
+  coordinatedService?: import('./coordinatedService').CoordinatedService;
+  commerce?: import('./commerce').Commerce;
+  householdPlans?: import('./householdPlans').HouseholdPlans;
+  obligations?: import('./obligations').Obligations;
+  militaryAftermath?: import('./militaryAftermath').MilitaryAftermath;
+  requestReceipts?: import('./requestReceipts').RequestReceipts;
   enterprises?: import('./enterprises').Enterprises;
   militaryCampaigns?: import('./militaryCampaigns').MilitaryCampaigns;
   deeds?: import('./deeds').Deeds;
@@ -36,7 +42,7 @@ export interface World {
   version: 2; retinue?:RetinueState; mobility?:MobilityState; service?:ServiceState; duties?:DutiesState; life?:LifeState; diplomacy?:DiplomacyState; relationships?:RelationshipState; families?:FamilyState; lifestyles?:LifestyleState; identities?:IdentityState; mode?:'sandbox'; realm?:RealmState; scriptId?:string; social?:Social; characterId?:string; campaign?:Campaign; holdings: Holdings; contentVersion: string; day: number; people: Person[]; chronicle: Chronicle[];
 }
 export interface RoutePlan { route: string[]; durations: number[]; days: number; food: number; distance: number }
-export type GameCommand = import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
+export type GameCommand = import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
   | { type: 'travel'; destination: string }
   | { type: 'provision' }
   | { type: 'commission' }
@@ -48,7 +54,7 @@ export type Request =
   | { type: 'speed'; speed: number }
   | { type: 'step' }
   | { type: 'background' }
-  | { type: 'command'; command: GameCommand }
+  | { type: 'command'; command: GameCommand; key?: import('./requestReceipts').CommandKey }
   | { type: 'save' }
   | { type: 'load'; slot: string }
   | { type: 'delete-save'; slot: string }

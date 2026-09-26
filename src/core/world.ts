@@ -1,3 +1,8 @@
+import {actCoordinated,recordCoordinated} from './coordinatedService';
+import {actCommerce,advanceCommerce} from './commerce';
+import {actHousehold,advanceHousehold} from './householdPlans';
+import {actMilitaryAction,advanceAftermath} from './militaryAftermath';
+import {advanceObligations} from './obligations';
 import {actCivilWar,civilCanAdmin} from './civilWars';
 import {actEnterprise,advanceEnterprises} from './enterprises';
 import {actMilitaryCampaign,advanceMilitaryCampaigns} from './militaryCampaigns';
@@ -124,6 +129,10 @@ function actCommand(world: World, command: GameCommand): void {
   if('site'in command&&typeof command.site==='string'&&['build','fiscal','service','population'].includes(command.type)&&!civilCanAdmin(world,world.characterId!,command.site))throw new Error('该地由内战对方控制，无法办理此项公务');
   if(command.type==='appointments'){actAppointments(world,command);return;}
  if(command.type==='local'){actLocal(world,command);return;}
+  if(command.type==='coordinate'){actCoordinated(world,command);return;}
+  if(command.type==='commerce'){actCommerce(world,command);return;}
+  if(command.type==='household'){actHousehold(world,command);return;}
+  if(command.type==='militaryAction'){actMilitaryAction(world,command);return;}
   if(command.type==='civilWar'){actCivilWar(world,command);return;}
   if(command.type==='enterprise'){actEnterprise(world,command);return;}
   if(command.type==='militaryCampaign'){actMilitaryCampaign(world,command);return;}
@@ -132,7 +141,7 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='retinue'){actRetinue(world,command);return;}
   if(command.type==='mobility'){actMobility(world,command);return;}
   if(command.type==='travel'&&departureReason(world))throw new Error(departureReason(world));
-  if(command.type==='service'){actService(world,command);return;}
+  if(command.type==='service'){actService(world,command);recordCoordinated(world);return;}
   if(command.type==='duty'){actDuty(world,command);return;}
   if(command.type==='diplomacy'){actDiplomacy(world,command);return;}
   if(command.type==='relationship'){actRelationship(world,command);return;}
@@ -215,9 +224,10 @@ export function advance(world: World, days = 1): void {
     advanceRetinue(world);
     advanceMobility(world);
     advanceDuties(world);
-    advanceService(world);
+    recordCoordinated(world);advanceService(world);recordCoordinated(world);
     advancePersonalEconomy(world);
     advanceEnterprises(world);
+    advanceAftermath(world);advanceObligations(world);advanceHousehold(world);advanceCommerce(world);
     advanceMilitaryCampaigns(world);
     ensureArmyOrganization(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);

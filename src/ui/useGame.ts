@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { openGameSession } from './gameSession';
 import type { Reply, Request, SaveInfo, World } from '../core/types';
 
+const commandSession=crypto.randomUUID();
+let commandSequence=0;
 export function useGame() {
   const [pauses,setPauses]=useState<PauseEvent[]>([]);
   const [entry,setEntry]=useState(0);
@@ -13,7 +15,7 @@ export function useGame() {
   const [world,setWorld]=useState<World|null>(null),[speed,setSpeed]=useState(0),[slots,setSlots]=useState<SaveInfo[]>([]),[lastSaved,setLastSaved]=useState<number|null>(null);
   const [notice,setNotice]=useState<{text:string;error?:boolean}|null>(null),[blocked,setBlocked]=useState('');
   const notify=useCallback((text:string,error=false)=>setNotice({text,error}),[]);
-  const send=useCallback((message:Request)=>{if(worker.current){if(['new','resume','menu','load','import'].includes(message.type))setNotice(null);setPending(true);worker.current.postMessage(message);}},[]);
+  const send=useCallback((message:Request)=>{if(worker.current){if(['new','resume','menu','load','import'].includes(message.type))setNotice(null);setPending(true);worker.current.postMessage(message.type==='command'?{...message,key:message.key??{session:commandSession,sequence:++commandSequence}}:message);}},[]);
   useEffect(()=>{
     let stopped=false,closeSession:(()=>void)|undefined;
     const start=()=>{

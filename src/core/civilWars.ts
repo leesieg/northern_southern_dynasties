@@ -53,7 +53,7 @@ export function settleCivilWar(w:World,war:War,terms:string,forced?:'rebel'|'loy
  if(w.relationships)delete w.relationships.regencies[r];
  }
  if(terms!=='white'){for(const city of Object.values(s.cities))if(city.owner===r&&city.governor&&(c.supporters.includes(city.governor)!==rebelsWin))city.governor=null;for(const [key,seat] of Object.entries(s.local?.seats??{}))if(key.startsWith(r+'|')&&seat.holder&&c.supporters.includes(seat.holder)!==rebelsWin){seat.holder=null;seat.delegated=false;}}
- for(const a of s.armies)if(a.realm===r){a.journey=null;a.siege=0;a.payer='central:'+r;}
+ for(const a of s.armies)if(a.realm===r){if(a.journey)a.withdrawalUntil=w.day+a.journey.durations.slice(a.journey.leg).reduce((n,d)=>n+d,0)-a.journey.elapsed+1;a.siege=0;a.payer='central:'+r;}
  s.wars=s.wars!.filter(v=>v!==war);s.war=s.wars[0]??null;s.mandate=governingExecutives(w,r).includes(w.characterId!);syncGovernance(w);syncRelationships(w);syncCourt(w,r);syncDiplomacy(w);
  w.chronicle.push({day:w.day,person:'player',text:terms==='white'?'内战议定赦免停战，恢复输税，保留实际损失。':rebelsWin?'起兵方取得朝廷，重建公职与统属；军饷欠款继续偿还。':'朝廷平定内战，撤免起兵方公职；人物保留私产继续生涯。'});w.chronicle=w.chronicle.slice(-100);
 }
@@ -76,3 +76,5 @@ export function advanceCivilPolitics(w:World){if(!w.realm)return;
  for(const id of candidates){const command:CivilCommand={type:'civilWar',action:'rise',name:'新'+(r==='liang'?'梁':'魏')};if(!civilReason(w,command,id)){actCivilWar(w,command,id);break;}}
  }
 }
+
+export function actorCommandsSide(w:World,actor:string,a:Army){const r=allegianceRealm(w,actor);if(a.realm!==r)return false;const war=civilWar(w,a.realm);return !war||war.civil!.supporters.includes(actor)===war.civil!.armies.includes(a.id!);}

@@ -12,7 +12,7 @@ export function HierarchyExplorer({selected,level,eventId,onSelect,onLevel,onEve
     <div className="hierarchy-children">{children.filter(()=>node.level==='realm'||!managed).map(child=><button key={child.id} onClick={()=>onSelect(child.id)}><span><small>{levelNames[child.level]}</small>{child.name}</span><span>{child.basis==='unresolved'?'隶属待核':child.level==='city'?'进入城市':descendantSites(child.id).length+' 城'} ›</span></button>)}</div>
     {!children.length&&<p className="hierarchy-note">已进入城市，可查看营建与行程。</p>}
 
-    <details className="history-events"><summary>城市沿革</summary><p>查看沿革只在地图上标记对应城市，不改变本局局势。记录尚不完整。</p><button aria-pressed={!eventId} onClick={()=>onEvent(null)}>退出沿革查看</button>{controlEvents.map(event=><div key={event.id}><button aria-pressed={eventId===event.id} onClick={()=>onEvent(event.id)}>{event.year} 年 · {event.label}</button><a href={event.source} target="_blank" rel="noreferrer">史料 ↗</a></div>)}</details>
+    <section className="detail-record-group"><h4>城市沿革</h4><p>查看沿革只在地图上标记对应城市，不改变本局局势。记录尚不完整。</p><button aria-pressed={!eventId} onClick={()=>onEvent(null)}>退出沿革查看</button>{controlEvents.map(event=><div key={event.id}><button aria-pressed={eventId===event.id} onClick={()=>onEvent(event.id)}>{event.year} 年 · {event.label}</button><a href={event.source} target="_blank" rel="noreferrer">史料 ↗</a></div>)}</section>
     <p className="hierarchy-note">边界为辖区示意，并非完整历史疆域。</p>
   </section>;
 }

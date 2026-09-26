@@ -1,3 +1,4 @@
+import {incurObligation,advanceObligations} from './obligations';
 import {civilPeaceReason} from './civilWars';
 import {annexationReason} from './polityLifecycle';
 import type {World} from './types';
@@ -12,7 +13,7 @@ export function ensureWars(w:World){const s=w.realm;if(!s)return;s.wars??=s.war?
 export function selectedWar(w:World,r:RealmId,id?:number){const relevant=activeWars(w).filter(v=>[v.attacker,v.defender].includes(r));return id===undefined?(relevant.length===1?relevant[0]:undefined):relevant.find(v=>v.id===id);}
 
 export type PeaceTerms='white'|'demand'|'yield';
-export interface Reparation {war:number;from:RealmId;to:RealmId;remaining:number;instalment:number;next:number}
+export interface Reparation {obligation?:number;war:number;from:RealmId;to:RealmId;remaining:number;instalment:number;next:number}
 export function peaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms){
  const attacker=actor===war.attacker,enemy=attacker?war.defender:war.attacker;
  const beneficiary=terms==='yield'?enemy:actor,loser=beneficiary===war.attacker?war.defender:war.attacker;
@@ -30,4 +31,12 @@ export function peaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms){
  if(war.civil)reason=civilPeaceReason(w,war,terms);
  return {annexes,reason,parts,beneficiary,loser,takesLand,coins:terms==='white'||(war.goal??'territory')!=='reparations'?0:war.demand??300,tributary:terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker};
 }
-export function advanceReparations(w:World){const s=w.realm;if(!s)return;for(const d of s.reparations??[]){if(d.remaining<=0||d.next>w.day)continue;const from=s.treasuries[d.from],to=s.treasuries[d.to],paid=Math.min(d.remaining,d.instalment,from.coins,1_000_000-to.coins);from.coins-=paid;to.coins+=paid;d.remaining-=paid;d.next=w.day+30;}s.reparations=s.reparations?.filter(d=>d.remaining>0);}
+export function advanceReparations(w:World){
+ const s=w.realm;if(!s)return;
+ for(const d of s.reparations??[]){if(d.obligation!==undefined)continue;
+  const source='reparation:'+d.war+':'+d.from+':'+d.to;
+  incurObligation(w,source,'central:'+d.from,'central:'+d.to,d.remaining,'议和分期赔款');
+  const claim=w.obligations!.items.find(q=>q.source===source)!;claim.next=d.next;claim.instalment=d.instalment;d.obligation=claim.id;
+ }
+ advanceObligations(w);
+}

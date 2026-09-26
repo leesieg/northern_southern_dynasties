@@ -1,11 +1,12 @@
+import {authorityGrant} from './authority';
 import {civilWar,civilCanAdmin,playerCommandsArmy} from './civilWars';
 import {armyCampaign} from './militaryCampaigns';
 import {enactPoliticalAction} from './politicalActions';
 import type {World} from './types';
 import type {Army} from './realm';
-import {playerRealm,executive} from './realm';
+import {playerRealm} from './realm';
 import {governmentMusterReason,spendGovernmentMuster} from './government';
-import {centralAccount,fiscalPath,publicBalance,ensureFiscal,fiscalRecord} from './treasury';
+import {centralAccount,publicBalance,ensureFiscal,fiscalRecord} from './treasury';
 import {siteById} from '../data/scenario';
 export const troopKinds={
  shield:{name:'刀盾兵',cost:30,pay:100,attack:100,defence:115},
@@ -54,18 +55,18 @@ export function payArmy(w:World,a:Army,want:number){
 }
 export function armyOrganizationReason(w:World,c:ArmyCommand){
  if('army'in c&&w.militaryCampaigns?.items.some(q=>q.status==='active'&&(q.army===c.army||c.action==='merge'&&q.army===c.target)))return '须先交接战役，才能调整编制';
- if(!w.realm||!w.characterId||w.campaign?.status!=='active'||!w.realm.mandate)return '须有军务授权';
+ if(!w.realm||!w.characterId||w.campaign?.status!=='active')return '须有在世人物与有效政务身份';
  const s=w.realm,r=playerRealm(w);
  if(c.action==='raise'){
   const city=s.cities[c.site];if(!civilCanAdmin(w,w.characterId!,c.site))return '不能在内战对方控制地区征募';if(!city||city.owner!==r||city.controller!==r)return '须在本国法理和控制下征募';
-  if(!executive(w)&&city.governor!==w.characterId)return '须有本县治理权或由朝廷动员';
+  const grant=authorityGrant(w,w.characterId,'levy',{realm:r,site:c.site});if(!grant.allowed)return grant.reason;
   if(!Object.hasOwn(troopKinds,c.kind)||!['levy','standing'].includes(c.service))return '无效兵种或役制';
   if(s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16)return '军队编制已满';
   if(city.population<300)return '须保留至少 100 名居民';
-  const source=executive(w)?centralAccount(r):fiscalPath(w,c.site,r)[0],cost=troopKinds[c.kind].cost*(c.service==='standing'?2:1);
+  const source=authorityGrant(w,w.characterId!,'levy',{realm:r,site:c.site}).account!,cost=troopKinds[c.kind].cost*(c.service==='standing'?2:1);
   return publicBalance(w,source)<cost?'拨付公库不足 '+cost+' 钱':city.grain<60?'驻地粮仓不足 60':governmentMusterReason(w,r);
  }
- const a=s.armies.find(a=>a.id===c.army&&a.realm===r);if(!a)return '军队不存在';if(!playerCommandsArmy(w,a))return '不能调整内战对方军队';if(civilWar(w,r))return '内战期间须保留各军编制';
+ const a=s.armies.find(a=>a.id===c.army&&a.realm===r);if(!a)return '军队不存在';if(!playerCommandsArmy(w,a))return '不能调整内战对方军队';const grant=authorityGrant(w,w.characterId,'command',{realm:r,site:a.location,army:a});if(!grant.allowed)return grant.reason;if(civilWar(w,r))return '内战期间须保留各军编制';
  if(a.journey||s.cities[a.location].controller!==r)return '须在本国驻地停驻整编';
  if(c.action==='split'){
   const u=a.regiments?.find(u=>u.id===c.regiment);return !u||u.troops<100||a.troops-u.troops<100?'两支军队均须至少 100 人':a.convoy?'粮队抵达后再分军':s.armies.length>=48||s.armies.filter(x=>x.realm===r).length>=16?'军队编制已满':'';
@@ -76,7 +77,7 @@ export function armyOrganizationReason(w:World,c:ArmyCommand){
 export function actArmyOrganization(w:World,c:ArmyCommand){
  const reason=armyOrganizationReason(w,c);if(reason)throw new Error(reason);ensureArmyOrganization(w);const s=w.realm!,r=playerRealm(w);
  if(c.action==='raise'){
-  const city=s.cities[c.site],payer=executive(w)?centralAccount(r):fiscalPath(w,c.site,r)[0],cost=troopKinds[c.kind].cost*(c.service==='standing'?2:1),id=s.nextArmyId!++;
+  const city=s.cities[c.site],payer=authorityGrant(w,w.characterId!,'levy',{realm:r,site:c.site}).account!,cost=troopKinds[c.kind].cost*(c.service==='standing'?2:1),id=s.nextArmyId!++;
   enactPoliticalAction(w,r,'military');spendGovernmentMuster(w,r);if(payer.startsWith('central:'))s.treasuries[r].coins-=cost;else ensureFiscal(w)!.balances[payer]=publicBalance(w,payer)-cost;
   fiscalRecord(w,r,payer,'expense',cost,'征募'+troopKinds[c.kind].name);city.population-=200;city.grain-=60;
   const revolt=civilWar(w,r);if(revolt?.civil?.supporters.includes(w.characterId!))revolt.civil.armies.push(id);

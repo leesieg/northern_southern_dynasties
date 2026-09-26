@@ -339,20 +339,15 @@ export function npcEconomyChoice(s: PersonalEconomyState, h: EconomyHost, person
   const generous = person.traits.includes('generous'), ambitious = person.traits.includes('ambitious');
   // Choices use this NPC's own wallet and access, not other people's hidden misconduct.
   const reserve = livingStandards[b.standard].monthly * 6 + (greedy ? 240 : ambitious ? 120 : generous ? 60 : 30);
-  if (greedy && !honest && coins < reserve && h.day - b.lastTheft >= 30) {
-    const account = h.managedAccounts(person.id).slice().sort((a, b) => b.wallet.read() - a.wallet.read())[0];
-    const amount = account ? Math.min(40, Math.floor(account.wallet.read() / 5)) : 0;
-    if (account && amount >= 5) {
-      const c: EconomyCommand = {type: 'economy', action: 'embezzle', account: account.id, amount};
-      if (!economyReason(s, h, person.id, c)) return c;
-    }
+  const candidates:{command:EconomyCommand;utility:number}[]=[];
+  // Scores only use one's own cash, legal access, private choices and visible needs.
+  if(greedy&&!honest&&h.day-b.lastTheft>=30){
+    const account=h.managedAccounts(person.id).slice().sort((a,b)=>b.wallet.read()-a.wallet.read())[0],amount=account?Math.min(40,Math.floor(account.wallet.read()/5)):0;
+    if(account&&amount>=5)candidates.push({command:{type:'economy',action:'embezzle',account:account.id,amount},utility:amount+(reserve-coins)/8-30-(person.traits.includes('wary')?25:0)-(person.traits.includes('generous')?10:0)});
   }
-  if (generous && coins > reserve + 20 && h.day - b.lastDonation >= 90) {
-    const a = h.managedAccounts(person.id).find(a => a.site !== null);
-    if (a) return {type: 'economy', action: 'donate', account: a.id, amount: 20};
-  }
-  if (ambitious && coins >= reserve + 30 && b.courses < 9 && !activeProgramme(s, person.id) && person.available)
-    return {type: 'economy', action: 'programme', kind: 'study'};
+  if(generous&&coins>reserve+20&&h.day-b.lastDonation>=90){const a=h.managedAccounts(person.id).find(a=>a.site!==null);if(a)candidates.push({command:{type:'economy',action:'donate',account:a.id,amount:20},utility:20+Math.max(0,80-a.wallet.read())/4-(coins<reserve*2?10:0)});}
+  if(ambitious&&coins>=reserve+30&&b.courses<9&&!activeProgramme(s,person.id)&&person.available)candidates.push({command:{type:'economy',action:'programme',kind:'study'},utility:30-b.courses*2-(coins<reserve*2?10:0)});
+  const best=candidates.filter(c=>c.utility>0&&!economyReason(s,h,person.id,c.command)).sort((a,b)=>b.utility-a.utility)[0];if(best)return best.command;
   return null;
 }
 export function advanceEconomy(s: PersonalEconomyState, h: EconomyHost): void {

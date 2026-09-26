@@ -1,3 +1,4 @@
+import {commandReceived,recordCommand} from '../core/requestReceipts';
 import {appointmentPauses} from '../core/appointmentCycle';
 import {pauseSnapshot,pauseEvents,economyPauses,type PauseEvent} from '../core/pauseEvents';
 import { act, advance, newWorld, newCampaignWorld } from '../core/world';
@@ -44,7 +45,8 @@ self.onmessage = (event: MessageEvent<Request>) => {
       else if (request.type === 'speed') speed = [0,1,3,7].includes(request.speed) ? request.speed : 0;
       else if (request.type === 'step') { if([...appointmentPauses(world),...economyPauses(world)].length)throw new Error('请先处理待决文书。');const next=structuredClone(world);advance(next);const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;speed=0;slots=await listSaves(); }
       else if (request.type === 'command') {
-        const next=structuredClone(world);act(next,request.command);
+        if(commandReceived(world,request.key,request.command))return;
+        const next=structuredClone(world);act(next,request.command);recordCommand(next,request.key,request.command);
         const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;slots=await listSaves();
         if(request.command.type==='travel'||request.command.type==='mobility'&&request.command.action==='plan'&&world.people[0].journey)speed=1;
       }
