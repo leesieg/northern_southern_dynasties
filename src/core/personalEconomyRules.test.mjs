@@ -78,11 +78,16 @@ test('donation is a single real private-to-public transfer', () => {
   assert.equal(f.wallets.p + f.balances.county, total); assert.equal(f.publicEntries.length, 1);
   assert.ok(f.valid());
 });
-test('donation cooldown stops repeated same-day benefits', () => {
-  const f = fixture(); f.act({action: 'donate', account: 'county', amount: 20});
-  const snapshot = JSON.stringify([f.s, f.wallets, f.balances]);
-  assert.throws(() => f.act({action: 'donate', account: 'county', amount: 20}), /90 日/);
-  assert.equal(JSON.stringify([f.s, f.wallets, f.balances]), snapshot);
+test('donation cooldown limits same-day benefits while preserving real transfers', () => {
+  const f = fixture(); f.people.p.traits.push('generous');
+  const total = f.wallets.p + f.balances.county;
+  f.act({action: 'donate', account: 'county', amount: 20});
+  f.act({action: 'donate', account: 'county', amount: 20});
+  assert.equal(f.wallets.p, 80); assert.equal(f.balances.county, 540);
+  assert.equal(f.wallets.p + f.balances.county, total);
+  assert.equal(f.publicEntries.length, 2);
+  assert.deepEqual(f.stress, [['p', -5]]);
+  assert.ok(f.valid());
 });
 test('donation rejects receiver overflow before touching payer', () => {
   const f = fixture(); f.balances.county = 999999;
