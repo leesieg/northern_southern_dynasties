@@ -1,6 +1,7 @@
 /* Shared detail surfaces: ink-green panels, paper text, restrained old-gold edges. */
 .focused-shell :is(.left-utility-drawer,.place-panel,.estate-modal){--detail-edge:#b69c6340;--detail-ink:#182a23;--detail-paper:#dfd3b8;--detail-muted:#acb69e;--detail-gold:#d9bd83}
 .focused-shell .detail-tabs{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap;padding:8px 0 12px;margin:0 0 16px;border:0;border-bottom:1px solid var(--detail-edge,#b69c6340);background:transparent;position:static;min-width:0}
+.focused-shell .detail-tabs--equal{display:grid;grid-template-columns:repeat(var(--detail-tab-count),minmax(0,1fr));}
 .focused-shell .detail-tabs>button,.focused-shell .detail-tabs>a{display:flex;flex:1 1 64px;min-width:0;min-height:62px;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 5px;border:1px solid var(--detail-edge,#b69c6340);border-radius:5px;background:#182a2366;color:#b8c0a7;font-size:11px;line-height:1.5;text-decoration:none;text-align:center}
 .focused-shell .detail-tabs>[aria-pressed=true]{border-color:#ccb078;background:#bca37120;color:#efd9a5;box-shadow:inset 0 -2px #c6a96f}
 .focused-shell .detail-tabs>button:hover,.focused-shell .detail-tabs>a:hover{border-color:#c6a96f;color:#efd9a5}
@@ -21,7 +22,7 @@
 .trait-tooltip{position:fixed;z-index:10000;display:grid;gap:7px;max-height:160px;overflow:auto;padding:12px 14px;border:1px solid #c6ac75;border-radius:5px;background:#172720;color:#d5d9c5;box-shadow:0 6px 20px #0006;font:12px/1.6 var(--sans);pointer-events:none}
 .trait-tooltip strong{font:17px var(--serif);color:#e9ce96}.trait-tooltip>span{overflow-wrap:anywhere}
 .trait-strip{gap:7px;flex-wrap:wrap}.roster-profile>.trait-badge.trait-icon-only{margin:4px 7px 4px 0}
-@media(max-width:520px){.focused-shell .detail-tabs{gap:4px}.focused-shell .detail-tabs>button,.focused-shell .detail-tabs>a{flex-basis:58px;padding:7px 3px}}
+@media(max-width:520px){.focused-shell .detail-tabs{gap:4px}.focused-shell .detail-tabs--equal{grid-template-columns:repeat(var(--detail-tab-count),minmax(68px,1fr));overflow-x:auto;scrollbar-width:thin}.focused-shell .detail-tabs>button,.focused-shell .detail-tabs>a{flex-basis:58px;padding:7px 3px}}
 
 .focused-shell .person-directory-list>button{display:grid;grid-template-columns:42px minmax(0,1fr);column-gap:10px;row-gap:5px;padding:12px;border:1px solid #b69c6340;border-radius:5px;background:#182a23}.focused-shell .person-directory-list>button>.art-icon{grid-row:1/4;align-self:center}.focused-shell .person-directory-list>button>:not(.art-icon){grid-column:2;min-width:0;overflow-wrap:anywhere}.focused-shell .person-directory-list strong{font:17px var(--serif)}.focused-shell .person-directory-list small{font-size:11px}.focused-shell .person-picker-list>button{display:flex;align-items:center;gap:6px;border-radius:5px;font-size:12px}
 /* Shared action hints remain reachable when the enclosed action is disabled. */

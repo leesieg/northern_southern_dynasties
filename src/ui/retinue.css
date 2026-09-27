@@ -4,3 +4,5 @@
 .clan-ranking .clan-head{flex:0 0 64px;width:64px;height:64px;align-self:center}.clan-ranking .clan-head>.hover-hint{display:block;width:100%;height:100%}.clan-ranking .clan-head-portrait{display:block;box-sizing:border-box;width:64px;height:64px;min-width:0;min-height:0;margin:0;padding:0;overflow:hidden;aspect-ratio:1;border:1px solid #a79160;border-radius:6px;background:#182d25}.clan-ranking .clan-head-portrait>.painted-portrait{display:block;box-sizing:border-box;width:100%;height:100%;min-height:0;max-height:none;aspect-ratio:1;margin:0;padding:0;border:0;border-radius:inherit;box-shadow:none}.clan-ranking .clan-head-portrait:focus-visible{outline:2px solid #e1c591;outline-offset:3px}
 
 .retinue-panel .retinue-holder,.retinue-panel .retinue-candidates button{min-width:0}.retinue-panel .retinue-person-info{flex:1;min-width:0;overflow-wrap:anywhere}
+.clan-ranking-list{max-height:55vh;overflow:auto;scrollbar-width:thin}
+.clan-ranking-list .clan-ranked{padding:9px 8px}

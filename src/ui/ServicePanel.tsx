@@ -43,7 +43,7 @@ export function ServicePanel(props:ServiceProps&{initialTaskId?:number;initialTa
    <ServiceChoiceOverview world={w} kind={kind} site={site} officer={candidate} realm={r} target={target}/><button className="primary" disabled={pending||!!reason} onClick={()=>{send(command);setOfferOpen(false);}}>{commission?'下达委任':'上书请命'}</button>{candidate&&<button onClick={()=>onPerson(candidate)}>查看承办人 →</button>}
   </>:<>
    {props.initialTab==='council'&&<CouncilPanel {...props}/>}
-   <section className="service-board-section"><header className="service-board-heading"><h3>在办差事 · {active.length}</h3><button onClick={()=>setOfferOpen(true)}>{commission?'委任新差事':'请领新差事'} →</button></header>{active.map(record)}{!active.length&&<p className="realm-quiet">当前没有在办差事。</p>}</section>
+   <section className="service-board-section"><header className="service-board-heading"><h3>在办差事 · {active.length}</h3><button onClick={()=>setOfferOpen(true)}>{commission?'委任新差事':'请领新差事'} →</button></header>{active.length>0&&<div className="service-active-list">{active.map(record)}</div>}</section>
    {props.initialTab!=='council'&&<CouncilPanel {...props}/>}
    {archive.length>0&&<section className="service-board-section"><h3>结案文书 · {archive.length}</h3><div className="service-archive-list">{archive.map(record)}</div></section>}
   </>}

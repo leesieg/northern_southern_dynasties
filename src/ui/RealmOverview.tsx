@@ -1,14 +1,11 @@
 import {serviceNeed} from '../core/serviceNeeds';
 import {localSites} from '../core/localAdministration';
-import {realmAtWar} from '../core/wars';
-import {plannedReinvestment} from '../core/treasury';
 import {officeHierarchy,superiorOffice} from '../core/offices';
-import {executive,playerRealm,realmForecast} from '../core/realm';
+import {executive,playerRealm} from '../core/realm';
 import {governmentOf,governingAuthority,politicalName} from '../core/government';
 import {personInfluence} from '../core/personalInfluence';
 import {serviceAttention} from '../core/assignments';
 import {dutyAttention} from '../core/duties';
-import {assignmentTemplates,assignmentPhases} from '../data/assignments';
 import {siteById} from '../data/scenario';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {ArtIcon,Resource} from './ArtIcon';
@@ -25,13 +22,12 @@ export function RealmIdentitySummary({world:w,onPerson,onCity,onHierarchy}:{worl
 }
 
 export function RealmOverview({world:w,onTab,onCity,onTerritory}:{world:World;onTab:(t:RealmTab)=>void;onCity:(id:string)=>void;onTerritory:(id:string)=>void}){
- const r=playerRealm(w),chief=executive(w),forecast=realmForecast(w,r),tasks=w.service?.tasks.filter(t=>t.realm===r&&t.phase!=='closed'&&(chief||t.officer===w.characterId||t.helper===w.characterId||t.invitation?.person===w.characterId))??[],attention=serviceAttention(w).length+(dutyAttention(w)?1:0),cities=Object.values(w.realm!.cities).filter(c=>c.governor===w.characterId&&c.controller===r).length;
+ const r=playerRealm(w),attention=serviceAttention(w).length+(dutyAttention(w)?1:0);
  const held=officeHierarchy(w).filter(n=>n.active&&n.holder===w.characterId&&n.realm===r),local=held.filter(n=>!!n.territory),campaigns=w.militaryCampaigns?.items.filter(q=>q.status==='active'&&q.commander===w.characterId)??[],home=w.people[0].location,governed=[...new Set([...local.map(n=>n.site).filter((v):v is string=>!!v),...local.flatMap(n=>localSites(w,n.territory!,r))])],priority=governed.map(site=>({site,...serviceNeed(w,'relief',site)})).sort((a,b)=>b.score-a.score)[0];
  const localTerritory=local.find(n=>n.territory&&['province','prefecture'].includes(territoryNodes[n.territory]?.level))?.territory;
  const openLocal=()=>localTerritory?onTerritory(localTerritory):onCity(governed[0]??home);
  return <div className="realm-overview">
-  {(attention>0||tasks.length>0)&&<section className="realm-overview-section"><h3>当前事务</h3>{attention>0&&<button className="realm-attention" onClick={()=>onTab('duties')}><ArtIcon name="influence"/>有 {attention} 项文书等你处理 <span>›</span></button>}{tasks.slice(0,3).map(t=><button className="realm-task-row" key={t.id} onClick={()=>onTab('duties')}><ArtIcon name={assignmentTemplates[t.kind].icon}/><span><strong>{siteById[t.site].name} · {assignmentTemplates[t.kind].name}</strong><small>{assignmentPhases[t.phase]} · 余 {Math.max(0,t.deadline-w.day)} 日</small></span><span>›</span></button>)}</section>}
+  {attention>0&&<button className="realm-attention" onClick={()=>onTab('duties')}><ArtIcon name="influence"/>有 {attention} 项文书等你处理 <span>›</span></button>}
   {(campaigns.length>0||priority||governed.length>0)&&<section className="realm-overview-section"><h3>{campaigns.length?'战役职掌':'辖区要务'}</h3><div className="realm-entry-grid">{campaigns.map(q=><button key={q.id} className="realm-entry" onClick={()=>onCity(q.target)}><ArtIcon name="army" size={36}/><span><strong>{siteById[q.target].name}战役</strong><small>{q.reason||'执行委任'} · 余 {Math.max(0,q.deadline-w.day)} 日</small></span><span aria-hidden="true">›</span></button>)}{priority&&<button className="realm-entry" onClick={()=>onCity(priority.site)}><ArtIcon name="grain" size={36}/><span><strong>{siteById[priority.site].name}</strong><small>{priority.reason} · {priority.neglect}</small></span><span aria-hidden="true">›</span></button>}{governed.length>1&&<button className="realm-entry" onClick={openLocal}><ArtIcon name="city" size={36}/><span><strong>统筹辖区</strong><small>下级任职与跨县公务</small></span><span aria-hidden="true">›</span></button>}</div></section>}
-  {chief&&<div className="realm-outlook"><span>中央下期预计结余 <b>{forecast.income-forecast.expense-plannedReinvestment(w,r)>=0?'+':''}{forecast.income-forecast.expense-plannedReinvestment(w,r)} 钱</b></span><span>亲任治理 <b>{cities} 城</b></span><span>{realmAtWar(w,r)?'战事进行中':'国境和平'}</span></div>}
  </div>;
 }

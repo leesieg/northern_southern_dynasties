@@ -1,11 +1,16 @@
 .treasury-panel{min-width:0}.treasury-cities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.treasury-cities article,.treasury-request,.treasury-ledger article{padding:10px;border:1px solid #bba77740;background:#172c2680;border-radius:5px}.treasury-cities small{display:block}.treasury-form{display:flex;gap:10px;margin:12px 0}.treasury-form label{flex:1;min-width:0}.treasury-form input,.treasury-form select{width:100%;box-sizing:border-box}.treasury-request-city{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}.treasury-request{display:flex;gap:12px;margin:10px 0}.treasury-applicant{flex:none;width:58px;height:58px;padding:0;overflow:hidden}.treasury-applicant .painted-portrait{width:100%;height:100%}.treasury-request p{margin:6px 0}.treasury-ledger article{display:grid;grid-template-columns:1fr auto;gap:5px;margin:6px 0}.treasury-ledger small{grid-column:1/-1;color:#acb59c}
 .treasury-central-summary{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #bba77740;border-radius:5px;background:#172c2680}
-.treasury-panel-flat{display:grid;gap:10px;align-content:start}
+.treasury-panel-flat{display:grid;gap:8px;align-content:start}
 .treasury-panel-flat h3,.treasury-panel-flat h4{margin:0}
-.treasury-panel-flat h4{padding-top:9px;border-top:1px solid #bba77740;color:#e4ce9e;font:17px var(--serif)}
+.treasury-panel-flat h4{padding-top:8px;border-top:1px solid #bba77740;color:#e4ce9e;font:17px var(--serif)}
+.treasury-panel-flat h4:first-child{padding-top:0;border-top:0}
+.treasury-help{color:#bea976;font:12px var(--sans)}
+.treasury-panel-flat .treasury-central-summary{margin:0}
 .treasury-panel-flat .treasury-form{margin:0}
 .treasury-panel-flat .treasury-request-city{justify-content:flex-start;gap:10px;margin:0}
 .treasury-panel-flat .treasury-request-city label{min-width:180px}
-.treasury-panel-flat .treasury-requests,.treasury-panel-flat .treasury-cities,.treasury-panel-flat .treasury-ledger{max-height:270px;overflow:auto;scrollbar-width:thin}
+.treasury-panel-flat .treasury-requests{max-height:210px;overflow:auto;scrollbar-width:thin}
+.treasury-panel-flat .treasury-cities{max-height:190px;overflow:auto;scrollbar-width:thin}
+.treasury-panel-flat .treasury-ledger{max-height:150px;overflow:auto;scrollbar-width:thin}
 .treasury-panel-flat .treasury-requests{display:grid;gap:8px}.treasury-panel-flat .treasury-request{margin:0}
 @media(max-width:600px){.treasury-panel-flat .treasury-request-city{flex-wrap:wrap}.treasury-panel-flat .treasury-request-city label{width:100%}}
