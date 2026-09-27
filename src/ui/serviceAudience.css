@@ -5,7 +5,8 @@
 .service-audience-portrait{width:100%;aspect-ratio:2/3;mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent)}
 .service-audience-portrait .painted-portrait{box-sizing:border-box;width:100%;height:100%;margin:0;border:0;background:transparent;box-shadow:none}
 .service-audience-portrait .painted-portrait-frame.painted-composition{background:transparent}
-.service-audience-portrait .painted-portrait-status{background:transparent;color:#e5d1a3}
+.service-audience-portrait .painted-portrait-frame.painted-composition::after{content:none}
+.service-audience-portrait .painted-composition .painted-portrait-status{background:transparent;color:#e5d1a3}
 .service-audience-portrait .portrait-role-frame{display:none}
 .service-audience-conversation{position:relative;z-index:2;display:grid;align-content:start;gap:5px;min-width:0}
 .service-audience-overline{display:flex;align-items:center;gap:5px;color:#d5c18e;font-size:13px}
