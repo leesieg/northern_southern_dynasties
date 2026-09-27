@@ -35,7 +35,7 @@ import { characterById,historicalCharacters,startRules } from '../data/character
 import { commission,evaluateCampaign } from './campaign';
 import { newHoldings, beginConstruction, advanceConstruction, provisionCost } from './construction';
 import { CONTENT_VERSION, roads, siteById, sites } from '../data/scenario';
-import type { GameCommand, Person, RoutePlan, World } from './types';
+import type { ArmyBatchCommand, GameCommand, Person, RoutePlan, World } from './types';
 import {ensureEconomy, actPersonalEconomy, advancePersonalEconomy} from './personalEconomyAdapter';
 
 export function distanceBetween(a: string, b: string): number {
@@ -117,9 +117,20 @@ function record(world: World, person: Person, text: string) {
   world.chronicle = world.chronicle.slice(-100);
 }
 export function act(world: World, command: GameCommand): void {
+ if(command.type==='armyBatch'){
+  const ids=command.armies;
+  if(ids.length<2||ids.length>16||ids.some(id=>!Number.isSafeInteger(id)||id<1)||new Set(ids).size!==ids.length)throw new Error('请选择 2 至 16 支不同的军队');
+  if(command.action==='merge'&&!ids.includes(command.target))throw new Error('须从所选军队中指定保留的一军');
+  const commands:GameCommand[]=command.action==='merge'?ids.filter(id=>id!==command.target).map(id=>({type:'army',action:'merge',army:command.target,target:id})):command.action==='march'?ids.map(id=>({type:'realm',action:'march',army:id,site:command.site})):ids.map(id=>({type:'realm',action:'disband',army:id}));
+  const next=structuredClone(world);
+  for(let i=0;i<commands.length;i++)try{act(next,commands[i]);}catch(error){const id=command.action==='merge'?(commands[i] as {target:number}).target:ids[i];throw new Error(`第 ${id} 军：${error instanceof Error?error.message:'军令无法执行'}`);}
+  Object.assign(world,next);
+  return;
+ }
  const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
 }
-function actCommand(world: World, command: GameCommand): void {
+export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
+function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand>): void {
   const person = world.people[0];
   ensureLife(world);
   if(!isAlive(world,world.characterId??'fictional'))throw new Error('人物已经去世。');

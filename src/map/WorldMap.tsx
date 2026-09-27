@@ -1,4 +1,4 @@
-import {civilWar} from '../core/civilWars';
+import {civilWar,playerCommandsArmy} from '../core/civilWars';
 import {mapActivities} from '../core/mapActivities';
 import type {OngoingItem} from '../core/ongoing';
 import {mapTravelers} from '../core/residence';
@@ -30,6 +30,7 @@ export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
   onActivity:(item:OngoingItem)=>void;
   onEstate:()=>void;
+  selectedArmies:number[];onSelectArmy:(id:number,extend:boolean)=>void;
   onDiplomacy:(r:RealmId)=>void;
   onInspectPeople:(ids:string[])=>void;
   territory:string;territoryLevel:TerritoryLevel;historyEvent:string|null;onSelectTerritory:(id:string)=>void;
@@ -146,8 +147,8 @@ export function WorldMap(props:Props){
         for(const item of places){const state=p.world.realm?.cities[item.id];if(state){item.button.style.borderColor=polities[state.controller].color;const internal=state.controller!=='frontier'?civilWar(p.world,state.controller):undefined,rebel=internal?.civil?.cities.includes(item.id);item.button.textContent=siteById[item.id].name+(state.controller!==state.owner?' · 占':rebel?' · 举兵':'');item.button.dataset.rebel=String(!!rebel);item.button.title='法理：'+regimeName(p.world,state.owner)+' / 控制：'+regimeName(p.world,state.controller);}}
         const currentArmies=p.world.realm?.armies??[];
         for(const [key,item] of armyMarkers)if(!currentArmies.some((a,i)=>String(a.id??a.realm+':'+i)===key)){item.marker.remove();armyMarkers.delete(key);}
-        for(const [i,a] of currentArmies.entries()){const key=String(a.id??a.realm+':'+i);let item=armyMarkers.get(key);if(!item){const button=document.createElement('button');button.className='atlas-army-marker';button.style.borderColor=polities[a.realm].color;button.onclick=()=>{const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(army)current.current.onSelect(army.location);};const marker=new Marker({element:button,anchor:'top',offset:[0,12]}).setLngLat([105,34]).addTo(map);item={marker,button};armyMarkers.set(key,item);}
-         let {lon,lat}=siteById[a.location];if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],t=j.elapsed/j.durations[j.leg];lon=from.lon+(to.lon-from.lon)*t;lat=from.lat+(to.lat-from.lat)*t;}const peers=currentArmies.slice(0,i).filter(b=>b.location===a.location&&!b.journey).length;item.marker.setLngLat([lon,lat]).setOffset([0,12+peers*28]);const rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!);item.button.dataset.rebel=String(!!rebel);item.button.textContent=(rebel?'举兵':regimeName(p.world,a.realm))+'軍 '+(a.id??'')+' · '+a.troops;item.button.title='士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:'');}
+        for(const [i,a] of currentArmies.entries()){const key=String(a.id??a.realm+':'+i);let item=armyMarkers.get(key);if(!item){const button=document.createElement('button');button.className='atlas-army-marker';button.style.borderColor=polities[a.realm].color;button.onclick=event=>{event.stopPropagation();const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(!army)return;if(army.id&&playerCommandsArmy(current.current.world,army))current.current.onSelectArmy(army.id,event.shiftKey);else current.current.onSelect(army.location);};const marker=new Marker({element:button,anchor:'top',offset:[0,12]}).setLngLat([105,34]).addTo(map);item={marker,button};armyMarkers.set(key,item);}
+         let {lon,lat}=siteById[a.location];if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],t=j.elapsed/j.durations[j.leg];lon=from.lon+(to.lon-from.lon)*t;lat=from.lat+(to.lat-from.lat)*t;}const peers=currentArmies.slice(0,i).filter(b=>b.location===a.location&&!b.journey).length;item.marker.setLngLat([lon,lat]).setOffset([0,12+peers*28]);const rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!);item.button.dataset.rebel=String(!!rebel);item.button.textContent=(rebel?'举兵':regimeName(p.world,a.realm))+'軍 '+(a.id??'')+' · '+a.troops;item.button.title='士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:'');if(playerCommandsArmy(p.world,a)){item.button.setAttribute('aria-label',`选择第 ${a.id} 军，Shift 点击可多选`);item.button.setAttribute('aria-pressed','false');}else{item.button.setAttribute('aria-label',`查看第 ${a.id} 军驻地`);item.button.removeAttribute('aria-pressed');}}
 
         const activityGroups=mapActivities(p.world);
         for(const [site,entry] of activityMarkers)if(!activityGroups.some(g=>g.site===site)){entry.marker.remove();activityMarkers.delete(site);}
@@ -155,6 +156,7 @@ export function WorldMap(props:Props){
          const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent=group.items.length>1?String(group.items.length):'';entry.button.title=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',siteById[group.site].name+'的活动：'+entry.button.title);entry.button.onclick=e=>{e.stopPropagation();setActivitySite(group.site);};}
         lastWorld=p.world;lastRoute=routeKey;
       }
+      for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
       map.setPaintProperty('territory-fill','fill-opacity',p.mode==='diplomacy'?.55:0);
       map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:['interpolate',['linear'],['zoom'],3,.48,5,.28,8,.08]);

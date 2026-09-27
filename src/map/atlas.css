@@ -139,3 +139,4 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-geographic-label.province{font-size:22px;letter-spacing:5px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.85}
 
 .atlas-army-marker[data-rebel=true]{background:#582f30;border-style:double!important;border-color:#d1a76b!important}
+.atlas-army-marker[data-selected=true]{outline:3px solid #f3d384;outline-offset:2px;box-shadow:0 0 0 5px #172b22bb,0 3px 12px #0009}
