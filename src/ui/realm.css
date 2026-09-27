@@ -5,3 +5,8 @@
 .city-management .city-civic-metrics select {min-width:0;max-width:100%;}
 .service-recommendations .service-offers button {display:flex;flex-direction:column;align-items:flex-start;gap:.3rem;text-align:left;}
 .service-recommendations .service-offers small {font-size:.78rem;line-height:1.5;color:var(--muted,#b1b59c);}
+.realm-page{display:grid;align-content:start;gap:14px;min-width:0}
+.realm-page-intro{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px solid #b5a47755;border-radius:5px;background:#172a24}
+.realm-page-intro h3{margin:0}.realm-page-intro .realm-action{margin-left:auto}
+.realm-page>.office-hierarchy>.office-tree{max-height:460px;overflow:auto;scrollbar-width:thin}
+.realm-page>.public-succession{border-top:1px solid #b5a47755;padding-top:12px}
