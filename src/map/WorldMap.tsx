@@ -18,7 +18,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import './atlas.css';
 import { polities, siteById, sites } from '../data/scenario';
 import { position,planRoute } from '../core/world';
-import type { GameCommand,World } from '../core/types';
+import type { World } from '../core/types';
 import { activeRoute, previewArmyRoute, atlasLabels, pointFeature } from './geography';
 import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
@@ -31,7 +31,7 @@ setWorkerCount(2);
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
   onActivity:(item:OngoingItem)=>void;
-  onBrowseActivities:()=>void;onActivityCommand:(command:GameCommand)=>void;pending:boolean;
+  onBrowseActivities:()=>void;
   onEstate:()=>void;
   selectedArmies:number[];onSelectArmy:(id:number,extend:boolean)=>void;
   onCommandArmy:(site:string)=>boolean;
@@ -300,7 +300,7 @@ export function WorldMap(props:Props){
   return <div className="world-map atlas-map">
     <div className="map-canvas atlas-canvas" ref={host}/>
     <div className="atlas-paper" aria-hidden="true"/>
-    {activityGroup&&<OngoingItemsDialog title={siteById[activityGroup.site].name+'事务'} icon="city" items={activityGroup.items} world={props.world} pending={props.pending} onClose={()=>setActivitySite(null)} onOpen={props.onActivity} onCommand={props.onActivityCommand}/>}
+    {activityGroup&&<OngoingItemsDialog title={siteById[activityGroup.site].name+'事务'} icon="city" items={activityGroup.items} onClose={()=>setActivitySite(null)} onOpen={props.onActivity}/>}
     {shownEvent&&<div className="history-map-notice"><strong>{shownEvent.year} 年 · {shownEvent.label}</strong><span>标记为城市攻取记录；底图仍是 546 行政基底，未重建当年疆界。</span></div>}
     {hover&&hoverSite&&!menu&&<div className="territory-tooltip" style={{left:hover.x,top:hover.y}}>
       <span className="territory-kicker">{regimeName(props.world,props.world.realm?.cities[hoverSite.id]?.controller??hoverSite.polity)} · {administration[hoverSite.id]?.prefecture??'区划待核'}</span><strong>{hoverNode?.name??hoverSite.name}</strong><p>{hoverNode?levelNames[hoverNode.level]:'城市'} · 单击选择此层级</p>

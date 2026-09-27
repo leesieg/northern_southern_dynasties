@@ -10,6 +10,7 @@
 .treasury-panel-flat .treasury-request-city{justify-content:flex-start;gap:10px;margin:0}
 .treasury-panel-flat .treasury-request-city label{min-width:180px}
 .treasury-panel-flat .treasury-requests{max-height:210px;overflow:auto;scrollbar-width:thin}
+.treasury-panel-flat .treasury-requests:has(> .service-audience){max-height:min(70dvh,740px)}
 .treasury-panel-flat .treasury-cities{max-height:190px;overflow:auto;scrollbar-width:thin}
 .treasury-panel-flat .treasury-ledger{max-height:150px;overflow:auto;scrollbar-width:thin}
 .treasury-panel-flat .treasury-requests{display:grid;gap:8px}.treasury-panel-flat .treasury-request{margin:0}

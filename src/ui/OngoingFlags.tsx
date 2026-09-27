@@ -1,11 +1,9 @@
 import {useEffect,useLayoutEffect,useRef,useState,type CSSProperties} from 'react';
 import {createPortal} from 'react-dom';
 import {ongoingItems,type OngoingItem,type OngoingKind} from '../core/ongoing';
-import type {GameCommand,World} from '../core/types';
+import type {World} from '../core/types';
 import {ArtIcon,type ArtName} from './ArtIcon';
-import {ConfirmAction} from './ConfirmAction';
 import {HoverHint} from './HoverHint';
-import {ongoingQuickActions,type OngoingQuickAction} from './ongoingQuickActions';
 import './ongoingFlags.css';
 
 const designs:Record<OngoingKind,{icon:ArtName;color:string;path:string;label:string}>={
@@ -21,17 +19,15 @@ const designs:Record<OngoingKind,{icon:ArtName;color:string;path:string;label:st
  retinue:{icon:'steadfast',color:'#456359',path:'M2 1H70V89L60 105H12L2 89Z',label:'幕职'},
 };
 function ongoingClock(item:OngoingItem){return item.days===null?item.clock==='estimate'?'暂缓':'待办':`${item.clock==='deadline'?'限 ':item.clock==='estimate'?'约 ':''}${item.days}日`;}
-export function OngoingItemsDialog({title,icon,items,world,pending,onClose,onOpen,onCommand}:{title:string;icon:ArtName;items:OngoingItem[];world:World;pending:boolean;onClose:()=>void;onOpen:(item:OngoingItem)=>void;onCommand:(command:GameCommand)=>void}){
- const ref=useRef<HTMLDialogElement>(null),restoreFocus=useRef(false),[confirm,setConfirm]=useState<(OngoingQuickAction&{itemId:string;subject:string})|null>(null);
+export function OngoingItemsDialog({title,icon,items,onClose,onOpen}:{title:string;icon:ArtName;items:OngoingItem[];onClose:()=>void;onOpen:(item:OngoingItem)=>void}){
+ const ref=useRef<HTMLDialogElement>(null);
  useEffect(()=>{const dialog=ref.current,previous=document.activeElement instanceof HTMLElement?document.activeElement:null;if(!dialog)return;dialog.showModal();return()=>{if(dialog.open)dialog.close();if(previous?.isConnected)previous.focus();};},[]);
- useEffect(()=>{if(!confirm&&restoreFocus.current){restoreFocus.current=false;const next=ref.current?.querySelector<HTMLButtonElement>('.ongoing-group-actions button:not(:disabled)')??ref.current?.querySelector<HTMLButtonElement>('header button');next?.focus();}},[confirm,items]);
  return createPortal(<dialog ref={ref} className="ongoing-group-dialog" aria-label={title} onCancel={event=>{event.preventDefault();onClose();}} onKeyDown={event=>event.stopPropagation()}>
   <header><ArtIcon name={icon} size={30}/><div><h2>{title}</h2><small>{items.length} 项进行中</small></div><button autoFocus aria-label="关闭事务列表" onClick={onClose}>×</button></header>
-  <div className="ongoing-group-list">{items.map(item=><article key={item.id}><div className="ongoing-group-item-main"><strong>{item.title}</strong><small>{item.status}</small></div><span className="ongoing-group-clock">{ongoingClock(item)}</span>{item.progress!==null&&<progress max={1} value={item.progress} aria-label={item.title+'进度'}/>}<div className="ongoing-group-actions">{ongoingQuickActions(world,item).map(action=><HoverHint key={action.label} label={action.label} content={action.reason||action.detail}><button disabled={pending||!!action.reason} onClick={()=>setConfirm({...action,itemId:item.id,subject:item.title})}>{action.label}</button></HoverHint>)}<button aria-label={'前往'+item.title+'详情'} onClick={()=>{onClose();onOpen(item);}}>详情</button></div></article>)}</div>
-  {confirm&&<ConfirmAction title={confirm.subject+' · '+confirm.label} detail={confirm.detail} confirmLabel={confirm.label} pending={pending} danger={['驳回','否决','不予准许','不予追加','婉拒','撤回'].includes(confirm.label)} onCancel={()=>setConfirm(null)} onConfirm={()=>{const item=items.find(item=>item.id===confirm.itemId),action=item&&ongoingQuickActions(world,item).find(action=>action.label===confirm.label);if(pending||!action||action.reason)return;restoreFocus.current=true;onCommand(action.command);setConfirm(null);}}/>}
+  <div className="ongoing-group-list">{items.map(item=><article key={item.id}><div className="ongoing-group-item-main"><strong>{item.title}</strong><small>{item.status}</small></div><span className="ongoing-group-clock">{ongoingClock(item)}</span>{item.progress!==null&&<progress max={1} value={item.progress} aria-label={item.title+'进度'}/>}<div className="ongoing-group-actions"><button aria-label={'前往'+item.title+'详情'} onClick={()=>{onClose();onOpen(item);}}>查看详情</button></div></article>)}</div>
  </dialog>,document.body);
 }
-export function OngoingFlags({world,pending,onOpen,onBrowse,onCommand}:{world:World;pending:boolean;onOpen:(item:OngoingItem)=>void;onBrowse:()=>void;onCommand:(command:GameCommand)=>void}){
+export function OngoingFlags({world,onOpen,onBrowse}:{world:World;onOpen:(item:OngoingItem)=>void;onBrowse:()=>void}){
  const items=ongoingItems(world),signature=items.map(i=>i.id).join('|'),[order,setOrder]=useState<string[]>(()=>items.map(i=>i.id)),[openKind,setOpenKind]=useState<OngoingKind|null>(null),ref=useRef<HTMLDivElement>(null);
  useLayoutEffect(()=>{const ids=signature?signature.split('|'):[];setOrder(old=>{const next=[...old.filter(id=>ids.includes(id)),...ids.filter(id=>!old.includes(id))];return next.join('|')===old.join('|')?old:next;});},[signature]);
  useLayoutEffect(()=>{const node=ref.current!,header=node.closest('header')!,left=header.querySelector('.sovereign-strip'),right=header.querySelector('.chronicle-control');const resize=()=>{const parent=header.getBoundingClientRect(),l=left?.getBoundingClientRect(),r=right?.getBoundingClientRect();node.style.left=`${(l?.right??parent.left)-parent.left+8}px`;node.style.right=`${parent.right-(r?.left??parent.right)+8}px`;};resize();const observer=new ResizeObserver(resize);observer.observe(header);if(left)observer.observe(left);if(right)observer.observe(right);return()=>observer.disconnect();},[]);
@@ -43,5 +39,5 @@ export function OngoingFlags({world,pending,onOpen,onBrowse,onCommand}:{world:Wo
   const design=designs[kind],single=entries.length===1,item=entries[0],progress=item.progress===null?null:Math.round(item.progress*100),clock=ongoingClock(item),label=single?item.title.split(' · ')[0]:design.label;
   const flag=<button className="ongoing-flag" aria-label={single?`${item.title}，${item.status}，${clock}`:`${design.label}，${entries.length} 项，打开事务列表`} aria-expanded={single?undefined:openKind===kind} onClick={()=>{if(single)onOpen(item);else{onBrowse();setOpenKind(kind);}}}><svg className="ongoing-cloth" viewBox="0 0 72 112" aria-hidden="true"><path d={design.path}/><path d="M8 8H64M10 12H62" className="ongoing-embroidery"/></svg><span className="ongoing-flag-content"><ArtIcon name={design.icon} size={32}/><span className="ongoing-flag-name">{label}</span>{single&&<><span className={`ongoing-meter ${progress===null?'waiting':''}`} role="progressbar" aria-label={item.title+'进度'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress??undefined} aria-valuetext={progress===null?item.status:progress+'%'}><i style={{width:progress===null?'100%':progress+'%'}}/></span><span className="ongoing-countdown">{clock}</span></>}</span>{!single&&<span key={entries.length} className="ongoing-flag-count" aria-hidden="true">{entries.length}</span>}</button>;
   return <div key={kind} className="ongoing-flag-entry" style={{'--flag-color':design.color} as CSSProperties}>{single?<HoverHint label={label} content={<><strong>{item.title}</strong><p>{item.status}</p><p>{progress===null?'等待进展':`当前阶段 ${progress}%`} · {item.clock==='deadline'?'距离期限':item.clock==='estimate'?'预计还需':'还需'} {item.days===null?'尚未确定':item.days+' 日'}</p></>}>{flag}</HoverHint>:flag}</div>;
- })}</div>{active&&<OngoingItemsDialog title={designs[active.kind].label+'列表'} icon={designs[active.kind].icon} items={active.entries} world={world} pending={pending} onClose={()=>setOpenKind(null)} onOpen={onOpen} onCommand={onCommand}/>}</div>;
+ })}</div>{active&&<OngoingItemsDialog title={designs[active.kind].label+'列表'} icon={designs[active.kind].icon} items={active.entries} onClose={()=>setOpenKind(null)} onOpen={onOpen}/>}</div>;
 }

@@ -2,11 +2,9 @@ import {EconomyCases} from './GovernmentAudit';
 import {AppointmentReview} from './AppointmentReview';
 import {LocalRequests} from './LocalAdministration';
 import {RealmBadge} from './RealmBadge';
-import {courtReason} from '../core/court';
-import {fiscalReason,grantFactors} from '../core/treasury';
+import {CourtPetitionAudience,FiscalPetitionAudience} from './PetitionCases';
 import {ActivityProgress} from './MobilityPanel';
 import {AssignmentPanel} from './AssignmentPanel';
-import {serviceAudienceKind} from './ServiceAudience';
 import {CouncilPanel} from './ServicePanel';
 import {diplomaticQuote,diplomacyActions} from '../core/diplomacy';
 import {playerRealm} from '../core/realm';
@@ -19,6 +17,8 @@ import {DutiesPanel} from './DutiesPanel';
 import {dutyPhaseNames} from '../core/duties';
 import {assignmentPhases} from '../data/assignments';
 import {serviceAuthority} from '../core/serviceMandates';
+import {serviceChief} from '../core/assignments';
+import {chiefOfDuty} from '../core/duties';
 import './pauseDialog.css';
 export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,send}:{event:PauseEvent;count:number;world:World;pending:boolean;error?:string;onClose:()=>void;onNavigate:(event:PauseEvent)=>void;send:(command:GameCommand)=>void}){
  const ref=useRef<HTMLDialogElement>(null);
@@ -27,7 +27,18 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  const actionable=pauseHasActions(world,event);
  const grant=world.realm?.fiscal?.requests.find(q=>q.id===event.fiscalId);
  const task=event.assignmentId?world.service?.tasks.find(t=>t.id===event.assignmentId):undefined;
- const audience=!!task&&serviceAudienceKind(task.kind)&&['petition','approval'].includes(task.phase)&&serviceAuthority(world,task,world.characterId!);
+ const localRequest=event.localId?world.realm?.local?.requests.find(q=>q.id===event.localId):undefined;
+ const auditCase=event.economyId?world.economy?.investigations.find(q=>q.id===event.economyId):undefined;
+ const council=world.characterId?world.service?.councils[playerRealm(world)]?.proposal:undefined;
+ const audience=actionable&&(
+  !!task&&['petition','approval','aid','report'].includes(task.phase)&&serviceAuthority(world,task,world.characterId!)
+  ||event.kind==='court'
+  ||event.kind==='economy'&&auditCase?.phase==='report'
+  ||event.kind==='fiscal'&&grant?.status==='pending'&&grant.approver===world.characterId
+  ||event.kind==='local'&&localRequest?.status==='pending'&&localRequest.approver===world.characterId
+  ||event.kind==='duties'&&!!world.duties?.task&&['approval','aid','report'].includes(world.duties.task.phase)&&chiefOfDuty(world)===world.characterId
+  ||event.kind==='service'&&!event.assignmentId&&!!council&&serviceChief(world,playerRealm(world))===world.characterId
+ );
  const body=event.kind==='service'&&task&&task.phase!=='closed'?(task.invitation?.person===world.characterId?'同僚邀你协办，请答复。':'差事进展：'+assignmentPhases[task.phase]+'。'):event.kind==='duties'&&world.duties?.task?'粮务进展：'+dutyPhaseNames[world.duties.task.phase]+'。':event.body;
  const label=event.kind==='economy'?'前往政务监察':event.kind==='court'?'查看局势':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
  return <dialog ref={ref} className={`pause-dialog ${audience?'pause-dialog--audience':''}`} aria-labelledby="pause-title" aria-describedby={audience?undefined:'pause-body'} onCancel={e=>{e.preventDefault();if(!pending&&(!actionable||audience))onClose();}} onKeyDown={e=>{if(e.key==='Escape')e.stopPropagation();}}>
@@ -37,14 +48,14 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  {actionable&&(event.kind==='service'||event.kind==='arrival'&&event.assignmentId)&&(event.assignmentId?task&&<AssignmentPanel key={task.id} world={world} pending={pending} send={send} task={task} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>:<CouncilPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>)}
  {actionable&&event.kind==='duties'&&world.duties?.task&&<DutiesPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
  {event.kind==='economy'&&actionable&&<EconomyCases world={world} pending={pending} send={send} caseId={event.economyId} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
- {event.kind==='court'&&actionable&&<section className="pause-decision"><div className="realm-actions">{[true,false].map(accept=>{const cmd={type:'court',action:'resolve',accept} as const,reason=courtReason(world,cmd);return <div key={String(accept)}><button disabled={pending||!!reason} onClick={()=>send(cmd)}>{accept?'批准 · 80 公款 / 20 影响力':'否决 · 支持 −5 / 紧张 +8'}</button>{reason&&<small>{reason}</small>}</div>;})}</div><p>批准后支持 +5、紧张 −8，眷顾集团并调整国策或合法性。</p></section>}
+ {event.kind==='court'&&actionable&&<CourtPetitionAudience world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
  {event.kind==='appointments'&&actionable&&event.appointmentRealm&&<AppointmentReview world={world} realm={event.appointmentRealm} pending={pending} send={send}/>}
- {event.kind==='local'&&actionable&&<LocalRequests world={world} pending={pending} send={send}/>}
- {event.kind==='fiscal'&&actionable&&grant&&<section className="pause-decision"><p>{grantFactors(world,grant).map(p=>p.label+' '+(p.value>=0?'+':'')+p.value).join(' · ')}</p><div className="realm-actions">{(['approve','reject'] as const).map(action=>{const cmd={type:'fiscal',action,id:grant.id} as const,reason=fiscalReason(world,cmd);return <div key={action}><button disabled={pending||!!reason} onClick={()=>send(cmd)}>{action==='approve'?'批准拨款':'驳回'}</button>{reason&&<small>{reason}</small>}</div>;})}</div></section>}
+ {event.kind==='local'&&actionable&&<LocalRequests world={world} pending={pending} send={send} requestId={event.localId} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
+ {event.kind==='fiscal'&&actionable&&grant&&grant.status==='pending'&&grant.approver===world.characterId&&<FiscalPetitionAudience world={world} request={grant} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
  {realmEvent&&<section className="pause-decision"><h3>{eventDefinitions[realmEvent.kind].title}</h3><p>{eventDefinitions[realmEvent.kind].body}</p><p>{eventDefinitions[realmEvent.kind].effect}</p><div className="realm-actions">{(['fund','decline'] as const).map(choice=>{const command={type:'realm',action:'event',choice} as const,reason=realmReason(world,command);return <div key={choice}><button disabled={pending||!!reason} onClick={()=>send(command)}>{choice==='fund'?`拨付处理 · ${eventDefinitions[realmEvent.kind].cost}`:'暂缓处理'}</button>{reason&&<small>{reason}</small>}</div>;})}</div></section>}
  {event.kind==='diplomacy'&&world.diplomacy?.missions.filter(m=>m.status==='audience'&&m.to===playerRealm(world)).map(m=><section className="pause-decision" key={m.id}><h3><RealmBadge realm={m.from} world={world}/>使团 · {diplomacyActions[m.action]}</h3><p>答复期限尚余 {Math.max(0,m.expires-world.day)} 日</p><div className="realm-actions">{(['accept','reject'] as const).map(action=>{const command={type:'diplomacy',action,mission:m.id} as const,reason=diplomaticQuote(world,command).reason;return <div key={action}><button disabled={pending||!!reason} onClick={()=>send(command)}>{action==='accept'?'接纳议案':'拒绝议案'}</button>{reason&&<small>{reason}</small>}</div>;})}</div></section>)}
  {event.kind==='realm'&&!realmEvent&&<p role="status">此项政务已处理。</p>}
  {error&&<p className="pause-error" role="alert">{error}</p>}
- <footer>{actionable&&(event.kind==='appointments'||event.kind==='economy')?null:actionable&&(event.kind==='service'&&!!event.assignmentId||event.kind==='arrival'&&!!event.assignmentId||event.kind==='duties')?<button disabled={pending} onClick={onClose}>稍后处理</button>:actionable?<button disabled={pending} className="primary" onClick={()=>onNavigate(event)}>{label} →</button>:<button disabled={pending} onClick={onClose}>知道了</button>}</footer>
+ <footer>{actionable&&(event.kind==='appointments'||event.kind==='economy')?null:actionable&&(audience||event.kind==='service'&&!!event.assignmentId||event.kind==='arrival'&&!!event.assignmentId||event.kind==='duties')?<button disabled={pending} onClick={onClose}>稍后处理</button>:actionable?<button disabled={pending} className="primary" onClick={()=>onNavigate(event)}>{label} →</button>:<button disabled={pending} onClick={onClose}>知道了</button>}</footer>
  </dialog>;
 }
