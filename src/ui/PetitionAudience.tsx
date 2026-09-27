@@ -12,10 +12,10 @@ export const AudienceDeferContext=createContext<(()=>void)|null>(null);
 type StageProps={world:World;person:string;realm:RealmId;subject:string;role:string;speech:string;terms?:ReactNode;onPerson?:(id:string)=>void};
 export function AudienceStage({world:w,person,realm,subject,role,speech,terms,onPerson}:StageProps){
  return <div className="service-audience-stage">
+  <div className="service-audience-title"><h3>{subject}</h3></div>
   <div className="service-audience-figure"><div className="service-audience-portrait"><CharacterPortrait characterId={person} world={w} cutout/></div></div>
   <div className="service-audience-conversation">
-   <div className="service-audience-overline"><RealmBadge realm={realm} world={w}/><span>{subject}</span></div>
-   <div className="service-audience-speaker">{onPerson?<button type="button" onClick={()=>onPerson(person)} aria-label={'查看'+politicalName(person)+'的人物详情'}>{politicalName(person)} ↗</button>:<strong>{politicalName(person)}</strong>}<span>{role}</span></div>
+   <div className="service-audience-speaker"><RealmBadge realm={realm} world={w}/>{onPerson?<button className="service-audience-person" type="button" onClick={()=>onPerson(person)} aria-label={'查看'+politicalName(person)+'的人物详情'}>{politicalName(person)} ↗</button>:<strong>{politicalName(person)}</strong>}<span>{role}</span></div>
    <p className="service-audience-speech">“{speech}”</p>{terms}
   </div>
  </div>;

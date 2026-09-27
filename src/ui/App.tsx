@@ -9,6 +9,7 @@ import {ConfirmAction} from './ConfirmAction';
 import type {OngoingItem} from '../core/ongoing';
 import {assignmentTemplates,assignmentPhases} from '../data/assignments';
 import {PauseDialog} from './PauseDialog';
+import {AudienceDeferContext} from './PetitionAudience';
 import type {PauseEvent} from '../core/pauseEvents';
 import { residentsAt } from '../core/placePeople';
 import { PlacePeople } from './PlacePeople';
@@ -146,7 +147,8 @@ export function App(){
   const pauseDialog=game.world&&game.pauses[0]?<PauseDialog key={game.pauses[0].id} event={game.pauses[0]} count={game.pauses.length} world={game.world} pending={game.pending} error={game.notice?.error?game.notice.text:undefined} onClose={game.dismissPause} onNavigate={navigatePause} send={command=>{game.dismiss();game.send({type:'command',command});}}/>:null;
   if(!game.world||game.page==='menu')return <GameEntry world={game.world} slots={game.slots} pending={game.pending} notice={game.notice} send={game.send} notify={game.notify}/>;
   if(game.world.campaign&&game.world.campaign.status!=='active')return <><RunOutcome world={game.world} pending={game.pending} notice={game.notice} send={game.send}/>{pauseDialog}</>;
-  return <RealmNavigation.Provider value={{world:game.world,open:r=>{if(game.pauses.length){game.dismissPause();game.dismiss();}if(modal==='diplomacy'&&diplomacyTarget===r)return;openDiplomacy(r);}}}><main className="game-shell focused-shell">
+  const deferAudience=modal?closePanel:drawer?()=>{setDrawer(null);setPanelTrail([]);}:null;
+  return <RealmNavigation.Provider value={{world:game.world,open:r=>{if(game.pauses.length){game.dismissPause();game.dismiss();}if(modal==='diplomacy'&&diplomacyTarget===r)return;openDiplomacy(r);}}}><AudienceDeferContext.Provider value={deferAudience}><main className="game-shell focused-shell">
     <header className="topbar">
       <div className="sovereign-strip"><div className="brand game-brand"><h1 className="game-brand-title"><img src={import.meta.env.BASE_URL+'art/brand/fengyun-nanbeichao-logo.png'} alt="风云南北朝" width="1983" height="793" draggable={false}/></h1></div>
       <div className="realm-resources" aria-label="人物资源"><Resource name="coins" value={person?.coins??'—'} label="个人盘缠" unit="钱"/><Resource name="grain" value={person?.food??'—'} label="个人行粮" unit="日"/></div>
@@ -195,5 +197,5 @@ export function App(){
     {modal==='saves'&&deleteSlot&&<ConfirmAction title={'删除「'+saveLabel(deleteSlot)+'」？'} detail='此操作无法撤销，当前游玩进度不会被删除。' confirmLabel='确认删除' danger pending={game.pending} onCancel={()=>setDeleteSlot(null)} onConfirm={()=>{if(game.pending)return;game.send({type:'delete-save',slot:deleteSlot});setDeleteSlot(null);}}/>}
     {game.notice&&<div className={`toast ${game.notice.error?'is-error':''}`} role={game.notice.error?'alert':'status'}><span>{game.notice.text}</span><button aria-label="关闭提示" onClick={game.dismiss}><Icon name="close" size={16}/></button></div>}
 
-  </main></RealmNavigation.Provider>;
+  </main></AudienceDeferContext.Provider></RealmNavigation.Provider>;
 }
