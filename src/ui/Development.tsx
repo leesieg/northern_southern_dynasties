@@ -10,7 +10,7 @@ import {politicalName} from '../core/government';
 import {playerRealm} from '../core/realm';
 import {countyTerritory,localAncestors,localHolder,localTitle} from '../core/localAdministration';
 import {PersonChoice} from './PersonSelection';
-import {ConfirmAction} from './ConfirmAction';
+import {ActionDialog} from './ActionDialog';
 import {attributes} from '../core/social';
 import {CitySummary} from './CitySummary';
 import {CityDistrict} from './CityDistrict';
@@ -24,7 +24,7 @@ import {CityManagement} from './CityManagement';
 import './cityNavigation.css';
 import { ArtIcon } from './ArtIcon';
 import { buildingModifiers,traitsFor } from '../core/social';
-import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { siteById } from '../data/scenario';
 import { buildQuote, cityBuildings, emptyCity, type Building, type CityBuilding } from '../core/construction';
 import type { GameCommand, World } from '../core/types';
@@ -35,21 +35,23 @@ export type CityTab='model'|'build'|'governance'|'military'|'coordination'|'serv
 export function LocationDevelopment({world,selected,onSelect,onPerson,onRetinue,onService,send,pending=false,tab:requestedTab,onTab,localTasks,overview,travel,people,peopleCount,onDiplomacy,onTerritory}:{onDiplomacy:(r:RealmId)=>void;onTerritory:(id:string)=>void;onPerson?:(id:string)=>void;onRetinue?:()=>void;onService?:()=>void;pending?:boolean;tab:CityTab;onTab:(tab:CityTab)=>void;people:ReactNode;localTasks:ReactNode;peopleCount:number;overview:ReactNode;travel:ReactNode;world:World;selected:string;onSelect:(id:string)=>void;send:(command:GameCommand)=>void}){
   const tab:CityTab=requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab;
   const [cityBuilding,setCityBuilding]=useState<CityBuilding|null>(null);
+  useEffect(()=>setCityBuilding(null),[selected]);
 
   return <section className="location-development">
     <CitySummary world={world} site={selected} pending={pending} send={send} onPerson={onPerson} onDiplomacy={onDiplomacy} onDistrict={()=>onTab('history')}/>
     <TerritoryTabs tab={tab} onTab={onTab} peopleCount={peopleCount} governance={!!world.realm}/>
     {tab==='model'&&<Suspense fallback={<div className="city-model-loading">正在载入城市模型…</div>}><CityViewport key={selected} holding={world.holdings.cities[selected]??emptyCity()} day={world.day} name={siteById[selected].name} capital={!!siteById[selected].capital} selected={cityBuilding} onSelect={id=>{setCityBuilding(id);onTab('build');}}/></Suspense>}
     {(['governance','service','military','finance','population'].includes(tab))&&<CityManagement section={tab} localTasks={localTasks} onPerson={onPerson} key={selected} world={world} selected={selected} pending={pending} send={send}/>}
-    {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}</>:tab==='history'?<><CityDistrict world={world} site={selected} onTerritory={onTerritory} onCity={onSelect}/>{overview}</>:tab==='build'?<ConstructionPanel world={world} scope="city" site={selected} send={send} onPerson={onPerson} onService={onService} onRetinue={onRetinue} pending={pending} selectedCityBuilding={cityBuilding}/>:null}
+    {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}</>:tab==='history'?<><CityDistrict world={world} site={selected} onTerritory={onTerritory} onCity={onSelect}/>{overview}</>:tab==='build'?<ConstructionPanel key={selected} world={world} scope="city" site={selected} send={send} onPerson={onPerson} onService={onService} onRetinue={onRetinue} pending={pending} selectedCityBuilding={cityBuilding}/>:null}
   </section>;
 }
 export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRetinue,pending=false,selectedCityBuilding=null}:{onPerson?:(id:string)=>void;onService?:()=>void;onRetinue?:()=>void;pending?:boolean;selectedCityBuilding?:CityBuilding|null;world:World;scope:'city'|'estate';site:string;send:(command:GameCommand)=>void}){
-  const [orderedBuilding,setOrderedBuilding]=useState<CityBuilding|null>(null),[officer,setOfficer]=useState(''),[plan,setPlan]=useState<AssignmentPlan>('balanced'),[confirm,setConfirm]=useState(false);
+  const [orderedBuilding,setOrderedBuilding]=useState<CityBuilding|null>(selectedCityBuilding),[officer,setOfficer]=useState(''),[plan,setPlan]=useState<AssignmentPlan>('balanced');
+  useEffect(()=>setOrderedBuilding(selectedCityBuilding),[selectedCityBuilding]);
   if(scope==='estate')return <EstateWorkshop world={world} send={send}/>;
   const holding=world.holdings.cities[site]??emptyCity(),definitions=cityBuildings,project=holding.project;
   const r=world.realm?playerRealm(world):null,actor=world.characterId!,delegated=!!r&&canCommission(world,actor,r,site,'marketworks')&&(!world.holdings.governedCities.includes(site)||isSovereign(world));
-  const selected=orderedBuilding??selectedCityBuilding,kind=selected?(Object.keys(civicBuildings) as AssignmentKind[]).find(k=>civicBuildings[k as keyof typeof civicBuildings]===selected):undefined;
+  const selected=orderedBuilding,kind=selected?(Object.keys(civicBuildings) as AssignmentKind[]).find(k=>civicBuildings[k as keyof typeof civicBuildings]===selected):undefined;
   const candidates=r?serviceCandidates(world,r):[],chosen=candidates.some(c=>c.id===officer)?officer:candidates[0]?.id??'';
   const order=kind?{type:'service' as const,action:'open' as const,kind,site,officer:chosen,plan}:null;
   const orderReason=order?serviceReason(world,order):'',budget=kind?assignmentBudget(kind,plan):null,quote=kind&&r&&chosen?assignmentPlanQuote(world,{kind,site,officer:chosen,helper:null,realm:r},plan):null;
@@ -68,7 +70,14 @@ export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRe
       const duty=(Object.keys(civicBuildings) as AssignmentKind[]).find(k=>civicBuildings[k as keyof typeof civicBuildings]===id),blocked=delegated?serviceReason(world,{type:'service',action:'open',kind:duty!,site,officer:chosen,plan}):quote.reason;
       return <article key={id} className={`building-row ${(selected===id)?'is-selected':''}`}><div><h4>{d.name}<span>{level} / 3 级</span></h4><p>{d.effect}</p></div>{level<3&&<small title={delegated?'按选定方案核定差事预算':`造价 ${quote.cost} 钱，工期 ${quote.days} 日`}><ArtIcon name="coins" size={24}/>{delegated?'委任营建':`${quote.cost} · ${quote.days} 日`}</small>}<HoverHint label={d.name+'营建要求'} content={blocked|| (delegated?'选择方案和承办人后下令，核准专款后开办。':`支付 ${quote.cost} 钱，工期 ${quote.days} 日`)}><button disabled={pending||(delegated?level>=3||!!active:!!blocked)} onClick={()=>delegated?setOrderedBuilding(id as CityBuilding):send(command)}>{level>=3?'已满级':delegated?'选定工程':level?'扩建至 '+quote.level+' 级':'兴建'}</button></HoverHint></article>;
     })}</div>
-    {delegated&&kind&&r&&<section className="construction-order"><h4>下令营建 · {definitions[selected!].name}</h4>{!world.service?.enabled?<button onClick={()=>send({type:'service',action:'begin'})} disabled={pending}>开启公务办理</button>:<><PersonChoice world={world} title="承办人" value={chosen} onChange={setOfficer} onPerson={onPerson} pending={pending} options={candidates.map(c=>({id:c.id,score:attributes(world,c.id).stewardship,metric:'管理',reason:serviceReason(world,{type:'service',action:'open',kind,site,officer:c.id,plan})}))}/><div className="service-plan-grid">{(Object.keys(assignmentPlans) as AssignmentPlan[]).map(p=>{const budget=assignmentBudget(kind,p),estimate=chosen?assignmentPlanQuote(world,{kind,site,officer:chosen,helper:null,realm:r},p):null;return <button key={p} aria-pressed={plan===p} onClick={()=>setPlan(p)}><strong>{assignmentPlans[p].name}</strong><span>{budget.coins} 钱 · {budget.grain} 粮{estimate?` · 约 ${estimate.days} 办理日 · 质量 ${estimate.quality}%`:''}</span></button>;})}</div><p>下令人：{politicalName(actor)} · 承办：{chosen?politicalName(chosen):'待选'} · 支出：{payer?accountName(payer.account):'待核'}（现有 {payer?publicBalance(world,payer.account):0} 钱）与{payer?.grainSite?'本城公粮':'中央公粮'} · 预算 {budget?.coins} 钱／{budget?.grain} 粮。预计核准、赴任后约 {quote?.days??0} 个有效办理日，阻碍和等待另计。</p>{orderReason&&<p className="service-warning">{orderReason}</p>}<button className="primary" disabled={pending||!!orderReason} onClick={()=>setConfirm(true)}>下令营建</button>{confirm&&order&&<ConfirmAction title="确认下令营建？" detail={`由 ${politicalName(chosen)} 承办；核准后从 ${payer?accountName(payer.account):'主管公库'} 拨 ${budget?.coins} 钱、${budget?.grain} 粮，赴任并实际办理后生效。`} confirmLabel="确认下令" pending={pending||!!orderReason} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(serviceReason(world,order))return;send(order);setConfirm(false);}}/>}</>}</section>}
+    {delegated&&kind&&r&&<ActionDialog title={`下令营建 · ${definitions[selected!].name}`} onClose={()=>setOrderedBuilding(null)} actions={world.service?.enabled?<button className="primary" disabled={pending||!!orderReason} onClick={()=>{if(!order||serviceReason(world,order))return;send(order);setOrderedBuilding(null);}}>确认下令</button>:null}>
+      {!world.service?.enabled?<p>开启公务办理后，可选承办人和方案，下达本城营建委任。<button onClick={()=>send({type:'service',action:'begin'})} disabled={pending}>开启公务办理</button></p>:<>
+        <div className="action-summary"><p>下令人：{politicalName(actor)} · 承办：{chosen?politicalName(chosen):'待选'}</p><p>核准后从 {payer?accountName(payer.account):'主管公库'}（现有 {payer?publicBalance(world,payer.account):0} 钱）与{payer?.grainSite?'本城公粮':'中央公粮'}划拨 {budget?.coins} 钱／{budget?.grain} 粮，赴任并实际办理后生效。</p><p>预计核准、赴任后约 {quote?.days??0} 个有效办理日；阻碍和等待另计。</p></div>
+        <PersonChoice world={world} title="承办人" value={chosen} onChange={setOfficer} onPerson={onPerson} pending={pending} options={candidates.map(c=>({id:c.id,score:attributes(world,c.id).stewardship,metric:'管理',reason:serviceReason(world,{type:'service',action:'open',kind,site,officer:c.id,plan})}))}/>
+        <div className="service-plan-grid">{(Object.keys(assignmentPlans) as AssignmentPlan[]).map(p=>{const budget=assignmentBudget(kind,p),estimate=chosen?assignmentPlanQuote(world,{kind,site,officer:chosen,helper:null,realm:r},p):null;return <button key={p} aria-pressed={plan===p} onClick={()=>setPlan(p)}><strong>{assignmentPlans[p].name}</strong><span>{budget.coins} 钱 · {budget.grain} 粮{estimate?` · 约 ${estimate.days} 办理日 · 质量 ${estimate.quality}%`:''}</span></button>;})}</div>
+        {orderReason&&<p className="service-warning" role="status">{orderReason}</p>}
+      </>}
+    </ActionDialog>}
     <p className="construction-note">下一次收支结算：{30-world.day%30} 日后。时间暂停时，工期与收益暂停结算。</p>
   </div>;
 }
