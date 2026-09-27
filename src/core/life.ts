@@ -8,7 +8,7 @@ import {syncCourt} from './court';
 import {syncRelationships} from './relationships';
 import {syncDiplomacy} from './diplomacy';
 import {handoverOffice,syncGovernance,realms} from './realm';
-import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,type LifeCommand} from './lifeState';
+import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,illnessCourse,monthlyIllnessRisk,illnessKind,type LifeCommand} from './lifeState';
 import type {World} from './types';
 
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
@@ -66,6 +66,7 @@ export function die(w:World,id:string,cause:'illness'|'age'){
     if(executiveHeir&&g.heirs?.executive===executiveHeir){g.executives=[executiveHeir,...g.executives.filter(c=>c!==executiveHeir)].slice(0,2);g.heirs.executive=null;}
     else if(!g.executives.length&&executiveHeir)g.executives=[executiveHeir];
     g.task=null;g.legitimacy=Math.max(0,g.legitimacy-10);g.support=Math.max(0,g.support-5);
+    delete g.resignedExecutives;
     s.successions.push({realm:r,regimeId:g.regimeId,stage:g.stages.at(-1)??null,day:w.day,deceased:id,ruler:g.ruler,executives:[...g.executives]});
     log(w,`${personName(id)}身后，${isAlive(w,g.ruler)?personName(g.ruler)+'居君位':'君位虚悬'}${g.executives.length?'，'+g.executives.map(personName).join('、')+'主持朝政':'，朝廷无人主持'}。`);
    }
@@ -84,14 +85,14 @@ export function advanceLife(w:World){
   const p=s.people[id];if(p.death)continue;
   const age=ageAt(w,id)!,self=id===(w.characterId??'fictional'),stress=self?w.social?.stress??0:0,care=p.careUntil>=w.day&&p.careUntil>0;
   const genome=w.identities?.people[id]?.genome,vigorous=genome?expressGenome(genome).congenital.includes('vitality'):false;
-  const max=healthCapacity(age),risk=.025+Math.max(0,age-55)*.0015+stress*.0005-(vigorous?.01:0);
+  const max=healthCapacity(age),risk=monthlyIllnessRisk(age,stress,vigorous);
   if(p.illness){
-   const ill=p.illness,healing=.27+(care?.35:0)+(vigorous?.08:0)-(ill.severity-1)*.06;
-   if(roll(w)<healing){p.illness=null;p.health=Math.min(max,p.health+(care?18:10));log(w,personName(id)+'病势消退，逐渐康复。');}
-   else {if(roll(w)<(care?.08:.25)&&ill.severity<3)ill.severity=(ill.severity+1) as 2|3;p.health=Math.max(0,p.health-ill.severity*(care?3:7));}
+   const ill=p.illness,course=illnessCourse[ill.kind],elapsed=w.day-ill.since,healing=Math.min(.98,course.recovery+(care?.25:0)+(vigorous?.08:0)+Math.floor(elapsed/60)*.08-(ill.severity-1)*.08);
+   if(elapsed>=course.duration||roll(w)<healing){p.illness=null;p.health=Math.min(max,p.health+(care?18:10));log(w,personName(id)+'病势消退，逐渐康复。');}
+   else {if(roll(w)<course.worsening*(care?.3:1)&&ill.severity<3)ill.severity=(ill.severity+1) as 2|3;p.health=Math.max(0,p.health-Math.ceil(ill.severity*course.damage*(care?.5:1)));}
   }else{
    p.health=Math.min(max,p.health+(care?12:4));
-   if(roll(w)<Math.max(.01,risk)){p.illness={kind:age>=60&&roll(w)<.5?'wasting':'fever',since:w.day,severity:1};p.health=Math.max(0,p.health-8);log(w,personName(id)+'患上'+illnessNames[p.illness.kind]+'。');}
+   if(roll(w)<risk){p.illness={kind:illnessKind(age,roll(w)),since:w.day,severity:1};p.health=Math.max(0,p.health-8);log(w,personName(id)+'患上'+illnessNames[p.illness.kind]+'。');}
   }
   // Simulation hazard, not a prediction or an enforced historical death date.
   const mortality=Math.max(0,age-55)**2/250000+(p.illness?.severity===3?.012:0)+(p.health<25?(25-p.health)*.003:0);

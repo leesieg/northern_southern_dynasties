@@ -5,6 +5,13 @@ import {careReason} from '../core/life';
 import {birthRecords} from '../data/lifespans';
 import {dateLabel} from '../core/world';
 import type {World,GameCommand} from '../core/types';
+/** Temporary acquired condition; never written into congenital/personality traits. */
+export function TemporaryIllnessTrait({world,id}:{world:World;id:string}){
+ const life=lifeOf(world,id),illness=life?.illness;if(!illness||isDeceased(world,id))return null;
+ const title=illnessNames[illness.kind],severity=['轻症','病势加重','重症'][illness.severity-1];
+ const paths={cold:'M7 10h13q6 0 6-4t-6-2 M5 16h22q7 0 7 5t-7 4 M9 23h9',fever:'M20 3q3 9-3 12q8-1 8-7q12 17 1 25q-14 5-18-7q-2-7 7-14q-2 8 2 8q6-4 3-17Z',flux:'M14 4v8q-8 2-8 10q0 12 12 12q13 0 13-12q0-7-10-7V4 M12 23q5-6 13 0 M13 28h10',wasting:'M19 34V11 M19 22Q3 23 5 10Q17 9 19 22 M19 15Q31 15 31 4Q20 3 19 15'};
+ return <HoverHint label={title+' · 临时特质'} content={<><strong>{title} · {severity}</strong><p>患病 {world.day-illness.since} 日 · 康复后移除</p><p>军事 −{illness.severity*2}，外交／管理／谋略各 −{illness.severity}{illness.severity===3?'；暂不能远行。':'。'}每月评估恢复，延医可提高康复机会。</p>{life.careUntil>world.day&&<p>医者照料余 {life.careUntil-world.day} 日</p>}</>}><span className="trait-badge trait-icon-only" role="img" aria-label={title+'（临时）'}><svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><path d={paths[illness.kind]} fill="none" stroke="#d6b98b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></HoverHint>;
+}
 export function LifeSummary({world,id}:{world:World;id:string}){
  const life=lifeOf(world,id),age=ageOf(world,id);
  if(isDeceased(world,id))return <p className="person-vitals deceased"><span>已故</span>{life?.death&&<strong>{ageLabel(world,id)}</strong>}</p>;

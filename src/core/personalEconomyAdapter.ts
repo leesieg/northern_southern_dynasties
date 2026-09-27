@@ -157,8 +157,7 @@ export function economyCommandReason(w: World, command: PersonalEconomyCommand):
   if (w.mode !== 'sandbox' || !w.realm || !w.characterId || w.campaign?.status !== 'active') return '仅在进行中的历史沙盒可用';
   if (w.realm.event) return '请先处理待决政务';
   if (command.action === 'activate') return w.economy ? '本局已开始持家结算' : '';
-  if (!w.economy) return '请先开始持家结算';
-  return economyReason(w.economy, economyHost(w), w.characterId, command);
+  return economyReason(w.economy ?? newPersonalEconomy(w.day), economyHost(w), w.characterId, command);
 }
 export function actPersonalEconomy(w: World, c: PersonalEconomyCommand): void {
   const reason = economyCommandReason(w, c); if (reason) throw new Error(reason);
@@ -167,6 +166,7 @@ export function actPersonalEconomy(w: World, c: PersonalEconomyCommand): void {
     w.chronicle.push({day:w.day, person:'player', text:'持家账簿已建立，每三十日结算生活开支。'});
     w.chronicle = w.chronicle.slice(-100); return;
   }
+  ensureEconomy(w);
   actEconomy(w.economy!, economyHost(w), w.characterId!, c);
 }
 export function advancePersonalEconomy(w: World): void {
@@ -175,11 +175,14 @@ export function advancePersonalEconomy(w: World): void {
   advanceEconomy(w.economy, economyHost(w,true));
 }
 export function economyPresentation(w: World) {
-  const host = economyHost(w), state = w.economy ?? newPersonalEconomy(w.day), id = w.characterId!;
+  const host = economyHost(w,true), state = w.economy ?? newPersonalEconomy(w.day), id = w.characterId!;
   const realm = allegianceRealm(w, id);
-  const donorKeys = realm ? [centralAccount(realm), ...Object.keys(w.realm?.cities ?? {})
-    .filter(site => w.realm!.cities[site].owner === realm && w.realm!.cities[site].controller === realm)
-    .map(site => realm + '|city:' + site)] : [];
+  // Put the player's real jurisdiction first, including province/prefecture treasuries.
+  const donorKeys = realm ? [...new Set([
+    ...host.managedAccounts(id).map(a => a.id), centralAccount(realm),
+    ...Object.values(territoryNodes).filter(n => ['city','province','prefecture'].includes(n.level)
+      && localActive(w,n.id,realm)).map(n => territoryAccount(w,realm,n.id)),
+  ])] : [];
   return {view: personalEconomyView(state, host, id),
     managed: host.managedAccounts(id).map(a => ({id: a.id, name: a.name, balance: a.wallet.read()})),
     audits: host.auditableAccounts(id).map(a => ({id: a.id, name: a.name})),

@@ -14,7 +14,7 @@ import {enactPoliticalAction} from './politicalActions';
 import {allegianceRealm,officeName,publicOfficeReason,appointmentAuthorityReason} from './officeEligibility';
 import {regionalEconomy} from '../data/regionalEconomy';
 import {civilianFood,settleLocalGrain,grainCapacity,ensurePopulation} from './population';
-import {centralTax,collectFiscal,distributeFiscal,payFiscalOperations,localBalance,spendLocal} from './treasury';
+import {localSalaryExpense,centralTax,collectFiscal,distributeFiscal,payFiscalOperations,localBalance,spendLocal} from './treasury';
 import {clanStanding} from './clans';
 import {recommendationBonus} from './retinue';
 import {attributes} from './social';
@@ -86,7 +86,7 @@ export function cityYield(w:World,id:string){
  const grain=Math.floor(effective/100*region.fertility*(1+c.irrigation*.1)*labor*(.75+c.order/400)*(100+bonus.grain+management)/100);
  return {coins:Math.floor((c.population/600+c.population/600*region.trade*access+(b?.market??0)*8*access)*rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+localEfficiency(w,id)+governmentBonus(w,c.controller,id).tax)/100),grain,expense:cityOperatingExpense(w,id),food:civilianFood(w,id),labor,capacity,region,management,access};
 }
-export function realmForecast(w:World,id:RealmId,yields?:ReadonlyMap<string,ReturnType<typeof cityYield>>){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=yields?.get(site)??cityYield(w,site);income+=centralTax(w,site,y.coins);expense+=y.expense;food+=y.grain-y.food;}for(const a of w.realm!.armies.filter(a=>a.realm===id)){if(!a.payer||a.payer==='central:'+id)expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id);return {income,expense,food};}
+export function realmForecast(w:World,id:RealmId,yields?:ReadonlyMap<string,ReturnType<typeof cityYield>>){let income=0,expense=0,food=0;for(const [site,c] of Object.entries(w.realm!.cities))if(c.controller===id){const y=yields?.get(site)??cityYield(w,site);income+=centralTax(w,site,y.coins);expense+=y.expense;food+=y.grain-y.food;}for(const a of w.realm!.armies.filter(a=>a.realm===id)){if(!a.payer||a.payer==='central:'+id)expense+=armyMonthlyPay(w,a);food-=armyDailyFood(w,a)*30;}expense+=courtSalary(w,id)+localSalaryExpense(w,id);return {income,expense,food};}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 const connected=(w:World,id:string,r:RealmId)=>roads.some(e=>e.from===id&&w.realm!.cities[e.to].controller===r||e.to===id&&w.realm!.cities[e.from].controller===r);
 export function realmReason(w:World,c:RealmCommand):string {

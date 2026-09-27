@@ -65,6 +65,11 @@ export function beginConstruction(world:World,command:BuildCommand){
   log(world,`${command.scope==='estate'?familyName(world.holdings.estate.family)+'氏庄园':siteById[command.site].name}开建${name}，支出 ${quote.cost} 钱，需 ${quote.days} 日。`);
 }
 function log(world:World,text:string){world.chronicle.push({day:world.day,person:'player',text});world.chronicle=world.chronicle.slice(-100);}
+/** Recurring family production; this is private income, never public tax revenue. */
+export function estateYield(world:World){
+ const e=world.holdings.estate.levels;
+ return {coins:4+e.workshop*6,food:e.fields*6+e.storehouse*3};
+}
 export function advanceConstruction(world:World){
   const h=world.holdings;
   const entries:[string,CityHolding|Holdings['estate']][]=[[familyName(h.estate.family)+'氏庄园',h.estate],...Object.entries(h.cities).map(([id,c])=>[siteById[id].name,c] as [string,CityHolding])];
@@ -76,8 +81,7 @@ export function advanceConstruction(world:World){
     }
   }
   if(world.day%30===0){
-    const e=h.estate.levels;
-    let coins=4+e.workshop*6,food=e.fields*6+e.storehouse*3;
+    let {coins,food}=estateYield(world);
     if(!world.realm)for(const id of h.governedCities){const c=h.cities[id];if(c){coins+=c.levels.market*8;food+=c.levels.granary*10;}}
     world.people[0].coins=Math.min(1_000_000,world.people[0].coins+coins);world.people[0].food=Math.min(1_000_000,world.people[0].food+food);
     log(world,`家产收入结算：收入 ${coins} 钱，行粮 ${food} 日份。`);

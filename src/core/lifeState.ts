@@ -3,8 +3,17 @@ import {birthRecords} from '../data/lifespans';
 import {getScript} from '../data/scripts';
 import type {World} from './types';
 import type {RealmId} from './realm';
-export type Illness='fever'|'wasting';
-export const illnessNames:Record<Illness,string>={fever:'热病',wasting:'虚损'};
+export type Illness='fever'|'wasting'|'cold'|'flux';
+export const illnessNames:Record<Illness,string>={fever:'热病',wasting:'虚损',cold:'风寒',flux:'腹疾'};
+/** Monthly game hazards; not historical epidemiological estimates. */
+export const illnessCourse:Record<Illness,{recovery:number;worsening:number;damage:number;duration:number}>={
+ cold:{recovery:.78,worsening:.04,damage:2,duration:90},
+ fever:{recovery:.58,worsening:.10,damage:4,duration:150},
+ flux:{recovery:.65,worsening:.08,damage:3,duration:120},
+ wasting:{recovery:.38,worsening:.10,damage:3,duration:240},
+};
+export function monthlyIllnessRisk(age:number,stress=0,vigorous=false){return Math.max(.002,Math.min(.05,.007+Math.max(0,age-55)*.00035+Math.max(0,Math.min(100,stress))*.00012-(vigorous?.003:0)));}
+export function illnessKind(age:number,draw:number):Illness {return age>=60?(draw<.35?'wasting':draw<.65?'cold':draw<.85?'flux':'fever'):(draw<.55?'cold':draw<.8?'flux':'fever');}
 export interface PersonLife {
  health:number;illness:{kind:Illness;since:number;severity:1|2|3}|null;
  careUntil:number;death:{day:number;cause:'illness'|'age'}|null;

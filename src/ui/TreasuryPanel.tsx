@@ -1,10 +1,10 @@
-import {localTitle} from '../core/localAdministration';
+import {canonicalTerritory,localTitle} from '../core/localAdministration';
 import {useState} from 'react';
 import {ArtIcon,Resource} from './ArtIcon';
 import {DetailTabs} from './DetailTabs';
 import {HoverHint} from './HoverHint';
 import {CharacterPortrait} from './CharacterPortrait';
-import {accountName,fiscalPath,localBalance,grantFactors,grantPurposes,fiscalReason,superiorForCity,type FiscalCommand,type GrantRequest} from '../core/treasury';
+import {territoryAccount,accountName,fiscalPath,localBalance,grantFactors,grantPurposes,fiscalReason,superiorForCity,type FiscalCommand,type GrantRequest} from '../core/treasury';
 import {playerRealm,executive,cityYield} from '../core/realm';
 import {politicalName} from '../core/government';
 import {siteById} from '../data/scenario';
@@ -21,4 +21,10 @@ export function TreasuryPanel({world:w,pending,send,site,onPerson}:{world:World;
  {requests.slice().reverse().map(q=><article className="treasury-request" key={q.id}><button className="treasury-applicant" onClick={()=>onPerson?.(q.actor)} aria-label={politicalName(q.actor)}><CharacterPortrait world={w} characterId={q.actor} compact/></button><div><strong>{q.territory?localTitle(q.territory):siteById[q.site].name} · {grantPurposes[q.purpose]} · {q.amount} 钱</strong><p>{q.status==='pending'?'候批 · '+politicalName(q.approver):q.reply}</p><HoverHint label="审批因素" content={<>{(q.evaluation??grantFactors(w,q)).map(p=><p key={p.label}>{p.label} {p.value>=0?'+':''}{p.value}</p>)}<p>非玩家上级在 3 日后审议，评分至少 50 且上级公库足额时批准。</p></>}><span>审批评分 {(q.evaluation??grantFactors(w,q)).reduce((n,p)=>n+p.value,0)} ⓘ</span></HoverHint>{q.status==='pending'&&<div className="realm-actions">{q.approver===w.characterId?<>{action({type:'fiscal',action:'approve',id:q.id},'批准')}{action({type:'fiscal',action:'reject',id:q.id},'驳回')}</>:q.actor===w.characterId&&action({type:'fiscal',action:'cancel',id:q.id},'撤回')}</div>}</div></article>)}</>}
  {tab==='ledger'&&<div className="treasury-ledger">{(s?.entries??[]).filter(e=>e.realm===r&&(!site||e.from===fiscalPath(w,site)[0]||e.to===fiscalPath(w,site)[0])).slice(-60).reverse().map(e=><article key={e.id}><span>第 {e.day} 日 · {e.reason}</span><strong>{e.coins} 钱</strong><small>{accountName(e.from)} → {accountName(e.to)}</small></article>)}{!s?.entries.length&&<p>本期尚无入账。</p>}</div>}
  </section>;
+}
+
+/** The upper-tier treasury owns its own applications and ledger, not its seat county's. */
+export function TerritoryFiscalActivity({world:w,territory,realm,send,pending}:{world:World;territory:string;realm:import('../core/realm').RealmId;send:(c:GameCommand)=>void;pending:boolean}){
+ const key=territoryAccount(w,realm,territory),entries=(w.realm?.fiscal?.entries??[]).filter(e=>e.from===key||e.to===key).slice(-6).reverse(),requests=(w.realm?.fiscal?.requests??[]).filter(q=>q.actor===w.characterId&&canonicalTerritory(q.territory??'city:'+q.site)===canonicalTerritory(territory)).slice(-4).reverse();
+ return <div className="treasury-panel">{requests.map(q=><article className="treasury-request" key={q.id}><div><strong><ArtIcon name="influence" size={22}/>{q.amount} 钱 · {q.status==='pending'?'候批':q.status==='approved'?'获准':q.status==='rejected'?'驳回':'已撤回'}</strong><p>{q.status==='pending'?`候 ${politicalName(q.approver)} 批示`:q.reply}</p><HoverHint label="审批依据" content={<>{(q.evaluation??grantFactors(w,q)).map(f=><p key={f.label}>{f.label} {f.value>=0?'+':''}{f.value}</p>)}<p>非玩家上级须评分至少 50 且公库足额。</p></>}><span>评分 {(q.evaluation??grantFactors(w,q)).reduce((n,f)=>n+f.value,0)} ⓘ</span></HoverHint>{q.status==='pending'&&<button disabled={pending||!!fiscalReason(w,{type:'fiscal',action:'cancel',id:q.id})} onClick={()=>send({type:'fiscal',action:'cancel',id:q.id})}>撤回</button>}</div></article>)}{entries.length>0&&<div className="treasury-ledger">{entries.map(e=><article key={e.id}><span>第 {e.day} 日 · {e.reason}</span><strong>{e.to===key?'+':'−'}{e.coins} 钱</strong><small>{accountName(e.from)} → {accountName(e.to)}</small></article>)}</div>}</div>;
 }

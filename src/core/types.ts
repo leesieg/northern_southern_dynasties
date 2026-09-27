@@ -29,6 +29,7 @@ export interface Person {
 }
 export interface Chronicle { day: number; text: string; person: string }
 export interface World {
+  resignations?: import('./resignation').Resignations;
   coordinatedService?: import('./coordinatedService').CoordinatedService;
   commerce?: import('./commerce').Commerce;
   householdPlans?: import('./householdPlans').HouseholdPlans;
@@ -42,7 +43,7 @@ export interface World {
   version: 2; retinue?:RetinueState; mobility?:MobilityState; service?:ServiceState; duties?:DutiesState; life?:LifeState; diplomacy?:DiplomacyState; relationships?:RelationshipState; families?:FamilyState; lifestyles?:LifestyleState; identities?:IdentityState; mode?:'sandbox'; realm?:RealmState; scriptId?:string; social?:Social; characterId?:string; campaign?:Campaign; holdings: Holdings; contentVersion: string; day: number; people: Person[]; chronicle: Chronicle[];
 }
 export interface RoutePlan { route: string[]; durations: number[]; days: number; food: number; distance: number }
-export type GameCommand = import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
+export type GameCommand = import('./resignation').ResignationCommand | import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
   | { type: 'travel'; destination: string }
   | { type: 'provision' }
   | { type: 'commission' }

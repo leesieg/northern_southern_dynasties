@@ -133,7 +133,7 @@ export function syncCourt(w:World,r:RealmId){const c=courtOf(w,r),g=governmentOf
  c.regimeId=g.regimeId;c.tenure=tenure;c.ministries=Object.fromEntries(ministryIds.map(k=>[k,null])) as CourtState['ministries'];c.founding=null;c.petition=null;c.favored=null;c.boosts={};c.tension=cap(c.tension+20);log(w,r,'朝廷更替：中央任职、奏议、眷顾与拥立议程清理，个人政治倾向保留。');
 }
 function foundDynasty(w:World,r:RealmId){const g=governmentOf(w,r)!,c=courtOf(w,r)!,f=c.founding!,s=w.realm!,state=s.governments!,old=state.regimes.find(v=>v.id===g.regimeId)!;old.until=w.day;
- const id=`${r}-sandbox-${w.day}`;delete g.heirs;g.dynasty=id;g.regimeId=id;g.ruler=f.sponsor;g.executives=[f.sponsor];g.task=null;
+ const id=`${r}-sandbox-${w.day}`;delete g.heirs;delete g.resignedExecutives;g.dynasty=id;g.regimeId=id;g.ruler=f.sponsor;g.executives=[f.sponsor];g.task=null;
  state.regimes.push({id,realm:r,dynasty:id,name:f.name,kind:'sandbox',ruler:f.sponsor,from:w.day,until:null,predecessor:old.id,source:null,cities:Object.keys(s.cities).filter(site=>s.cities[site].owner===r&&s.cities[site].controller===r)});
  g.legitimacy=f.mode==='unify'?85:55;g.support=65;if(f.mode==='unify')g.type='celestial';
  s.offices=s.offices.filter(o=>allegianceRealm(w,o.candidate)!==r);for(const city of Object.values(s.cities))if(city.owner===r){city.governor=null;city.order=cap(city.order-10);}

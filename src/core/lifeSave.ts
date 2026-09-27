@@ -9,7 +9,7 @@ export function validLife(w:World){
  if(!obj(s)||s.version!==1||!int(s.since,0,w.day)||!int(s.lastMonthly,Math.floor(s.since/30)*30,w.day)||s.lastMonthly%30||!int(s.seed,0,0xffffffff)||!obj(s.people)||Object.keys(s.people).length!==Object.keys(birthRecords).length)return false;
  for(const id of Object.keys(birthRecords)){
   const p=s.people[id];if(!obj(p)||!int(p.health,0,100)||!int(p.careUntil,0,w.day+90))return false;
-  if(p.illness!==null&&(!obj(p.illness)||!['fever','wasting'].includes(String(p.illness.kind))||!int(p.illness.since,s.since,w.day)||!int(p.illness.severity,1,3)))return false;
+  if(p.illness!==null&&(!obj(p.illness)||!['fever','wasting','cold','flux'].includes(String(p.illness.kind))||!int(p.illness.since,s.since,w.day)||!int(p.illness.severity,1,3)))return false;
   if(p.death!==null&&(!obj(p.death)||!int(p.death.day,s.since,w.day)||!['illness','age'].includes(String(p.death.cause))||p.health!==0||p.careUntil!==0||p.illness!==null&&Number(p.illness.since)>p.death.day))return false;
  }
  if(!Array.isArray(s.successions)||s.successions.length>Object.keys(birthRecords).length)return false;

@@ -1,3 +1,4 @@
+import {actResignation,isAdventurer} from './resignation';
 import {actCoordinated,recordCoordinated} from './coordinatedService';
 import {actCommerce,advanceCommerce} from './commerce';
 import {actHousehold,advanceHousehold} from './householdPlans';
@@ -127,6 +128,7 @@ function actCommand(world: World, command: GameCommand): void {
   if(command.type==='travel'&&lifeOf(world,world.characterId??'fictional')?.illness?.severity===3)throw new Error('重病期间无法远行，请先延医休养。');
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
   if('site'in command&&typeof command.site==='string'&&['build','fiscal','service','population'].includes(command.type)&&!civilCanAdmin(world,world.characterId!,command.site))throw new Error('该地由内战对方控制，无法办理此项公务');
+  if(command.type==='resign'){actResignation(world,command);return;}
   if(command.type==='appointments'){actAppointments(world,command);return;}
  if(command.type==='local'){actLocal(world,command);return;}
   if(command.type==='coordinate'){actCoordinated(world,command);return;}
@@ -189,7 +191,7 @@ export function advance(world: World, days = 1): void {
       if(p.id==='player'&&world.diplomacy?.missions.some(m=>m.envoy===world.characterId))continue;
       if (p.journey) {
         const j = p.journey;
-        if(p.id==='player'&&world.realm&&!world.diplomacy?.returning&&(!civilCanAdmin(world,world.characterId!,j.route[j.leg+1])||!canEnter(world,playerRealm(world),world.realm.cities[j.route[j.leg+1]].controller,world.characterId))){
+        if(p.id==='player'&&world.realm&&!world.diplomacy?.returning&&(!isAdventurer(world,world.characterId!)&&!civilCanAdmin(world,world.characterId!,j.route[j.leg+1])||!canEnter(world,playerRealm(world),world.realm.cities[j.route[j.leg+1]].controller,world.characterId))){
           p.food=Math.min(1_000_000,p.food+remainingDays(p));p.journey=null;record(world,p,'边境局势变化，前方不再允许通行。行程中止，未用行粮退回。');continue;
         }
         if(p.id==='player'&&world.diplomacy?.returning&&world.realm){const controller=world.realm.cities[j.route[j.leg+1]].controller;const destination=world.realm.cities[j.route.at(-1)!].controller;if(controller==='frontier'||atWar(world,playerRealm(world),controller)||destination!==playerRealm(world)){p.food=Math.min(1_000_000,p.food+remainingDays(p));p.journey=null;world.diplomacy.returning=null;record(world,p,'返国路线因战事变化中断，请重新安排。');continue;}}

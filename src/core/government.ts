@@ -17,6 +17,7 @@ import type { RealmId } from './realm';
 export type Contract='balanced'|'tax'|'levy';
 export interface GovernmentTask {kind:'government'|'law'|'succession';target:string;started:number;progress:number;required:number;sponsor:string}
 export interface Government {
+ resignedExecutives?:string[];
  heirs?:PublicHeirs;court?:CourtState;type:GovernmentType;dynasty:string;regimeId:string;ruler:string;executives:string[];legitimacy:number;support:number;
  merit:Record<string,number>;herd:number;camp:string;lastCamp:number;contracts:Record<string,Contract>;
  laws:ReformId[];stages:SuccessionId[];task:GovernmentTask|null;cooldowns:Record<string,number>;
@@ -121,7 +122,7 @@ function completeTask(w:World,r:RealmId){
  if(task.kind==='government'){g.type=task.target as GovernmentType;g.legitimacy=cap(g.legitimacy-5);}
  if(task.kind==='law')g.laws.push(task.target as ReformId);
  if(task.kind==='succession'){
- const d=successionDefinitions[task.target as SuccessionId];delete g.heirs;g.stages.push(task.target as SuccessionId);g.ruler=d.ruler;g.executives=[...d.executives];
+ const d=successionDefinitions[task.target as SuccessionId];delete g.heirs;delete g.resignedExecutives;g.stages.push(task.target as SuccessionId);g.ruler=d.ruler;g.executives=[...d.executives];
  // Withdraw old authority and pending appointments; a new court requires fresh investiture.
  s.offices=s.offices.filter(o=>allegianceRealm(w,o.candidate)!==r);
  for(const city of Object.values(s.cities))if(city.owner===r){city.governor=null;city.order=cap(city.order-10);}

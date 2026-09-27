@@ -26,7 +26,7 @@ export function officeHierarchy(w:World,person?:string):OfficeNode[]{
   // Initial titles are scenario evidence, not automatically reissued by a successor court.
   if(g.court)for(const m of ministryIds)add({id:`office:${r}:ministry:${m}`,name:ministries[m].name,holder:g.court.ministries[m],parentId:chief,kind:'office',relation:'administration',active:['meritocratic','celestial','khanate'].includes(g.type)});
   if(!g.stages.length&&g.dynasty===r)for(const o of scenarioOffices){
-   const c=characterById[o.holder];if(c.polity!==r||o.name.endsWith('刺史'))continue;
+   const c=characterById[o.holder];if(c.polity!==r||o.name.endsWith('刺史')||w.resignations?.titles.includes('office:546:'+o.id))continue;
    const ownExecutive=governingExecutives(w,r).indexOf(o.holder);
    add({id:`office:546:${o.id}`,name:o.name,holder:o.holder,parentId:o.kind==='honour'?root:ownExecutive>=0?`office:${r}:executive:${ownExecutive}`:chief,kind:o.kind,relation:o.kind==='honour'?'honour':'administration',active:true,source:c.sources});
   }

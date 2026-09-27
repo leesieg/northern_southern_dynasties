@@ -1,3 +1,4 @@
+import {isAdventurer} from './resignation';
 import {coordinatedPlanReason,programmePlans} from './coordinatedService';
 import {ensureArmyOrganization} from './armyOrganization';
 import {requestAccountFunding,publicBalance} from './treasury';
@@ -228,7 +229,7 @@ export function advanceService(w:World){
    if(t.progress>=t.required){if(t.kind==='supply'&&t.delivery?.status==='traveling')continue;if(t.kind==='supply'&&t.delivery&&!t.delivery.delivered){finish(w,t,false,'粮队未形成有效驻军补给，不计军功');continue;}phase(w,t,'report');log(w,t,'办理完成，呈报考绩。');continue;}
   }
   if(w.day-t.changed<2)continue;
-  if(t.phase==='proposal'&&t.officer!==w.characterId&&!t.helper&&!t.invitation&&!t.invited.length){const candidate=serviceCandidates(w,t.realm,t.id).sort((a,b)=>Number(b.id===w.characterId)-Number(a.id===w.characterId)).find(c=>c.id!==t.officer&&!humanPause(w,c.id)&&relationOpinion(w,t.officer,c.id)>=0);if(candidate&&(s.enabled||candidate.id!==w.characterId))actService(w,{type:'service',action:'invite',id:t.id,person:candidate.id},t.officer);}
+  if(t.phase==='proposal'&&t.officer!==w.characterId&&!t.helper&&!t.invitation&&!t.invited.length){const candidate=serviceCandidates(w,t.realm,t.id).sort((a,b)=>Number(b.id===w.characterId)-Number(a.id===w.characterId)).find(c=>c.id!==t.officer&&!isAdventurer(w,c.id)&&!humanPause(w,c.id)&&relationOpinion(w,t.officer,c.id)>=0);if(candidate&&(s.enabled||candidate.id!==w.characterId))actService(w,{type:'service',action:'invite',id:t.id,person:candidate.id},t.officer);}
   if(t.phase==='approval'&&chief&&chief!==w.characterId&&t.plan){const payer=servicePayer(w,t,chief),need=assignmentBudget(t.kind,t.plan).coins-publicBalance(w,payer.account);if(need>0)requestAccountFunding(w,chief,payer.account,need,assignmentTemplates[t.kind].category==='military'?'military':'construction');}
   let action:ServiceCommand|undefined,actor:string|undefined;
   if(['petition','approval'].includes(t.phase)&&(chief!==w.characterId||!serviceException(w,t))){actor=chief;action={type:'service',action:'approve',id:t.id};}
@@ -240,7 +241,7 @@ export function advanceService(w:World){
   if(actor&&(actor!==w.characterId||['approve','close'].includes(action?.action??'')&&!serviceException(w,t))&&action&&!serviceReason(w,action,actor))actService(w,action,actor);
  }
  // NPC initiative uses the same quotes, capacity limits and budgets as player proposals.
- if(w.day%15===0)for(const r of realms){const chief=serviceChief(w,r);if(!chief)continue;const options=assignmentOptions(w,r),candidates=serviceCandidates(w,r).filter(c=>c.id!==w.characterId&&!humanPause(w,c.id));for(const c of candidates){const option=options.find(o=>!serviceReason(w,{type:'service',action:'open',...o,officer:c.id},c.id));if(option){actService(w,{type:'service',action:'open',...option,officer:c.id},c.id);break;}}}
+ if(w.day%15===0)for(const r of realms){const chief=serviceChief(w,r);if(!chief)continue;const options=assignmentOptions(w,r),candidates=serviceCandidates(w,r).filter(c=>c.id!==w.characterId&&!isAdventurer(w,c.id)&&!humanPause(w,c.id));for(const c of candidates){const option=options.find(o=>{const approver=serviceApprover(w,{realm:r,site:o.site,kind:o.kind,officer:c.id});if(s.tasks.filter(t=>['petition','approval','aid'].includes(t.phase)&&serviceApprover(w,t)===approver).length>=2)return false;return !serviceReason(w,{type:'service',action:'open',...o,officer:c.id},c.id);});if(option){actService(w,{type:'service',action:'open',...option,officer:c.id},c.id);break;}}}
 }
 
 export function reconcileServiceAllegiance(w:World){for(const t of w.service?.tasks??[])if(t.phase!=='closed'&&allegianceRealm(w,t.officer)!==t.realm)finish(w,t,false,'承办人效忠改变，差事终止并结算未用专款');}

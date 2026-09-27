@@ -2,7 +2,7 @@
 import {describe, it, expect} from 'vitest';
 import {newCampaignWorld, act, advance} from './world';
 import {serializeWorld, parseWorld, validateWorld} from './save';
-import {economyHost, economyCommandReason} from './personalEconomyAdapter';
+import {economyHost, economyCommandReason, economyPresentation} from './personalEconomyAdapter';
 import {actEconomy} from './personalEconomyRules';
 import {governmentOf} from './government';
 import {localPoliticalBasis} from './officePower';
@@ -31,6 +31,25 @@ describe('personal economy integration', () => {
     expect(() => act(w, {type:'government', action:'appraise'})).toThrow('不再收取');
     expect(w.people[0].coins).toBe(coins);
     expect(governmentOf(w)!.merit[w.characterId!]).toBe(merit);
+  });
+  it('offers the serving province treasury and conserves repeat private deposits without farming benefits', () => {
+    const w = newCampaignWorld('dugu-xin', undefined, 'sandbox');
+    const presentation = economyPresentation(w), host=economyHost(w);
+    const province=host.managedAccounts('dugu-xin').find(a=>a.id.includes('|province:'))!;
+    expect(province).toBeDefined();
+    expect(presentation.donations.some(a=>a.id===province.id)).toBe(true);
+    const total=w.people[0].coins+province.wallet.read();
+    act(w,{type:'economy',action:'donate',account:province.id,amount:20});
+    const order=w.realm!.cities[province.site!].order,stress=w.social!.stress;
+    act(w,{type:'economy',action:'donate',account:province.id,amount:20});
+    expect(province.wallet.read()).toBe(40);
+    expect(w.people[0].coins+province.wallet.read()).toBe(total);
+    expect(w.realm!.cities[province.site!].order).toBe(order);
+    expect(w.social!.stress).toBe(stress);
+    const before=structuredClone(w);w.people[0].coins=0;
+    expect(()=>act(w,{type:'economy',action:'donate',account:province.id,amount:20})).toThrow('个人钱不足');
+    expect(province.wallet.read()).toBe(40);w.people[0].coins=before.people[0].coins;
+    expect(parseWorld(serializeWorld(w))).toEqual(w);
   });
   it('uses actual account references for donations through the regular command path', () => {
     const w = newCampaignWorld('dugu-xin', undefined, 'sandbox');

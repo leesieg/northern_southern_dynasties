@@ -1,11 +1,17 @@
 import { describe,expect,it } from 'vitest';
 import { act,advance,newWorld } from './world';
-import { buildQuote, emptyCity, provisionCost } from './construction';
+import { buildQuote, emptyCity, provisionCost, estateYield, advanceConstruction } from './construction';
 import { parseWorld,serializeWorld,validateWorld } from './save';
 import type { GameCommand } from './types';
 const estate=(building:'fields'|'hall'|'workshop'|'storehouse')=>({type:'build' as const,scope:'estate' as const,site:'jiankang',building});
 function legacyEnvelope(payload:string){let hash=2166136261;for(let i=0;i<payload.length;i++)hash=Math.imul(hash^payload.charCodeAt(i),16777619);return JSON.stringify({format:'fynbc-save',version:1,payload,checksum:(hash>>>0).toString(16)});}
 describe('city and family construction rules',()=>{
+  it('uses the same estate income forecast and actual private payment without an office',()=>{
+    const w=newWorld();w.holdings.estate.levels.workshop=1;w.holdings.governedCities=[];
+    expect(estateYield(w)).toEqual({coins:10,food:0});
+    const before=w.people[0].coins;w.day=30;advanceConstruction(w);
+    expect(w.people[0].coins-before).toBe(estateYield(w).coins);
+  });
   it('deducts the real cost, persists an unfinished project and completes once',()=>{
     const w=newWorld();act(w,estate('fields'));expect(w.people[0].coins).toBe(140);expect(w.holdings.estate.levels.fields).toBe(0);
     advance(w,9);const restored=parseWorld(serializeWorld(w));advance(restored);expect(restored.holdings.estate.levels.fields).toBe(1);expect(restored.holdings.estate.project).toBeNull();

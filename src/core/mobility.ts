@@ -1,3 +1,4 @@
+import {isAdventurer} from './resignation';
 import {authorityGrant} from './authority';
 import {armyCampaign} from './militaryCampaigns';
 import type {Army} from './realm';
@@ -81,7 +82,7 @@ export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>
  else if(c.kind==='tour'&&w.realm.cities[c.site].order>=75&&w.realm.cities[c.site].prosperity>=65)reason='当地政务安定，无需重复巡察';
  else if(c.kind==='training'&&(!w.realm.mandate||!w.realm.armies.some(a=>a.realm===r&&a.location===c.site&&!a.journey)))reason='须有军务授权并选择本国驻军所在地';
  else if(c.target&&!['family','succession'].includes(c.kind)&&personResidence(w,c.target).site!==c.site)reason='请在对方当前驻地会面';
- else if((!civilCanAdmin(w,id,c.site)||!canEnter(w,r,w.realm.cities[c.site].controller,id)))reason='当前政权关系不允许在此活动';
+ else if((!isAdventurer(w,id)&&!civilCanAdmin(w,id,c.site)||!canEnter(w,r,w.realm.cities[c.site].controller,id)))reason='当前政权关系不允许在此活动';
  else if(c.delegate&&!npcRoute(w,executor,c.site))reason='承办人没有可通行路线';
  else if(!c.delegate&&p.location!==c.site&&!route)reason='没有获准通行的路线';
  else if(!c.delegate&&route&&p.food<route.food)reason=`需 ${route.food} 日行粮`;
@@ -165,7 +166,7 @@ export function advanceMobility(w:World){
  for(const a of s.activities){if(['done','cancelled'].includes(a.phase))continue;
   if(a.actor!==w.characterId||!isAlive(w,a.actor)||a.target&&!isAlive(w,a.target)||a.delegate&&!isAlive(w,a.delegate)){end(w,a,'cancelled','参加者身份变化或去世，事务中止。');continue;}
   const r=playerRealm(w),controller=w.realm.cities[a.site].controller;
-  if(w.day>a.deadline||controller!=='frontier'&&atWar(w,r,controller)){end(w,a,'cancelled',w.day>a.deadline?'超过约定期限，事务未成。':'战事阻断，事务中止。');continue;}
+  if(w.day>a.deadline||!isAdventurer(w,a.actor)&&controller!=='frontier'&&atWar(w,r,controller)){end(w,a,'cancelled',w.day>a.deadline?'超过约定期限，事务未成。':'战事阻断，事务中止。');continue;}
   const arrived=presentAt(w,a.delegate??a.actor,a.site)&&(!a.target||presentAt(w,a.target,a.site));
   if(a.phase==='travel'&&arrived)a.phase='ready';
   if(a.delegate&&a.phase==='ready'){a.phase='working';a.started=w.day;a.due=w.day+activities[a.kind].days;}

@@ -182,7 +182,6 @@ export function economyReason(s: PersonalEconomyState, h: EconomyHost, actor: st
       if (!account || account.realm !== person.realm) return '账户不存在或已不属本国';
       assertWallet(account.wallet);
       if (c.action === 'donate') {
-        if (h.day - b.lastDonation < 90) return '捐输每 90 日一次';
         if (coins < c.amount) return '个人钱不足';
         return account.wallet.read() + c.amount > account.wallet.capacity ? '公库容量不足' : '';
       }
@@ -238,10 +237,14 @@ export function actEconomy(s: PersonalEconomyState, h: EconomyHost, actor: strin
     }
     case 'donate': {
       const account = h.account(c.account)!;
-      moveMoney(wallet, account.wallet, c.amount); b.lastDonation = h.day;
-      h.publicTransfer(account, 'in', c.amount, '个人捐输'); h.charity(actor, account, c.amount);
-      if (h.actor(actor)!.traits.includes('generous')) h.stress(actor, -5);
-      if (h.actor(actor)!.traits.includes('greedy')) h.stress(actor, 5);
+      moveMoney(wallet, account.wallet, c.amount);
+      h.publicTransfer(account, 'in', c.amount, '个人捐输');
+      // Transfers can be repeated; the social benefit cannot be farmed by splitting deposits.
+      if (h.day - b.lastDonation >= 90) {
+        b.lastDonation = h.day; h.charity(actor, account, c.amount);
+        if (h.actor(actor)!.traits.includes('generous')) h.stress(actor, -5);
+        if (h.actor(actor)!.traits.includes('greedy')) h.stress(actor, 5);
+      }
       entry(s, h, actor, -c.amount, '向' + account.name + '捐输'); break;
     }
     case 'embezzle': {

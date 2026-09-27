@@ -1,3 +1,4 @@
+import {validResignations} from './resignation';
 import {validCoordinated} from './coordinatedService';
 import {validCommerce} from './commerce';
 import {validHousehold} from './householdPlans';
@@ -62,6 +63,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.scriptId!==undefined&&typeof value.scriptId!=='string')return fail();
   const script=getScript(value.scriptId as string|undefined);
   if(value.characterId!==undefined&&!script.characterIds.includes(String(value.characterId)))return fail();
+  if(value.resignations!==undefined&&!validResignations(value.resignations))return fail();
   if(value.identities!==undefined&&!validIdentities(value.identities))return fail();
   if(value.families!==undefined&&!validFamilies(value.families,Number(value.day)))return fail();
   if(value.duties!==undefined&&!validDuties(value.duties,Number(value.day),value.mode))return fail();
