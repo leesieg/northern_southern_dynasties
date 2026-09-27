@@ -1,9 +1,12 @@
 import {describe,it,expect} from 'vitest';
-import {newCampaignWorld} from './world';
+import {newCampaignWorld,act} from './world';
 import {actService,advanceService,serviceTask,serviceReason,serviceAttention} from './assignments';
 import {countyTerritory,setLocalHolder,localAncestors} from './localAdministration';
 import {serviceApprover,canCommission,settleServiceRefund} from './serviceMandates';
-import {territoryAccount,ensureFiscal,publicBalance} from './treasury';
+import {territoryAccount,ensureFiscal,publicBalance,actFiscal,fiscalReason,localBalance} from './treasury';
+import {realmReason} from './realm';
+import {buildQuote} from './construction';
+import {governmentOf} from './government';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 function setup(){
  const w=newCampaignWorld('xiao-yan',undefined,'sandbox');actService(w,{type:'service',action:'begin'});
@@ -15,6 +18,41 @@ function setup(){
  return {w,task,account,site,t};
 }
 describe('scoped service mandates',()=>{
+ it('actual ruler orders local tax and relief without taking the county seat, while a figurehead cannot',()=>{
+  const w=newCampaignWorld('xiao-yan',undefined,'sandbox'),site='jiankang';setLocalHolder(w,countyTerritory(site),'liang','xiao-gang');
+  w.realm!.cities[site].grain=50;ensureFiscal(w)!.balances['liang|city:'+site]=20;
+  const tax={type:'realm',action:'tax',site,tax:'heavy'} as const,grain={type:'realm',action:'relief',site} as const;
+  expect(realmReason(w,tax)).toBe('');act(w,tax);expect(w.realm!.cities[site].tax).toBe('heavy');
+  expect(realmReason(w,grain)).toBe('');act(w,grain);expect(w.realm!.cities[site].grain).toBe(0);
+  const center=w.realm!.treasuries.liang.coins,privateCoins=w.people[0].coins;
+  expect(fiscalReason(w,{type:'fiscal',action:'relief',site})).toBe('');act(w,{type:'fiscal',action:'relief',site});
+  expect(localBalance(w,site)).toBe(0);expect(w.realm!.treasuries.liang.coins).toBe(center);expect(w.people[0].coins).toBe(privateCoins);
+  expect(realmReason(w,{...tax,site:'changan'})).not.toBe('');
+  governmentOf(w)!.executives=['chen-baxian'];expect(realmReason(w,{...tax,tax:'light'})).not.toBe('');
+  const nominal=newCampaignWorld('yuan-shanjian',undefined,'sandbox');expect(realmReason(nominal,{type:'realm',action:'tax',site:'ye',tax:'heavy'})).not.toBe('');
+ });
+ it('prefect spends only the county wallet for relief and loses authority after dismissal',()=>{
+  const {w,site,t}=setup();ensureFiscal(w)!.balances['liang|city:'+site]=20;
+  const central=w.realm!.treasuries.liang.coins,cmd={type:'fiscal',action:'relief',site} as const;
+  expect(fiscalReason(w,cmd,'xiao-yi')).toBe('');actFiscal(w,cmd,'xiao-yi');expect(localBalance(w,site)).toBe(0);expect(w.realm!.treasuries.liang.coins).toBe(central);
+  setLocalHolder(w,t,'liang',null);expect(fiscalReason(w,cmd,'xiao-yi')).not.toBe('');expect(fiscalReason(w,{...cmd,site:'changan'},'xiao-yi')).not.toBe('');
+ });
+ it('superior commissions construction with a plan, pays the real treasury, and can direct execution without taking credit',()=>{
+  const w=newCampaignWorld('xiao-yan',undefined,'sandbox'),site='jiankang';setLocalHolder(w,countyTerritory(site),'liang','xiao-gang');
+  act(w,{type:'service',action:'begin'});const command={type:'service',action:'open',kind:'marketworks',site,officer:'xiao-gang',plan:'balanced'} as const;
+  expect(serviceReason(w,command)).toBe('');const center=w.realm!.treasuries.liang.coins,privateCoins=w.people[0].coins;
+  act(w,command);const task=w.service!.tasks.at(-1)!;expect(task.phase).toBe('approval');expect(task.mandate?.issuer).toBe('xiao-yan');
+  expect(buildQuote(w,{type:'build',scope:'city',site,building:'granary'}).reason).toContain('营建差事');
+  expect(serviceReason(w,command)).not.toBe('');act(w,{type:'service',action:'approve',id:task.id});
+  expect(w.realm!.treasuries.liang.coins).toBe(center-task.funds.coins);expect(w.people[0].coins).toBe(privateCoins);
+  expect(serviceReason(w,{type:'service',action:'start',id:task.id})).toBe('');act(w,{type:'service',action:'start',id:task.id});
+  task.phase='incident';const stress=w.social!.stress,required=task.required,preGrant=w.realm!.treasuries.liang.coins;
+  act(w,{type:'service',action:'grant',id:task.id});expect(w.realm!.treasuries.liang.coins).toBe(preGrant-20);
+  expect(()=>act(w,{type:'service',action:'grant',id:task.id})).toThrow();
+  act(w,{type:'service',action:'strain',id:task.id});expect(task.required).toBe(required+30);expect(w.social!.stress).toBe(stress);
+  expect(task.contributors['xiao-yan']).toBeUndefined();validateWorld(w);
+  governmentOf(w)!.executives=['chen-baxian'];expect(serviceReason(w,{type:'service',action:'cancel',id:task.id})).not.toBe('');
+ });
  it('uses local supervisor and real local budget, refunds the same wallet',()=>{
   const {w,task,account,site}=setup(),central=w.realm!.treasuries.liang.coins;
   expect(serviceApprover(w,task)).toBe('xiao-yi');expect(canCommission(w,'xiao-yi','liang',site,'envoy')).toBe(false);

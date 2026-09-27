@@ -44,8 +44,8 @@ export function buildQuote(world:World,command:BuildCommand):{cost:number;days:n
   const definition=(definitions as Record<string,{cost:number;days:number}>)[building];
   const m=constructionModifiers(world,scope,site),cost=Math.ceil(definition.cost*level*m.costRate/100),days=Math.ceil(definition.days*level*m.timeRate/100);
   let reason='';
-  if(scope==='city'&&!holdings.governedCities.includes(site))reason='需要这座城市的治理权';
-  else if(scope==='city'&&world.service?.tasks.some(t=>t.site===site&&t.phase!=='closed'&&Object.hasOwn(civicBuildings,t.kind)))reason='已有中央营建差事进行中';
+  if(scope==='city'&&world.service?.tasks.some(t=>t.site===site&&t.phase!=='closed'&&Object.hasOwn(civicBuildings,t.kind)))reason='已有中央营建差事进行中';
+  else if(scope==='city'&&!holdings.governedCities.includes(site))reason='需要这座城市的治理权';
   else if(scope==='city'&&isSovereign(world))reason='请通过中央官职委派营建公务';
   else if(scope==='city'&&world.retinue&&!['secretariat','finance'].includes(centralMinistry(world,world.characterId!)??'')&&postStatus(world,'engineer',site).reason)reason=postStatus(world,'engineer',site).reason;
   else if(scope==='estate'&&site!==holdings.estate.location)reason='家族庄园位于'+siteById[holdings.estate.location].name;

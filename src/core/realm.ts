@@ -9,6 +9,7 @@ import {roadEncounters} from './battlefield';
 import {activeWars,ensureWars,bilateralWar,selectedWar,peaceQuote,advanceReparations,type PeaceTerms,type War} from './wars';
 import {ensureArmyOrganization,reconcileRegiments,armyPayFactor,armyCombatFactor,consumeArmyFood} from './armyOrganization';
 import {completeLocalAppointment,advanceLocal,localEfficiency,localCanAppoint,countyTerritory} from './localAdministration';
+import {canCommission} from './serviceMandates';
 import {advanceArmyLogistics,returnArmyConvoy,distributeGarrisonFood,type ArmyConvoy} from './armyLogistics';
 import {enactPoliticalAction} from './politicalActions';
 import {allegianceRealm,officeName,publicOfficeReason,appointmentAuthorityReason} from './officeEligibility';
@@ -96,8 +97,8 @@ export function realmReason(w:World,c:RealmCommand):string {
  if(c.action==='event'){if(!s.event)return '没有待处理事件';if(!['fund','decline'].includes(c.choice))return '无效选项';if(c.choice==='fund'){const k=s.event.kind;if((k==='flood'||k==='levy')?t.grain<(k==='flood'?60:40):t.coins<(k==='market'?50:k==='dispute'?30:k==='harvest'?40:35))return '公库资源不足，可选择搁置';}return '';}
  if(s.event)return '先处理待决事务';
  switch(c.action){
- case 'tax':if(!civilCanAdmin(w,w.characterId,c.site))return '失去实际控制';if(!['light','normal','heavy'].includes(c.tax))return '无效税制';return city!.governor!==w.characterId||city!.controller!==r?'需要本城治理权':city!.tax===c.tax?'已是现行税制':'';
- case 'relief':if(!civilCanAdmin(w,w.characterId,c.site))return '失去实际控制';return city!.governor!==w.characterId||city!.controller!==r?'需要本城治理权':city!.grain+(c.site===capital(r)?t.grain:0)<50?'需本城公粮 50（都城可动用中央储粮）':'';
+ case 'tax':if(!civilCanAdmin(w,w.characterId,c.site))return '失去实际控制';if(!['light','normal','heavy'].includes(c.tax))return '无效税制';return !canCommission(w,w.characterId,r,c.site,'taxation')?'须实际统辖本国控制的城市':city!.tax===c.tax?'已是现行税制':'';
+ case 'relief':if(!civilCanAdmin(w,w.characterId,c.site))return '失去实际控制';return !canCommission(w,w.characterId,r,c.site,'relief')?'须实际统辖本国控制的城市':city!.grain+(c.site===capital(r)?t.grain:0)<50?'需本城公粮 50（都城可动用中央储粮）':'';
  case 'appoint':return (localCanAppoint(w,w.characterId!,countyTerritory(c.site),r)?'':appointmentAuthorityReason(w,r))||(allegianceRealm(w,c.candidate)!==r?'需当前效忠本国的人物':publicOfficeReason(w,c.candidate))||(city!.owner!==r||city!.controller!==r?'仅可任命本国控制的本国城市':s.offices.some(o=>o.site===c.site&&(!o.territory||o.territory===countyTerritory(c.site)))?'任命正在送达':city!.governor===c.candidate?'此人已在任':s.influence<20?'需影响力 20':appointmentReason(w,c.candidate,c.site));
  case 'petition':if(governmentOf(w)?.type==='feudal'&&appointmentReason(w,w.characterId!,c.site))return appointmentReason(w,w.characterId!,c.site);return city!.owner!==r||city!.controller!==r?'只能请任本国控制的本国城市':city!.governor===w.characterId?'你已在任':s.offices.some(o=>o.site===c.site&&(!o.territory||o.territory===countyTerritory(c.site)))?'任命正在送达':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'office')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?`需执政者接受度 60 或官僚功绩 ${20-(clanStanding(w,w.characterId!)?.merit??0)}`:'';
  case 'mandate':return s.mandate?'已有军务授权':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'military')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?'需执政者接受度 60 或官僚功绩 40':'';

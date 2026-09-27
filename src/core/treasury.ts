@@ -11,6 +11,7 @@ import {cityYield,armyMonthlyPay,realms,type RealmId} from './realm';
 import {governmentOf,governingAuthority,governingExecutives} from './government';
 import {creditPersonalCoins,relationOpinion} from './relationships';
 import {isAlive} from './lifeState';
+import {canCommission} from './serviceMandates';
 import type {World} from './types';
 export interface FiscalEntry {id:number;day:number;realm:RealmId;from:string;to:string;coins:number;reason:string}
 export interface GrantRequest {id:number;realm:RealmId;site:string;territory?:string;actor:string;amount:number;purpose:'construction'|'relief'|'military';created:number;changed:number;approver:string;status:'pending'|'approved'|'rejected'|'cancelled';reply:string;evaluation?:{label:string;value:number}[]}
@@ -38,7 +39,7 @@ export function grantSource(w:World,r:RealmId,t:string,actor:string){if(governin
 export function transferTerritoryGrant(w:World,r:RealmId,t:string,source:string,amount:number,reason:string){const path=territoryFiscalPath(w,r,t).reverse(),start=path.indexOf(source);if(start<0||!Number.isSafeInteger(amount)||amount<0||publicBalance(w,source)<amount)throw new Error('上级公库不足');const route=path.slice(start);if(route.length<2||route.slice(1).some(k=>publicBalance(w,k)+amount>1_000_000))throw new Error('拨款路径容量不足');for(let i=0;i<route.length-1;i++)transfer(w,r,route[i],route[i+1],amount,reason);}
 export function fiscalReason(w:World,c:FiscalCommand,actor=w.characterId!){if(!w.realm||!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前不能办理公款';const r=allegianceRealm(w,actor) as RealmId;if(!realms.includes(r))return '无所属政权';
  if('site'in c&&!civilCanAdmin(w,actor,c.site))return '该地由内战对方控制';
- if(c.action==='relief'){const city=w.realm.cities[c.site];return !city||city.controller!==r||city.owner!==r||city.governor!==actor?'需要本城治理权':city.order>=100?'本城秩序已满':localBalance(w,c.site)<20?'本城公库不足 20 钱':'';}
+ if(c.action==='relief'){const city=w.realm.cities[c.site];return !city||!canCommission(w,actor,r,c.site,'relief')?'须实际统辖本国控制的城市':city.order>=100?'本城秩序已满':localBalance(w,c.site)<20?'本城公库不足 20 钱':'';}
  if(c.action==='request'||c.action==='allocate'){const t=canonicalTerritory(c.territory??countyTerritory(c.site));if(!territoryNodes[t]||!localSites(w,t,r).includes(c.site)||!localActive(w,t,r))return '仅限本国控制的本国辖区';if(!Number.isSafeInteger(c.amount)||c.amount<20||c.amount>400)return '拨款须为 20 至 400 钱';if(territoryFiscalPath(w,r,t).slice(0,-1).some(k=>publicBalance(w,k)+c.amount>1_000_000))return '拨款路径公库容量不足';
  if(c.action==='allocate'){if(!governingExecutives(w,r).includes(actor)&&!localAncestors(t).some(n=>localHolder(w,n.id,r)===actor&&localActive(w,n.id,r)))return '须由辖区上级拨款';return publicBalance(w,grantSource(w,r,t,actor))<c.amount?'上级公库不足':'';}
  if(!Object.hasOwn(grantPurposes,c.purpose))return '无效用途';if(localHolder(w,t,r)!==actor)return '须由本辖区主官提出申请';if(governingExecutives(w,r).includes(actor))return '执政者可直接安排拨款';if(!localSuperior(w,t,r,actor))return '没有可请款的上级';if(w.realm.fiscal?.requests.some(q=>canonicalTerritory(q.territory??countyTerritory(q.site))===t&&q.status==='pending'))return '本辖区已有待批拨款';if(w.realm.fiscal?.requests.some(q=>q.actor===actor&&canonicalTerritory(q.territory??countyTerritory(q.site))===t&&q.status!=='pending'&&w.day-q.changed<30))return '本辖区再次申请须间隔 30 日';return '';}
