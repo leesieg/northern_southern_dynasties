@@ -28,9 +28,9 @@ export function pauseHasActions(w:World,event:PauseEvent){
  if(event.kind==='realm')return !!w.realm?.event;
  if(event.kind==='diplomacy')return !!w.realm&&!!w.diplomacy?.missions.some(m=>m.status==='audience'&&m.to===playerRealm(w));
  if(event.kind==='mobility')return !!w.mobility?.captivity||!!w.mobility?.activities.some(a=>(event.activityId===undefined||a.id===event.activityId)&&!['done','cancelled'].includes(a.phase));
- if(event.kind==='duties')return !!w.duties?.task&&w.duties.task.phase!=='closed';
+ if(event.kind==='duties')return !!dutyAttention(w);
  if(event.kind==='service'||event.kind==='arrival'&&event.assignmentId){
-  if(event.assignmentId)return !!w.service?.tasks.some(t=>t.id===event.assignmentId&&t.phase!=='closed');
+  if(event.assignmentId)return serviceAttention(w).some(key=>key.startsWith('task:'+event.assignmentId+':')||key.startsWith('invite:'+event.assignmentId+':'));
   if(!w.realm)return false;const r=playerRealm(w),c=w.service?.councils[r];return !!c&&(!c.decided||!!c.proposal&&serviceChief(w,r)===w.characterId);
  }
  return false;

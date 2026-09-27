@@ -4,6 +4,7 @@ import {describe,it,expect} from 'vitest';
 import {act,advance,remainingDays} from './world';
 import {ongoingItems} from './ongoing';
 import {pauseHasActions,type PauseEvent} from './pauseEvents';
+import {actDuty} from './duties';
 import {parseWorld,serializeWorld} from './save';
 import {governmentOf} from './government';
 import {courtOf} from './court';
@@ -50,4 +51,6 @@ describe('暂停弹窗的决策与通知',()=>{
  it('待决政务需操作，处理后转通知',()=>{const w=start();w.realm!.event={kind:'market',day:0} as never;expect(pauseHasActions(w,event('realm'))).toBe(true);w.realm!.event=null;expect(pauseHasActions(w,event('realm'))).toBe(false);});
  it('事项结束或取消后不残留操作提示，也不会误用其他事项',()=>{const w=start('xiao-gang');act(w,{type:'mobility',action:'plan',kind:'visit',site:'jiankang',target:'xiao-yan'});const a=w.mobility!.activities[0],e=event('mobility',{activityId:a.id});expect(pauseHasActions(w,e)).toBe(true);expect(pauseHasActions(w,event('mobility',{activityId:999}))).toBe(false);act(w,{type:'mobility',action:'cancel',id:a.id});expect(pauseHasActions(w,e)).toBe(false);});
  it('差事到达有操作，结案文书只通知；对外使团不误判为接见决定',()=>{const w=start('yuwen-tai');act(w,{type:'service',action:'begin'});act(w,{type:'service',action:'open',kind:'agriculture',site:'tianshui',officer:'yuan-qin'});const t=w.service!.tasks[0],e=event('arrival',{assignmentId:t.id});expect(pauseHasActions(w,e)).toBe(true);t.phase='closed';expect(pauseHasActions(w,e)).toBe(false);expect(pauseHasActions(w,event('diplomacy'))).toBe(false);});
+ it('差事核准后可继续办理，启办后不再提示待办',()=>{const w=start('yuwen-tai');act(w,{type:'service',action:'begin'});act(w,{type:'service',action:'open',kind:'agriculture',site:'tianshui',officer:'yuan-qin',plan:'balanced'});const t=w.service!.tasks[0],e=event('service',{assignmentId:t.id});expect(t.phase).toBe('approval');expect(pauseHasActions(w,e)).toBe(true);act(w,{type:'service',action:'approve',id:t.id});expect(t.phase).toBe('ready');expect(pauseHasActions(w,e)).toBe(true);w.mobility!.residences['yuan-qin']={site:t.site,journey:null};act(w,{type:'service',action:'start',id:t.id});expect(t.phase).toBe('working');expect(pauseHasActions(w,e)).toBe(false);});
+ it('地方粮务核准后等待承办人，不再提示主官重复进入详情',()=>{const w=start('yuwen-tai');act(w,{type:'duty',action:'open'});actDuty(w,{type:'duty',action:'propose',plan:'purchase'},'dugu-xin');const e=event('duties');expect(pauseHasActions(w,e)).toBe(true);act(w,{type:'duty',action:'approve'});expect(w.duties!.task!.phase).toBe('ready');expect(pauseHasActions(w,e)).toBe(false);});
 });
