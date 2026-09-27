@@ -14,7 +14,7 @@ export function DutiesPanel({world:w,pending,send,onPerson}:{world:World;pending
  const action=(command:DutyCommand,label:string)=>{const reason=dutyReason(w,command);return <div className="realm-action"><button disabled={pending||!!reason} onClick={()=>send(command)}>{label}</button>{reason&&<small>{reason}</small>}</div>;};
  if(!t)return <section><h3>天水粮务</h3><p>天水来报军民口粮紧缺，请朝廷筹措。由独孤信拟议，执政者批拨钱粮，限一百二十日办结。</p><p>办结可获功绩 20，改善与执政者的交情，并恢复天水秩序与繁荣。</p>{action({type:'duty',action:'open'},'受理粮务')}</section>;
  const pause=dutyPause(w),candidates=dutyCandidates(w).filter(c=>c.id!==t.officer);
- return <section className="duty-panel"><header><small>地方差事 · {dutyPhaseNames[t.phase]}</small><h3>天水粮务</h3></header><div className="assignment-officers"><PositionSeat world={w} holder={chief} title="执政" onPerson={onPerson}/><PositionSeat world={w} holder={t.officer} title="承办" onPerson={onPerson}/></div>
+ return <section className="duty-panel"><header><small>地方差事 · {dutyPhaseNames[t.phase]}</small><h3>天水粮务</h3></header><div className="assignment-officers"><PositionSeat compact world={w} holder={chief} title="执政" onPerson={onPerson}/><PositionSeat compact world={w} holder={t.officer} title="承办" onPerson={onPerson}/></div>
  <p>{t.phase==='closed'?'已结案':`距限期 ${Math.max(0,t.deadline-w.day)} 日`} · {t.plan?dutyPlans[t.plan].name:'等待拟议'}</p>
  <div className="realm-actions"><Resource name="coins" value={t.funds.coins} label="专拨公款" caption/><Resource name="grain" value={t.funds.grain} label="专拨公粮" caption/></div>
  {t.started&&<><progress aria-label="粮务进度" max={t.required} value={t.progress}/><p>已办理 {t.progress} / {t.required} 日</p></>}

@@ -1,7 +1,7 @@
 .government-audit{display:grid;gap:12px;min-width:0;color:#e5dac0}
 .government-audit>section{display:grid;gap:10px;min-width:0;padding:12px;border:1px solid #b5a47766;border-radius:5px;background:#172a24}
 .government-audit h3{display:flex;align-items:center;gap:8px;margin:0;font:18px var(--serif);color:#e8d19b}
-.government-audit-parameters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+.government-audit-parameters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:10px;align-items:center}
 .government-audit label{display:grid;gap:5px;min-width:0;color:#c6c5ad;font-size:12px}
 .government-audit select{min-height:38px;width:100%;min-width:0}
 .government-audit .economy-cases{display:grid;gap:10px}
