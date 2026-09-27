@@ -6,6 +6,8 @@ import {economyHost, economyCommandReason} from './personalEconomyAdapter';
 import {actEconomy} from './personalEconomyRules';
 import {governmentOf} from './government';
 import {localPoliticalBasis} from './officePower';
+import {dispatchCommissionedEnvoy} from './diplomacy';
+import {personResidence} from './residence';
 
 describe('personal economy integration', () => {
   it('keeps new/old sandbox saves unchanged until the first settled day', () => {
@@ -44,6 +46,16 @@ describe('personal economy integration', () => {
     act(w, {type:'economy', action:'activate'});
     expect(localPoliticalBasis(w, 'dugu-xin', 'west')).toBeGreaterThanOrEqual(20);
     expect(Object.values(w.realm!.cities).some(c => c.governor === 'dugu-xin')).toBe(false);
+  });
+  it('does not assign an envoy awaiting a foreign reply to audit a public account', () => {
+    const w = newCampaignWorld('yuwen-tai', undefined, 'sandbox');
+    dispatchCommissionedEnvoy(w, 'liang', 'west');
+    const mission = w.diplomacy!.missions[0], envoy = mission.envoy!;
+    for(let day=0;day<120&&mission.status!=='audience';day++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w);}
+    expect(mission.status).toBe('audience');
+    expect(personResidence(w,envoy).traveling).toBe(false);
+    expect(economyHost(w).inspectors('county-official-jiankang')).not.toContain(envoy);
+    validateWorld(w);
   });
   it('has a real embezzlement / investigation / restitution path with NPC wallets', () => {
     const w = newCampaignWorld('yuwen-tai', undefined, 'sandbox');

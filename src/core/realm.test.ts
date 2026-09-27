@@ -52,12 +52,14 @@ describe('沙盒政治经济军事',()=>{
   s.treasuries.east.coins=0;s.treasuries.east.grain=0;s.treasuries.liang.grain=10000;s.cities[origin].grain=10000;
   act(w,{type:'realm',action:'march',site:target});for(let d=0;d<100&&s.cities[target].controller!=='liang';d++){s.treasuries.east.coins=0;s.treasuries.east.grain=0;advance(w);if(s.event)act(w,{type:'realm',action:'event',choice:'decline'});}
   expect(s.cities[target].controller).toBe('liang');expect(s.cities[target].owner).toBe('east');validate(w);
-  act(w,{type:'realm',action:'peace'});expect(s.cities[target].owner).toBe('liang');expect(s.war).toBeNull();expect(s.truces['east|liang']).toBe(w.day+360);validate(w);
+  act(w,{type:'realm',action:'peace',terms:'demand'});expect(s.cities[target].owner).toBe('liang');expect(s.war).toBeNull();expect(s.truces['east|liang']).toBe(w.day+360);validate(w);
   const next=roads.find(e=>s.cities[e.from].controller==='liang'&&s.cities[e.to].owner==='east');if(next)expect(realmReason(w,{type:'realm',action:'war',site:next.to})).toContain('停战');
  });
- it('NPC 应战与财政均运行，战争最迟 360 日结束',()=>{
+ it('NPC 应战与财政运行，战争须经议和结束',()=>{
   const w=sandbox(),r=playerRealm(w),edge=roads.find(e=>siteById[e.from].polity===r&&['east','west'].includes(siteById[e.to].polity))!;
-  act(w,{type:'realm',action:'war',site:edge.to});advance(w,6);expect(w.realm!.armies.some(a=>a.realm!=='liang')).toBe(true);passDays(w,360);expect(w.realm!.war).toBeNull();validate(w);
+  act(w,{type:'realm',action:'war',site:edge.to});advance(w,6);expect(w.realm!.armies.some(a=>a.realm!=='liang')).toBe(true);passDays(w,30);
+  expect(w.realm!.ledger.some(entry=>entry.day===30)).toBe(true);expect(w.realm!.war).not.toBeNull();validate(w);
+  act(w,{type:'realm',action:'peace'});expect(w.realm!.war).toBeNull();validate(w);
  });
  it.each(['treasury','governance','army','city','war','event'])('拒绝损坏的 %s 数据',field=>{
   const w=sandbox(),s=w.realm!;

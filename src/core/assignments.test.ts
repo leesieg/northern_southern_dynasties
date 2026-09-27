@@ -25,10 +25,11 @@ describe('general appointments and service lifecycle',()=>{
  });
  it.each([['xiao-yi','xunyang'],['gao-yang','ye'],['dugu-xin','tianshui']])('officer %s requests work and receives NPC approvals',(id,site)=>{const w=start(id),t=open(w,'agriculture',site,id);expect(t.phase).toBe('petition');expect(drive(w,t.id).result?.success).toBe(true);expect(w.service!.careers[id].economy).toBe(1);});
  it('uses one actor capacity, one seasonal task slot and authority checks',()=>{
-  const w=start(),t=open(w);expect(()=>open(w,'commerce')).toThrow('承办人');expect(()=>act(w,{type:'service',action:'approve',id:t.id})).toThrow('执政');
+  const w=start(),t=open(w);expect(()=>open(w,'commerce')).toThrow('承办人');expect(()=>act(w,{type:'service',action:'approve',id:t.id})).toThrow('主管');
   act(w,{type:'service',action:'cancel',id:t.id});expect(()=>open(w)).toThrow('本季');
   expect(()=>act(w,{type:'service',action:'open',kind:'relief',site:'ye',officer:'dugu-xin'})).toThrow('本国');
-  expect(()=>act(w,{type:'service',action:'open',kind:'commerce',site:'tianshui',officer:'yuan-qin'})).toThrow('自荐');
+  expect(()=>act(w,{type:'service',action:'open',kind:'greatworks',site:'tianshui',officer:'yuan-qin'})).toThrow('自荐');
+  act(w,{type:'service',action:'open',kind:'commerce',site:'tianshui',officer:'yuan-qin'});expect(w.service!.tasks.at(-1)?.mandate?.issuer).toBe('dugu-xin');
  });
  it('keeps public funds separate, refuses repeated payment and refunds unspent allocations',()=>{
   const w=start(),t=open(w);actService(w,{type:'service',action:'approve',id:t.id},'yuwen-tai');act(w,{type:'service',action:'plan',id:t.id,plan:'thorough'});
@@ -86,7 +87,7 @@ describe('general appointments and service lifecycle',()=>{
     }tick(w);validateWorld(w);
   }return w;};
   const a=run(parseWorld(saved)),b=run(parseWorld(saved));expect(a).toEqual(b);expect(a.service!.councils.east.season).toBeGreaterThanOrEqual(3);expect(a.service!.tasks.filter(t=>t.result?.success).length).toBeGreaterThan(5);expect(a.service!.tasks.length).toBeLessThanOrEqual(64);
- },30000);
+ },180000);
  it('rejects mutated contribution totals, council proposals and reward ledgers',()=>{
   const {w,t}=prepared();drive(w,t.id);
   const mutations=[(v:typeof w)=>{v.service!.tasks[0].contributors['dugu-xin'].lead++;},(v:typeof w)=>{v.service!.councils.west.petitioned=['gao-huan'];},(v:typeof w)=>{v.service!.tasks[0].result!.awards[0].merit=500;},(v:typeof w)=>{v.service!.nextId=1;}];

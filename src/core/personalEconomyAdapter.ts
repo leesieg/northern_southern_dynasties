@@ -31,6 +31,7 @@ export function ensureEconomy(w: World): void {
 }
 function available(w: World, id: string): boolean {
   return !w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===id)&&!personResidence(w, id).traveling && lifeOf(w, id)?.illness?.severity !== 3
+    && !w.diplomacy?.missions.some(m=>m.envoy===id)
     && !Object.values(w.mobility?.commanders ?? {}).includes(id)
     && !Object.values(w.mobility?.armyCommanders ?? {}).includes(id)
     && !w.mobility?.activities.some(a => !['done', 'cancelled'].includes(a.phase) && (a.actor === id || a.delegate === id))

@@ -58,7 +58,7 @@ export function diplomaticQuote(w:World,c:DiplomacyCommand){
  else if(c.action==='submit'&&(w.diplomacy.subjects[r]||cycles(w,r,c.target)))reason='不能形成重复或循环臣属';
  else if(c.action==='recognize'&&p.recognized)reason='已相互承认国号';
  else if(atWar(w,r,c.target)&&!['insult','revoke','independence'].includes(c.action))reason='正在交战，请先议和';
- else if(w.diplomacy.missions.some(m=>m.from===r&&m.to===c.target))reason='已有使团前往该国';
+ else if(w.diplomacy.missions.some(m=>m.from===r&&m.to===c.target&&m.status!=='returning'))reason='已有使团前往该国';
  else if(w.diplomacy.missions.length>=6)reason='使团名额已满';
  else if(needsEnvoy(c.action)&&(!envoy||envoyReason(w,envoy,r,c.target)))reason=envoy?envoyReason(w,envoy,r,c.target):'没有空闲使者';
  else if(w.realm.treasuries[r].coins<coins)reason='国库不足 '+coins+' 钱';
@@ -128,7 +128,7 @@ export function advanceDiplomacy(w:World){const s=w.diplomacy;if(!s||!w.realm)re
 }
 export const diplomaticColor=(w:World,to:Polity)=>{if(!w.realm||!w.characterId||to==='frontier')return '#77796e';const r=playerRealm(w);if(r===to)return '#d4bd72';if(atWar(w,r,to))return '#b13f3f';if(treaty(w,r,to,'alliance'))return '#599e89';if(canEnter(w,r,to,w.characterId))return '#6c9fb8';return (diplomaticPair(w,r,to)?.opinion??0)<-39?'#a87665':'#999f93';};
 
-export function commissionedEnvoyReason(w:World,from:RealmId,to:RealmId){if(!w.diplomacy||!governingAuthority(w,from))return '无可用外交机关';if(atWar(w,from,to))return '两国交战';if(w.diplomacy.missions.length>=6||w.diplomacy.missions.some(m=>m.from===from&&m.to===to))return '已有使团在途，请等候答复';if(!defaultEnvoy(w,from,to))return '没有空闲使者';if((diplomaticPair(w,from,to)?.cooldowns[from+'|improve']??0)>w.day)return '上次修好交涉后须间隔六十日';return '';}
+export function commissionedEnvoyReason(w:World,from:RealmId,to:RealmId){if(!w.diplomacy||!governingAuthority(w,from))return '无可用外交机关';if(atWar(w,from,to))return '两国交战';if(w.diplomacy.missions.length>=6||w.diplomacy.missions.some(m=>m.from===from&&m.to===to&&m.status!=='returning'))return '已有使团在途，请等候答复';if(!defaultEnvoy(w,from,to))return '没有空闲使者';if((diplomaticPair(w,from,to)?.cooldowns[from+'|improve']??0)>w.day)return '上次修好交涉后须间隔六十日';return '';}
 export function dispatchCommissionedEnvoy(w:World,from:RealmId,to:RealmId){const reason=commissionedEnvoyReason(w,from,to);if(reason)throw new Error(reason);diplomaticPair(w,from,to)!.cooldowns[from+'|improve']=w.day+60;dispatch(w,from,to,'improve');}
 /** Population raids worsen the existing war relationship without inventing a treaty. */
 export function recordRaid(w:World,from:RealmId,to:RealmId){const p=diplomaticPair(w,from,to);if(p)changeOpinion(p,-10,'war');if(w.diplomacy)w.diplomacy.credit[from]=Math.max(0,w.diplomacy.credit[from]-5);}

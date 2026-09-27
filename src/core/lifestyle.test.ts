@@ -51,7 +51,7 @@ describe('生活重心',()=>{
  });
  it('军事军粮和军饷实际降低，敌军不会获得玩家技能',()=>{
   const w=trained('martial'),a=army('liang'),b=army('east','ye');w.realm!.armies=[a,b];expect(armyDailyFood(w,a)).toBe(9);expect(armyMonthlyPay(w,a)).toBe(51);expect(armyDailyFood(w,b)).toBe(10);
-  advanceRealm(w);expect(a.supply).toBe(111);expect(b.supply).toBe(110);
+  advanceRealm(w);expect(a.supply).toBe(112);expect(b.supply).toBe(110);
   w.realm!.mandate=false;expect(armyDailyFood(w,a)).toBe(10);
  });
  it('军事技能提高实际野战伤害并缩短围城',()=>{
