@@ -10,8 +10,9 @@ import {personalRoute} from '../core/diplomacy';
 import {departureReason} from '../core/mobility';
 import {DetailTabs} from './DetailTabs';
 import {HoverHint} from './HoverHint';
-import {useState} from 'react';
-import {assignmentTemplates,assignmentPlans,assignmentPhases} from '../data/assignments';
+import {SingleChoiceCards} from './SingleChoiceCards';
+import {useEffect,useState} from 'react';
+import {assignmentTemplates,assignmentPlans,assignmentPhases,type AssignmentPlan} from '../data/assignments';
 import {assignmentBudget,assignmentPlanQuote,assignmentEffort,assignmentPause,serviceCandidates,serviceReason,type ServiceCommand,type Assignment} from '../core/assignments';
 import {politicalName} from '../core/government';
 import {siteById} from '../data/scenario';
@@ -21,7 +22,11 @@ export type ServiceProps={world:World;pending:boolean;send:(c:GameCommand)=>void
 export function AssignmentPanel({world:w,pending,send,onPerson,task:t}:ServiceProps&{task:Assignment}){
  const [chapter,setChapter]=useState<'progress'|'people'|'records'>('progress');
  const [invite,setInvite]=useState(''),[replacement,setReplacement]=useState(''),[confirm,setConfirm]=useState(false);
+ const [planDraft,setPlanDraft]=useState<AssignmentPlan|null>(null),[incidentDraft,setIncidentDraft]=useState<'spend'|'delay'|'strain'|null>(null);
+ useEffect(()=>{setPlanDraft(null);setIncidentDraft(null);},[t.id,t.phase]);
  const d=assignmentTemplates[t.kind],chief=serviceApprover(w,t),mine=t.officer===w.characterId,authority=serviceAuthority(w,t,w.characterId!),effort=assignmentEffort(w,t),pause=assignmentPause(w,t),candidates=serviceCandidates(w,t.realm,t.id).filter(c=>c.id!==t.officer&&c.id!==t.helper);
+ const planCommand=planDraft?{type:'service' as const,action:'plan' as const,id:t.id,plan:planDraft}:null,planReason=planCommand?serviceReason(w,planCommand):'';
+ const incidentCommand=incidentDraft?{type:'service' as const,action:incidentDraft,id:t.id}:null,incidentReason=incidentCommand?serviceReason(w,incidentCommand):'';
  const consequences:Record<string,string>={approve:t.phase==='petition'?'准予拟案，占用差事与承办人名额；当前不扣预算。':'从主管公庫与对应粮仓划拨所示钱粮，完成前无法用于其他事务。',revise:'不拨款，承办人重新拟案；原限期继续计算。',grant:'主管公款 −20，转入专款；不会自动解决道路阻断或地方失序。',deny:'不增拨公款，承办人须缓办或强令推进；已用时间不返还。',close:'按实际质量、贡献核定功绩，结算地方成果与退回未使用预算。',extend:'限期 +30 日，朝野支持 −3，成果质量 −5；每案仅一次。',spend:'需已获追加 20 公款且道路畅通、秩序至少 25；质量 −5，秩序 −3。'+(t.kind==='inspection'?'另使积弊 −3、朝廷紧张 +5。':t.kind==='envoy'?'承办人与对方执政者好感 −3。':''),delay:'工作量 +40，质量 +10（最高 130%）；不延长限期，可能逾期。',strain:'质量 −15（最低 50%）、秩序 −8；本人办理时压力 +18、工作量 +10；他人办理时工作量 +30。'};
  const button=(command:ServiceCommand,label:string)=>{const reason=serviceReason(w,command);return <div className="realm-action"><HoverHint label={label} content={<>{consequences[command.action]??label}{reason&&<p>{reason}</p>}</>}><button disabled={pending||!!reason} onClick={()=>send(command)}>{label}</button></HoverHint></div>;};
  const action=(action:Extract<ServiceCommand,{id:number}>['action'],label:string)=>button({type:'service',action,id:t.id} as ServiceCommand,label);
@@ -36,10 +41,14 @@ export function AssignmentPanel({world:w,pending,send,onPerson,task:t}:ServicePr
  {t.result?<section><h4>{t.result.success?'考绩核定':'差事未成'}</h4><p>{t.result.reason}</p>{t.result.effects.map((effect,i)=><p key={i}>{effect}</p>)}{t.result.awards.map(a=><p key={a.person}><button onClick={()=>onPerson(a.person)}>{politicalName(a.person)}</button> · 功绩 {a.merit>=0?'+':''}{a.merit} · 主管交往 {a.opinion>=0?'+':''}{a.opinion} · 家族威望 +{a.prestige}</p>)}</section>:<>
  {t.invitation?.person===w.characterId&&<section className="service-callout"><h4>邀你协办</h4><p>接受后将占用你的差事名额，按实际参与领取考绩。</p><div className="realm-actions">{action('accept','接受协办')}{action('decline','婉拒')}</div></section>}
  {authority&&t.phase==='petition'&&<div className="realm-actions">{action('approve','准予请命')}{action('cancel','不予准许')}</div>}
- {(mine||authority)&&t.phase==='proposal'&&<div className="service-plan-grid">{(Object.keys(assignmentPlans) as (keyof typeof assignmentPlans)[]).map(plan=>{const b=assignmentPlanQuote(w,t,plan);return <section key={plan}><h4>{assignmentPlans[plan].name}</h4><p>{assignmentPlans[plan].description}</p><p>公款 {b.coins} · 公粮 {b.grain}</p><p>约 {b.days} 个办理日 · 质量 {b.quality}%</p><small>不含赴任、待批与阻碍；限期余 {Math.max(0,t.deadline-w.day)} 日。{b.days>t.deadline-w.day?'仅办理工期已超限，存在逾期风险。':'审批前不扣款。'}</small>{button({type:'service',action:'plan',id:t.id,plan},authority?'批定此案':'呈请此案')}</section>;})}</div>}
+ {(mine||authority)&&t.phase==='proposal'&&<section className="service-plan-choice">
+  <SingleChoiceCards label="办理方案 · 单选" value={planDraft} onChange={setPlanDraft} disabled={pending} options={(Object.keys(assignmentPlans) as AssignmentPlan[]).map(plan=>{const b=assignmentPlanQuote(w,t,plan);return {id:plan,title:assignmentPlans[plan].name,description:assignmentPlans[plan].description,detail:<><span>公款 {b.coins} · 公粮 {b.grain}</span><span>约 {b.days} 个有效办理日</span><span>基础质量 {b.quality}%</span><span className={b.days>t.deadline-w.day?'service-warning':'service-hint'}>{b.days>t.deadline-w.day?'仅办理工期已超限，有逾期风险':'审批前不扣款'}</span></>,reason:serviceReason(w,{type:'service',action:'plan',id:t.id,plan})};})}/>
+  <p className="service-hint">限期余 {Math.max(0,t.deadline-w.day)} 日；预估不含赴任、待批与阻碍。</p>
+  <div className="single-choice-submit"><span>{planDraft?`已选 ${assignmentPlans[planDraft].name}`:'请选择办理方案'}{planReason&&<small role="status">{planReason}</small>}</span><button className="primary" disabled={pending||!planDraft||!!planReason} onClick={()=>{if(!planCommand||pending||serviceReason(w,planCommand))return;send(planCommand);setPlanDraft(null);}}>{authority?'批定':'呈请'}方案{planDraft?' · '+assignmentPlans[planDraft].name:''}</button></div>
+ </section>}
  {authority&&t.phase==='approval'&&<><p>预计 {assignmentPlanQuote(w,t,t.plan!).days} 个有效办理日 · 质量 {t.quality??100}%，工期不含赴任和中途阻碍。</p><p>{assignmentPlans[t.plan!].name} · 公款 {assignmentBudget(t.kind,t.plan!).coins} / 公粮 {assignmentBudget(t.kind,t.plan!).grain}</p><div className="realm-actions">{action('approve','核准并拨款')}{action('revise','退回重拟')}</div></>}
  {(mine||authority)&&t.phase==='ready'&&action('start',authority?'下令开办':'启办差事')}
- {(mine||authority||t.helper===w.characterId&&!!w.mobility&&!presentAt(w,t.officer,t.site)&&presentAt(w,w.characterId!,t.site)&&!['training','inspection'].includes(t.kind))&&t.phase==='incident'&&<><p>{t.history.at(-1)?.text}</p><div className="realm-actions">{!t.aidRequested&&mine&&action('request-aid','请求追加公款 20')}{!t.aidRequested&&authority&&action('grant','追加公款 20')}{action('spend',incidentChoices(t.kind).spend)}{action('delay',incidentChoices(t.kind).delay)}{action('strain',incidentChoices(t.kind).strain)}</div></>}
+ {(mine||authority||t.helper===w.characterId&&!!w.mobility&&!presentAt(w,t.officer,t.site)&&presentAt(w,w.characterId!,t.site)&&!['training','inspection'].includes(t.kind))&&t.phase==='incident'&&<section className="service-incident-choice"><p>{t.history.at(-1)?.text}</p><div className="realm-actions">{!t.aidRequested&&mine&&action('request-aid','请求追加公款 20')}{!t.aidRequested&&authority&&action('grant','追加公款 20')}</div><SingleChoiceCards label="阻碍处理 · 单选" value={incidentDraft} onChange={setIncidentDraft} disabled={pending} options={(['spend','delay','strain'] as const).map(choice=>({id:choice,title:incidentChoices(t.kind)[choice],description:consequences[choice],reason:serviceReason(w,{type:'service',action:choice,id:t.id})}))}/><div className="single-choice-submit"><span>{incidentDraft?`已选 ${incidentChoices(t.kind)[incidentDraft]}`:'请选择处理办法'}{incidentReason&&<small role="status">{incidentReason}</small>}</span><button className="primary" disabled={pending||!incidentDraft||!!incidentReason} onClick={()=>{if(!incidentCommand||pending||serviceReason(w,incidentCommand))return;send(incidentCommand);setIncidentDraft(null);}}>确认处理</button></div></section>}
  {authority&&t.phase==='aid'&&<div className="realm-actions">{action('grant','追加公款 20')}{action('deny','不予追加')}</div>}
  {authority&&t.started&&t.phase!=='report'&&!t.extended&&action('extend','批准延期 30 日 · 朝野支持 −3 / 质量 −5')}
  {authority&&t.phase==='report'&&action('close','核定考绩并结案')}
