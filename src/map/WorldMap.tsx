@@ -8,6 +8,7 @@ import type { Army,RealmId } from '../core/realm';
 import type { ExpressionSpecification } from 'maplibre-gl';
 import { regimeName } from '../core/government';
 import { ArtIcon } from '../ui/ArtIcon';
+import {OngoingItemsDialog} from '../ui/OngoingFlags';
 import { familyName } from '../data/characters';
 import { territoryNodes,descendantSites,nodeForSite,levelNames,controlEvents,type TerritoryLevel } from '../data/territorialHierarchy';
 import { useEffect, useRef, useState } from 'react';
@@ -17,7 +18,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import './atlas.css';
 import { polities, siteById, sites } from '../data/scenario';
 import { position,planRoute } from '../core/world';
-import type { World } from '../core/types';
+import type { GameCommand,World } from '../core/types';
 import { activeRoute, previewArmyRoute, atlasLabels, pointFeature } from './geography';
 import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
@@ -30,6 +31,7 @@ setWorkerCount(2);
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
   onActivity:(item:OngoingItem)=>void;
+  onBrowseActivities:()=>void;onActivityCommand:(command:GameCommand)=>void;pending:boolean;
   onEstate:()=>void;
   selectedArmies:number[];onSelectArmy:(id:number,extend:boolean)=>void;
   onCommandArmy:(site:string)=>boolean;
@@ -157,7 +159,7 @@ export function WorldMap(props:Props){
         const activityGroups=mapActivities(p.world);
         for(const [site,entry] of activityMarkers)if(!activityGroups.some(g=>g.site===site)){entry.marker.remove();activityMarkers.delete(site);}
         for(const group of activityGroups){let entry=activityMarkers.get(group.site);if(!entry){const button=document.createElement('button');button.className='atlas-activity-marker';const loc=siteById[group.site];const marker=new Marker({element:button,anchor:'left',offset:[18,-22]}).setLngLat([loc.lon,loc.lat]).addTo(map);entry={marker,button};activityMarkers.set(group.site,entry);}
-         const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent=group.items.length>1?String(group.items.length):'';entry.button.title=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',siteById[group.site].name+'的活动：'+entry.button.title);entry.button.onclick=e=>{e.stopPropagation();setActivitySite(group.site);};}
+         const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent=group.items.length>1?String(group.items.length):'';entry.button.title=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',group.items.length===1?'查看'+item.title+'详情':'查看'+siteById[group.site].name+'的'+group.items.length+'项事务');entry.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=mapActivities(current.current.world).find(value=>value.site===group.site);if(!latest)return;if(latest.items.length===1)current.current.onActivity(latest.items[0]);else{current.current.onBrowseActivities();setActivitySite(group.site);}};}
         lastWorld=p.world;lastRoute=routeKey;
       }
       for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
@@ -294,10 +296,11 @@ export function WorldMap(props:Props){
   const hoverPlan=hoverSite&&!player.journey?personalRoute(props.world,hoverSite.id):null;
   const hoverArmy=props.world.realm?.armies.find(a=>props.selectedArmies.includes(a.id!));
   const hoverOrder=hoverSite&&hoverArmy?armyOrderPreview(props.world,hoverArmy,hoverSite.id):null;
+  const activityGroup=activitySite?mapActivities(props.world).find(group=>group.site===activitySite):undefined;
   return <div className="world-map atlas-map">
     <div className="map-canvas atlas-canvas" ref={host}/>
     <div className="atlas-paper" aria-hidden="true"/>
-    {activitySite&&<section className="map-activity-list" aria-label="当地活动"><header><strong>{siteById[activitySite].name}</strong><button aria-label="关闭活动列表" onClick={()=>setActivitySite(null)}>×</button></header>{(mapActivities(props.world).find(g=>g.site===activitySite)?.items??[]).map(item=><button key={item.id} onClick={()=>{props.onActivity(item);setActivitySite(null);}}><ArtIcon name={item.kind==='construction'?'estate':item.kind==='service'?'diligent':item.kind==='military'?'army':'person'} size={28}/><span><strong>{item.title}</strong><small>{item.status} · {item.days===null?'待定':item.days+' 日'}</small>{item.progress!==null&&<progress max={1} value={item.progress}/>}</span><span>›</span></button>)}</section>}
+    {activityGroup&&<OngoingItemsDialog title={siteById[activityGroup.site].name+'事务'} icon="city" items={activityGroup.items} world={props.world} pending={props.pending} onClose={()=>setActivitySite(null)} onOpen={props.onActivity} onCommand={props.onActivityCommand}/>}
     {shownEvent&&<div className="history-map-notice"><strong>{shownEvent.year} 年 · {shownEvent.label}</strong><span>标记为城市攻取记录；底图仍是 546 行政基底，未重建当年疆界。</span></div>}
     {hover&&hoverSite&&!menu&&<div className="territory-tooltip" style={{left:hover.x,top:hover.y}}>
       <span className="territory-kicker">{regimeName(props.world,props.world.realm?.cities[hoverSite.id]?.controller??hoverSite.polity)} · {administration[hoverSite.id]?.prefecture??'区划待核'}</span><strong>{hoverNode?.name??hoverSite.name}</strong><p>{hoverNode?levelNames[hoverNode.level]:'城市'} · 单击选择此层级</p>
