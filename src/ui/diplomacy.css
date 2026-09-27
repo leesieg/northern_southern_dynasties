@@ -5,3 +5,14 @@
 
 .diplomacy-panel .envoy-person{display:inline-flex;align-items:center;gap:8px;font-size:12px;padding:4px 8px;margin-right:8px}
 .diplomacy-panel .envoy-person .painted-portrait{width:40px;height:40px;flex:0 0 40px;aspect-ratio:1;overflow:hidden}
+.diplomacy-panel .diplomacy-realm-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;border:0}
+.diplomacy-fact{display:grid;align-content:start;gap:6px;min-width:0;padding:11px 12px;border:1px solid #b69c6340;border-radius:5px;background:#182a23}
+.diplomacy-panel .diplomacy-fact h3{gap:6px;margin:0;font:14px var(--serif)}
+.diplomacy-fact>strong{color:#ead6ae;font:24px var(--serif);line-height:1.25;overflow-wrap:anywhere}
+.diplomacy-fact>strong small{font:11px var(--sans)}
+.diplomacy-fact-pair{display:flex;gap:5px 14px;flex-wrap:wrap;font-size:12px}
+.diplomacy-fact-pair b{color:#ead6ae;font-size:15px;font-weight:500}
+.diplomacy-fact-wars{grid-column:1/-1}
+.diplomacy-fact-wars h3 small{margin-left:auto;font:11px var(--sans)}
+.diplomacy-panel .diplomacy-fact-wars p{display:flex;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;margin:0;padding-top:6px;border-top:1px solid #b69c6325}
+.diplomacy-fact-wars p b{font-weight:500}

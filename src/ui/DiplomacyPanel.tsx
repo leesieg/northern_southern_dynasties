@@ -14,6 +14,8 @@ import {HoverHint} from './HoverHint';
 import {playerRealm,type RealmId} from '../core/realm';
 import {governingExecutives,governmentOf,politicalName,regimeName} from '../core/government';
 import {siteById} from '../data/scenario';
+import {phases,policies} from '../data/court';
+import {courtEnabled,courtOf} from '../core/court';
 import {diplomacyActions,diplomaticQuote,diplomaticPair,diplomaticScore,diplomaticOpinionBreakdown,warState,attitude,type DiplomacyAction,type TreatyKind} from '../core/diplomacy';
 import {relationshipPersonById} from '../data/relationships';
 import type {World,GameCommand} from '../core/types';
@@ -30,6 +32,8 @@ export function DiplomacyPanel({world:w,selected:target,onSelect,onPerson,pendin
  useEffect(()=>{setEnvoy(undefined);setAction(null);},[target]);
  const s=w.diplomacy;if(!s||!w.realm)return <p>此局没有国家外交事务。</p>;
  const r=playerRealm(w),g=governmentOf(w,target)!,p=target===r?null:diplomaticPair(w,r,target),exec=governingExecutives(w,target),lord=s.subjects[target],isSubject=s.subjects[r]===target,isOverlord=s.subjects[target]===r,status=warState(w,r,target),active=p?.treaties.filter(t=>t.until>w.day)??[];
+ const treasury=w.realm.treasuries[target],cities=Object.values(w.realm.cities),held=cities.filter(c=>c.owner===target),controlled=cities.filter(c=>c.controller===target);
+ const population=controlled.reduce((sum,c)=>sum+c.population,0),court=courtOf(w,target),realmWars=activeWars(w).filter(v=>!!warRealmSide(v,target));
  const person=(id:string)=><button className="diplomacy-person-link" onClick={()=>onPerson(id)}>{politicalName(id)} ›</button>;
  const leaders=[{id:g.ruler,title:exec.includes(g.ruler)?'君主 · 执政':'君主'},...exec.filter(id=>id!==g.ruler).map(id=>({id,title:'执政'}))];
  const bilateral=(a:RealmId,b:RealmId)=>target===r?a===r||b===r:[a,b].includes(r)&&[a,b].includes(target);
@@ -42,6 +46,13 @@ export function DiplomacyPanel({world:w,selected:target,onSelect,onPerson,pendin
  const treaties=(kinds:TreatyKind[])=>active.filter(t=>kinds.includes(t.kind)).map(t=><div className="diplomacy-treaty-row" key={t.kind+t.from}><strong>{treatyNames[t.kind]}</strong><small><RealmBadge realm={t.from} world={w}/> → <RealmBadge realm={t.to} world={w}/> · 余 {t.until-w.day} 日</small>{t.actor&&<small>{person(t.actor)}{t.meeting==='invited'?' · 待赴会盟':t.meeting==='held'?' · 会盟已成':''}</small>}</div>);
  const relationSummary=p&&<section className="diplomacy-key-relation"><h3>与<RealmBadge realm={r} world={w}/>的关系</h3><div className="diplomacy-status"><span className={status==='交战'?'is-war':''}><ArtIcon name={status==='交战'?'army':status==='停战期'?'steadfast':'frugal'}/><b>{status}</b></span><span><ArtIcon name={p.opinion>=40?'gregarious':p.opinion>=0?'person':p.opinion>-40?'wary':'stress'}/><b>{attitude(p.opinion)}</b></span>{(isSubject||isOverlord)&&<span><ArtIcon name="coins"/><b>{isSubject?'向其朝贡':'向我朝贡'}</b></span>}{active.some(t=>t.kind==='alliance')&&<span><ArtIcon name="steadfast"/><b>盟国</b></span>}<HoverHint label={'关系分数 '+p.opinion+'，查看影响因子'} content={<><strong>国家关系 · {signed(p.opinion)}</strong>{diplomaticOpinionBreakdown(p).map(v=><p key={v.label}>{v.label}<b>{signed(v.value)}</b></p>)}<small>范围 −100 至 +100；列示实际计入的变化。</small></>}><span className="diplomacy-score">{signed(p.opinion)}<small>关系</small></span></HoverHint></div><p className="diplomacy-meta">{p.recognized?'相互承认国号':r!=='liang'&&target!=='liang'?'竞争正统':'未相互承认国号'}{status==='停战期'?' · 停战余 '+(w.realm.truces[[r,target].sort().join('|')]-w.day)+' 日':''}</p></section>;
  return <div className="diplomacy-panel"><header className="diplomacy-banner"><RealmBadge realm={target} world={w}/><div><small>{target===r?'本国':'政权档案'}</small><span>{lord?<>宗主：<RealmBadge realm={lord} world={w} onOpen={onSelect}/></>:'独立政权'}</span><small>国家信用 {s.credit[target]} / 100</small></div></header>
+ <section className="diplomacy-realm-facts" aria-label="国家基础信息">
+  <div className="diplomacy-fact"><h3><ArtIcon name="coins" size={22}/>中央国库</h3><div className="diplomacy-fact-pair"><span>公款 <b>{treasury.coins.toLocaleString('zh-CN')}</b></span><span>公粮 <b>{treasury.grain.toLocaleString('zh-CN')}</b></span></div><small>中央余额，不含地方公库与县仓</small></div>
+  <div className="diplomacy-fact"><h3><ArtIcon name="person" size={22}/>总人口</h3><strong>{population.toLocaleString('zh-CN')} <small>人</small></strong><small>当前实控县域人口合计</small></div>
+  <div className="diplomacy-fact"><h3><ArtIcon name="city" size={22}/>总土地</h3><strong>{held.length} <small>县域</small></strong><small>法理辖县 {held.length} · 实控 {controlled.length}；不按面积估算</small></div>
+  <div className="diplomacy-fact"><h3><ArtIcon name="renown" size={22}/>朝局状态</h3><strong>{court?phases[court.phase].name:'暂无朝局记录'}</strong><small>{court?`${policies[court.policy].name}国策 · 天命 ${g.legitimacy} · 支持 ${g.support} · 紧张 ${court.tension}${courtEnabled(w,target)?'':' · 结算暂停'}`:'此局尚未建立朝局状态'}</small></div>
+  <div className="diplomacy-fact diplomacy-fact-wars"><h3><ArtIcon name="army" size={22}/>进行中的战争 <small>{realmWars.length} 场</small></h3>{realmWars.length?realmWars.map(v=><p key={v.id??`${v.attacker}|${v.defender}|${v.started}`}><b>{v.civil?`内战 · ${v.civil.name}`:`${regimeName(w,v.attacker)} 对 ${regimeName(w,v.defender)}`}</b><small>{siteById[v.target]?.name??v.target} · 已持续 {w.day-v.started} 日</small></p>):<small>目前没有参与战争</small>}</div>
+ </section>
  {relationSummary}
  <div className="diplomacy-leaders">{leaders.map(({id,title})=><button key={id} onClick={()=>onPerson(id)}><CharacterPortrait characterId={id} world={w}/><span><strong>{politicalName(id)}</strong><small>{title}</small></span></button>)}</div>
  <DetailTabs label="国家详情" value={tab} onChange={setTab} items={[{id:'relations',label:'外交',icon:'world'},{id:'officers',label:'官员',icon:'influence'},{id:'clans',label:'世族',icon:'renown'},{id:'history',label:'往事',icon:'diligent'}]}/>
