@@ -9,7 +9,7 @@ import {RealmBadge} from './RealmBadge';
 import {ArtIcon,Resource} from './ArtIcon';
 import {CharacterPortrait} from './CharacterPortrait';
 import {PersonChoice} from './PersonSelection';
-import {EconomyAction} from './EconomyAction';
+import {ActionDialog} from './ActionDialog';
 import {PetitionAudience} from './PetitionAudience';
 import './personalEconomy.css';
 import './governmentAudit.css';
@@ -29,12 +29,13 @@ export function EconomyCases({world,pending,send,caseId,onPerson}:Props&{caseId?
  })}</div>;
 }
 export function GovernmentAuditPanel({world,pending,send,onPerson}:Props&{onPerson:(id:string)=>void}){
- const [auditAccount,setAuditAccount]=useState(''),[inspector,setInspector]=useState('');
+ const [auditAccount,setAuditAccount]=useState(''),[inspector,setInspector]=useState(''),[commissionOpen,setCommissionOpen]=useState(false);
  const p=economyPresentation(world),audit=p.audits.some(a=>a.id===auditAccount)?auditAccount:p.audits[0]?.id??'';
- const props={world,pending,send};
+ const props={world,pending,send},command={type:'economy',action:'audit',account:audit,inspector} as const,reason=economyCommandReason(world,command);
  if(!p.audits.length&&!p.view.investigations.length)return null;
  return <div className="government-audit"><h3><ArtIcon name="wary" size={26}/>监察</h3>
-  {p.audits.length>0&&<section className="government-audit-commission"><h3><ArtIcon name="influence" size={24}/>委托查核</h3><div className="government-audit-parameters"><label>查核公库<select value={audit} onChange={e=>setAuditAccount(e.target.value)}>{p.audits.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label><PersonChoice world={world} title="监察人" value={inspector} onChange={setInspector} pending={pending} options={p.inspectors.map(a=>({id:a.id,score:attributes(world,a.id).stewardship,metric:'管理',reason:economyCommandReason(world,{type:'economy',action:'audit',account:audit,inspector:a.id})}))}/></div><EconomyAction {...props} label="委托查核 · 私财 20 钱" icon="influence" command={{type:'economy',action:'audit',account:audit,inspector}} consequence="监察人赴当地驻留查核 14 日；可能查无实据，因失守或人事变化中止时不退已付费用。"/></section>}
+  {p.audits.length>0&&<div className="government-audit-launch"><span>核查公库支出与追缴记录</span><button onClick={()=>setCommissionOpen(true)}><ArtIcon name="influence" size={22}/>委托查核 · 私财 20 钱</button></div>}
+  {commissionOpen&&<ActionDialog title="委托查核" onClose={()=>setCommissionOpen(false)} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||economyCommandReason(world,command))return;send(command);setCommissionOpen(false);}}>确认委托 · 私财 20 钱</button>}><div className="government-audit-parameters"><label>查核公库<select value={audit} onChange={e=>setAuditAccount(e.target.value)}>{p.audits.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label><PersonChoice world={world} title="监察人" value={inspector} onChange={setInspector} pending={pending} options={p.inspectors.map(a=>({id:a.id,score:attributes(world,a.id).stewardship,metric:'管理',reason:economyCommandReason(world,{type:'economy',action:'audit',account:audit,inspector:a.id})}))}/></div><p>监察人赴当地驻留查核 14 日；可能查无实据，因失守或人事变化中止时不退已付费用。</p>{reason&&<p role="status" className="court-fiscal-reason">{reason}</p>}</ActionDialog>}
   {p.view.investigations.length>0&&<section className="government-audit-records"><h3><ArtIcon name="diligent" size={24}/>查核案件</h3><EconomyCases {...props} onPerson={onPerson}/></section>}
  </div>;
 }

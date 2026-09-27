@@ -6,4 +6,5 @@
 .government-audit select{min-height:38px;width:100%;min-width:0}
 .government-audit .economy-cases{display:grid;gap:10px}
 .government-audit .economy-action-card{max-width:360px}
+.government-audit-launch{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid #b5a47766;background:#172a24;color:#b8c3ae;font-size:11px}.government-audit-launch button{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;color:#ecd6a5}.action-detail-body .government-audit-parameters{margin:0 0 10px}.action-detail-body .government-audit-parameters label{display:grid;gap:5px;min-width:0}.action-detail-body .government-audit-parameters select{width:100%}
 @media(max-width:600px){.government-audit-parameters{grid-template-columns:1fr}.government-audit .economy-action-card{max-width:none}}

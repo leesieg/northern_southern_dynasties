@@ -24,12 +24,13 @@ export function RealmIdentitySummary({world:w,onPerson,onCity,onCourt}:{world:Wo
 }
 
 export function RealmOverview({world:w,onTab,onCity,onTerritory}:{world:World;onTab:(t:RealmTab)=>void;onCity:(id:string)=>void;onTerritory:(id:string)=>void}){
- const r=playerRealm(w),attention=serviceAttention(w).length+(dutyAttention(w)?1:0);
+ const r=playerRealm(w),attention=serviceAttention(w),councilAttention=attention.filter(key=>key.startsWith('council')).length,dutyCount=attention.length-councilAttention+(dutyAttention(w)?1:0);
  const held=officeHierarchy(w).filter(n=>n.active&&n.holder===w.characterId&&n.realm===r),local=held.filter(n=>!!n.territory),campaigns=w.militaryCampaigns?.items.filter(q=>q.status==='active'&&q.commander===w.characterId)??[],home=w.people[0].location,governed=[...new Set([...local.map(n=>n.site).filter((v):v is string=>!!v),...local.flatMap(n=>localSites(w,n.territory!,r))])],priority=governed.map(site=>({site,...serviceNeed(w,'relief',site)})).sort((a,b)=>b.score-a.score)[0];
  const localTerritory=local.find(n=>n.territory&&['province','prefecture'].includes(territoryNodes[n.territory]?.level))?.territory;
  const openLocal=()=>localTerritory?onTerritory(localTerritory):onCity(governed[0]??home);
  return <div className="realm-overview">
-  {attention>0&&<button className="realm-attention" onClick={()=>onTab('duties')}><ArtIcon name="influence"/>有 {attention} 项文书等你处理 <span>›</span></button>}
+  {dutyCount>0&&<button className="realm-attention" onClick={()=>onTab('duties')}><ArtIcon name="diligent"/>有 {dutyCount} 项差事文书等你处理 <span>›</span></button>}
+  {councilAttention>0&&<button className="realm-attention" onClick={()=>onTab('council')}><ArtIcon name="influence"/>有 {councilAttention} 项议事文书等你处理 <span>›</span></button>}
   {(campaigns.length>0||priority||governed.length>0)&&<section className="realm-overview-section"><h3>{campaigns.length?'战役职掌':'辖区要务'}</h3><div className="realm-entry-grid">{campaigns.map(q=><button key={q.id} className="realm-entry" onClick={()=>onCity(q.target)}><ArtIcon name="army" size={36}/><span><strong>{siteById[q.target].name}战役</strong><small>{q.reason||'执行委任'} · 余 {Math.max(0,q.deadline-w.day)} 日</small></span><span aria-hidden="true">›</span></button>)}{priority&&<button className="realm-entry" onClick={()=>onCity(priority.site)}><ArtIcon name="grain" size={36}/><span><strong>{siteById[priority.site].name}</strong><small>{priority.reason} · {priority.neglect}</small></span><span aria-hidden="true">›</span></button>}{governed.length>1&&<button className="realm-entry" onClick={openLocal}><ArtIcon name="city" size={36}/><span><strong>统筹辖区</strong><small>下级任职与跨县公务</small></span><span aria-hidden="true">›</span></button>}</div></section>}
  </div>;
 }
