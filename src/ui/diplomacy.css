@@ -5,6 +5,8 @@
 
 .diplomacy-panel .envoy-person{display:inline-flex;align-items:center;gap:8px;font-size:12px;padding:4px 8px;margin-right:8px}
 .diplomacy-panel .envoy-person .painted-portrait{width:40px;height:40px;flex:0 0 40px;aspect-ratio:1;overflow:hidden}
+.diplomacy-banner .diplomacy-court-entry{display:flex;align-items:center;gap:8px;min-height:44px;margin-left:auto;padding:6px 10px;border:1px solid #c0a36b81;border-left:3px solid #a8513c;background:linear-gradient(110deg,#3a3b2c,#20382c);color:#f1d99e;text-align:left}.diplomacy-court-entry>span:nth-child(2){display:grid;gap:2px;font:16px var(--serif)}.diplomacy-court-entry small{color:#bdc5ae;font:10px var(--sans)}.diplomacy-court-entry>span:last-child{margin-left:10px}.diplomacy-banner .diplomacy-court-entry:hover{border-color:#efd397;background:#3b4834}
+@media(max-width:560px){.diplomacy-banner{flex-wrap:wrap}.diplomacy-banner .diplomacy-court-entry{width:100%;margin-left:0}}
 .diplomacy-panel .diplomacy-realm-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;border:0}
 .diplomacy-fact{display:grid;align-content:start;gap:6px;min-width:0;padding:11px 12px;border:1px solid #b69c6340;border-radius:5px;background:#182a23}
 .diplomacy-panel .diplomacy-fact h3{gap:6px;margin:0;font:14px var(--serif)}

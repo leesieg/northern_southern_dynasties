@@ -6,7 +6,6 @@ import {activeWars,warRealmSide} from '../core/wars';
 import {RealmBadge} from './RealmBadge';
 import {ClanRanking} from './ClanRanking';
 import {useState,useEffect} from 'react';
-import {OfficeHierarchy} from './OfficeHierarchy';
 import {CharacterPortrait} from './CharacterPortrait';
 import {ArtIcon,type ArtName} from './ArtIcon';
 import {DetailTabs} from './DetailTabs';
@@ -25,8 +24,8 @@ const groups:{name:string;icon:ArtName;actions:DiplomacyAction[]}[]=[{name:'邦�
 const effects:Record<DiplomacyAction,string>={improve:'获接纳后，两国关系 +25。',safe:'批准后本人获得 240 日安全通行；交战时失效。',meeting:'批准后本人获得安全通行，须亲赴对方都城完成会盟，完成后关系再 +15。',transit:'普通人物可通行 720 日；君主、执政和统帅仍需安全通行。',military:'己方军队可借道 720 日，不授予占领权。',aid:'盟国答应后拨付 120 钱与 120 粮，不派兵参战。',join:'盟国答应后实际加入指定战争，自行指挥军队；攻占归战争主导国，和约由主导国签订。',submit:'成为对方臣属，每月朝贡 20 钱，失去独立宣战及军政缔约权。',independence:'解除臣属，关系 −50、信用 −20。',revoke:'终止双方全部条约，关系 −30、信用 −20。',insult:'立即使两国关系 −25。',recognize:'相互承认国号，双方合法性 +5。',pact:'720 日互不侵犯；宣战前须先终止条约。',alliance:'720 日军事同盟，双方军队可借道；可分别请求钱粮军援或实际参战。'};
 const instant=(a:DiplomacyAction)=>['insult','revoke','independence'].includes(a);
 const signed=(n:number)=>(n>0?'+':'')+n;
-export function DiplomacyPanel({world:w,selected:target,initialTab='relations',onSelect,onPerson,pending,send}:{world:World;selected:RealmId;initialTab?:'relations'|'clans';onSelect:(r:RealmId)=>void;onPerson:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
- const [tab,setTab]=useState<'relations'|'officers'|'history'|'clans'>(initialTab),[action,setAction]=useState<DiplomacyAction|null>(null),[warConfirm,setWarConfirm]=useState<'war'|'peace'|null>(null);
+export function DiplomacyPanel({world:w,selected:target,initialTab='relations',onSelect,onPerson,onCourt,pending,send}:{world:World;selected:RealmId;initialTab?:'relations'|'clans';onSelect:(r:RealmId)=>void;onPerson:(id:string)=>void;onCourt:(r:RealmId)=>void;pending:boolean;send:(c:GameCommand)=>void}){
+ const [tab,setTab]=useState<'relations'|'history'|'clans'>(initialTab),[action,setAction]=useState<DiplomacyAction|null>(null),[warConfirm,setWarConfirm]=useState<'war'|'peace'|null>(null);
  const [envoy,setEnvoy]=useState<string|undefined>();
  const [joinWar,setJoinWar]=useState<number|undefined>();
  useEffect(()=>{setEnvoy(undefined);setAction(null);},[target]);
@@ -45,7 +44,7 @@ export function DiplomacyPanel({world:w,selected:target,initialTab='relations',o
  const q=action?diplomaticQuote(w,{type:'diplomacy',action,target,envoy,war:action==='join'?selectedJoinWar:undefined}):null;
  const treaties=(kinds:TreatyKind[])=>active.filter(t=>kinds.includes(t.kind)).map(t=><div className="diplomacy-treaty-row" key={t.kind+t.from}><strong>{treatyNames[t.kind]}</strong><small><RealmBadge realm={t.from} world={w}/> → <RealmBadge realm={t.to} world={w}/> · 余 {t.until-w.day} 日</small>{t.actor&&<small>{person(t.actor)}{t.meeting==='invited'?' · 待赴会盟':t.meeting==='held'?' · 会盟已成':''}</small>}</div>);
  const relationSummary=p&&<section className="diplomacy-key-relation"><h3>与<RealmBadge realm={r} world={w}/>的关系</h3><div className="diplomacy-status"><span className={status==='交战'?'is-war':''}><ArtIcon name={status==='交战'?'army':status==='停战期'?'steadfast':'frugal'}/><b>{status}</b></span><span><ArtIcon name={p.opinion>=40?'gregarious':p.opinion>=0?'person':p.opinion>-40?'wary':'stress'}/><b>{attitude(p.opinion)}</b></span>{(isSubject||isOverlord)&&<span><ArtIcon name="coins"/><b>{isSubject?'向其朝贡':'向我朝贡'}</b></span>}{active.some(t=>t.kind==='alliance')&&<span><ArtIcon name="steadfast"/><b>盟国</b></span>}<HoverHint label={'关系分数 '+p.opinion+'，查看影响因子'} content={<><strong>国家关系 · {signed(p.opinion)}</strong>{diplomaticOpinionBreakdown(p).map(v=><p key={v.label}>{v.label}<b>{signed(v.value)}</b></p>)}<small>范围 −100 至 +100；列示实际计入的变化。</small></>}><span className="diplomacy-score">{signed(p.opinion)}<small>关系</small></span></HoverHint></div><p className="diplomacy-meta">{p.recognized?'相互承认国号':r!=='liang'&&target!=='liang'?'竞争正统':'未相互承认国号'}{status==='停战期'?' · 停战余 '+(w.realm.truces[[r,target].sort().join('|')]-w.day)+' 日':''}</p></section>;
- return <div className="diplomacy-panel"><header className="diplomacy-banner"><RealmBadge realm={target} world={w}/><div><small>{target===r?'本国':'政权档案'}</small><span>{lord?<>宗主：<RealmBadge realm={lord} world={w} onOpen={onSelect}/></>:'独立政权'}</span><small>国家信用 {s.credit[target]} / 100</small></div></header>
+ return <div className="diplomacy-panel"><header className="diplomacy-banner"><RealmBadge realm={target} world={w}/><div><small>{target===r?'本国':'政权档案'}</small><span>{lord?<>宗主：<RealmBadge realm={lord} world={w} onOpen={onSelect}/></>:'独立政权'}</span><small>国家信用 {s.credit[target]} / 100</small></div><button className="diplomacy-court-entry" onClick={()=>onCourt(target)} aria-label={'查看'+regimeName(w,target)+'朝廷'}><ArtIcon name="influence" size={25}/><span>朝廷<small>职官 · 统属</small></span><span aria-hidden="true">›</span></button></header>
  <section className="diplomacy-realm-facts" aria-label="国家基础信息">
   <div className="diplomacy-fact"><h3><ArtIcon name="coins" size={22}/>中央国库</h3><div className="diplomacy-fact-pair"><span>公款 <b>{treasury.coins.toLocaleString('zh-CN')}</b></span><span>公粮 <b>{treasury.grain.toLocaleString('zh-CN')}</b></span></div><small>中央余额，不含地方公库与县仓</small></div>
   <div className="diplomacy-fact"><h3><ArtIcon name="person" size={22}/>总人口</h3><strong>{population.toLocaleString('zh-CN')} <small>人</small></strong><small>当前实控县域人口合计</small></div>
@@ -55,9 +54,8 @@ export function DiplomacyPanel({world:w,selected:target,initialTab='relations',o
  </section>
  {relationSummary}
  <div className="diplomacy-leaders">{leaders.map(({id,title})=><button key={id} onClick={()=>onPerson(id)}><CharacterPortrait characterId={id} world={w}/><span><strong>{politicalName(id)}</strong><small>{title}</small></span></button>)}</div>
- <DetailTabs label="国家详情" value={tab} onChange={setTab} items={[{id:'relations',label:'外交',icon:'world'},{id:'officers',label:'官员',icon:'influence'},{id:'clans',label:'世族',icon:'renown'},{id:'history',label:'往事',icon:'diligent'}]}/>
+ <DetailTabs label="国家详情" value={tab} onChange={setTab} items={[{id:'relations',label:'外交',icon:'world'},{id:'clans',label:'世族',icon:'renown'},{id:'history',label:'往事',icon:'diligent'}]}/>
  {tab==='clans'&&<ClanRanking world={w} realm={target} onPerson={onPerson}/>}
- {tab==='officers'&&<OfficeHierarchy world={w} realm={target} onPerson={onPerson} expanded/>}
  {tab==='history'&&<section className="diplomacy-history"><h3><ArtIcon name="diligent"/>外交往事</h3>{history.slice(-20).reverse().map((h,i)=><article key={i}><small>第 {h.day} 日</small><p>{h.text}</p></article>)}{!history.length&&<p className="diplomacy-empty">尚无外交记录。</p>}</section>}
  {tab==='relations'&&<>{p?<>
  <section><h3><ArtIcon name="influence"/>现行约定</h3>{!active.length&&!isSubject&&!isOverlord&&!marriages.length?<p className="diplomacy-empty">双方尚无条约或姻亲关系。</p>:<div className="diplomacy-treaties">{(isSubject||isOverlord)&&<article><h4><ArtIcon name="coins"/>经济</h4><p><RealmBadge realm={isSubject?r:target} world={w}/>每月向<RealmBadge realm={isSubject?target:r} world={w}/>朝贡 20 钱</p></article>}{active.some(t=>['military','pact','alliance'].includes(t.kind))&&<article><h4><ArtIcon name="army"/>军事</h4>{treaties(['military','pact','alliance'])}</article>}{active.some(t=>['transit','safe'].includes(t.kind))&&<article><h4><ArtIcon name="world"/>通行</h4>{treaties(['transit','safe'])}</article>}{marriages.length>0&&<article><h4><ArtIcon name="renown"/>姻亲</h4>{marriages.map(m=><p key={m.a+m.b}>{person(m.a)} × {person(m.b)}</p>)}<p className="diplomacy-empty">人物婚姻不附带国家盟约。</p></article>}</div>}</section>

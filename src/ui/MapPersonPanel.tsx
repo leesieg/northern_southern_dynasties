@@ -47,7 +47,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
 
  {tab==='overview'&&<>
  <LifeDetails world={w} id={lifeId} pending={pending} send={send}/>
- <div className="person-quick-actions">{self?<><button onClick={onEconomy}><ArtIcon name="coins" size={26}/>管理私财 ›</button><button onClick={onLifestyle}><ArtIcon name="diligent" size={26}/>生活重心 ›</button><button onClick={onEstate}><ArtIcon name="estate" size={26}/>家族庄园 ›</button></>:extra&&w.social&&<button className="primary" disabled={retired||deceased} onClick={()=>onTab('interaction')}>{deceased?'已故':retired?'已退居':'与'+name+'互动'}</button>}</div>
+ <div className="person-quick-actions">{self?<><button onClick={onEconomy}><ArtIcon name="coins" size={26}/>{w.realm?'生活与私财':'生活重心'} ›</button><button onClick={onEstate}><ArtIcon name="estate" size={26}/>家族庄园 ›</button></>:extra&&w.social&&<button className="primary" disabled={retired||deceased} onClick={()=>onTab('interaction')}>{deceased?'已故':retired?'已退居':'与'+name+'互动'}</button>}</div>
  {self&&w.social&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson} section="self"/>}
  {!isDeceased(w,id)&&!self&&<p><ArtIcon name="world" size={24}/><button onClick={()=>onCity(personResidence(w,id).site)}>{siteById[personResidence(w,id).site]?.name} · {personResidence(w,id).traveling?'在途':'驻留'}</button></p>}
  {self&&<ActivityProgress world={w} send={send} pending={pending}/>}
@@ -57,7 +57,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  </>}
  {tab==='family'&&family&&<>{self&&<DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree',label:'族谱',icon:'renown'},{id:'legacy',label:'世业继任',icon:'estate'}]}/>}{(!self||familyMode==='tree')&&<FamilyPanel world={w} selected={familySelection??id} onSelect={setFamilySelection} onPerson={onPerson}/>}{self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
 
- {tab==='economy'&&self&&w.realm&&<button onClick={onEconomy}><ArtIcon name="coins"/>管理私财 →</button>}
+ {tab==='economy'&&self&&w.realm&&<button onClick={onEconomy}><ArtIcon name="coins"/>查看生活 →</button>}
  {tab==='relations'&&<PersonConnections key={id} world={w} person={id} onPerson={onPerson}/>}
  {tab==='interaction'&&!self&&w.social&&extra&&!retired&&!deceased&&<><RelationshipPanel key={id} world={w} pending={pending} send={send} targetId={id}/></>}
 
