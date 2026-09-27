@@ -73,5 +73,7 @@ export function refundService(w:World,t:Assignment,coins:number,grain:number){
 }
 export function serviceException(w:World,t:Assignment){
  if(!t.mandate?.automatic)return true;
- return !!serviceBudgetReason(w,t,t.phase==='approval'?Math.ceil(assignmentTemplates[t.kind].coins*assignmentPlans[t.plan??'balanced'].cost/100):0,t.phase==='approval'?Math.ceil(assignmentTemplates[t.kind].grain*assignmentPlans[t.plan??'balanced'].cost/100):0)||national(t.kind)||w.realm!.cities[t.site].order<t.mandate.orderFloor||(t.quality??100)<t.mandate.qualityFloor||w.day>t.deadline||t.phase==='aid';
+ const budget=t.phase==='approval'?Math.ceil(assignmentTemplates[t.kind].coins*assignmentPlans[t.plan??'balanced'].cost/100):0;
+ const grain=t.phase==='approval'?Math.ceil(assignmentTemplates[t.kind].grain*assignmentPlans[t.plan??'balanced'].cost/100):0;
+ return t.result?.success===false||serviceApprover(w,t)!==t.mandate.issuer||!canCommission(w,t.mandate.issuer,t.realm,t.site,t.kind)||budget>assignmentTemplates[t.kind].coins||grain>assignmentTemplates[t.kind].grain||!!serviceBudgetReason(w,t,budget,grain)||national(t.kind)||w.realm!.cities[t.site].order<t.mandate.orderFloor||(t.quality??100)<t.mandate.qualityFloor||w.day>t.deadline||t.phase==='aid';
 }

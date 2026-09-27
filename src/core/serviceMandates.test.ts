@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act} from './world';
 import {actService,advanceService,serviceTask,serviceReason,serviceAttention} from './assignments';
 import {countyTerritory,setLocalHolder,localAncestors} from './localAdministration';
-import {serviceApprover,canCommission,settleServiceRefund} from './serviceMandates';
+import {serviceApprover,canCommission,settleServiceRefund,serviceException} from './serviceMandates';
 import {territoryAccount,ensureFiscal,publicBalance,actFiscal,fiscalReason,localBalance} from './treasury';
 import {realmReason} from './realm';
 import {buildQuote} from './construction';
@@ -74,9 +74,29 @@ describe('scoped service mandates',()=>{
   expect(serviceAttention(w).some(k=>k.startsWith('task:'+task.id))).toBe(false);
   w.day=2;advanceService(w);expect(serviceTask(w,task.id)?.phase).toBe('ready');validateWorld(w);
  });
+ it('applies standing relief authority only inside its budget boundary and revokes active authority',()=>{
+  const make=(plan:'balanced'|'urgent')=>{const w=newCampaignWorld('xiao-yan',undefined,'sandbox');act(w,{type:'service',action:'begin'});act(w,{type:'service',action:'routine',kind:'relief',enabled:true});act(w,{type:'service',action:'open',site:'jiankang',kind:'relief',officer:'xiao-gang',plan});return {w,task:w.service!.tasks.at(-1)!};};
+  const normal=make('balanced');expect(normal.task.mandate?.automatic).toBe(true);expect(serviceAttention(normal.w).some(k=>k.startsWith('task:'+normal.task.id))).toBe(false);expect(parseWorld(serializeWorld(normal.w))).toEqual(normal.w);
+  act(normal.w,{type:'service',action:'routine',kind:'relief',enabled:false});expect(normal.task.mandate?.automatic).toBe(false);expect(serviceAttention(normal.w).some(k=>k.startsWith('task:'+normal.task.id))).toBe(true);validateWorld(normal.w);
+  const expensive=make('urgent');expect(expensive.task.mandate?.automatic).toBe(true);expect(serviceAttention(expensive.w).some(k=>k.startsWith('task:'+expensive.task.id))).toBe(true);validateWorld(expensive.w);
+ });
+ it('allows an actual local supervisor to grant routine authority, and reports a failed automatic case',()=>{
+  const {w,task}=setup();actService(w,{type:'service',action:'routine',kind:'relief',enabled:true},'xiao-yi');expect(w.service!.routine).toContainEqual({realm:'liang',issuer:'xiao-yi',kind:'relief'});
+  actService(w,{type:'service',action:'automation',id:task.id,enabled:true},'xiao-yi');w.day=task.deadline;advanceService(w);expect(task.result?.success).toBe(false);expect(serviceException(w,task)).toBe(true);validateWorld(w);
+ });
  it('rechecks the supervisor after dismissal instead of retaining former access',()=>{
   const {w,task}=setup();for(const [key,seat] of Object.entries(w.realm!.local!.seats))if(seat.holder==='xiao-yi')setLocalHolder(w,key.split('|')[1],'liang',null);for(const c of Object.values(w.realm!.cities))if(c.governor==='xiao-yi')c.governor=null;
   expect(serviceApprover(w,task)).not.toBe('xiao-yi');expect(serviceReason(w,{type:'service',action:'approve',id:task.id},'xiao-yi')).toContain('主管');
+ });
+ it('does not revive a former supervisor’s standing authority after reappointment',()=>{
+  const {w,task,t}=setup();actService(w,{type:'service',action:'routine',kind:'relief',enabled:true},'xiao-yi');actService(w,{type:'service',action:'automation',id:task.id,enabled:true},'xiao-yi');
+  for(const [key,seat] of Object.entries(w.realm!.local!.seats))if(seat.holder==='xiao-yi')setLocalHolder(w,key.split('|')[1],'liang',null);for(const c of Object.values(w.realm!.cities))if(c.governor==='xiao-yi')c.governor=null;
+  w.day++;advanceService(w);expect(task.mandate?.automatic).toBe(false);expect(w.service!.routine).toEqual([]);
+  setLocalHolder(w,t,'liang','xiao-yi');w.day++;advanceService(w);expect(task.mandate?.automatic).toBe(false);expect(w.service!.routine).toEqual([]);validateWorld(w);
+ });
+ it('rejects malformed authorization and outcome snapshots in saves',()=>{
+  const {w,task}=setup(),order=task.baseline!.order;task.baseline!.order=101;expect(()=>serializeWorld(w)).toThrow('存档');task.baseline!.order=order;
+  actService(w,{type:'service',action:'routine',kind:'relief',enabled:true},'xiao-yi');w.service!.routine!.push({...w.service!.routine![0]});expect(()=>serializeWorld(w)).toThrow('存档');
  });
  it('runs NPC service without opting the player into service',()=>{
   const w=newCampaignWorld('dugu-xin',undefined,'sandbox');w.day=15;advanceService(w);

@@ -21,7 +21,7 @@ const prepared=(kind:AssignmentKind='relief')=>{const w=start(),t=open(w,kind);a
 describe('general appointments and service lifecycle',()=>{
  it.each([['xiao-yan','xiao-yi','xunyang'],['gao-huan','gao-yang','ye'],['yuwen-tai','dugu-xin','tianshui']])('chief %s completes appointments with NPC officials', (chief,officer,site)=>{
   const w=start(chief),t=open(w,'relief',site,officer),coins=w.people[0].coins;
-  const result=drive(w,t.id);expect(result.result?.success).toBe(true);expect(result.result?.awards.some(a=>a.person===officer&&a.merit>0)).toBe(true);expect(w.people[0].coins).toBeGreaterThanOrEqual(coins);expect(parseWorld(serializeWorld(w))).toEqual(w);
+  const result=drive(w,t.id);expect(result.result?.success).toBe(true);expect(result.result?.awards.some(a=>a.person===officer&&a.merit>0)).toBe(true);expect(result.baseline?.day).toBe(result.created);expect(result.result?.after?.day).toBe(result.result?.day);expect(w.people[0].coins).toBeGreaterThanOrEqual(coins);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it.each([['xiao-yi','xunyang'],['gao-yang','ye'],['dugu-xin','tianshui']])('officer %s requests work and receives NPC approvals',(id,site)=>{const w=start(id),t=open(w,'agriculture',site,id);expect(t.phase).toBe('petition');expect(drive(w,t.id).result?.success).toBe(true);expect(w.service!.careers[id].economy).toBe(1);});
  it('uses one actor capacity, one seasonal task slot and authority checks',()=>{

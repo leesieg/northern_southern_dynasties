@@ -14,11 +14,13 @@ const key=(v:unknown,map:object):v is string=>typeof v==='string'&&Object.hasOwn
 const person=(v:unknown):v is string=>key(v,relationshipPersonById);
 const realm=(v:unknown)=>realms.includes(v as typeof realms[number]);
 const priorities=Object.keys(servicePriorities);
+const localSnapshot=(v:unknown,start:number,end:number)=>obj(v)&&int(v.day,start,end)&&int(v.order,0,100)&&int(v.grain,0,1000000)&&int(v.prosperity,0,100)&&int(v.irrigation,0,10)&&int(v.building,0,3);
 export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean {
  if(mode!=='sandbox'||!obj(v)||v.version!==1||!int(v.since,0,day)||!int(v.lastDay,v.since,day)||typeof v.enabled!=='boolean'||!int(v.nextId,1,1000000)||!obj(v.councils)||Object.keys(v.councils).length!==3||!obj(v.careers)||Object.keys(v.careers).some(id=>!relationshipPersonById[id]))return false;
  for(const r of realms){const c=v.councils[r];if(!obj(c)||!int(c.season,Math.floor(v.since/90),Math.floor(day/90))||!key(c.priority,servicePriorities)||typeof c.decided!=='boolean'||!int(c.completed,0,10000)||!text(c.lastResult,300)||!Array.isArray(c.petitioned)||new Set(c.petitioned).size!==c.petitioned.length||c.petitioned.some(p=>!person(p)||relationshipPersonById[p].realm!==r))return false;const reply=c.reply;if(reply!==null&&(!obj(reply)||!person(reply.actor)||relationshipPersonById[reply.actor].realm!==r||!int(reply.day,v.since,day)||!text(reply.text,200)))return false;const p=c.proposal;if(p!==null&&(!obj(p)||!person(p.actor)||relationshipPersonById[p.actor].realm!==r||!key(p.priority,servicePriorities)||!int(p.day,v.since,day)||!c.petitioned.includes(p.actor)))return false;}
  if(historicalCharacters.some(c=>!Object.hasOwn(v.careers as object,c.id)))return false;
  for(const id of Object.keys(v.careers)){const p=v.careers[id];if(!obj(p)||Object.keys(p).length!==4||priorities.some(k=>!int(p[k],0,100000)))return false;}
+ if(v.routine!==undefined&&(!Array.isArray(v.routine)||v.routine.length>512||new Set(v.routine.map(m=>obj(m)?[m.realm,m.issuer,m.kind].join('|'):null)).size!==v.routine.length||v.routine.some(m=>!obj(m)||!realm(m.realm)||!person(m.issuer)||!['relief','marketworks','granaryworks','hostelworks'].includes(String(m.kind)))))return false;
  if(!Array.isArray(v.used)||v.used.length>6000||new Set(v.used).size!==v.used.length||!v.used.every(k=>{if(!text(k,160))return false;const [season,r,kind,site,target,...rest]=k.split('|');return !rest.length&&int(Number(season),0,Math.floor(day/90))&&realm(r)&&key(kind,assignmentTemplates)&&key(site,siteById)&&(kind==='envoy'?realm(target)&&target!==r:target==='');}))return false;
  if(!Array.isArray(v.tasks)||v.tasks.length>256)return false;
  const ids=new Set<number>(),busy=new Set<string>(),counts:Record<string,number>={};
@@ -27,6 +29,7 @@ export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean
   if(t.delivery!==undefined){const d=t.delivery;if(t.kind!=='supply'||!t.started||!obj(d)||!(d.transfer===null||int(d.transfer,1,1000000000))||!int(d.sent,1,200)||!int(d.arrived,0,Number(d.sent))||!int(d.delivered,0,Number(d.arrived))||!int(d.lost,0,Number(d.sent))||!['traveling','arrived','returned'].includes(String(d.status))||d.status!=='traveling'&&Number(d.arrived)+Number(d.lost)!==d.sent)return false;}
   const validFunding=(p:unknown)=>obj(p)&&typeof p.account==='string'&&(p.account==='central:'+t.realm||p.account.split('|').length===2&&p.account.startsWith(t.realm+'|')&&Object.hasOwn(territoryNodes,p.account.split('|')[1]))&&(p.grainSite===null||p.grainSite===t.site)&&int(p.coins,0,400)&&int(p.grain,0,200);
   if(t.mandate!==undefined&&(!obj(t.mandate)||!person(t.mandate.issuer)||t.mandate.issuer===t.officer||typeof t.mandate.automatic!=='boolean'||t.mandate.orderFloor!==40||t.mandate.qualityFloor!==85||t.mandate.reserve!==0))return false;
+  if(t.baseline!==undefined&&!localSnapshot(t.baseline,Number(t.created),Number(t.created)))return false;
   if(t.funding!==undefined&&(!Array.isArray(t.funding)||t.funding.length>2||!t.funding.every(validFunding)||!obj(t.funds)||t.funding.reduce((n,p)=>n+p.coins,0)!==t.funds.coins||t.funding.reduce((n,p)=>n+p.grain,0)!==t.funds.grain))return false;
   if(t.refunds!==undefined&&(!Array.isArray(t.refunds)||t.refunds.length>2||!t.refunds.every(validFunding)||t.phase!=='closed'&&t.refunds.length))return false;
   if(Array.isArray(t.refunds)&&obj(t.funds)&&obj(t.spent)&&(t.refunds.reduce((n,p)=>n+p.coins,0)>Number(t.funds.coins)-Number(t.spent.coins)||t.refunds.reduce((n,p)=>n+p.grain,0)>Number(t.funds.grain)-Number(t.spent.grain)))return false;
@@ -52,6 +55,7 @@ export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean
   if(total!==t.progress)return false;
   if(t.phase==='closed'){
    const r=t.result;if(!obj(r)||r.day!==t.changed||typeof r.success!=='boolean'||!text(r.reason,300)||!Array.isArray(r.effects)||r.effects.length>12||r.effects.some(e=>!text(e,300))||!Array.isArray(r.awards)||r.awards.length>relationshipPeople.length||t.invitation!==null||t.helper!==null)return false;
+   if(r.after!==undefined&&!localSnapshot(r.after,Number(r.day),Number(r.day)))return false;
    if(r.success&&(!t.started||t.progress!==t.required||!t.incidentDone))return false;
    const seen=new Set<string>();for(const a of r.awards){if(!obj(a)||!person(a.person)||!Object.hasOwn(t.contributors,a.person)||seen.has(a.person)||!int(a.merit,-4,40)||!int(a.opinion,-5,8)||!int(a.prestige,0,5))return false;if(r.success?(a.merit<0||a.opinion<0):(a.merit>0||a.opinion>0||a.prestige!==0))return false;seen.add(a.person);}
   }else {if(t.result!==null||busy.has(t.officer))return false;busy.add(t.officer);if(t.helper){if(busy.has(t.helper as string))return false;busy.add(t.helper as string);}counts[String(t.realm)]=(counts[String(t.realm)]??0)+1;if(counts[String(t.realm)]>128)return false;}
