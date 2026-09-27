@@ -16,7 +16,7 @@ const designs:Record<OngoingKind,{icon:ArtName;color:string;path:string}>={
  military:{icon:'army',color:'#714a37',path:'M2 1H70V109L52 98 36 109 20 98 2 109Z'},
  retinue:{icon:'steadfast',color:'#456359',path:'M2 1H70V89L60 105H12L2 89Z'},
 };
-export function ongoingClock(item:OngoingItem){return item.days===null?item.clock==='estimate'?'暂缓':'待办':`${item.clock==='deadline'?'限 ':item.clock==='estimate'?'约 ':''}${item.days}日`;}
+function ongoingClock(item:OngoingItem){return item.days===null?item.clock==='estimate'?'暂缓':'待办':`${item.clock==='deadline'?'限 ':item.clock==='estimate'?'约 ':''}${item.days}日`;}
 export function OngoingFlags({world,onOpen}:{world:World;onOpen:(item:OngoingItem)=>void}){
  const items=ongoingItems(world),signature=items.map(i=>i.id).join('|'),[order,setOrder]=useState<string[]>(()=>items.map(i=>i.id)),ref=useRef<HTMLDivElement>(null);
  useLayoutEffect(()=>{const ids=signature?signature.split('|'):[];setOrder(old=>{const next=[...old.filter(id=>ids.includes(id)),...ids.filter(id=>!old.includes(id))];return next.join('|')===old.join('|')?old:next;});},[signature]);

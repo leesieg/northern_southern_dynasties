@@ -1,0 +1,9 @@
+.action-confirm-dialog{width:min(440px,calc(100vw - 32px));max-height:min(80dvh,640px);overflow:auto;padding:22px 24px;border:2px double #c6a66c;border-radius:6px;background:#1b3028;color:#e4dec8;box-shadow:0 18px 56px #0009}
+.action-confirm-dialog::backdrop{background:#0d1b18b8}
+.action-confirm-dialog h2{margin:0 0 12px;font:24px var(--serif);color:#e9cf98}
+.action-confirm-detail{font-size:13px;line-height:1.7;color:#c7d0ba}
+.action-confirm-detail p{margin:0 0 8px}
+.action-confirm-dialog footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.action-confirm-dialog footer button{min-height:44px;padding:8px 16px}
+.action-confirm-dialog footer .danger{border-color:#b76f60;background:#6b342c;color:#fff1de}
+.action-confirm-dialog button:focus-visible{outline:2px solid #f3d796;outline-offset:3px}

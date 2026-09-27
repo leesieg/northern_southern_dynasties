@@ -1,3 +1,4 @@
+import {ConfirmAction} from './ConfirmAction';
 import {HouseholdPlansPanel} from './HouseholdPlansPanel';
 import {PrivateBanquet} from './PersonalEconomyPanel';
 import {retinueQuote,recruitmentScore} from '../core/retinue';
@@ -8,10 +9,9 @@ import {HoverHint} from './HoverHint';
 import {ArtIcon} from './ArtIcon';
 import {DetailTabs} from './DetailTabs';
 import { useState } from 'react';
-import { relationshipPeople,relationshipPersonById,relationshipActionNames,type RelationshipAction } from '../data/relationships';
+import { relationshipPeople,relationshipActionNames,type RelationshipAction } from '../data/relationships';
 import { relationName,relationHooks,relationshipScore,relationshipQuote,activeMarriage,validRegency,type RelationshipCommand } from '../core/relationships';
 import { governmentOf,currentRealm } from '../core/government';
-import { CharacterPortrait } from './CharacterPortrait';
 import { interactionQuote,acceptance } from '../core/social';
 import type { World,GameCommand } from '../core/types';
 import './relationships.css';
@@ -33,7 +33,7 @@ export function RelationshipPanel({world:w,pending,send,targetId}:{world:World;p
  const quoteFor=(cmd:GameCommand)=>{if(cmd.type==='retinue')return {...retinueQuote(w,cmd),influence:0,days:0,chance:0};if(cmd.type==='interact')return {...interactionQuote(w,target.id,cmd.action),influence:0,days:0,chance:0};return relationshipQuote(w,cmd as RelationshipCommand);};
  const active=chosen&&groups[tab].some(k=>k===chosen)?chosen:groups[tab][0];
  const scoreParts=active==='hire'?recruitmentScore(w,a,target.id):active==='advisor'||active==='favor'?acceptance(w,target.id):[...relationshipScore(w,target.id),...(tab==='marriage'&&marriageClanBonus(w,a,target.id)?[{label:'世族门第',value:marriageClanBonus(w,a,target.id)}]:[])];
- const action=(cmd:GameCommand,label:string,danger=false)=>{const q=quoteFor(cmd),key=JSON.stringify(cmd);return <div className="relationship-action"><small>{q.cost?q.cost+' 钱':'无需盘缠'}{q.influence?' · '+q.influence+' 影响力':''}{q.days?' · '+q.days+' 日 · 成功率 '+q.chance+'%':''}</small><button className="primary" disabled={pending||!!q.reason} onClick={()=>{if(danger&&confirmation!==key){setConfirmation(key);return;}setConfirmation(null);send(cmd);}}>{confirmation===key?'确认':''}{label}</button>{q.reason&&<small role="status">{q.reason}</small>}{confirmation===key&&<aside><p>{cmd.type==='relationship'&&cmd.action==='marital-branch'?'以未婚身份开始本局婚姻经历？':cmd.type==='retinue'?'解聘后立即失去幕职加成，再次延聘须等待 90 日。':'确认后扣除费用并执行；已付计谋费用不会退还。'}</p><button onClick={()=>setConfirmation(null)}>取消</button></aside>}</div>;};
+ const action=(cmd:GameCommand,label:string,danger=false)=>{const q=quoteFor(cmd),key=JSON.stringify(cmd);return <div className="relationship-action"><small>{q.cost?q.cost+' 钱':'无需盘缠'}{q.influence?' · '+q.influence+' 影响力':''}{q.days?' · '+q.days+' 日 · 成功率 '+q.chance+'%':''}</small><button className="primary" disabled={pending||!!q.reason} onClick={()=>{if(danger)setConfirmation(key);else send(cmd);}}>{label}</button>{q.reason&&<small role="status">{q.reason}</small>}{confirmation===key&&<ConfirmAction title={label} detail={cmd.type==='relationship'&&cmd.action==='marital-branch'?'以未婚身份开始本局婚姻经历？':cmd.type==='retinue'?'解聘后立即失去幕职加成，再次延聘须等待 90 日。':'确认后扣除费用并执行；已付计谋费用不会退还。'} confirmLabel='确认执行' danger pending={pending||!!q.reason} onCancel={()=>setConfirmation(null)} onConfirm={()=>{if(pending||quoteFor(cmd).reason)return;send(cmd);setConfirmation(null);}}/>}</div>;};
  return <div className="relationship-panel"><MobilityPanel world={w} target={targetId} send={send} pending={pending}/>
  {s.scheme?.target===target.id&&<article className="relationship-task"><h4>{s.scheme.kind==='control'?'筹划挟制':'培养友谊'} · {relationName(s.scheme.target)}</h4><progress aria-label="计谋进度" value={w.day-s.scheme.started} max={s.scheme.due-s.scheme.started}/><p>余 {s.scheme.due-w.day} 日 · 成功率 {s.scheme.chance}%</p>{action({type:'relationship',action:'cancel'},'撤回计谋',true)}</article>}
  {w.social?.scheme?.target===target.id&&<article><h4>交好 · {relationName(w.social.scheme.target)}</h4><p>余 {w.social.scheme.due-w.day} 日 · 成功率 {w.social.scheme.chance}%</p><button disabled={pending} onClick={()=>send({type:'cancel-scheme'})}>撤回交好 · 不退费</button></article>}
@@ -50,4 +50,3 @@ export function RelationshipPanel({world:w,pending,send,targetId}:{world:World;p
  <section className="detail-record-group"><h4>关系往事</h4>{s.history.filter(h=>h.actor===a&&h.target===target.id||h.actor===target.id&&h.target===a).slice(-15).reverse().map((h,i)=><p key={i}>第 {h.day} 日 · {h.text}</p>)}</section>
  </div>;
 }
-export function RelationshipPortrait({id,world}:{id:string;world?:World}){const p=relationshipPersonById[id];return <div className="relationship-portrait"><CharacterPortrait characterId={id} name={p?.name} world={world} compact/></div>;}

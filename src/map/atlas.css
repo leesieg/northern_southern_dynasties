@@ -25,9 +25,7 @@
 .atlas-scale-indicator span{font-family:"PingFang SC",sans-serif;font-size:9px;letter-spacing:1px;margin-left:12px;color:#66745d}
 .atlas-network-notice{position:absolute;left:20px;right:20px;top:155px;z-index:7;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#283a30ec;border:1px solid #e7ce8c66;color:#e5d7ad;font-size:11px;line-height:1.6}
 .atlas-network-notice button{padding:4px 9px;flex-shrink:0;font-size:11px}
-.map-stage:not(.journal-expanded) .map-legend{bottom:100px}
 .map-stage:not(.journal-expanded) .zoom-tools{bottom:95px}
-.map-stage:not(.journal-expanded) .map-bottomline{bottom:72px}
 .map-stage .journal{bottom:22px}
 .map-stage .journal.collapsed{background:#21372be6}
 .atlas-view-toggle{font-size:11px;padding:7px 11px;background:#20342ce6;border-color:#b6b4956b;color:#ded7b5;white-space:nowrap}

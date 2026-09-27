@@ -20,7 +20,6 @@
 .map-options-toggle{padding:8px 10px;font-size:10px;background:#203027f5;color:#d8c89c;border-color:#bca37180;white-space:nowrap}
 .map-options{position:absolute;right:0;bottom:45px;display:grid;gap:8px;min-width:150px;padding:12px;background:#203027fa;border:1px solid #bca37170;box-shadow:0 4px 18px #17271b33}
 .map-options button{width:100%;font-size:11px}
-.focused-shell .map-legend{left:20px;bottom:19px;max-width:calc(100% - 40px);font-size:9px;gap:12px;flex-wrap:wrap}.focused-shell .map-bottomline{display:none}
 .focused-shell .zoom-tools{bottom:118px;right:18px}.focused-shell .compass-rose{display:none}
 .focused-shell .journal{left:20px;right:auto;bottom:110px;width:min(460px,calc(100% - 82px))}.focused-shell .journal-entries{max-height:240px}
 .focused-shell .development-tabs{position:sticky;top:0;z-index:2;background:#24312c;padding-block:8px;gap:4px;border-bottom:1px solid #bba47150;margin-bottom:14px}
@@ -28,7 +27,6 @@
 .focused-shell .location-development .route-section{padding:0}.focused-shell .location-development .city-detail-more{margin-inline:0}.focused-shell .route-metrics{margin-top:12px}.focused-shell .city-view{margin-bottom:8px}.focused-shell .city-view-hint{margin-bottom:10px}
 .focused-shell button:focus-visible,.focused-shell summary:focus-visible{outline:2px solid #d6b576;outline-offset:3px}
 @media(max-width:1100px){.focused-shell .topbar{gap:10px;padding-inline:12px}.realm-resources{gap:12px;margin-left:0}.realm-resources strong{font-size:18px}.focused-shell .time-state{display:none}.focused-shell .brand h1{display:none}.focused-shell .game-body.place-open{grid-template-columns:60px minmax(300px,1fr) 320px}.focused-shell .game-body,.focused-shell .game-body.character-open{grid-template-columns:60px minmax(0,1fr)}.focused-shell .character-open .map-stage{grid-column:2}.focused-shell .character-panel{position:absolute;left:60px;top:0;bottom:0;width:270px;z-index:6;box-shadow:12px 0 24px #111b183d}.focused-shell .map-toolbox{right:12px}.focused-shell .map-modes button{padding-inline:8px}.command-rail{padding-inline:4px}.focused-shell .world-date strong{font-size:14px}}
-.focused-shell .map-stage .map-legend{bottom:26px}
 .focused-shell .map-stage .zoom-tools{bottom:118px}
 .focused-shell .map-stage .map-toolbox{flex-wrap:nowrap}
 .focused-shell .route-section .provision-button{margin:12px 0 0;width:100%;justify-content:center;gap:12px}
@@ -62,4 +60,4 @@
  .focused-shell .character-panel,.focused-shell .place-panel,.utility-drawer-host{position:absolute;left:0;top:0;bottom:0;width:var(--detail-width);z-index:6;box-shadow:12px 0 24px #111b184d}
 }
 
-.focused-shell .situation-drawer-host{position:absolute;inset:0 0 0 auto;grid-column:auto;grid-row:auto;width:min(440px,calc(100% - var(--rail-width)));z-index:7;border-left:1px solid #c4b28070;border-right:0;box-shadow:-12px 0 24px #111b184d}.situation-map-button{position:absolute;right:18px;bottom:16px;z-index:4;display:flex;align-items:center;gap:6px;padding:4px 9px;background:#203027f5;border:1px solid #bca37180;color:#e6d2a4;font-size:11px}.situation-map-button b{color:#e9b079}.focused-shell .map-stage .map-legend{max-width:calc(100% - 150px)}
+.focused-shell .situation-drawer-host{position:absolute;inset:0 0 0 auto;grid-column:auto;grid-row:auto;width:min(440px,calc(100% - var(--rail-width)));z-index:7;border-left:1px solid #c4b28070;border-right:0;box-shadow:-12px 0 24px #111b184d}.situation-map-button{position:absolute;right:18px;bottom:16px;z-index:4;display:flex;align-items:center;gap:6px;padding:4px 9px;background:#203027f5;border:1px solid #bca37180;color:#e6d2a4;font-size:11px}.situation-map-button b{color:#e9b079}

@@ -1,3 +1,4 @@
+import {ConfirmAction} from './ConfirmAction';
 import {accountName} from '../core/treasury';
 import {RealmBadge} from './RealmBadge';
 import type {RealmId} from '../core/realm';
@@ -17,7 +18,7 @@ import './personalEconomy.css';
 type Props={world:World;pending:boolean;send:(c:GameCommand)=>void};
 function EconomyAction({world,pending,send,command,label,icon='coins',consequence,hint,summary,active}:{command:PersonalEconomyCommand;label:string;icon?:ArtName;consequence?:string;hint?:string;summary?:string;active?:boolean}&Props){
  const [confirm,setConfirm]=useState(false),reason=economyCommandReason(world,command);
- return <div className="economy-action"><HoverHint label={label} content={<>{hint||consequence||label}{reason&&<p>{reason}</p>}</>}><button aria-pressed={active} disabled={pending||!!reason} onClick={()=>consequence?setConfirm(true):send(command)}><ArtIcon name={icon} size={26}/>{label}</button></HoverHint>{summary&&<small>{summary}</small>}{confirm&&<div className="economy-confirm" role="group" aria-label="确认操作"><p>{consequence}</p>{reason&&<small>{reason}</small>}<button disabled={pending||!!reason} onClick={()=>{send(command);setConfirm(false);}}>确认</button><button disabled={pending} onClick={()=>setConfirm(false)}>取消</button></div>}</div>;
+ return <div className="economy-action"><HoverHint label={label} content={<>{hint||consequence||label}{reason&&<p>{reason}</p>}</>}><button aria-pressed={active} disabled={pending||!!reason} onClick={()=>consequence?setConfirm(true):send(command)}><ArtIcon name={icon} size={26}/>{label}</button></HoverHint>{summary&&<small>{summary}</small>}{confirm&&<ConfirmAction title={label} detail={<><p>{consequence}</p>{reason&&<p role='status'>{reason}</p>}</>} confirmLabel='确认执行' danger pending={pending||!!reason} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(pending||economyCommandReason(world,command))return;send(command);setConfirm(false);}}/>}</div>;
 }
 export function EconomyCases({world,pending,send,caseId,onPerson}:Props&{caseId?:number;onPerson?:(id:string)=>void}){
  const p=economyPresentation(world);

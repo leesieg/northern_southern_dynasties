@@ -5,6 +5,7 @@ import { buildingModifiers,heirs,legacyDefinitions,type Legacy,type SocialComman
 import type { RelationshipCommand } from '../core/relationships';
 import type { World } from '../core/types';
 import { Resource,ArtIcon } from './ArtIcon';
+import {ConfirmAction} from './ConfirmAction';
 import './social.css';
 export function SocialPanel({world:w,pending,send,onPerson,section='family'}:{world:World;pending:boolean;send:(c:SocialCommand|RelationshipCommand)=>void;onPerson:(id:string)=>void;section?:'self'|'family'}){
  const [confirm,setConfirm]=useState(false),s=w.social,id=w.characterId;
@@ -15,7 +16,7 @@ export function SocialPanel({world:w,pending,send,onPerson,section='family'}:{wo
  <h3>家族世业</h3><Resource name="renown" value={s.renown} label="家业名望" caption/><small>每月 +10，工程竣工 +5。解锁世业不消耗累计家族威望。</small>
  <div className="social-cards">{(Object.keys(legacyDefinitions) as Legacy[]).map(branch=><article key={branch}><h3>{legacyDefinitions[branch].name} · {s.legacies[branch]} / 2</h3><p>{legacyDefinitions[branch].effect}</p><button disabled={pending||s.legacies[branch]>=2||s.renown<30*(s.legacies[branch]+1)} onClick={()=>send({type:'legacy',branch})}>{s.legacies[branch]>=2?'已满级':`解锁 · ${30*(s.legacies[branch]+1)} 名望`}</button></article>)}</div>
  <h3>家业继任</h3><div className="social-cards">{eligible.map(p=><article key={p.id}><button onClick={()=>onPerson(p.id)}>{p.name} →</button><p>{p.title}</p><button disabled={pending||s.heir===p.id} onClick={()=>{setConfirm(false);send({type:'heir',target:p.id});}}>{s.heir===p.id?'已指定继任':'指定继任'}</button></article>)}</div>{!eligible.length&&<p>暂无合格继任者。</p>}
- {s.heir&&<article><h3>交接予 {characterById[s.heir].name}</h3><p>交接后以继任者继续游玩。保留私产、庄园、工程与世业；当前人物退居，压力重置为 20，协理及未完成交往撤销。</p><section className="detail-record-group"><h4>官职与军务</h4><p>军务重新核定，官僚公职不继承。封建制同族领有由合格家业继任者传承；皇位不随家业交接。</p></section>{confirm?<div><button className="primary" disabled={pending||!!w.people[0].journey} onClick={()=>{setConfirm(false);send({type:'handover'});}}>确认交接</button><button onClick={()=>setConfirm(false)}>取消</button></div>:<button disabled={pending||!!w.people[0].journey} onClick={()=>setConfirm(true)}>交接家业…</button>}</article>}
+ {s.heir&&<article><h3>交接予 {characterById[s.heir].name}</h3><p>交接后以继任者继续游玩。保留私产、庄园、工程与世业；当前人物退居，压力重置为 20，协理及未完成交往撤销。</p><section className="detail-record-group"><h4>官职与军务</h4><p>军务重新核定，官僚公职不继承。封建制同族领有由合格家业继任者传承；皇位不随家业交接。</p></section><button disabled={pending||!!w.people[0].journey} onClick={()=>setConfirm(true)}>交接家业…</button>{confirm&&<ConfirmAction title={'交接家业予 '+characterById[s.heir].name+'？'} detail='交接后以继任者继续游玩；当前人物退居，协理及未完成交往撤销。军务重新核定，官僚公职和皇位不随家业交接。' confirmLabel='确认交接' danger pending={pending||!!w.people[0].journey} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(pending||w.people[0].journey)return;setConfirm(false);send({type:'handover'});}}/>}</article>}
  <section className="detail-record-group"><h4>传承记录</h4>{s.lineage.map(p=><p key={p.id}>第 {p.day} 日 · <button onClick={()=>onPerson(p.id)}>{characterById[p.id].name}</button>{p.id===id?' · 你':' · 退居'}</p>)}</section>
  </>}
  </div>;

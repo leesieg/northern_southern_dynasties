@@ -13,9 +13,9 @@
 .focused-shell .map-command-dock{position:absolute;right:16px;bottom:16px;z-index:4;display:flex;flex-direction:column;align-items:flex-end;gap:8px;max-width:calc(100% - 32px)}
 .focused-shell .map-navigation-row{display:flex;align-items:center;gap:10px}.focused-shell .map-command-dock .zoom-tools{position:static;display:flex;flex-direction:row;gap:4px;padding:5px;background:#1b2d25f5;box-shadow:0 3px 10px #0003}.focused-shell .map-command-dock .zoom-tools button{width:38px;height:38px;flex-shrink:0}.focused-shell .map-command-dock .zoom-tools button:nth-child(3){margin-left:7px}
 .focused-shell .map-command-dock .situation-map-button{position:relative;inset:auto;min-height:42px;border-radius:5px;box-shadow:0 3px 10px #0003}.focused-shell .map-command-dock .map-toolbox{position:relative;inset:auto;display:flex;align-items:stretch;gap:6px;max-width:100%;flex-wrap:nowrap}.focused-shell .map-command-dock .map-modes{gap:3px;padding:4px;border-radius:6px;box-shadow:0 3px 10px #0003}.focused-shell .map-command-dock .map-modes button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;min-width:48px;padding:5px 7px;font-size:10px;border-radius:3px}.focused-shell .map-command-dock .map-modes button.active{box-shadow:inset 0 -2px #cdb47e;background:#cdb47e25}.focused-shell .map-command-dock .map-options-toggle{display:grid;place-items:center;width:35px;padding:6px;border-radius:5px}.focused-shell .map-command-dock>.map-options{bottom:calc(100% + 10px);right:0;z-index:10;background:#203027;box-shadow:0 6px 20px #0008;min-width:180px}.focused-shell .map-command-dock .map-options-toggle:is(:hover,[aria-expanded=true]){background:#344838;border-color:#cdb47e}.focused-shell .map-command-dock .map-options button{background:#283b2e}.focused-shell .map-command-dock .map-options button[aria-pressed=true]{background:#49553a;border-color:#cdb47e}
-.focused-shell .map-stage .map-legend{left:16px;bottom:16px;max-width:calc(100% - 390px);padding:7px 9px;gap:8px;pointer-events:none}.focused-shell .map-stage .map-topline{justify-content:flex-start;pointer-events:none}.focused-shell .map-topline .journey-chip{pointer-events:auto}.focused-shell .journal{bottom:146px}
+.focused-shell .map-stage .map-topline{justify-content:flex-start;pointer-events:none}.focused-shell .map-topline .journey-chip{pointer-events:auto}.focused-shell .journal{bottom:146px}
 
-@media(max-width:1250px){.focused-shell .map-stage .map-legend{bottom:146px;max-width:calc(100% - 32px)}.focused-shell .journal{bottom:190px}}
+@media(max-width:1250px){.focused-shell .journal{bottom:190px}}
 @media(max-width:900px){.focused-shell .sovereign-strip .brand.game-brand{width:116px;flex-basis:116px}.sovereign-strip{gap:6px;padding-right:8px}.sovereign-strip .realm-resources{gap:7px}.sovereign-strip .art-unit{display:none}.chronicle-control{gap:6px;padding-inline:9px}.chronicle-date{min-width:140px}.chronicle-date>strong{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.chronicle-control *{transition:none}}
 
@@ -24,9 +24,7 @@
 .focused-shell .game-body:is(.place-open,.character-open,.utility-open){--map-hud-left:calc(var(--rail-width) + var(--detail-width))}
 .focused-shell .game-body>.map-stage{grid-column:1 / -1;grid-row:1;z-index:0}
 .focused-shell .utility-drawer-host{z-index:6}
-.focused-shell .map-stage .map-legend{left:calc(var(--map-hud-left) + 16px);max-width:calc(100% - var(--map-hud-left) - 390px)}
 .focused-shell .map-stage .map-topline{left:calc(var(--map-hud-left) + 22px)}
 .focused-shell .map-stage .journal{left:calc(var(--map-hud-left) + 20px);width:min(460px,calc(100% - var(--map-hud-left) - 40px))}
 .focused-shell .map-stage .campaign-tracker{left:calc(var(--map-hud-left) + 22px)}
-@media(max-width:1250px){.focused-shell .map-stage .map-legend{max-width:calc(100% - var(--map-hud-left) - 32px)}}
 @media(max-width:1100px){.focused-shell .game-body:is(.place-open,.character-open,.utility-open){--map-hud-left:var(--rail-width)}}
