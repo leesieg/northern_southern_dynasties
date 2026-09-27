@@ -13,3 +13,4 @@
 .position-seat--compact .position-vacant>span{display:none}
 .assignment-officers>.position-seat--compact{flex:1 1 180px;width:auto;max-width:none;margin:0}
 :is(.service-panel,.assignment-detail section,.duty-panel details,.journey-preview)>.position-seat--compact{width:100%;max-width:none;margin:8px 0}
+.person-selection-tools button[aria-pressed=true]{border-color:#f4d791;background:#a98c4f30;color:#f0d9a5}

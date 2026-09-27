@@ -12,7 +12,7 @@
 .action-detail-dialog>footer{justify-content:flex-end;border-top:1px solid #bba47166}
 .action-detail-dialog>footer button{min-height:42px;padding:8px 16px}
 .action-detail-dialog button:focus-visible,.action-detail-dialog :is(input,select):focus-visible{outline:2px solid #f3d796;outline-offset:3px}
-.action-detail-dialog :is(input,select){max-width:100%;min-height:34px;background:#14281f;color:#e4dec8;border:1px solid #bba47166;border-radius:4px;padding:6px 8px}
+.action-detail-dialog :is(input:not([type="checkbox"]):not([type="radio"]),select){max-width:100%;min-height:34px;background:#14281f;color:#e4dec8;border:1px solid #bba47166;border-radius:4px;padding:6px 8px}
 .action-detail-dialog .construction-plan-options{min-width:0;margin:16px 0 0;padding:0;border:0}
 .action-detail-dialog .construction-plan-options legend{padding:0 0 8px;color:#e9cf98;font:17px var(--serif)}
 .action-detail-dialog .construction-plan-grid{display:grid;gap:9px}
