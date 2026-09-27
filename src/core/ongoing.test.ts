@@ -7,6 +7,7 @@ import {pauseHasActions,type PauseEvent} from './pauseEvents';
 import {parseWorld,serializeWorld} from './save';
 import {governmentOf} from './government';
 import {courtOf} from './court';
+import {economyCommandReason,economyPresentation} from './personalEconomyAdapter';
 const start=(id='xiao-yan')=>newCampaignWorld(id,undefined,'sandbox');
 const event=(kind:PauseEvent['kind'],extra:Partial<PauseEvent>={}):PauseEvent=>({id:'test',kind,title:'事项',body:'说明',...extra});
 describe('顶部进行中事项投影',()=>{
@@ -32,6 +33,13 @@ describe('顶部进行中事项投影',()=>{
  });
  it('使团抵达仍是同一旗帜，倒计时改为答复期限；结束即消失',()=>{
   const w=start();act(w,{type:'diplomacy',action:'improve',target:'west'});const mission=w.diplomacy!.missions[0],first=ongoingItems(w).find(i=>i.kind==='diplomacy')!;expect(first.days).toBe(mission.due-w.day);mission.status='audience';const next=ongoingItems(w).find(i=>i.id===first.id)!;expect(next.clock).toBe('deadline');expect(next.days).toBe(mission.expires-w.day);w.diplomacy!.missions=[];expect(ongoingItems(w).some(i=>i.id===first.id)).toBe(false);
+ });
+ it('公库查核事项指向政务监察，结案后从旗帜移除',()=>{
+  const w=start(),p=economyPresentation(w),choice=p.audits.flatMap(account=>p.inspectors.map(inspector=>({account:account.id,inspector:inspector.id}))).find(c=>!economyCommandReason(w,{type:'economy',action:'audit',...c}));
+  expect(choice).toBeDefined();act(w,{type:'economy',action:'audit',...choice!});
+  const q=w.economy!.investigations[0],flag=ongoingItems(w).find(item=>item.id==='economy-case:'+q.id);
+  expect(flag?.target).toEqual({page:'audit'});
+  q.phase='closed';expect(ongoingItems(w).some(item=>item.id==='economy-case:'+q.id)).toBe(false);
  });
  it('幕僚在途可追踪，不把同行主公重复算作军队旗帜',()=>{
   const w=start('xiao-gang');w.realm!.mandate=true;w.mobility!.residences['guest-liang']={site:'jingkou',journey:null};act(w,{type:'retinue',action:'recruit',person:'guest-liang'});advance(w);expect(ongoingItems(w).some(i=>i.kind==='retinue')).toBe(true);routeGrant(w,w.people[0].home,120,'军需预算');act(w,{type:'realm',action:'muster'});act(w,{type:'mobility',action:'command',person:'xiao-yan'});act(w,{type:'realm',action:'march',site:'jingkou'});expect(ongoingItems(w).filter(i=>i.kind==='military')).toHaveLength(1);expect(ongoingItems(w).some(i=>i.kind==='travel')).toBe(false);const armyId=ongoingItems(w).find(i=>i.kind==='military')!.id;advance(w);expect(ongoingItems(w).filter(i=>i.kind==='military')).toHaveLength(1);expect(ongoingItems(w).find(i=>i.kind==='military')!.id).toBe(armyId);

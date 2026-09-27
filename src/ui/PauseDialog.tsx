@@ -1,4 +1,4 @@
-import {EconomyCases} from './PersonalEconomyPanel';
+import {EconomyCases} from './GovernmentAudit';
 import {AppointmentReview} from './AppointmentReview';
 import {LocalRequests} from './LocalAdministration';
 import {RealmBadge} from './RealmBadge';
@@ -22,7 +22,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  const realmEvent=event.kind==='realm'?world.realm?.event:null;
  const actionable=pauseHasActions(world,event);
  const grant=world.realm?.fiscal?.requests.find(q=>q.id===event.fiscalId);
- const label=event.kind==='economy'?'查看私财与监察':event.kind==='court'?'查看局势':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
+ const label=event.kind==='economy'?'前往政务监察':event.kind==='court'?'查看局势':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
  return <dialog ref={ref} className="pause-dialog" aria-labelledby="pause-title" aria-describedby="pause-body" onCancel={e=>{e.preventDefault();if(!pending&&!actionable)onClose();}} onKeyDown={e=>{if(e.key==='Escape')e.stopPropagation();}}>
  <header><span className="eyebrow">时光暂停{count>1?` · 尚有 ${count} 件消息`:''}</span><h2 id="pause-title">{event.title}</h2></header>
  <p id="pause-body">{event.body}</p>
