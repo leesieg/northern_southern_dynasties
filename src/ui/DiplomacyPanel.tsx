@@ -49,7 +49,7 @@ export function DiplomacyPanel({world:w,selected:target,onSelect,onPerson,pendin
  <section className="diplomacy-realm-facts" aria-label="国家基础信息">
   <div className="diplomacy-fact"><h3><ArtIcon name="coins" size={22}/>中央国库</h3><div className="diplomacy-fact-pair"><span>公款 <b>{treasury.coins.toLocaleString('zh-CN')}</b></span><span>公粮 <b>{treasury.grain.toLocaleString('zh-CN')}</b></span></div><small>中央余额，不含地方公库与县仓</small></div>
   <div className="diplomacy-fact"><h3><ArtIcon name="person" size={22}/>总人口</h3><strong>{population.toLocaleString('zh-CN')} <small>人</small></strong><small>当前实控县域人口合计</small></div>
-  <div className="diplomacy-fact"><h3><ArtIcon name="city" size={22}/>总土地</h3><strong>{held.length} <small>县域</small></strong><small>法理辖县 {held.length} · 实控 {controlled.length}；不按面积估算</small></div>
+  <div className="diplomacy-fact"><h3><ArtIcon name="city" size={22}/>总土地</h3><strong>{held.length} <small>县域</small></strong><small>法理辖县 {held.length} · 实控 {controlled.length}</small></div>
   <div className="diplomacy-fact"><h3><ArtIcon name="renown" size={22}/>朝局状态</h3><strong>{court?phases[court.phase].name:'暂无朝局记录'}</strong><small>{court?`${policies[court.policy].name}国策 · 天命 ${g.legitimacy} · 支持 ${g.support} · 紧张 ${court.tension}${courtEnabled(w,target)?'':' · 结算暂停'}`:'此局尚未建立朝局状态'}</small></div>
   <div className="diplomacy-fact diplomacy-fact-wars"><h3><ArtIcon name="army" size={22}/>进行中的战争 <small>{realmWars.length} 场</small></h3>{realmWars.length?realmWars.map(v=><p key={v.id??`${v.attacker}|${v.defender}|${v.started}`}><b>{v.civil?`内战 · ${v.civil.name}`:`${regimeName(w,v.attacker)} 对 ${regimeName(w,v.defender)}`}</b><small>{siteById[v.target]?.name??v.target} · 已持续 {w.day-v.started} 日</small></p>):<small>目前没有参与战争</small>}</div>
  </section>

@@ -41,11 +41,11 @@ export const sites: Site[] = [
   { id: 'jicheng', name: '蓟城', lon: 116.35, lat: 39.9, polity: 'east', terrain: '平原', description: '北方道路的节点，东向可通辽地。' },
   { id: 'qingzhou', name: '青州', lon: 118.48, lat: 36.7, polity: 'east', terrain: '丘陵', description: '山海之间，东部道路向此延伸。' },
   { id: 'pengcheng', name: '彭城', lon: 117.18, lat: 34.26, polity: 'east', terrain: '平原', description: '泗水附近，江淮通往中原的节点。' },
-  { id: 'gaochang', name: '高昌', lon: 89.53, lat: 42.85, polity: 'frontier', terrain: '绿洲', description: '西域绿洲。当前采用远行设计节点，制度尚待制作。' },
+  { id: 'gaochang', name: '高昌', lon: 89.53, lat: 42.85, polity: 'frontier', terrain: '绿洲', description: '西域绿洲。' },
   { id: 'qiuci', name: '龟兹', lon: 82.97, lat: 41.72, polity: 'frontier', terrain: '绿洲', description: '天山南侧的绿洲，连接更西方的路途。' },
-  { id: 'shule', name: '疏勒', lon: 75.99, lat: 39.47, polity: 'frontier', terrain: '绿洲', description: '西部远行节点，沿绿洲道路与东方相连。' },
-  { id: 'liaodong', name: '辽东', lon: 123.17, lat: 41.27, polity: 'frontier', terrain: '平原', description: '东北方向的旅行节点，具体历史疆界尚待考据。' },
-  { id: 'ningzhou', name: '宁州', lon: 103.8, lat: 25.5, polity: 'liang', terrain: '山地', description: '西南山地中的交通锚点，山路行程较长。' },
+  { id: 'shule', name: '疏勒', lon: 75.99, lat: 39.47, polity: 'frontier', terrain: '绿洲', description: '西部绿洲，沿道路与东方相连。' },
+  { id: 'liaodong', name: '辽东', lon: 123.17, lat: 41.27, polity: 'frontier', terrain: '平原', description: '东北边地。' },
+  { id: 'ningzhou', name: '宁州', lon: 103.8, lat: 25.5, polity: 'liang', terrain: '山地', description: '西南山地，山路行程较长。' },
 ];
 
 const links: [string, string, number?][] = [

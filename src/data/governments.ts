@@ -1,10 +1,10 @@
 import type { RealmId } from '../core/realm';
 export const governmentDefinitions={
- meritocratic:{name:'贤能制',subtitle:'官僚功绩与任职',description:'本剧本表现门阀背景下的铨选、察举与考课，不前置后世科举。功绩达 20 可请任，达 40 可请军务；任职不随家业继承。',tax:0,pay:0,attack:0},
+ meritocratic:{name:'贤能制',subtitle:'官僚功绩与任职',description:'门阀背景下推行铨选、察举与考课。功绩达 20 可请任，达 40 可请军务；任职不随家业继承。',tax:0,pay:0,attack:0},
  celestial:{name:'天朝制',subtitle:'天命与中央官僚',description:'控制至少六成已录非边疆城市后可立制。税收 +15%，军饷 +10%；天命低于 25 时税收转为 −20%，低于 15 时退化为贤能制。',tax:15,pay:10,attack:0},
  nomadic:{name:'游牧制',subtitle:'畜群、逐水草与骑军',description:'需北方驻牧地与 200 畜群。税收 −35%、军饷 −25%、攻击 +15%；动员耗 100 畜群，畜群随季节与驻牧压力变化，可迁营。',tax:-35,pay:-25,attack:15},
  khanate:{name:'宫帐制',subtitle:'草原官僚与宫帐',description:'兼具功绩任职与畜群经营；税收 −10%、军饷 −10%、攻击 +10%。动员耗 50 畜群，可迁营，家业交接不继承官职。',tax:-10,pay:-10,attack:10},
- feudal:{name:'封建制',subtitle:'世袭领有与契约义务',description:'每座城分别选择均衡、税赋或军役契约；家业交接将前任在本国的治理权传给合格亲属。不是把南北朝郡县史实称为欧洲封建制。',tax:0,pay:0,attack:0},
+ feudal:{name:'封建制',subtitle:'世袭领有与契约义务',description:'每座城分别选择均衡、税赋或军役契约；家业交接将前任在本国的治理权传给合格亲属。',tax:0,pay:0,attack:0},
  tribal:{name:'部落制',subtitle:'部众拥戴与集会',description:'税收 −25%、军饷 −30%；部众支持至少 50 才可动员，耗 10 支持。军队攻击随支持高低变化，可用集会争取拥戴。',tax:-25,pay:-30,attack:0},
 } as const;
 export type GovernmentType=keyof typeof governmentDefinitions;
@@ -20,7 +20,7 @@ export const reformDefinitions={
  'west-six':{realm:'west',name:'六条诏书',year:546,initial:true,requires:['west-register'],days:0,cost:0,effect:'开局已行；后续可整编军制、建置六官。',history:'六条包括治心、教化、地利、贤良、狱讼、赋役。',source:source('《周书》卷二十三·苏绰','周書/卷23')},
  'west-militia':{realm:'west',name:'整编府兵',year:550,initial:false,requires:['west-six'],days:180,cost:240,effect:'军饷 −15%，军队攻击 +10%；支持 −12。',history:'府兵为逐步形成的军事组织；550 是本局开放整编阶段的约定，不断言单一年份创立。',source:source('《周书》卷二·军制演进','周書/卷02')},
  'west-offices':{realm:'west',name:'建置六官',year:556,initial:false,requires:['west-militia'],days:240,cost:300,effect:'税收 +10%；任命须候选人功绩达到 20，朝廷精简后更重考课。',history:'西魏恭帝三年（556）初行周礼，建六官。',source:source('《周书》卷二·六官','周書/卷02')},
- 'east-selection':{realm:'east',name:'整顿铨选',year:546,initial:true,requires:[],days:0,cost:0,effect:'开局已行，贤能制功绩任职代表其玩法延续。',history:'高澄入辅朝政、参与选官；不可将 546 年仍为东魏的制度称作北齐既成制度。',source:source('《北齐书》卷三·文襄','北齊書/卷3')},
+ 'east-selection':{realm:'east',name:'整顿铨选',year:546,initial:true,requires:[],days:0,cost:0,effect:'开局已行，贤能制功绩任职沿用此制。',history:'高澄入辅朝政、参与选官；不可将 546 年仍为东魏的制度称作北齐既成制度。',source:source('《北齐书》卷三·文襄','北齊書/卷3')},
  'east-censorate':{realm:'east',name:'御史纠察',year:546,initial:true,requires:['east-selection'],days:0,cost:0,effect:'开局已行，可继续推动考课常制。',history:'崔暹任御史中尉，纠察权贵；该制度并非从 546 年才开始。',source:source('《北齐书》卷三十·崔暹','北齊書/卷30')},
  'east-assessment':{realm:'east',name:'推广考课常制',year:546,initial:false,requires:['east-censorate'],days:120,cost:180,effect:'税收 +10%；称职在任者月度功绩由 +2 升至 +4；任命功绩门槛 20。',history:'据铨选与纠察背景设计的可选制度深化，不是史籍中同名同年的独立法令。',source:source('《北齐书》卷三、卷三十', '北齊書/卷30')},
 } as const;
