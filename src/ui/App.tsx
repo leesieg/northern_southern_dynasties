@@ -9,7 +9,7 @@ import {ConfirmAction} from './ConfirmAction';
 import type {OngoingItem} from '../core/ongoing';
 import {assignmentTemplates,assignmentPhases} from '../data/assignments';
 import {PauseDialog} from './PauseDialog';
-import {AudienceDeferContext} from './PetitionAudience';
+import {AudienceDeferContext} from './AudienceContext';
 import type {PauseEvent} from '../core/pauseEvents';
 import { residentsAt } from '../core/placePeople';
 import { PlacePeople } from './PlacePeople';

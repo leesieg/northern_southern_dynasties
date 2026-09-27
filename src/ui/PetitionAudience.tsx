@@ -1,4 +1,6 @@
-import {createContext,useContext,useState,type ReactNode} from 'react';
+import {useContext,useState,type ReactNode} from 'react';
+import {createPortal} from 'react-dom';
+import {AudienceDecorHostContext,AudienceDeferContext} from './AudienceContext';
 import {CharacterPortrait} from './CharacterPortrait';
 import {RealmBadge} from './RealmBadge';
 import {SingleChoiceCards} from './SingleChoiceCards';
@@ -7,13 +9,12 @@ import type {RealmId} from '../core/realm';
 import type {GameCommand,World} from '../core/types';
 import './serviceAudience.css';
 
-export const AudienceDeferContext=createContext<(()=>void)|null>(null);
-
 type StageProps={world:World;person:string;realm:RealmId;subject:string;role:string;speech:string;terms?:ReactNode;onPerson?:(id:string)=>void};
 export function AudienceStage({world:w,person,realm,subject,role,speech,terms,onPerson}:StageProps){
+ const decorHost=useContext(AudienceDecorHostContext);
+ const decorations=<><div className="service-audience-title"><h3>{subject}</h3></div><div className="service-audience-figure"><div className="service-audience-portrait"><CharacterPortrait characterId={person} world={w} cutout/></div></div></>;
  return <div className="service-audience-stage">
-  <div className="service-audience-title"><h3>{subject}</h3></div>
-  <div className="service-audience-figure"><div className="service-audience-portrait"><CharacterPortrait characterId={person} world={w} cutout/></div></div>
+  {decorHost?createPortal(decorations,decorHost):decorations}
   <div className="service-audience-conversation">
    <div className="service-audience-speaker"><RealmBadge realm={realm} world={w}/>{onPerson?<button className="service-audience-person" type="button" onClick={()=>onPerson(person)} aria-label={'查看'+politicalName(person)+'的人物详情'}>{politicalName(person)} ↗</button>:<strong>{politicalName(person)}</strong>}<span>{role}</span></div>
    <p className="service-audience-speech">“{speech}”</p>{terms}
