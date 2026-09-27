@@ -5,7 +5,8 @@ import {RealmBadge} from './RealmBadge';
 import {PersonAbilities} from './PersonAbilities';
 import {isSovereign} from '../core/officialDuties';
 import {RetinuePanel} from './RetinuePanel';
-import {ClanBadge} from './ClanRanking';
+import {clanStanding} from '../core/clans';
+import {HoverHint} from './HoverHint';
 import {ActivityProgress} from './MobilityPanel';
 import {personResidence} from '../core/residence';
 import {DetailTabs} from './DetailTabs';
@@ -40,10 +41,10 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  const reference=familyPersonById[id];
  if(!c&&!p&&!extra&&!reference)return <p>未找到人物。</p>;
  const lifeId=id==='player'?'fictional':id,deceased=isDeceased(w,lifeId);
- const name=c?.name??extra?.name??reference?.name??p!.name,family=c?familyById[c.family]:reference?familyById[reference.family]:null,realm=c?.polity??extra?.realm;
+ const name=c?.name??extra?.name??reference?.name??p!.name,family=familyById[c?.family??reference?.family??extra?.family??''],realm=c?.polity??extra?.realm,clan=family?clanStanding(w,id):null;
  return <div className="person-sheet">
  {ids.length>1&&<nav className="person-picker-list" aria-label="此处人物">{ids.map(person=><button key={person} aria-pressed={person===raw} onClick={()=>onSelect(person)}><ArtIcon name="person" size={22}/>{characterById[person]?.name??relationshipPersonById[person]?.name??w.people.find(p=>p.id===person)?.name}</button>)}</nav>}
- <header className="person-identity"><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{realm?<RealmBadge realm={realm} world={w} onOpen={onDiplomacy}/>:reference?'族谱记载':'行旅'}{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><h2>{name}</h2><LifeSummary world={w} id={lifeId}/><ClanBadge world={w} person={id}/><div className="person-symbol-row">{!deceased&&<PersonIdentityIcons world={w} person={id} onOffice={()=>onTab('office')} onLifestyle={onLifestyle}/>}{(c||extra)&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div>}</div>{family&&<button className="person-clan" onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/>{family.name} →</button>}{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}</div></header>
+ <header className="person-identity"><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{realm?<RealmBadge realm={realm} world={w} onOpen={onDiplomacy}/>:reference?'族谱记载':'行旅'}{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><div className="person-name-row"><h2>{name}</h2>{family&&<HoverHint label={family.name+'家族'} content={<><strong>{family.name}</strong>{clan?.elite&&<><p>本国世族 · 族望第 {clan.rank} 位 · 家族威望 {clan.prestige}</p><p>联姻荫望 +{clan.marriage}；求官接受度 +{clan.petition}，城邑请任功绩门槛 −{clan.merit}。</p></>}</>}><button className={'person-clan'+(clan?.elite?' is-elite':'')} aria-label={'查看'+family.name+'家族详情'} onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/></button></HoverHint>}</div><LifeSummary world={w} id={lifeId}/><div className="person-symbol-row">{!deceased&&<PersonIdentityIcons world={w} person={id} onOffice={()=>onTab('office')} onLifestyle={onLifestyle}/>}{(c||extra)&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div>}</div>{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}</div></header>
  <PersonAbilities world={w} person={id}/>
  <PersonDomains world={w} person={id} onCity={onCity}/>
  <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'office',label:'官职',icon:'influence'},{id:'relations',label:'关系',icon:'gregarious'},{id:'retinue',label:'幕府',icon:'influence'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='office'&&!!w.realm||key==='relations'||key==='retinue'&&!isSovereign(w,id)&&!!w.retinue&&(self||Object.values(w.retinue.members).some(m=>m.host===id))||key==='interaction'&&!self&&!!extra&&!!w.social&&!retired&&!deceased)}/>

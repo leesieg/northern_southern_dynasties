@@ -8,10 +8,10 @@
 .realm-panel .realm-person-link>span:first-child{display:grid;gap:3px;min-width:0}
 .realm-panel .realm-person-link small{font-size:11px;color:#acb79c}
 .realm-panel .realm-person-link strong{font:19px var(--serif);color:#e3d8b9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.realm-my-resources{display:flex;gap:14px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.realm-key-resources{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;padding-top:8px;border-top:1px solid #bda67330}.realm-key-resources .hover-hint{min-width:0}
 .realm-influence-source{display:inline-flex;align-items:center;gap:3px;cursor:help}.realm-influence-source>small{color:#c5a76d;font-size:11px}
-.realm-my-resources .art-resource-value b{font-size:18px}.realm-my-resources .art-resource-value small{font-size:10px}
+.realm-key-resources .art-resource-value b{font-size:18px}.realm-key-resources .art-resource-value small{font-size:10px}
 .realm-panel .realm-role-facts{margin-top:10px;padding:8px 0 0;border-top:1px solid #bda67330;border-bottom:0;background:none}
 .realm-overview{gap:14px}.realm-overview-section{padding:12px;border:1px solid #b5a47755;border-radius:5px;background:#172a24}
 .realm-panel>.detail-tabs{margin:0;padding:0 0 10px}
-@media(max-width:600px){.realm-my-resources{width:100%;margin:2px 0 0;padding-top:8px;border-top:1px solid #bda67330}.realm-panel .realm-role-facts>div{padding:0 6px}.realm-panel .realm-role-facts dd button{font-size:11px}}
+@media(max-width:600px){.realm-panel .realm-role-facts>div{padding:0 6px}.realm-panel .realm-role-facts dd button{font-size:11px}}

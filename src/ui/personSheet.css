@@ -8,7 +8,7 @@
 .person-identity .portrait-paper-mark{display:none}
 .person-identity-info h2{font:30px var(--serif);margin:6px 0;color:#eddfb7}
 .person-identity-info p{margin:6px 0;font-size:13px;line-height:1.6}
-.person-clan{display:flex;gap:9px;align-items:center;padding:4px!important;background:transparent!important;border:0!important;color:var(--person-gold)!important}
+.person-name-row{display:flex;align-items:center;gap:10px;min-width:0}.person-name-row h2{min-width:0;overflow-wrap:anywhere}.person-clan{display:inline-flex;align-items:center;justify-content:center;padding:2px!important;background:transparent!important;border:0!important;flex:none}.person-clan .family-crest.small{width:34px;height:40px}.person-clan.is-elite .family-crest{border:3px double #efd38e;box-shadow:inset 0 0 0 3px #3c341e,0 0 0 2px #9c7437,0 2px 9px #d8ad5466;color:#efd38e}
 .person-tabs{display:flex;position:sticky;top:90px;z-index:2;background:var(--person-ink);border-bottom:1px solid #c5a76d60;padding:10px 0;gap:4px;margin-bottom:16px}
 .person-tabs button{flex:1;border:0!important;background:transparent!important;border-radius:0!important;color:var(--person-muted)!important;padding:10px 5px!important}
 .person-tabs button[aria-pressed=true]{color:#efd7a4!important;box-shadow:inset 0 -2px var(--person-gold)}
