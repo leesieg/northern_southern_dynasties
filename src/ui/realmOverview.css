@@ -9,6 +9,7 @@
 .realm-panel .realm-person-link small{font-size:11px;color:#acb79c}
 .realm-panel .realm-person-link strong{font:19px var(--serif);color:#e3d8b9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .realm-my-resources{display:flex;gap:14px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.realm-influence-source{display:inline-flex;align-items:center;gap:3px;cursor:help}.realm-influence-source>small{color:#c5a76d;font-size:11px}
 .realm-my-resources .art-resource-value b{font-size:18px}.realm-my-resources .art-resource-value small{font-size:10px}
 .realm-panel .realm-role-facts{margin-top:10px;padding:8px 0 0;border-top:1px solid #bda67330;border-bottom:0;background:none}
 .realm-overview{gap:14px}.realm-overview-section{padding:12px;border:1px solid #b5a47755;border-radius:5px;background:#172a24}
