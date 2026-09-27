@@ -10,7 +10,8 @@ export function mapActivities(w:World){
   else if(item.id.startsWith('enterprise:'))site=w.enterprises?.items.find(e=>'enterprise:'+e.id===item.id)?.site;
   else if(item.kind==='service')site=item.target.page==='duties'?'tianshui':w.service?.tasks.find(t=>'service:'+t.id===item.id)?.site;
   else if(item.kind==='construction')site=item.target.page==='estate'?w.holdings.estate.location:item.target.page==='city'?item.target.site:undefined;
-  if(site){const list=groups.get(site)??[];list.push(item);groups.set(site,list);}
+  else if(item.id.startsWith('siege:'))site=item.target.page==='city'?item.target.site:undefined;
+  if(site){const list=groups.get(site)??[];if(item.id.startsWith('siege:'))list.unshift(item);else list.push(item);groups.set(site,list);}
  }
  return [...groups].map(([site,items])=>({site,items}));
 }

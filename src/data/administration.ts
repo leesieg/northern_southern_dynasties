@@ -58,7 +58,7 @@ const regionalAnchors:[string,string,string,string,string][]=[
  ['bajun','楚州','巴郡','江州县','bajun'],['hanzhong','梁州','汉中郡','南郑县','hanzhong'],
  ['tianshui','秦州','天水郡','上邽县','tianshui'],['jincheng','河州','金城郡','金城县','jincheng'],
  ['wuwei','凉州','武威郡','姑臧县','wuwei'],['zhangye','甘州','张掖郡','觻得县','zhangye'],
- ['dunhuang','瓜州','敦煌郡','敦煌县','dunhuang'],['luoyang','洛州','河南郡','洛阳县','henan'],
+ ['dunhuang','瓜州','敦煌郡','敦煌县','dunhuang'],['luoyang','洛州','洛阳郡','洛阳县','henan'],
  ['pingcheng','恒州','代郡','平城县','daijun'],['jicheng','幽州','燕郡','蓟县','yanjun'],
  ['qingzhou','青州','齐郡','益都县','qijun'],['pengcheng','徐州','彭城郡','彭城县','pengcheng'],
  ['ningzhou','宁州','建宁郡','味县','jianning'],
@@ -66,3 +66,6 @@ const regionalAnchors:[string,string,string,string,string][]=[
 const southern=new Set(['shouchun','hefei','xunyang','xiangyang','changsha','nanchang','guangzhou','chengdu','bajun','hanzhong','ningzhou']);
 for(const [id,province,prefecture,county,group] of regionalAnchors) administration[id]=record(province,prefecture,county,group,southern.has(id)?['qi14','qi15','liang3','sui31']:['weiUp','weiMid','weiDown'],'earlier-source','治所采用约略定位；州郡层级依据地志及沿革推定，非完整 546 年实测辖界。');
 for(const [id,,,,,realm,,province,prefecture,county,group] of expandedSeats) administration[id]=record(province,prefecture,county,group,id==='yubi'?['zhou31']:realm==='liang'?['qi14','qi15','liang3','sui31']:['weiUp','weiMid','weiDown'],realm==='east'?'period-source':'earlier-source','县治与交通锚点约略；地方沿革采用史籍基底，个别梁、西魏隶属尚待逐年校核，县界仅示意。');
+// 《魏书·地形志》洛州列洛阳郡、北荆州列汝北郡及梁县；州郡身份不随占领自动改变。
+administration.luoyang=record('洛州','洛阳郡','洛阳县','henan',['weiMid'],'period-source','武定年间洛州洛阳郡；县域边界仍为示意。');
+administration.liangxian=record('北荆州','汝北郡','梁县','rubei',['weiMid'],'period-source','北荆州武定二年置，汝北郡武定元年复；546 年县治定位约略。');

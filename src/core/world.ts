@@ -44,11 +44,12 @@ export function distanceBetween(a: string, b: string): number {
   return Math.hypot((p.lon - q.lon) * Math.cos(lat), p.lat - q.lat) * 111;
 }
 // Static road topology; permissions are still evaluated against live world state for every route.
-const roadLinks=new Map<string,Map<string,number>>();
+const roadLinks=new Map<string,Map<string,number>>(),routeLinks=new Map<string,Map<string,number>>();
 for(const edge of roads){
   const days=Math.max(1,Math.ceil(distanceBetween(edge.from,edge.to)*edge.factor/40));
   for(const [from,to] of [[edge.from,edge.to],[edge.to,edge.from]]){
     const links=roadLinks.get(from)??new Map<string,number>();if(!links.has(to))links.set(to,days);roadLinks.set(from,links);
+    if(!edge.legacyOnly){const active=routeLinks.get(from)??new Map<string,number>();if(!active.has(to))active.set(to,days);routeLinks.set(from,active);}
   }
 }
 export function legDays(a: string, b: string): number {
@@ -70,7 +71,7 @@ export function planRoute(from: string, to: string,allowed:(id:string)=>boolean=
       return {route, durations, days, food: days, distance: Math.round(route.slice(1).reduce((sum,id,i) => sum + distanceBetween(route[i],id),0))};
     }
     unvisited.delete(current);
-    for (const [next,days] of roadLinks.get(current)??[]) {
+    for (const [next,days] of routeLinks.get(current)??[]) {
       if (!unvisited.has(next)||!allowed(next)) continue;
       const nextCost = cost[current] + days;
       if (nextCost < (cost[next] ?? Infinity)) { cost[next] = nextCost; prev[next] = current; }

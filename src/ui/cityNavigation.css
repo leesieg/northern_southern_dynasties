@@ -20,6 +20,7 @@
 .city-management .city-command-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:8px 0}
 .city-management .city-command-row button,.city-management .journey-actions button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 10px;font-size:12px;border:1px solid #bba47155;border-radius:4px;background:#14281f}
 .city-summary-resources{row-gap:10px}.city-summary-resource{min-height:48px}.city-summary-resource em{line-height:1.4}
+.city-integration-status{display:inline-block;margin-left:6px;padding:3px 7px;border:1px solid #c8a96d88;border-radius:3px;background:#765d3233;color:#ebd19a;font-size:11px}
 .city-management .city-policy-grid button:focus-visible,.city-management .journey-options button:focus-visible,.city-management .city-command-row button:focus-visible{outline:2px solid #edd79d;outline-offset:3px}
 @media(max-width:420px){.city-summary-resources{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .city-management .city-policy-item button.danger{border-color:#ba805c}

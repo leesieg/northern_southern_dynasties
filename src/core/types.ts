@@ -21,7 +21,7 @@ export interface Site {
   terrain: '平原' | '山地' | '河谷' | '绿洲' | '丘陵';
   description: string; capital?: boolean; rank?: 'county';
 }
-export interface Road { from: string; to: string; factor: number }
+export interface Road { from: string; to: string; factor: number; legacyOnly?:boolean }
 export interface Journey { route: string[]; leg: number; elapsed: number; durations: number[]; started: number }
 export interface Person {
   id: string; name: string; location: string; home: string; coins: number; food: number;

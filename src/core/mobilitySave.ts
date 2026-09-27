@@ -26,5 +26,6 @@ export function validMobility(v:unknown,day:number):v is MobilityState{
  const busy=new Set<string>();for(const a of v.activities){const t=a as Record<string,unknown>;if(['done','cancelled'].includes(String(t.phase)))continue;for(const id of [t.delegate??t.actor,t.target].filter(Boolean)){if(busy.has(String(id)))return false;busy.add(String(id));}if(t.target&&!Object.hasOwn(v.appointments,String(t.target)))return false;}
  for(const [r,id] of Object.entries(v.commanders))if(relationshipPersonById[String(id)].realm!==r||busy.has(String(id)))return false;
  if(v.armyCommanders!==undefined){if(!obj(v.armyCommanders))return false;const assigned=new Set(Object.values(v.commanders));for(const [key,id] of Object.entries(v.armyCommanders)){if(!/^\d+$/.test(key)||!person(id)||assigned.has(id)||busy.has(String(id)))return false;assigned.add(id);}}
+ if(v.pendingCommanders!==undefined){if(!obj(v.pendingCommanders))return false;const assigned=new Set([...Object.values(v.commanders),...Object.values(v.armyCommanders??{})]);for(const [key,pending] of Object.entries(v.pendingCommanders)){if(!/^\d+$/.test(key)||!obj(pending)||!person(pending.person)||!num(pending.ordered,day)||busy.has(String(pending.person))||assigned.has(pending.person))return false;assigned.add(pending.person);}}
  return true;
 }

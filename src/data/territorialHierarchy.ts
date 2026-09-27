@@ -12,7 +12,8 @@ for(const site of sites){
   const a=administration[site.id],realm='realm:'+site.polity;
   let parent=realm;
   if(a){
-    const province=`province:${site.polity}:${a.province}`,prefecture='prefecture:'+a.group,county='county:'+site.id;
+    // Keep the pre-correction key for existing saves; the historical display name is independent of this opaque ID.
+    const province=site.id==='liangxian'?'province:east:广州':`province:${site.polity}:${a.province}`,prefecture='prefecture:'+a.group,county='county:'+site.id;
     add({id:province,name:a.province,level:'province',parent:realm,basis:'gazetteer'});
     add({id:prefecture,name:a.prefecture,level:'prefecture',parent:province,basis:'gazetteer'});
     add({id:county,name:a.county,level:'county',parent:prefecture,basis:'gazetteer'});parent=county;

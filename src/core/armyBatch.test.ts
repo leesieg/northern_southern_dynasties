@@ -27,7 +27,7 @@ describe('batch army orders',()=>{
   expect(()=>act(w,order)).toThrow(`第 ${ids[2]} 军`);
   expect(serializeWorld(w)).toBe(before);
  });
- it('moves selected armies together and disbands them at their destination',()=>{
+ it('moves selected armies together and sends their demobilized soldiers home',()=>{
   const w=setup(2),ids=w.realm!.armies.map(a=>a.id!);
   for(const a of w.realm!.armies)a.trainingUntil=w.day;
   act(w,{type:'armyBatch',action:'march',armies:ids,site:'jingkou'});
@@ -37,7 +37,8 @@ describe('batch army orders',()=>{
   const population=w.realm!.cities.jingkou.population;
   act(w,{type:'armyBatch',action:'disband',armies:ids});
   expect(w.realm!.armies).toHaveLength(0);
-  expect(w.realm!.cities.jingkou.population).toBe(population+400);
+  expect(w.realm!.cities.jingkou.population).toBe(population);
+  expect(w.realm!.population?.transfers.filter(t=>t.kind==='demobilized'&&t.to==='jiankang').reduce((n,t)=>n+t.sent,0)).toBe(400);
   validateWorld(w);
  });
 });

@@ -30,7 +30,7 @@ export const expandedSeats:GazetteerRow[]=[
  ['langzhong','阆中',105.97,31.56,'chengdu','liang','河谷','南梁州','巴西郡','阆中县','baxi'],
  ['fuxian','涪县',104.74,31.46,'chengdu','liang','平原','益州','梓潼郡','涪县','zitong'],
  ['nanxiang','南乡',107.77,33.07,'hanzhong','liang','河谷','梁州','汉中郡','南乡县','hanzhong'],
- ['liangxian','梁县',112.83,34.16,'luoyang','east','河谷','广州','汝北郡','梁县','rubei'],
+ ['liangxian','梁县',112.83,34.16,'luoyang','east','河谷','北荆州','汝北郡','梁县','rubei'],
  ['yingchuan','长社',113.83,34.22,'luoyang','east','平原','颍州','颍川郡','长社县','yingchuan'],
  ['chenliu','浚仪',114.30,34.80,'yingchuan','east','平原','梁州','陈留郡','浚仪县','chenliu'],
  ['jibei','卢县',116.65,36.50,'qingzhou','east','平原','济州','济北郡','卢县','jibei'],

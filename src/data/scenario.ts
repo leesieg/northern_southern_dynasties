@@ -54,7 +54,7 @@ const links: [string, string, number?][] = [
   ['wujun','kuaiji'],['jiankang','xunyang'],['xunyang','nanchang'],['xunyang','jiangling'],
   ['jiangling','xiangyang'],['jiangling','changsha'],['changsha','nanchang'],['changsha','guangzhou',1.5],
   ['kuaiji','nanchang',1.5],['jiangling','bajun',1.5],['bajun','chengdu',1.2],['chengdu','hanzhong',1.7],
-  ['hanzhong','changan',1.8],['xiangyang','hanzhong',1.6],['xiangyang','luoyang',1.3],
+  ['hanzhong','changan',1.8],['xiangyang','hanzhong',1.6],['xiangyang','luoyang',1.3],['xiangyang','liangxian',1.3],
   ['changan','luoyang',1.2],['changan','tianshui',1.4],['tianshui','jincheng',1.4],['jincheng','wuwei',1.3],
   ['wuwei','zhangye'],['zhangye','dunhuang'],['dunhuang','gaochang',1.3],['gaochang','qiuci',1.3],
   ['qiuci','shule',1.3],['luoyang','ye'],['luoyang','pengcheng'],['ye','qingzhou'],['pengcheng','qingzhou'],
@@ -70,5 +70,6 @@ for(const [id,name,lon,lat,connection,polity,terrain] of expandedSeats){
  sites.push({id,name,lon,lat,polity,terrain,rank:'county',description:'州郡县治与周边乡里，城址约略。'});
  links.push([connection,id]);
 }
-export const roads: Road[] = links.map(([from, to, factor = 1]) => ({from, to, factor}));
+// Retain the old direct edge only to read journeys already saved on it. New routes pass through Liang County.
+export const roads: Road[] = links.map(([from, to, factor = 1]) => ({from, to, factor,...(from==='xiangyang'&&to==='luoyang'?{legacyOnly:true}:{})}));
 export const siteById = Object.fromEntries(sites.map(site => [site.id, site])) as Record<string, Site>;

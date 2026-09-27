@@ -1,7 +1,7 @@
 import { describe,expect,it } from 'vitest';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import { atlasStyle, DEM_TILES, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
-import { activeRoute, roadFeatures, siteFeatures } from './geography';
+import { activeRoute, previewArmyRoute, roadFeatures, siteFeatures } from './geography';
 import { territories, territoryRealms } from './territories';
 import { settlements } from './settlements';
 import { sites, roads } from '../data/scenario';
@@ -9,6 +9,7 @@ import { act,advance,newWorld,planRoute,position } from '../core/world';
 import { mapResourceUrl } from './mapResources';
 
 describe('atlas data and style contracts (no UI)',()=>{
+  it('starts a retarget preview at the army actual position on its current road',()=>{const first=planRoute('jiankang','jingkou')!,next=planRoute('jingkou','pengcheng')!,army={realm:'liang' as const,location:'jiankang',troops:600,morale:80,supply:200,siege:0,journey:{route:first.route,durations:first.durations,leg:0,elapsed:1,started:0}},coordinates=previewArmyRoute(army,next.route).features[0].geometry.coordinates;expect(coordinates[0]).not.toEqual([sites.find(s=>s.id==='jiankang')!.lon,sites.find(s=>s.id==='jiankang')!.lat]);expect(coordinates.at(-1)).toEqual([sites.find(s=>s.id==='pengcheng')!.lon,sites.find(s=>s.id==='pengcheng')!.lat]);});
   it('relays only the two public tile providers in local previews',()=>{
     expect(mapResourceUrl('https://tiles.mapterhorn.com/3/6/2.webp','http://127.0.0.1:5173')).toBe('http://127.0.0.1:5173/__atlas/dem/3/6/2.webp');
     expect(mapResourceUrl('https://tiles.openfreemap.org/planet/20260913_164504_pt/4/12/6.pbf','http://localhost:4173')).toBe('http://localhost:4173/__atlas/vector/planet/20260913_164504_pt/4/12/6.pbf');
@@ -42,7 +43,7 @@ describe('atlas data and style contracts (no UI)',()=>{
     const snapshot=structuredClone(world);activeRoute(world,[]);expect(world).toEqual(snapshot);
   });
   it('keeps overlays geographically valid and matches every travel node',()=>{
-    expect(siteFeatures.features).toHaveLength(sites.length);expect(roadFeatures.features).toHaveLength(roads.length);
+    expect(siteFeatures.features).toHaveLength(sites.length);expect(roadFeatures.features).toHaveLength(roads.filter(r=>!r.legacyOnly).length);
     const coordinates=[...territories.features,...territoryRealms.features].flatMap(f=>f.geometry.coordinates.flat(2));
     for(const [lon,lat] of coordinates){expect(Number.isFinite(lon)&&Number.isFinite(lat)).toBe(true);expect(lon).toBeGreaterThan(70);expect(lon).toBeLessThan(138);expect(lat).toBeGreaterThan(15);expect(lat).toBeLessThan(55);}
   });

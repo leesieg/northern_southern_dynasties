@@ -3,19 +3,28 @@ import type { Feature, FeatureCollection, LineString, Point, Position } from 'ge
 import { polities, roads, siteById, sites } from '../data/scenario';
 import { position } from '../core/world';
 import type { World } from '../core/types';
+import type {Army} from '../core/realm';
 
 export const emptyCollection = (): FeatureCollection => ({type:'FeatureCollection',features:[]});
 export const pointFeature = (lon:number,lat:number,properties:Record<string,unknown>={}):Feature<Point> => ({type:'Feature',properties,geometry:{type:'Point',coordinates:[lon,lat]}});
 export const lineFeature = (coordinates:Position[],properties:Record<string,unknown>={}):Feature<LineString> => ({type:'Feature',properties,geometry:{type:'LineString',coordinates}});
 export function routeCoordinates(route:string[]):Position[]{return route.map(id=>[siteById[id].lon,siteById[id].lat]);}
-export const roadFeatures:FeatureCollection<LineString>={type:'FeatureCollection',features:roads.map(r=>lineFeature(routeCoordinates([r.from,r.to])))};
+export const roadFeatures:FeatureCollection<LineString>={type:'FeatureCollection',features:roads.filter(r=>!r.legacyOnly).map(r=>lineFeature(routeCoordinates([r.from,r.to])))};
 export const siteFeatures:FeatureCollection<Point>={type:'FeatureCollection',features:sites.map(s=>pointFeature(s.lon,s.lat,{id:s.id,capital:!!s.capital,color:polities[s.polity].color}))};
 
 // The displayed route follows the simulation's exact linear interpolation.
-export function activeRoute(world:World,preview:string[]):FeatureCollection<LineString>{
+export function activeRoute(world:World,preview:string[],army?:Army):FeatureCollection<LineString>{
+  if(army){const j=army.journey;if(!j)return {type:'FeatureCollection',features:[]};const start=siteById[j.route[j.leg]],end=siteById[j.route[j.leg+1]],fraction=j.elapsed/j.durations[j.leg];const coordinates:Position[]=[[start.lon+(end.lon-start.lon)*fraction,start.lat+(end.lat-start.lat)*fraction],...routeCoordinates(j.route.slice(j.leg+1))];return {type:'FeatureCollection',features:[lineFeature(coordinates)]};}
   const player=world.people[0],j=player.journey;
   const coordinates=j?[[position(player).lon,position(player).lat],...routeCoordinates(j.route.slice(j.leg+1))]:routeCoordinates(preview);
   return {type:'FeatureCollection',features:coordinates.length>1?[lineFeature(coordinates)]:[]};
+}
+export function previewArmyRoute(army:Army,route:string[]):FeatureCollection<LineString>{
+ const j=army.journey;
+ if(!j)return {type:'FeatureCollection',features:route.length>1?[lineFeature(routeCoordinates(route))]:[]};
+ const from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],fraction=j.elapsed/j.durations[j.leg];
+ const coordinates:Position[]=[[from.lon+(to.lon-from.lon)*fraction,from.lat+(to.lat-from.lat)*fraction],...routeCoordinates(route)];
+ return {type:'FeatureCollection',features:coordinates.length>1?[lineFeature(coordinates)]:[]};
 }
 
 export interface AtlasLabel {text:string;lon:number;lat:number;kind:'realm'|'range'|'water'|'prefecture'|'province';minZoom:number;maxZoom:number}

@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance} from './world';
-import {payArmy,consumeArmyFood,reconcileRegiments,armyCombatFactor} from './armyOrganization';
+import {payArmy,consumeArmyFood,reconcileRegiments,armyCombatFactor,armyMatchupFactor,readyTroops} from './armyOrganization';
 import {realmReason,advanceRealm} from './realm';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 function setup(){const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.realm!.cities.jiankang.grain=1000;return w;}
@@ -16,8 +16,9 @@ describe('army organization and conservation',()=>{
   const s=w.realm!,a=s.armies[0],population=s.cities.jiankang.population,grain=s.cities.jiankang.grain,coins=s.treasuries.liang.coins;
   act(w,{type:'army',action:'raise',site:'jiankang',kind:'archer',service:'standing',target:a.id});
   expect(s.armies).toHaveLength(1);expect(a.troops).toBe(400);expect(a.supply).toBe(120);expect(s.cities.jiankang.population).toBe(population-200);expect(s.cities.jiankang.grain).toBe(grain-60);expect(s.treasuries.liang.coins).toBe(coins-80);
-  expect(new Set(a.regiments!.map(u=>u.id)).size).toBe(2);expect(a.trainingUntil).toBe(w.day+60);expect(parseWorld(serializeWorld(w))).toEqual(w);
+  expect(new Set(a.regiments!.map(u=>u.id)).size).toBe(2);expect(a.trainingUntil).toBe(w.day+30);expect(a.regiments![1].readyDay).toBe(w.day+60);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
+ it('keeps trained soldiers ready when fresh recruits join their army',()=>{const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy'});const a=w.realm!.armies[0];a.trainingUntil=w.day;act(w,{type:'army',action:'raise',site:'jiankang',kind:'archer',service:'standing',target:a.id});expect(readyTroops(a,w.day)).toBe(200);expect(realmReason(w,{type:'realm',action:'march',army:a.id,site:'jingkou'})).toBe('');expect(armyCombatFactor(a,'attack','平原',w.day)).toBeLessThan(armyCombatFactor(a,'attack','平原',Infinity));validateWorld(w);});
  it('rejects an invalid reinforcement target before any resource changes',()=>{
   const w=setup(),before=serializeWorld(w);
   expect(()=>act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy',target:9999})).toThrow();expect(serializeWorld(w)).toBe(before);
@@ -48,6 +49,7 @@ describe('army organization and conservation',()=>{
   const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'heavyHorse',service:'levy'});const a=w.realm!.armies[0];
   expect(armyCombatFactor(a,'attack','山地')).toBeLessThan(armyCombatFactor(a,'attack','平原'));a.troops=123;reconcileRegiments(a);expect(a.regiments!.reduce((n,u)=>n+u.troops,0)).toBe(123);validateWorld(w);
  });
+ it('uses surviving troop composition for a bounded field matchup',()=>{const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'spear',service:'levy'});act(w,{type:'army',action:'raise',site:'jiankang',kind:'heavyHorse',service:'levy'});const [spear,horse]=w.realm!.armies;expect(armyMatchupFactor([spear],[horse],w.day)).toBeGreaterThan(armyMatchupFactor([horse],[spear],w.day));expect(armyMatchupFactor([spear],[horse],w.day)).toBeLessThanOrEqual(1.2);});
  it('keeps short training, wage and ration progression saveable',()=>{
   const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'spear',service:'standing'});
   for(let i=0;i<12;i++){advance(w);validateWorld(w);}

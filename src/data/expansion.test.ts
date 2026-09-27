@@ -26,7 +26,8 @@ describe('546 content enrichment',()=>{
   expect(sites.length).toBeGreaterThan(100);expect(new Set(sites.map(s=>s.id)).size).toBe(sites.length);
   for(const [id,,,,connection] of expandedSeats){expect(siteById[connection]).toBeDefined();expect(planRoute('jiankang',id)).not.toBeNull();expect(ancestorsOf('city:'+id)).toHaveLength(5);expect(administration[id].sources.length).toBeGreaterThan(0);}
   for(const road of roads){expect(siteById[road.from]).toBeDefined();expect(siteById[road.to]).toBeDefined();}
-  for(const [id,a] of Object.entries(administration))expect(territoryNodes['prefecture:'+a.group].parent).toBe('province:'+siteById[id].polity+':'+a.province);
+  for(const [id,a] of Object.entries(administration))expect(territoryNodes['prefecture:'+a.group].parent).toBe(id==='liangxian'?'province:east:广州':'province:'+siteById[id].polity+':'+a.province);
+  expect(territoryNodes['province:east:广州'].name).toBe('北荆州');expect(administration.luoyang.prefecture).toBe('洛阳郡');
  });
  it('allocates recorded Wei Yin total once; estimated county values and capacity remain explicit',()=>{
   const ids=sites.filter(s=>administration[s.id]?.group==='weiyin').map(s=>s.id);expect(ids).toHaveLength(13);expect(ids.reduce((n,id)=>n+populationEstimates[id].people,0)).toBe(438024);
