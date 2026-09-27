@@ -54,6 +54,7 @@ import './interaction.css';
 import './detailPanels.css';
 import './mapHud.css';
 import './drawerFrame.css';
+import './ceremonialModalTitle.css';
 
 type IconName='play'|'pause'|'pin'|'layers'|'compass'|'plus'|'minus'|'arrow'|'close'|'save'|'menu';
 function Icon({name,size=18}:{name:IconName;size?:number}){
@@ -79,6 +80,7 @@ export function App(){
   const [territory,setTerritory]=useState('realm:liang'),[level,setLevel]=useState<TerritoryLevel>('realm'),[historyEvent,setHistoryEvent]=useState<string|null>(null);
   const [drawer,setDrawer]=useState<'character'|'place'|null>(null);
   const [diplomacyTarget,setDiplomacyTarget]=useState<RealmId>('west');
+  const [diplomacyInitialTab,setDiplomacyInitialTab]=useState<'relations'|'clans'>('relations');
   const [personTab,setPersonTab]=useState<PersonTab>('overview');
   const [realmTab,setRealmTab]=useState<RealmTab>('overview'),[financeFocus,setFinanceFocus]=useState<'treasury'|'audit'>('treasury');
   const [staffTab,setStaffTab]=useState<CourtTab>('central'),[staffRegion,setStaffRegion]=useState(''),[staffPerson,setStaffPerson]=useState(''),[treasuryTab,setTreasuryTab]=useState<'budget'|'requests'|'ledger'>('budget'),[retinueHost,setRetinueHost]=useState('');
@@ -109,7 +111,7 @@ export function App(){
   const openCourt=(tab:CourtTab='central',personId=game.world?.characterId??'',nested=true,financeTab:'budget'|'requests'|'ledger'='budget',view:'treasury'|'audit'='treasury')=>{setStaffTab(tab);setStaffPerson(personId);setTreasuryTab(financeTab);setFinanceFocus(view);openModal('staff',nested);};
   const openRetinue=(host=game.world?.characterId??'',nested=true)=>{setRetinueHost(host);openModal('retinue',nested);};
   const openPerson=(id:string,nested=true)=>{openModal('map-person',nested);setMapPeople([id]);setPersonTab('overview');};
-  const openDiplomacy=(r:RealmId,nested=true)=>{openModal('diplomacy',nested);setDiplomacyTarget(r);};
+  const openDiplomacy=(r:RealmId,nested=true,initialTab:'relations'|'clans'='relations')=>{openModal('diplomacy',nested);setDiplomacyTarget(r);setDiplomacyInitialTab(initialTab);};
   const timeLocked=game.pauses.length>0||modal==='estate'||modal==='staff'||modal==='retinue'||modal==='menu'||modal==='saves';
   const disabledReason=!person?'世界载入中':person.journey?'正在途中':selected===person.location?'此刻所在之地':!plan?(game.world?travelDiplomacyReason(game.world,selected):'')||'暂无可用路线':person.food<plan.food?'行粮不足，请先整备':'';
   const allEvents=game.world?.chronicle.filter(e=>journalScope==='all'||e.person==='player').slice().reverse()??[];
@@ -129,7 +131,7 @@ export function App(){
     else if(event.kind==='court')openModal('situation');
     else if(event.kind==='local')openCourt('local',undefined,false);
     else if(event.kind==='fiscal')openCourt('finance',undefined,false,'requests');
-    else if(event.kind==='clan'){setRealmTab('clans');openModal('realm');}
+    else if(event.kind==='clan')openDiplomacy(playerRealm(game.world!),false,'clans');
     else if(event.kind==='service'){setServiceFocus(v=>({id:event.assignmentId,seq:v.seq+1}));openModal('realm',true);setRealmTab(event.assignmentId?'duties':'council');}
     else if(event.kind==='duties'){setServiceFocus(v=>({seq:v.seq+1,view:'duties'}));openModal('realm',true);setRealmTab('duties');}
     else if(event.kind==='realm'){openModal('realm');}
@@ -186,7 +188,7 @@ export function App(){
 
       {modal==='wealth'&&<PersonalEconomyPanel world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})} onEstate={()=>openModal('estate',true)}/>}
       {modal==='situation'&&<CourtPanel world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})} onPerson={id=>openPerson(id)} tab="situation" onTab={()=>{}}/>}
-      {modal==='diplomacy'&&<DiplomacyPanel key={diplomacyTarget} world={game.world} selected={diplomacyTarget} onSelect={id=>openDiplomacy(id)} onPerson={id=>openPerson(id)} pending={game.pending} send={command=>game.send({type:'command',command})}/>}
+      {modal==='diplomacy'&&<DiplomacyPanel key={diplomacyTarget+'|'+diplomacyInitialTab} world={game.world} selected={diplomacyTarget} initialTab={diplomacyInitialTab} onSelect={id=>openDiplomacy(id)} onPerson={id=>openPerson(id)} pending={game.pending} send={command=>game.send({type:'command',command})}/>}
       {modal==='lifestyle'&&<LifestylePanel key={game.world.characterId??'fictional'} world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})}/>}
       {modal==='menu'&&<div className="game-menu-actions"><button className="primary" onClick={closePanel}>返回游戏</button><button onClick={()=>openModal('saves',true)}>保存／读取／导出</button><button disabled={game.pending} onClick={()=>game.send({type:'menu'})}>保存并返回主菜单</button><button onClick={()=>openModal('about',true)}>玩法与说明</button><p>关闭菜单后保持暂停，可使用顶部时间控制继续。本地保存失败时会留在当前游戏，可导出文件备份。</p></div>}
       {modal==='saves'&&<><p className="modal-description">{accountSaves?'存档保存在当前登录账号下。导出文件可用于备份或迁移；读取与导入前会保留当前进度。':'存档保存在此浏览器中。导出文件可用于备份或迁移；读取与导入前会保留当前进度。'}</p><div className="save-actions"><button className="primary" disabled={!person} onClick={()=>game.send({type:'save'})}>保存当前行程</button><button disabled={!person} onClick={()=>game.send({type:'export'})}>导出文件</button><button disabled={!person} onClick={()=>upload.current?.click()}>导入文件</button><input ref={upload} type="file" accept=".json" hidden onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;if(file.size>2_000_000){game.notify('存档超过 2 MB，无法导入。',true);return;}try{game.send({type:'import',text:await file.text()});}catch{game.notify('读取文件失败。',true);}}}/></div><div className="save-list">{!game.slots.length?<p className="empty-state">暂无存档。现在保存，为这段旅途留下一页行记。</p>:game.slots.map(slot=><div className="save-row" key={slot.id}><div><strong>{saveLabel(slot.id)}{slot.characterName?' · '+slot.characterName:''}</strong><span>{slot.mode==='sandbox'?'历史沙盒':'原有玩法'} · {scriptLabel(slot.scriptId)} · {dateLabel(slot.day,slot.scriptId)} · {new Date(slot.savedAt).toLocaleString('zh-CN')}</span></div><div className="save-row-actions"><button disabled={game.pending} onClick={()=>game.send({type:'load',slot:slot.id})}>恢复</button><button disabled={game.pending} className="danger" onClick={()=>setDeleteSlot(slot.id)}>删除</button></div></div>)}</div><p className="small-note">自动保存：出发、补给、每十个游戏日及抵达时。保留三份轮换自动行记和一份手动行记。</p></>}

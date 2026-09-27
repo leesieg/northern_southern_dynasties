@@ -25,8 +25,8 @@ const groups:{name:string;icon:ArtName;actions:DiplomacyAction[]}[]=[{name:'邦�
 const effects:Record<DiplomacyAction,string>={improve:'获接纳后，两国关系 +25。',safe:'批准后本人获得 240 日安全通行；交战时失效。',meeting:'批准后本人获得安全通行，须亲赴对方都城完成会盟，完成后关系再 +15。',transit:'普通人物可通行 720 日；君主、执政和统帅仍需安全通行。',military:'己方军队可借道 720 日，不授予占领权。',aid:'盟国答应后拨付 120 钱与 120 粮，不派兵参战。',join:'盟国答应后实际加入指定战争，自行指挥军队；攻占归战争主导国，和约由主导国签订。',submit:'成为对方臣属，每月朝贡 20 钱，失去独立宣战及军政缔约权。',independence:'解除臣属，关系 −50、信用 −20。',revoke:'终止双方全部条约，关系 −30、信用 −20。',insult:'立即使两国关系 −25。',recognize:'相互承认国号，双方合法性 +5。',pact:'720 日互不侵犯；宣战前须先终止条约。',alliance:'720 日军事同盟，双方军队可借道；可分别请求钱粮军援或实际参战。'};
 const instant=(a:DiplomacyAction)=>['insult','revoke','independence'].includes(a);
 const signed=(n:number)=>(n>0?'+':'')+n;
-export function DiplomacyPanel({world:w,selected:target,onSelect,onPerson,pending,send}:{world:World;selected:RealmId;onSelect:(r:RealmId)=>void;onPerson:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
- const [tab,setTab]=useState<'relations'|'officers'|'history'|'clans'>('relations'),[action,setAction]=useState<DiplomacyAction|null>(null),[warConfirm,setWarConfirm]=useState<'war'|'peace'|null>(null);
+export function DiplomacyPanel({world:w,selected:target,initialTab='relations',onSelect,onPerson,pending,send}:{world:World;selected:RealmId;initialTab?:'relations'|'clans';onSelect:(r:RealmId)=>void;onPerson:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
+ const [tab,setTab]=useState<'relations'|'officers'|'history'|'clans'>(initialTab),[action,setAction]=useState<DiplomacyAction|null>(null),[warConfirm,setWarConfirm]=useState<'war'|'peace'|null>(null);
  const [envoy,setEnvoy]=useState<string|undefined>();
  const [joinWar,setJoinWar]=useState<number|undefined>();
  useEffect(()=>{setEnvoy(undefined);setAction(null);},[target]);
