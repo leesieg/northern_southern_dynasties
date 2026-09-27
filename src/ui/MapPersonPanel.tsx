@@ -1,6 +1,4 @@
-import {ResignationPanel} from './ResignationPanel';
 import {PersonIdentityIcons} from './PersonIdentityIcons';
-import {LocalCareer} from './LocalAdministration';
 import {RealmBadge} from './RealmBadge';
 import {PersonAbilities} from './PersonAbilities';
 import {isSovereign} from '../core/officialDuties';
@@ -10,7 +8,6 @@ import {HoverHint} from './HoverHint';
 import {ActivityProgress} from './MobilityPanel';
 import {personResidence} from '../core/residence';
 import {DetailTabs} from './DetailTabs';
-import {ServiceProfile} from './ServicePanel';
 import {LifeSummary,LifeDetails,TemporaryIllnessTrait} from './LifeDetails';
 import {isDeceased} from '../core/lifeState';
 import { OpinionDetails } from './OpinionDetails';
@@ -21,7 +18,6 @@ import { useState } from 'react';
 import {PersonConnections,PersonDomains} from './PersonConnections';
 import { RelationshipPanel } from './RelationshipPanel';
 import { relationshipPersonById } from '../data/relationships';
-import { OfficeHierarchy } from './OfficeHierarchy';
 import { FamilyPanel,FamilyCrest } from './FamilyPanel';
 import { familyById,familyPersonById } from '../data/families';
 import { characterById } from '../data/characters';
@@ -34,8 +30,8 @@ import { CharacterPortrait } from './CharacterPortrait';
 import { TraitBadge,Resource,ArtIcon } from './ArtIcon';
 import { SocialPanel } from './SocialPanel';
 import './personSheet.css';
-export type PersonTab='overview'|'family'|'office'|'relations'|'interaction'|'retinue'|'economy';
-export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifestyle,onEconomy,onRealm,onStaff,onService,onEstate,onDiplomacy,onLocate,onCity,onFind,pending,send}:{world:World;ids:string[];tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onLifestyle:()=>void;onEconomy:()=>void;onRealm:()=>void;onStaff:()=>void;onService:()=>void;onEstate:()=>void;onLocate:()=>void;onCity:(id:string)=>void;onFind:()=>void;pending:boolean;send:(c:GameCommand)=>void}){
+export type PersonTab='overview'|'family'|'relations'|'interaction'|'retinue'|'economy';
+export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifestyle,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,onFind,pending,send}:{world:World;ids:string[];tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onLifestyle:()=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:()=>void;onEstate:()=>void;onLocate:()=>void;onCity:(id:string)=>void;onFind:()=>void;pending:boolean;send:(c:GameCommand)=>void}){
  const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'legacy'>('tree');
  const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=characterById[id],extra=relationshipPersonById[id],self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
  const reference=familyPersonById[id];
@@ -44,10 +40,10 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  const name=c?.name??extra?.name??reference?.name??p!.name,family=familyById[c?.family??reference?.family??extra?.family??''],realm=c?.polity??extra?.realm,clan=family?clanStanding(w,id):null;
  return <div className="person-sheet">
  {ids.length>1&&<nav className="person-picker-list" aria-label="此处人物">{ids.map(person=><button key={person} aria-pressed={person===raw} onClick={()=>onSelect(person)}><ArtIcon name="person" size={22}/>{characterById[person]?.name??relationshipPersonById[person]?.name??w.people.find(p=>p.id===person)?.name}</button>)}</nav>}
- <header className="person-identity"><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{realm?<RealmBadge realm={realm} world={w} onOpen={onDiplomacy}/>:reference?'族谱记载':'行旅'}{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><div className="person-name-row"><h2>{name}</h2>{family&&<HoverHint label={family.name+'家族'} content={<><strong>{family.name}</strong>{clan?.elite&&<><p>本国世族 · 族望第 {clan.rank} 位 · 家族威望 {clan.prestige}</p><p>联姻荫望 +{clan.marriage}；求官接受度 +{clan.petition}，城邑请任功绩门槛 −{clan.merit}。</p></>}</>}><button className={'person-clan'+(clan?.elite?' is-elite':'')} aria-label={'查看'+family.name+'家族详情'} onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/></button></HoverHint>}</div><LifeSummary world={w} id={lifeId}/><div className="person-symbol-row">{!deceased&&<PersonIdentityIcons world={w} person={id} onOffice={()=>onTab('office')} onLifestyle={onLifestyle}/>}{(c||extra)&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div>}</div>{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}</div></header>
+ <header className="person-identity"><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{realm?<RealmBadge realm={realm} world={w} onOpen={onDiplomacy}/>:reference?'族谱记载':'行旅'}{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><div className="person-name-row"><h2>{name}</h2>{family&&<HoverHint label={family.name+'家族'} content={<><strong>{family.name}</strong>{clan?.elite&&<><p>本国世族 · 族望第 {clan.rank} 位 · 家族威望 {clan.prestige}</p><p>联姻荫望 +{clan.marriage}；求官接受度 +{clan.petition}，城邑请任功绩门槛 −{clan.merit}。</p></>}</>}><button className={'person-clan'+(clan?.elite?' is-elite':'')} aria-label={'查看'+family.name+'家族详情'} onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/></button></HoverHint>}</div><LifeSummary world={w} id={lifeId}/><div className="person-symbol-row">{!deceased&&<PersonIdentityIcons world={w} person={id} onOffice={()=>onCourtPerson(id)} onLifestyle={onLifestyle}/>}{(c||extra)&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div>}</div>{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}</div></header>
  <PersonAbilities world={w} person={id}/>
- <PersonDomains world={w} person={id} onCity={onCity}/>
- <DetailTabs label="人物章节" value={tab} onChange={next=>next==='retinue'&&self?onStaff():onTab(next)} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'office',label:'官职',icon:'influence'},{id:'relations',label:'关系',icon:'gregarious'},{id:'retinue',label:'幕僚',icon:'influence'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='office'&&!!w.realm||key==='relations'||key==='retinue'&&!isSovereign(w,id)&&!!w.retinue&&(self||Object.values(w.retinue.members).some(m=>m.host===id))||key==='interaction'&&!self&&!!extra&&!!w.social&&!retired&&!deceased)}/>
+ <PersonDomains world={w} person={id} onCity={onCity}/>{w.realm&&<button className="person-court-entry" onClick={()=>onCourtPerson(id)}><ArtIcon name="influence" size={22}/>朝廷任职 · {name}<span aria-hidden="true">›</span></button>}
+ <DetailTabs label="人物章节" value={tab} onChange={next=>next==='retinue'&&self?onStaff():onTab(next)} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'retinue',label:'幕僚',icon:'influence'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='relations'||key==='retinue'&&!isSovereign(w,id)&&!!w.retinue&&(self||Object.values(w.retinue.members).some(m=>m.host===id))||key==='interaction'&&!self&&!!extra&&!!w.social&&!retired&&!deceased)}/>
 
  {tab==='overview'&&<>
  <LifeDetails world={w} id={lifeId} pending={pending} send={send}/>
@@ -60,7 +56,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onLifest
  {c&&<section className="detail-record-group"><h4>生平</h4><p>{c.biography}</p></section>}
  </>}
  {tab==='family'&&family&&<>{self&&<DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree',label:'族谱',icon:'renown'},{id:'legacy',label:'世业继任',icon:'estate'}]}/>}{(!self||familyMode==='tree')&&<FamilyPanel world={w} selected={familySelection??id} onSelect={setFamilySelection} onPerson={onPerson}/>}{self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
- {tab==='office'&&<>{self&&<ResignationPanel world={w} pending={pending} send={send}/>}<OfficeHierarchy world={w} person={id} onPerson={onPerson}/><LocalCareer world={w} person={id} send={send} pending={pending} onPerson={onPerson}/><ServiceProfile world={w} person={id} onOpen={onService}/>{self&&w.realm&&<button className="primary" onClick={isSovereign(w,id)?onStaff:onRealm}><ArtIcon name="influence" size={24}/>{isSovereign(w,id)?'打开朝廷 · 安排官职':'任职与朝廷事务'} →</button>}</>}
+
  {tab==='economy'&&self&&w.realm&&<button onClick={onEconomy}><ArtIcon name="coins"/>管理私财 →</button>}
  {tab==='relations'&&<PersonConnections key={id} world={w} person={id} onPerson={onPerson}/>}
  {tab==='retinue'&&!isSovereign(w,id)&&(self?<button className="primary" onClick={onStaff}>打开幕僚 · 安排幕职 →</button>:<RetinuePanel onInteract={target=>{onPerson(target);onTab('interaction');}} world={w} host={id} pending={pending} send={send} onPerson={onPerson} onFind={onFind}/>) }

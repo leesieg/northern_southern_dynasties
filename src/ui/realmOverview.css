@@ -15,3 +15,5 @@
 .realm-overview{gap:14px}.realm-overview-section{padding:12px;border:1px solid #b5a47755;border-radius:5px;background:#172a24}
 .realm-panel>.detail-tabs{margin:0;padding:0 0 10px}
 @media(max-width:600px){.realm-panel .realm-role-facts>div{padding:0 6px}.realm-panel .realm-role-facts dd button{font-size:11px}}
+.realm-panel .realm-court-entry{display:flex;align-items:center;gap:7px;min-width:106px;min-height:46px;margin-left:auto;padding:5px 8px;border:1px solid #c1a56e85;border-left:3px solid #aa503c;border-radius:2px;background:linear-gradient(110deg,#3b3a2e,#20382c);color:#efd79f;text-align:left}.realm-court-entry>span:nth-child(2){display:grid;gap:2px;font:16px var(--serif)}.realm-court-entry small{color:#bdc6ac;font:10px var(--sans);white-space:nowrap}.realm-court-entry>span:last-child{margin-left:auto}.realm-court-entry:hover{border-color:#efd397;background:#3b4834}.realm-court-entry:focus-visible{outline:2px solid #efd397;outline-offset:2px}
+@media(max-width:600px){.realm-panel .realm-court-entry{order:3;width:100%;margin:2px 0 0}}
