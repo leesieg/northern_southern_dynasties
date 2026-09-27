@@ -11,3 +11,4 @@
 .realm-office-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .realm-page>.office-hierarchy>.office-tree{max-height:460px;overflow:auto;scrollbar-width:thin}
 .realm-page>.public-succession{border-top:1px solid #b5a47755;padding-top:12px}
+.realm-staff-entry{margin:12px 0;padding:16px;border:1px solid #b99b635c;background:#182d24}.realm-staff-entry h3{display:flex;align-items:center;gap:9px;margin:0;color:#e6cf9a;font:21px var(--serif)}.realm-staff-entry p{margin:9px 0 14px;color:#bfcaaf;font-size:12px;line-height:1.7}.realm-staff-entry button,.realm-staff-link{display:flex;align-items:center;gap:8px;padding:9px 13px}.realm-staff-link{margin:12px 0;border:1px solid #b99b635c;background:#20392d;color:#e6cf9a}
