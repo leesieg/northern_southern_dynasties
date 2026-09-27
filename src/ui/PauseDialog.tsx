@@ -6,6 +6,7 @@ import {courtReason} from '../core/court';
 import {fiscalReason,grantFactors} from '../core/treasury';
 import {ActivityProgress} from './MobilityPanel';
 import {AssignmentPanel} from './AssignmentPanel';
+import {serviceAudienceKind} from './ServiceAudience';
 import {CouncilPanel} from './ServicePanel';
 import {diplomaticQuote,diplomacyActions} from '../core/diplomacy';
 import {playerRealm} from '../core/realm';
@@ -17,6 +18,7 @@ import {eventDefinitions,realmReason} from '../core/realm';
 import {DutiesPanel} from './DutiesPanel';
 import {dutyPhaseNames} from '../core/duties';
 import {assignmentPhases} from '../data/assignments';
+import {serviceAuthority} from '../core/serviceMandates';
 import './pauseDialog.css';
 export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,send}:{event:PauseEvent;count:number;world:World;pending:boolean;error?:string;onClose:()=>void;onNavigate:(event:PauseEvent)=>void;send:(command:GameCommand)=>void}){
  const ref=useRef<HTMLDialogElement>(null);
@@ -25,11 +27,12 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  const actionable=pauseHasActions(world,event);
  const grant=world.realm?.fiscal?.requests.find(q=>q.id===event.fiscalId);
  const task=event.assignmentId?world.service?.tasks.find(t=>t.id===event.assignmentId):undefined;
+ const audience=!!task&&serviceAudienceKind(task.kind)&&['petition','approval'].includes(task.phase)&&serviceAuthority(world,task,world.characterId!);
  const body=event.kind==='service'&&task&&task.phase!=='closed'?(task.invitation?.person===world.characterId?'同僚邀你协办，请答复。':'差事进展：'+assignmentPhases[task.phase]+'。'):event.kind==='duties'&&world.duties?.task?'粮务进展：'+dutyPhaseNames[world.duties.task.phase]+'。':event.body;
  const label=event.kind==='economy'?'前往政务监察':event.kind==='court'?'查看局势':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
- return <dialog ref={ref} className="pause-dialog" aria-labelledby="pause-title" aria-describedby="pause-body" onCancel={e=>{e.preventDefault();if(!pending&&!actionable)onClose();}} onKeyDown={e=>{if(e.key==='Escape')e.stopPropagation();}}>
+ return <dialog ref={ref} className={`pause-dialog ${audience?'pause-dialog--audience':''}`} aria-labelledby="pause-title" aria-describedby={audience?undefined:'pause-body'} onCancel={e=>{e.preventDefault();if(!pending&&(!actionable||audience))onClose();}} onKeyDown={e=>{if(e.key==='Escape')e.stopPropagation();}}>
  <header><span className="eyebrow">时光暂停{count>1?` · 尚有 ${count} 件消息`:''}</span><h2 id="pause-title">{event.title}</h2></header>
- <p id="pause-body">{body}</p>
+ {!audience&&<p id="pause-body">{body}</p>}
  {actionable&&event.kind==='mobility'&&<ActivityProgress world={world} send={send} pending={pending} id={event.activityId}/>}
  {actionable&&(event.kind==='service'||event.kind==='arrival'&&event.assignmentId)&&(event.assignmentId?task&&<AssignmentPanel key={task.id} world={world} pending={pending} send={send} task={task} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>:<CouncilPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>)}
  {actionable&&event.kind==='duties'&&world.duties?.task&&<DutiesPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
