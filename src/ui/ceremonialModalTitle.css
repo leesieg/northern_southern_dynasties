@@ -33,6 +33,7 @@
   overflow-wrap:anywhere;
   text-shadow:0 1px 2px #20140f;
 }
+.modal.estate-modal>header h2{flex:none;white-space:nowrap}
 .modal:is(.estate-modal,.staff-modal)>header h2::before,
 .modal:is(.estate-modal,.staff-modal)>header h2::after{
   content:'◆';
