@@ -58,7 +58,11 @@
 @media(max-width:1180px){.territory-connections{padding-inline:17px}.territory-tooltip{width:210px}.atlas-scale-indicator{top:142px}.atlas-network-notice{top:169px}}
 .atlas-place-label.county{font-size:11px;letter-spacing:1px;font-weight:400}
 .atlas-geographic-label.prefecture{font-size:19px;letter-spacing:4px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.9}
-.atlas-estate-marker{font:11px var(--serif);color:#fae5b5;background:#614834eb;border:1px solid #c9a972;box-shadow:0 2px 6px #24322244;padding:4px 7px;z-index:4;white-space:nowrap}
+.atlas-estate-marker{display:grid;place-items:center;width:42px;height:46px;padding:3px;border:2px double #d8bb78;border-radius:50% 50% 8px 8px;background:linear-gradient(145deg,#614a35f5,#273d31f5);color:#f6e6bd;box-shadow:0 5px 13px #14251d88,inset 0 0 0 2px #16291d99;z-index:7;filter:drop-shadow(0 2px 3px #14251d77)}
+.atlas-map .atlas-estate-marker::before{margin-right:0}
+.atlas-estate-marker:hover{background:#4b5738;color:#fff0c8}
+.atlas-estate-marker:focus-visible{outline:3px solid #f6da9c;outline-offset:3px}
+.atlas-estate-marker::after{content:'';position:absolute;left:calc(50% - 5px);bottom:-6px;width:8px;height:8px;transform:rotate(45deg);border-right:2px solid #d8bb78;border-bottom:2px solid #d8bb78;background:#273d31}
 .location-development{margin:0 18px 20px;border-top:1px solid #b5bb9540;border-bottom:1px solid #b5bb9540;padding-bottom:12px}
 .development-tabs{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #b5bb9525;margin-bottom:12px}
 .development-tabs button{border:0;background:transparent;font-size:12px;padding:5px 0;border-bottom:2px solid transparent}

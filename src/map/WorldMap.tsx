@@ -29,6 +29,7 @@ setWorkerCount(2);
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
   onActivity:(item:OngoingItem)=>void;
+  onEstate:()=>void;
   onDiplomacy:(r:RealmId)=>void;
   onInspectPeople:(ids:string[])=>void;
   territory:string;territoryLevel:TerritoryLevel;historyEvent:string|null;onSelectTerritory:(id:string)=>void;
@@ -64,6 +65,7 @@ export function WorldMap(props:Props){
     let hoveredId:string|null=null;
     const allMarkers:Marker[]=[];
     const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
+    let estateMarker:Marker|undefined,estateButton:HTMLButtonElement|undefined;
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     const places:{marker:Marker;button:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
@@ -130,6 +132,12 @@ export function WorldMap(props:Props){
       const routeKey=p.route.join(',');
       if(lastWorld!==p.world||lastRoute!==routeKey){
         (map.getSource('route') as GeoJSONSource).setData(activeRoute(p.world,p.route));
+        const estate=p.world.holdings.estate,estateSite=siteById[estate.location];
+        if(estateMarker&&estateButton&&estateSite){
+          estateMarker.setLngLat([estateSite.lon,estateSite.lat]);
+          estateButton.setAttribute('aria-label','查看'+familyName(estate.family)+'氏庄园，位于'+estateSite.name);
+          estateButton.title=estateSite.name+' · '+familyName(estate.family)+'氏庄园';
+        }
         for(const person of mapTravelers(p.world)){
           const entry=people.get(person.id),pos=position(person);
           entry?.marker.setLngLat([pos.lon,pos.lat]);
@@ -193,6 +201,11 @@ export function WorldMap(props:Props){
           const marker=new Marker({element,anchor:'bottom',offset:[0,-7],opacityWhenCovered:.3}).setLngLat([s.lon,s.lat]).addTo(map);
           places.push({marker,button,id:s.id,capital:!!s.capital});allMarkers.push(marker);
         }
+        estateButton=document.createElement('button');estateButton.type='button';estateButton.className='atlas-estate-marker';
+        estateButton.onclick=event=>{event.stopPropagation();setMenu(null);current.current.onEstate();};
+        estateButton.ondblclick=event=>event.stopPropagation();
+        const estateSite=siteById[current.current.world.holdings.estate.location];
+        if(estateSite){estateMarker=new Marker({element:estateButton,anchor:'bottom',offset:[0,-55]}).setLngLat([estateSite.lon,estateSite.lat]).addTo(map);allMarkers.push(estateMarker);}
         for(const person of mapTravelers(current.current.world)){
           const element=document.createElement('button');element.type='button';element.hidden=true;element.className=`atlas-traveler${person.id==='player'?' player':''}`;
           element.onclick=event=>{event.stopPropagation();setMenu(null);current.current.onInspectPeople([person.id==='player'?(current.current.world.characterId??'player'):person.id]);};element.ondblclick=event=>event.stopPropagation();element.setAttribute('aria-label','查看'+person.name+'详情');
