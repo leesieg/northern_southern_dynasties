@@ -8,6 +8,8 @@
 .service-board-heading button,.service-back{min-height:36px}
 .service-archive-list{max-height:260px;overflow:auto;scrollbar-width:thin;display:grid;gap:6px}
 .service-board .assignment-card{margin:0}
+.service-routine-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.service-routine-grid button{display:flex;align-items:center;gap:8px;min-height:52px;text-align:left;padding:8px 10px}.service-routine-grid button[aria-pressed=true]{border-color:#cfb879;background:#cfb87924}.service-routine-grid small{font-size:11px}
+@media(max-width:520px){.service-routine-grid{grid-template-columns:1fr}}
 .service-active-list{display:grid;gap:6px;max-height:36vh;overflow:auto;scrollbar-width:thin}
 .service-council>.position-seat--compact{width:100%;margin:8px 0 0}
 
