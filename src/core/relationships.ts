@@ -165,7 +165,6 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
  const personal=Object.values(s.bonds).filter(b=>isAlive(w,b.a)&&isAlive(w,b.b)&&(b.a===w.characterId||b.b===w.characterId)),friends=personal.filter(b=>b.kind==='friend'||b.kind==='confidant').length,rivals=personal.filter(b=>b.kind==='rival'||b.kind==='nemesis').length;
  w.social!.stress=cap(w.social!.stress-Math.min(6,friends*2)+(spouseOf(w,w.characterId!)?-2:0)+Math.min(9,rivals*3));
  for(const [id,o] of Object.entries(s.oaths)){const kind=friendship(w,id,o.lord);o.loyalty=cap(o.loyalty+(kind==='rival'||kind==='nemesis'?-15:relationshipBonus(w,id,o.lord)>10?3:relationOpinion(w,o.lord,id)>=40?2:-1));if(o.loyalty===0){delete s.oaths[id];log(w,id,o.lord,'效忠者离心，誓约自动解除。');}}
- if(w.realm){const loyal=Object.values(s.oaths).filter(o=>o.lord===w.characterId&&o.loyalty>=70).length;w.realm.influence=cap(w.realm.influence+Math.min(4,loyal),999);}
  for(const r of realms){const c=validRegency(w,r);if(c&&c.origin!=='restored'){c.grip=cap(c.grip-(governmentOf(w,r)!.support>=60?1:4));if(c.grip===0)restoreRule(w,r);}}
 }
 

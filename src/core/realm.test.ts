@@ -26,9 +26,9 @@ describe('沙盒政治经济军事',()=>{
  });
  it('任命延迟生效，撤销前任权限；皇帝不自动取得权臣任命权',()=>{
   const w=sandbox();act(w,{type:'realm',action:'appoint',site:'jiankang',candidate:'xiao-gang'});
-  advance(w,7);expect(w.holdings.governedCities).toContain('jiankang');advance(w);expect(w.holdings.governedCities).not.toContain('jiankang');
+  const due=w.realm!.offices[0].due;advance(w,due-1);expect(w.holdings.governedCities).toContain('jiankang');advance(w);expect(w.holdings.governedCities).not.toContain('jiankang');
   expect(()=>act(w,{type:'build',scope:'city',site:'jiankang',building:'market'})).toThrow('治理权');validate(w);
-  const emperor=sandbox('yuan-shanjian'),before=structuredClone(emperor);expect(()=>act(emperor,{type:'realm',action:'appoint',site:'ye',candidate:'gao-huan'})).toThrow('任命权');expect(emperor).toEqual(before);
+  const emperor=sandbox('yuan-shanjian'),before=structuredClone(emperor);expect(()=>act(emperor,{type:'realm',action:'appoint',site:'ye',candidate:'gao-huan'})).toThrow('授官权');expect(emperor).toEqual(before);
  });
  it('交接只继承家业，公职及军务权限重新核定，存档合法',()=>{
   const w=sandbox();act(w,{type:'heir',target:'xiao-gang'});act(w,{type:'handover'});expect(w.holdings.governedCities).toEqual([]);expect(w.realm!.mandate).toBe(false);expect(w.realm!.cities.jiankang.governor).toBe('xiao-yan');validate(w);

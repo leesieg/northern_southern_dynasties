@@ -8,11 +8,11 @@ import {armyCampaign} from './militaryCampaigns';
 import {roadEncounters,fieldBattles} from './battlefield';
 import {activeWars,ensureWars,bilateralWar,selectedWar,peaceQuote,advanceReparations,warRealmSide,type PeaceTerms,type War} from './wars';
 import {ensureArmyOrganization,reconcileRegiments,readyTroops,armyPayFactor,armyCombatFactor,armyMatchupFactor,consumeArmyFood} from './armyOrganization';
-import {completeLocalAppointment,advanceLocal,localEfficiency,localCanAppoint,countyTerritory} from './localAdministration';
+import {completeLocalAppointment,advanceLocal,localEfficiency,countyTerritory,localReason,actLocal} from './localAdministration';
 import {canCommission} from './serviceMandates';
 import {advanceArmyLogistics,returnArmyConvoy,distributeGarrisonFood,type ArmyConvoy} from './armyLogistics';
 import {enactPoliticalAction} from './politicalActions';
-import {allegianceRealm,officeName,publicOfficeReason,appointmentAuthorityReason} from './officeEligibility';
+import {allegianceRealm} from './officeEligibility';
 import {regionalEconomy} from '../data/regionalEconomy';
 import {civilianFood,settleLocalGrain,grainCapacity,ensurePopulation,demobilizationPlan,demobilizeArmy} from './population';
 import {localSalaryExpense,centralTax,collectFiscal,distributeFiscal,payFiscalOperations,localBalance,spendLocal} from './treasury';
@@ -21,7 +21,7 @@ import {recommendationBonus} from './retinue';
 import {attributes} from './social';
 import { foreignWarReason,diplomaticWar,canEnter } from './diplomacy';
 import { courtSalary } from './court';
-import { governmentExecutive,governingAuthority,governmentBonus,appointmentReason,meritAccess,governmentMusterReason,spendGovernmentMuster,governmentOf,regimeName } from './government';
+import { governmentExecutive,governingAuthority,governmentBonus,meritAccess,governmentMusterReason,spendGovernmentMuster,governmentOf,regimeName } from './government';
 import type { GovernmentState } from './government';
 import { lifestyleBonuses } from './lifestyle';
 import { emptyLifestyleBonus } from '../data/lifestyles';
@@ -43,7 +43,7 @@ export interface RealmState {
  local?:import('./localAdministration').LocalAdministration;
  population?:import('./population').PopulationState;
  fiscal?:import('./treasury').FiscalState;
- version:1;personalInfluence?:Record<string,number>;governments?:GovernmentState;cities:Record<string,Province>;treasuries:Record<RealmId,Treasury>;influence:number;mandate:boolean;
+ version:1;personalInfluence?:Record<string,number>;lastInfluenceIncome?:number;governments?:GovernmentState;cities:Record<string,Province>;treasuries:Record<RealmId,Treasury>;influence:number;mandate:boolean;
  offices:{site:string;candidate:string;due:number;territory?:string;realm?:RealmId;issuer?:string;acting?:boolean;concurrent?:boolean;issued?:number}[];armies:Army[];
  reparations?:import('./wars').Reparation[];wars?:War[];nextWarId?:number;war:War|null;sieges?:Siege[];
  truces:Record<string,number>;event:{kind:EventKind;site:string;day:number}|null;lastEvent:number;
@@ -107,8 +107,8 @@ export function realmReason(w:World,c:RealmCommand):string {
  case 'tax':if(!civilCanAdmin(w,w.characterId,c.site))return '失去实际控制';if(!['light','normal','heavy'].includes(c.tax))return '无效税制';return !canCommission(w,w.characterId,r,c.site,'taxation')?'须实际统辖本国控制的城市':city!.tax===c.tax?'已是现行税制':'';
  case 'relief':if(!civilCanAdmin(w,w.characterId,c.site))return '失去实际控制';return !canCommission(w,w.characterId,r,c.site,'relief')?'须实际统辖本国控制的城市':city!.grain+(c.site===capital(r)?t.grain:0)<50?'需本城公粮 50（都城可动用中央储粮）':'';
  case 'fortify':{if(!civilCanAdmin(w,w.characterId,c.site)||city!.owner!==r||city!.controller!==r)return '须控制本国法理城市';if(!authorityGrant(w,w.characterId,'levy',{realm:r,site:c.site}).allowed)return '须有本城军务权限';const level=fortificationLevel(w,c.site),cost=(level+1)*80;return level>=3?'城防已达最高等级':city!.fortification?.due!==undefined&&city!.fortification.due!==null?'城防正在修筑':localBalance(w,c.site)<cost?`本城公款不足 ${cost}`:'';}
- case 'appoint':return (localCanAppoint(w,w.characterId!,countyTerritory(c.site),r)?'':appointmentAuthorityReason(w,r))||(allegianceRealm(w,c.candidate)!==r?'需当前效忠本国的人物':publicOfficeReason(w,c.candidate))||(city!.owner!==r||city!.controller!==r?'仅可任命本国控制的本国城市':s.offices.some(o=>o.site===c.site&&(!o.territory||o.territory===countyTerritory(c.site)))?'任命正在送达':city!.governor===c.candidate?'此人已在任':s.influence<20?'需影响力 20':appointmentReason(w,c.candidate,c.site));
- case 'petition':if(governmentOf(w)?.type==='feudal'&&appointmentReason(w,w.characterId!,c.site))return appointmentReason(w,w.characterId!,c.site);return city!.owner!==r||city!.controller!==r?'只能请任本国控制的本国城市':city!.governor===w.characterId?'你已在任':s.offices.some(o=>o.site===c.site&&(!o.territory||o.territory===countyTerritory(c.site)))?'任命正在送达':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'office')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?`需执政者接受度 60 或官僚功绩 ${20-(clanStanding(w,w.characterId!)?.merit??0)}`:'';
+ case 'appoint':return localReason(w,{type:'local',action:'appoint',territory:countyTerritory(c.site),candidate:c.candidate});
+ case 'petition':return localReason(w,{type:'local',action:'apply',territory:countyTerritory(c.site),candidate:w.characterId!});
  case 'mandate':return s.mandate?'已有军务授权':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'military')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?'需执政者接受度 60 或官僚功绩 40':'';
  case 'muster':{if(civilWar(w,r))return '内战期间请通过驻地军队编制征募';const home=s.cities[w.people[0].home]?.controller===r?w.people[0].home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;return !s.mandate?'需要军务授权':s.armies.filter(a=>a.realm===r).length>=16?'本国军队编制已满':!Object.values(s.cities).some(c=>c.controller===r)?'已无控制城市':!executive(w)&&s.cities[home].governor!==w.characterId?'地方动员须有本城治理权，或由朝廷委派征募':s.cities[home].population<700?'本城人口不足以动员 600 人':(executive(w)?t.coins:localBalance(w,home))<120||t.grain<120?'动员需要'+(executive(w)?'中央':'本城')+'公款 120、公粮 120':governmentMusterReason(w);}
  case 'disband':if(a&&!playerCommandsArmy(w,a))return '不能指挥内战对方军队';if(a&&armyCampaign(w,a))return '须先撤销战役委任';return !a?'尚未动员':!authorityGrant(w,w.characterId,'command',{realm:r,site:a.location,army:a}).allowed?'没有本军指挥权':(a.arrears??0)>0?'须结清军饷后遣散':a.journey?'抵达后方可遣散':s.cities[a.location].controller!==r?'请回到己方控制城市':demobilizationPlan(w,a).reason;
@@ -124,7 +124,7 @@ export function actRealm(w:World,c:RealmCommand){
  case 'tax':enactPoliticalAction(w,r,'tax');s.cities[c.site].tax=c.tax;log(w,siteById[c.site].name+'税制调整为'+({light:'轻税',normal:'常税',heavy:'重税'})[c.tax]+'。');break;
  case 'relief':{const local=Math.min(s.cities[c.site].grain,50);s.cities[c.site].grain-=local;t.grain-=50-local;s.cities[c.site].order=clamp(s.cities[c.site].order+15,0,100);log(w,'向'+siteById[c.site].name+'拨粮 50，秩序 +15。');break;}
  case 'fortify':{const cty=s.cities[c.site],level=fortificationLevel(w,c.site),cost=(level+1)*80,days=(level+1)*30;spendLocal(w,c.site,cost,'修筑城防');cty.fortification={level,due:w.day+days};log(w,siteById[c.site].name+`修筑城防至 ${level+1} 级，支出本城公款 ${cost}，需 ${days} 日。`);break;}
- case 'appoint':case 'petition':{enactPoliticalAction(w,r,'appointment');const candidate=c.action==='appoint'?c.candidate:w.characterId!;s.influence-=c.action==='appoint'?20:40;const g=governmentOf(w)!;if((g.merit[candidate]??0)<20){g.support=Math.max(0,g.support-10);s.cities[c.site].order=Math.max(0,s.cities[c.site].order-3);}const days=planRoute(capital(r),c.site)?.days??1;s.offices.push({site:c.site,candidate,due:w.day+days+7});log(w,'任命'+officeName(candidate)+'治理'+siteById[c.site].name+'，文书预计 '+(days+7)+' 日送达。');break;}
+ case 'appoint':case 'petition':{actLocal(w,{type:'local',action:c.action==='appoint'?'appoint':'apply',territory:countyTerritory(c.site),candidate:c.action==='appoint'?c.candidate:w.characterId!});enactPoliticalAction(w,r,'appointment');break;}
  case 'mandate':s.influence-=40;s.mandate=true;log(w,'获得本局军务授权，可以动员与发动边境争夺。');break;
  case 'muster':{enactPoliticalAction(w,r,'military');spendGovernmentMuster(w);const home=w.people[0].home,location=s.cities[home].controller===r?home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;if(executive(w))t.coins-=120;else spendLocal(w,location,120,'地方动员');t.grain-=120;s.cities[location].population-=600;s.armies.push({realm:r,location,troops:600,morale:100,supply:120,journey:null,siege:0});const army=s.armies.at(-1)!;log(w,regimeName(w,r)+`动员 600 人，每 30 日军饷 ${armyMonthlyPay(w,army)} 钱，每日消耗军粮 ${armyDailyFood(w,army)}。`);break;}
  case 'disband':{if(w.mobility&&(!c.army||s.armies.find(a=>a.realm===r)?.id===c.army)){const leader=w.mobility.commanders[r];if(leader===w.characterId)w.people[0].journey=null;else if(leader&&w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.commanders[r];}const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;const returned=demobilizeArmy(w,a);delete w.mobility?.pendingCommanders?.[a.id!];const leader=w.mobility?.armyCommanders?.[a.id!];if(leader&&w.mobility){if(leader===w.characterId)w.people[0].journey=null;else if(w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.armyCommanders![a.id!];}s.cities[a.location].grain=Math.min(grainCapacity(w,a.location),s.cities[a.location].grain+a.supply);returnArmyConvoy(w,a);s.armies=s.armies.filter(other=>other!==a);log(w,`军队遣散：${returned.traveling} 人按兵团原籍返乡，${returned.settled} 人因原籍失守、道路不通或本地籍而于驻地安置；随军余粮返仓，超仓部分损耗。`);break;}
@@ -197,7 +197,7 @@ export function advanceRealm(w:World){
  for(const [id,city] of Object.entries(s.cities))if(city.controller===r&&city.integration){if(city.integration.funded)city.integration.progress=Math.min(100,city.integration.progress+integrationGain(w,id).gain);if(city.integration.progress>=100){delete city.integration;log(w,siteById[id].name+'完成地方接管，税收恢复常态。');}}
  if(r!==playerRealm(w))for(const city of Object.values(s.cities))if(city.controller===r)city.tax=city.order<45?'light':t.coins<100?'heavy':'normal';
  }
- s.ledger=s.ledger.slice(-36);s.influence=clamp(s.influence+5,0,999);
+ s.ledger=s.ledger.slice(-36);
 
  }
  advanceMilitaryAI(w);

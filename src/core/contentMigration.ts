@@ -13,7 +13,7 @@ const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&
  * defaulted or overwritten: missing/corrupt old fields must still fail validation. */
 export function upgradeContent(value:unknown){
  if(!object(value)||value.version!==2)return;
- if(value.contentVersion==='546-map-0.2'||value.contentVersion==='546-map-0.3'){upgradeOfficials(value);return;}
+ if(value.contentVersion==='546-map-0.2'||value.contentVersion==='546-map-0.3'||value.contentVersion==='546-map-0.4'){upgradeOfficials(value);return;}
  if(value.contentVersion!=='546-map-0.1')return;
  if(!Number.isSafeInteger(value.day)||Number(value.day)<0||Number(value.day)>365000)return;
  const day=Number(value.day),w=value as unknown as World;

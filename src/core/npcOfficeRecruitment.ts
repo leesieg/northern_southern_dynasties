@@ -15,6 +15,8 @@ import {isAlive,lifeOf} from './lifeState';
 import {attributes,type Ability} from './social';
 import {capital,realms,type RealmId} from './realm';
 import type {World} from './types';
+export const NPC_CENTRAL_APPOINTMENTS=2;
+export const NPC_LOCAL_APPOINTMENTS=3;
 
 function idleCandidates(w:World,r:RealmId){
  const g=governmentOf(w,r)!,reserved=new Set([
@@ -45,31 +47,32 @@ export function advanceNPCOfficeRecruitment(w:World){
    }
    fillCentral(w,r,chief);
   }
-  let applications=0;
+  let applications=0;const appointments=new Map<string,number>();
   for(const n of posts){
    if(localHolder(w,n.id,r)||w.realm!.offices.some(o=>canonicalTerritory(o.territory??'city:'+o.site)===n.id)||s.requests.some(q=>q.status==='pending'&&q.realm===r&&q.territory===n.id))continue;
    const actor=localAppointer(w,n.id,r),site=localSeatSite(w,n.id,r)!;
    if(!isAlive(w,actor)||!civilCanAdmin(w,actor,site))continue;
-   if(actor===w.characterId&&applications>=3||actor!==w.characterId&&personInfluence(w,actor)<20)continue;
+   if(actor===w.characterId&&applications>=3||actor!==w.characterId&&(appointments.get(actor)??0)>=NPC_LOCAL_APPOINTMENTS)continue;
    const reference=localMeritReference(n.id),candidate=idleCandidates(w,r).filter(p=>(g.merit[p.id]??0)>=reference&&(actor!==w.characterId||personInfluence(w,p.id)>=10)).sort((a,b)=>Number(presentAt(w,b.id,site))-Number(presentAt(w,a.id,site))||(g.merit[a.id]??0)-(g.merit[b.id]??0)||a.id.localeCompare(b.id)).find(p=>!!npcRoute(w,p.id,site));
    if(!candidate)continue;
    const command={type:'local',action:actor===w.characterId?'apply':'appoint',territory:n.id,candidate:candidate.id} as const,issuer=actor===w.characterId?candidate.id:actor;
    if(localReason(w,command,issuer))continue;
-   actLocal(w,command,issuer);if(actor===w.characterId)applications++;
+   actLocal(w,command,issuer);if(actor===w.characterId)applications++;else appointments.set(actor,(appointments.get(actor)??0)+1);
   }
  }
 }
 
 function fillCentral(w:World,r:RealmId,actor:string){
  if(!courtEnabled(w,r)||w.realm!.cities[capital(r)].owner!==r||w.realm!.cities[capital(r)].controller!==r||!civilCanAdmin(w,actor,capital(r)))return;
- const g=governmentOf(w,r)!,court=g.court!;
+ const g=governmentOf(w,r)!,court=g.court!;let decisions=0;
  const skills:Record<MinistryId,Ability>={secretariat:'diplomacy',personnel:'stewardship',finance:'stewardship',military:'martial',censorate:'intrigue'};
  for(const ministry of ministryIds){
-  if(court.ministries[ministry]||personInfluence(w,actor)<15)continue;
+  if(decisions>=NPC_CENTRAL_APPOINTMENTS)break;if(court.ministries[ministry])continue;
   const candidate=idleCandidates(w,r).filter(p=>(g.merit[p.id]??0)>=40).map(p=>({id:p.id,ability:attributes(w,p.id)[skills[ministry]],merit:g.merit[p.id]})).sort((a,b)=>Number(presentAt(w,b.id,capital(r)))-Number(presentAt(w,a.id,capital(r)))||b.ability-a.ability||a.merit-b.merit||a.id.localeCompare(b.id)).find(p=>!!npcRoute(w,p.id,capital(r)));
   if(!candidate)continue;
   const command={type:'court',action:'appoint',ministry,candidate:candidate.id} as const;
   if(courtReason(w,command,actor))continue;
+  decisions++;
   if(!presentAt(w,candidate.id,capital(r))){dispatchNPC(w,candidate.id,capital(r));continue;}
   actCourt(w,command,actor);
  }

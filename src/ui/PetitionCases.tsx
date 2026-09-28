@@ -5,7 +5,7 @@ import {courtOf,courtReason,type CourtCommand} from '../core/court';
 import {chiefOfDuty,dutyPlans,dutyReason,type DutyCommand} from '../core/duties';
 import {serviceReason,type Assignment,type ServiceCommand} from '../core/assignments';
 import {servicePayer} from '../core/serviceMandates';
-import {localMeritFactors,localReason,localTitle,type LocalCommand,type LocalRequest} from '../core/localAdministration';
+import {localMeritFactors,localReason,localInfluenceCost,localTitle,type LocalCommand,type LocalRequest} from '../core/localAdministration';
 import {accountName,fiscalReason,grantFactors,grantPurposes,grantSource,publicBalance,type FiscalCommand,type GrantRequest} from '../core/treasury';
 import {officeName} from '../core/officeEligibility';
 import {playerRealm} from '../core/realm';
@@ -17,7 +17,7 @@ type Props={world:World;pending:boolean;send:(command:GameCommand)=>void;onPerso
 export function CourtPetitionAudience({world:w,pending,send,onPerson}:Props){
  const petition=courtOf(w)?.petition;if(!petition)return null;
  const r=playerRealm(w),name=movements[petition.group].name;
- return <PetitionAudience identity={`court:${petition.sponsor}:${petition.due}`} world={w} person={petition.sponsor} realm={r} subject={`${name}奏议`} role={`集团请议 · 余 ${Math.max(0,petition.due-w.day)} 日`} speech={`臣等请议${movements[petition.group].goal}，望朝廷裁决。`} terms={<div className="service-audience-terms"><span>中央国库公款 <b>80</b></span><span>本国影响力 <b>20</b></span></div>} options={[{id:'approve',title:'准其奏议',description:'支持 +5、紧张 −8，眷顾集团并调整国策或合法性。',command:{type:'court',action:'resolve',accept:true}},{id:'reject',title:'此议不准',description:'不拨款；支持 −5、紧张 +8。',command:{type:'court',action:'resolve',accept:false}}]} reason={command=>courtReason(w,command as CourtCommand)} pending={pending} send={send} onPerson={onPerson}/>;
+ return <PetitionAudience identity={`court:${petition.sponsor}:${petition.due}`} world={w} person={petition.sponsor} realm={r} subject={`${name}奏议`} role={petition.due<=w.day?'候执政者核定钱粮与影响力':`集团请议 · 余 ${petition.due-w.day} 日`} speech={`臣等请议${movements[petition.group].goal}，望朝廷裁决。`} terms={<div className="service-audience-terms"><span>中央国库公款 <b>80</b></span><span>本国影响力 <b>20</b></span></div>} options={[{id:'approve',title:'准其奏议',description:'支持 +5、紧张 −8，眷顾集团并调整国策或合法性。',command:{type:'court',action:'resolve',accept:true}},{id:'reject',title:'此议不准',description:'不拨款；支持 −5、紧张 +8。',command:{type:'court',action:'resolve',accept:false}}]} reason={command=>courtReason(w,command as CourtCommand)} pending={pending} send={send} onPerson={onPerson}/>;
 }
 
 export function FiscalPetitionAudience({world:w,pending,send,onPerson,request:q}:Props&{request:GrantRequest}){
@@ -26,7 +26,7 @@ export function FiscalPetitionAudience({world:w,pending,send,onPerson,request:q}
 }
 
 export function LocalPetitionAudience({world:w,pending,send,onPerson,request:q}:Props&{request:LocalRequest}){
- return <PetitionAudience identity={`local:${q.id}:${q.status}`} world={w} person={q.actor} realm={q.realm} subject={`${localTitle(q.territory)} · 授官奏请`} role={`候批 · 余 ${Math.max(0,60-w.day+q.created)} 日`} speech={`臣请以${officeName(q.candidate)}出任${localTitle(q.territory)}，望准予授官。`} terms={<div className="service-audience-terms"><span>候选人 <b>{officeName(q.candidate)}</b></span></div>} options={[{id:'approve',title:'准予授官',description:'发出赴任文书；撤换与破格后果依当前规则结算。',command:{type:'local',action:'approve',id:q.id}},{id:'reject',title:'此任暂缓',description:'不授此职，申请结案。',command:{type:'local',action:'reject',id:q.id}}]} reason={command=>localReason(w,command as LocalCommand)} pending={pending} send={send} onPerson={onPerson} detailLabel="查看候选依据" details={<p>{localMeritFactors(w,q.territory,q.candidate,q.approver,q.realm).map(f=>`${f.label} ${f.value>=0?'+':''}${f.value}`).join(' · ')}</p>}/>;
+ return <PetitionAudience identity={`local:${q.id}:${q.status}`} world={w} person={q.actor} realm={q.realm} subject={`${localTitle(q.territory)} · 授官奏请`} role={`候批 · 余 ${Math.max(0,60-w.day+q.created)} 日`} speech={`臣请以${officeName(q.candidate)}出任${localTitle(q.territory)}，望准予授官。`} terms={<div className="service-audience-terms"><span>候选人 <b>{officeName(q.candidate)}</b></span></div>} options={[{id:'approve',title:'准予授官',description:`本人影响力 ${localInfluenceCost(w,{type:'local',action:'approve',id:q.id})}；发出赴任文书，撤换与破格后果依当前规则结算。`,command:{type:'local',action:'approve',id:q.id}},{id:'reject',title:'此任暂缓',description:'不授此职，申请结案。',command:{type:'local',action:'reject',id:q.id}}]} reason={command=>localReason(w,command as LocalCommand)} pending={pending} send={send} onPerson={onPerson} detailLabel="查看候选依据" details={<p>{localMeritFactors(w,q.territory,q.candidate,q.approver,q.realm).map(f=>`${f.label} ${f.value>=0?'+':''}${f.value}`).join(' · ')}</p>}/>;
 }
 
 export function ServiceExtraAudience({world:w,pending,send,onPerson,task:t}:Props&{task:Assignment}){

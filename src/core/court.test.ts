@@ -37,7 +37,7 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
  it('加入、游说、清议、集团领袖奏议均有成本和冷却，非玩家执政会裁决',()=>{
   const w=start('xiao-gang');resources(w);governmentOf(w)!.merit['xiao-gang']=70;act(w,{type:'court',action:'join',group:'reform'});act(w,{type:'court',action:'debate'});expect(movementSummary(w,'liang','reform').leader).toBe('xiao-gang');
   const before=structuredClone(w);expect(()=>act(w,{type:'court',action:'debate'})).toThrow('冷却');expect(w).toEqual(before);
-  act(w,{type:'court',action:'petition'});pass(w,15);expect(courtOf(w)!.petition).toBeNull();expect(courtOf(w)!.policy).toBe('reform');expect(courtOf(w)!.favored).toBe('reform');expect(courtBonus(w,'liang').tax).toBe(8);
+  w.realm!.personalInfluence!['xiao-yan']=20;act(w,{type:'court',action:'petition'});pass(w,15);expect(courtOf(w)!.petition).toBeNull();expect(courtOf(w)!.policy).toBe('reform');expect(courtOf(w)!.favored).toBe('reform');expect(courtBonus(w,'liang').tax).toBe(8);
   const target='xiao-yi';w.social!.opinions[['xiao-gang',target].sort().join('|')]=90;act(w,{type:'court',action:'convince',target});expect(courtOf(w)!.members[target]).toBe('reform');expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('玩家执政奏议可明确批准，逾期否决；政体停用时也清理到期奏议',()=>{

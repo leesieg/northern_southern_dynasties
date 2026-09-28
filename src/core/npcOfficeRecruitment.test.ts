@@ -6,7 +6,6 @@ import {relationshipPeople} from '../data/relationships';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {governmentOf,governingAuthority} from './government';
 import {realms,type RealmId} from './realm';
-import {ministryIds} from '../data/court';
 import {courtOf,courtReason,actCourt} from './court';
 import {makeAppointmentRound,advanceAppointments} from './appointmentCycle';
 import {actLocal,advanceLocal,localHolder,localKey,localSites,setLocalHolder,completeLocalAppointment} from './localAdministration';
@@ -28,16 +27,16 @@ describe('持续补缺与后备士人',()=>{
   for(const p of officeReserves){expect(w.life!.people[p.id]).toBeDefined();expect(w.relationships!.reserves[p.id]).toBe(120);expect(governmentOf(w,p.realm)!.merit[p.id]).toBe(p.initialMerit);expect(Object.values(w.realm!.cities).some(c=>c.governor===p.id)).toBe(false);}
   for(const r of realms){for(const p of relationshipPeople)if(p.realm===r)governmentOf(w,r)!.merit[p.id]=100;const q=makeAppointmentRound(w,r);expect(q.rows.every(row=>row.candidate)).toBe(true);expect(new Set(q.rows.map(row=>row.candidate)).size).toBe(q.rows.length);}
  });
- it('月度中央、地方补缺支付实际任命者的影响力，保持原县官，重复推进幂等',()=>{
+ it('月度合格补缺不挤占个人余额，按办理容量保留现任，重复推进幂等',()=>{
   const w=start(),player=w.realm!.influence,counties=structuredClone(w.realm!.cities);fund(w,'east');w.day=30;advanceNPCOfficeRecruitment(w);
-  const orders=w.realm!.offices.filter(o=>o.realm==='east');expect(occupied(w,'east')).toHaveLength(ministryIds.length);expect(orders.length).toBeGreaterThan(1);
-  expect(personInfluence(w,'gao-huan')).toBe(200-occupied(w,'east').length*15-orders.length*20);expect(w.realm!.influence).toBe(player);
+  const orders=w.realm!.offices.filter(o=>o.realm==='east');expect(occupied(w,'east')).toHaveLength(2);expect(orders).toHaveLength(3);
+  expect(personInfluence(w,'gao-huan')).toBe(200);expect(w.realm!.influence).toBe(player);
   for(const p of countyOfficials)expect(w.realm!.cities[p.home].governor).toBe(counties[p.home].governor);
   const once=structuredClone(w);advanceNPCOfficeRecruitment(w);expect(w).toEqual(once);expect(parseWorld(serializeWorld(w))).toEqual(w);
   const order=orders[0];arrive(w,order);expect(localHolder(w,order.territory!,'east')).toBe(order.candidate);
  });
- it('任命者余额不足、失守与忙碌候选人不会被绕过',()=>{
-  const w=start();fund(w,'east',14);w.day=30;advanceNPCOfficeRecruitment(w);expect(occupied(w,'east')).toHaveLength(0);expect(w.realm!.offices.filter(o=>o.realm==='east')).toHaveLength(0);expect(personInfluence(w,'gao-huan')).toBe(14);
+ it('零余额可常规补缺，失守与忙碌候选人仍受限制',()=>{
+  const w=start();fund(w,'east',0);w.day=30;advanceNPCOfficeRecruitment(w);expect(occupied(w,'east')).toHaveLength(2);expect(w.realm!.offices.filter(o=>o.realm==='east')).toHaveLength(3);expect(personInfluence(w,'gao-huan')).toBe(0);
   const lost=start();fund(lost,'east');lost.realm!.cities.ye.controller='west';lost.day=30;advanceNPCOfficeRecruitment(lost);expect(occupied(lost,'east')).toHaveLength(0);expect(lost.realm!.offices.every(o=>o.site!=='ye')).toBe(true);
   const busy=start(),p=officeReserves.find(p=>p.realm==='east')!;busy.retinue!.members[p.id]={host:'gao-huan',joined:0,post:null,site:null,arrears:0};fund(busy,'east');busy.day=30;advanceNPCOfficeRecruitment(busy);expect([...occupied(busy,'east'),...busy.realm!.offices.map(o=>o.candidate)]).not.toContain(p.id);
  });
@@ -55,10 +54,10 @@ describe('持续补缺与后备士人',()=>{
   const requests=w.realm!.local!.requests.filter(q=>q.approver==='gao-yang');expect(requests.length).toBeGreaterThan(0);expect(requests.every(q=>q.status==='pending')).toBe(true);
   expect(w.realm!.offices.every(o=>!requests.some(q=>q.territory===o.territory))).toBe(true);
  });
- it('合法授权的 NPC 州郡官使用自己的余额补下属空位',()=>{
+ it('合法授权的 NPC 州郡官使用自己的办理容量补下属空位',()=>{
   const w=start(),province=Object.values(territoryNodes).find(n=>n.level==='province'&&localSites(w,n.id,'east').length)!,holder=officeReserves.find(p=>p.realm==='east'&&p.initialMerit===50)!;
   setLocalHolder(w,province.id,'east',holder.id);w.realm!.personalInfluence![holder.id]=40;fund(w,'east',0);w.day=30;advanceNPCOfficeRecruitment(w);
-  expect(w.realm!.local!.seats[localKey('east',province.id)].delegated).toBe(true);const orders=w.realm!.offices.filter(o=>o.issuer===holder.id);expect(orders.length).toBeGreaterThan(0);expect(personInfluence(w,holder.id)).toBe(40-orders.length*20);
+  expect(w.realm!.local!.seats[localKey('east',province.id)].delegated).toBe(true);const orders=w.realm!.offices.filter(o=>o.issuer===holder.id);expect(orders.length).toBeGreaterThan(0);expect(orders.length).toBeLessThanOrEqual(3);expect(personInfluence(w,holder.id)).toBe(40);
  });
  it('待审铨选期间不插入自动任命，已结束的局不补缺',()=>{
   const w=start();advanceAppointments(w);w.day=1096;advanceAppointments(w);fund(w,'east');const q=structuredClone(w.realm!.local!.cycle!.rounds.east);w.day=1110;advanceNPCOfficeRecruitment(w);
@@ -87,12 +86,12 @@ describe('持续补缺与后备士人',()=>{
   const w=start(),g=governmentOf(w,'east')!,candidate=officeReserves.find(p=>p.realm==='east'&&p.home!=='ye'&&p.initialMerit>=40)!;
   for(const id of Object.keys(g.merit))g.merit[id]=0;g.merit[candidate.id]=50;fund(w,'east',15);w.day=30;advanceNPCOfficeRecruitment(w);
   expect(occupied(w,'east')).toHaveLength(0);expect(personInfluence(w,'gao-huan')).toBe(15);expect(w.mobility!.residences[candidate.id].journey).not.toBeNull();const route=npcRoute(w,candidate.id,'ye')!;
-  for(let i=0;i<route.days;i++){w.day++;advanceMobility(w);}expect(presentAt(w,candidate.id,'ye')).toBe(true);w.day=Math.ceil(w.day/30)*30;advanceNPCOfficeRecruitment(w);expect(occupied(w,'east')).toContain(candidate.id);expect(personInfluence(w,'gao-huan')).toBe(0);
+  for(let i=0;i<route.days;i++){w.day++;advanceMobility(w);}expect(presentAt(w,candidate.id,'ye')).toBe(true);w.day=Math.ceil(w.day/30)*30;advanceNPCOfficeRecruitment(w);expect(occupied(w,'east')).toContain(candidate.id);expect(personInfluence(w,'gao-huan')).toBe(15);
  });
  it('外国中央任命失败不扣玩家或 NPC 余额，原有玩家入口复用相同规则',()=>{
   const w=start(),candidate=officeReserves.find(p=>p.realm==='east'&&p.home==='ye'&&p.initialMerit===40)!;fund(w,'east',15);const player=w.realm!.influence;
   const invalid={type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'} as const;expect(courtReason(w,invalid,'gao-huan')).toContain('本国');expect(()=>actCourt(w,invalid,'gao-huan')).toThrow();expect(personInfluence(w,'gao-huan')).toBe(15);
-  actCourt(w,{type:'court',action:'appoint',ministry:'finance',candidate:candidate.id},'gao-huan');expect(personInfluence(w,'gao-huan')).toBe(0);expect(w.realm!.influence).toBe(player);expect(courtOf(w,'east')!.ministries.finance).toBe(candidate.id);expect(parseWorld(serializeWorld(w))).toEqual(w);
+  actCourt(w,{type:'court',action:'appoint',ministry:'finance',candidate:candidate.id},'gao-huan');expect(personInfluence(w,'gao-huan')).toBe(15);expect(w.realm!.influence).toBe(player);expect(courtOf(w,'east')!.ministries.finance).toBe(candidate.id);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('0.3 旧档只增补新人物账户，保留任官、钱粮、死亡与进行中文书，迁移幂等',()=>{
   const w=start();fund(w,'east');w.day=30;advanceNPCOfficeRecruitment(w);const deceased=officeReserves.find(p=>p.realm==='west')!;die(w,deceased.id,'age');
