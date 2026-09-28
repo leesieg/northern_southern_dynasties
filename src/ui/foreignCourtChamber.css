@@ -1,5 +1,0 @@
-.focused-shell .staff-chamber.foreign-court>.detail-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
-.foreign-court-context{display:flex;align-items:center;gap:8px 22px;flex-wrap:wrap;margin:0 0 10px;padding:7px 10px;border:1px solid #ae925e66;background:#1a3026;color:#c0c7ae;font-size:11px}
-.foreign-court-context button{padding:0;border:0;background:none;color:#ead5a3;text-decoration:underline;text-decoration-color:#bca46b80;text-underline-offset:3px}
-.foreign-court .staff-local-office>header{min-height:24px}
-.foreign-court button:focus-visible{outline:2px solid #f0d69e;outline-offset:2px}

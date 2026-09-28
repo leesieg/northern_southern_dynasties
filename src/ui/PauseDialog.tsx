@@ -5,6 +5,7 @@ import {RealmBadge} from './RealmBadge';
 import {CourtPetitionAudience,FiscalPetitionAudience} from './PetitionCases';
 import {AudienceDecorHostContext,AudienceDeferContext} from './AudienceContext';
 import {ActivityProgress} from './MobilityPanel';
+import {ServiceOutcome} from './ServiceAudience';
 import {AssignmentPanel} from './AssignmentPanel';
 import {CouncilPanel} from './ServicePanel';
 import {diplomaticQuote,diplomacyActions} from '../core/diplomacy';
@@ -42,7 +43,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
   ||event.kind==='service'&&!event.assignmentId&&!!council&&serviceChief(world,playerRealm(world))===world.characterId
  );
  const body=event.kind==='service'&&task&&task.phase!=='closed'?(task.invitation?.person===world.characterId?'同僚邀你协办，请答复。':'差事进展：'+assignmentPhases[task.phase]+'。'):event.kind==='duties'&&world.duties?.task?'粮务进展：'+dutyPhaseNames[world.duties.task.phase]+'。':event.body;
- const label=event.kind==='economy'?'前往政务监察':event.kind==='court'?'查看局势':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
+ const label=event.kind==='economy'?'前往政务监察':event.kind==='court'||event.kind==='situation'?'查看朝局':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
  return <dialog ref={ref} className={`pause-dialog ${audience?'pause-dialog--audience':''}`} aria-labelledby="pause-title" aria-describedby={audience?undefined:'pause-body'} onCancel={e=>{e.preventDefault();if(!pending&&(!actionable||audience))onClose();}} onKeyDown={e=>{if(e.key==='Escape')e.stopPropagation();}}>
  {audience&&<div className="pause-audience-decoration" ref={setDecorHost}/>}
  <AudienceDecorHostContext.Provider value={audience?decorHost:null}>
@@ -50,8 +51,10 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  <div className={audience?'pause-dialog-scroll':undefined}>
  <header>{!audience&&<span className="eyebrow">时光暂停{count>1?` · 尚有 ${count} 件消息`:''}</span>}<h2 id="pause-title">{event.title}</h2></header>
  {!audience&&<p id="pause-body">{body}</p>}
+ {!actionable&&event.kind==='situation'&&<button disabled={pending} onClick={()=>onNavigate(event)}>查看原因与应对 ›</button>}
+ {!actionable&&event.kind==='service'&&task?.result&&<><ServiceOutcome task={task}/><button disabled={pending} onClick={()=>onNavigate(event)}>查看结案与后续 ›</button></>}
  {actionable&&event.kind==='mobility'&&<ActivityProgress world={world} send={send} pending={pending} id={event.activityId}/>}
- {actionable&&(event.kind==='service'||event.kind==='arrival'&&event.assignmentId)&&(event.assignmentId?task&&<AssignmentPanel key={task.id} world={world} pending={pending} send={send} task={task} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>:<CouncilPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>)}
+ {actionable&&(event.kind==='service'||event.kind==='arrival'&&event.assignmentId)&&(event.assignmentId?task&&<AssignmentPanel key={task.id} world={world} pending={pending} send={send} task={task} onSituation={()=>onNavigate({...event,kind:'situation'})} onTerritory={site=>onNavigate({...event,kind:'arrival',site:site.replace('city:','')})} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>:<CouncilPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>)}
  {actionable&&event.kind==='duties'&&world.duties?.task&&<DutiesPanel world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
  {event.kind==='economy'&&actionable&&<EconomyCases world={world} pending={pending} send={send} caseId={event.economyId} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
  {event.kind==='court'&&actionable&&<CourtPetitionAudience world={world} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
