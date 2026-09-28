@@ -1,4 +1,4 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
 import {newCampaignWorld,act} from './world';
 import {actService,advanceService,serviceTask,serviceReason,serviceAttention} from './assignments';
 import {countyTerritory,setLocalHolder,localAncestors} from './localAdministration';
@@ -18,6 +18,15 @@ function setup(){
  return {w,task,account,site,t};
 }
 describe('scoped service mandates',()=>{
+ it('initializes the rules from the shared-duty entry and retains finance commissioning permissions',async()=>{
+  vi.resetModules();
+  const duties=await import('./officialDuties'),mandates=await import('./serviceMandates'),world=await import('./world');
+  const w=world.newCampaignWorld('xiao-yan',undefined,'sandbox');w.realm!.governments!.realms.liang.court!.ministries.finance='xiao-gang';
+  expect(duties.dutyMinistries.taxation).toContain('finance');
+  expect(mandates.canCommission(w,'xiao-gang','liang','jiankang','taxation')).toBe(true);
+  expect(mandates.canCommission(w,'xiao-gang','liang','jiankang','relief')).toBe(true);
+  expect(mandates.canCommission(w,'xiao-gang','liang','jiankang','training')).toBe(false);
+ });
  it('actual ruler orders local tax and relief without taking the county seat, while a figurehead cannot',()=>{
   const w=newCampaignWorld('xiao-yan',undefined,'sandbox'),site='jiankang';setLocalHolder(w,countyTerritory(site),'liang','xiao-gang');
   w.realm!.cities[site].grain=50;ensureFiscal(w)!.balances['liang|city:'+site]=20;

@@ -18,8 +18,9 @@ export interface ServiceMandate {issuer:string;automatic:boolean;orderFloor:numb
 export interface ServiceFunding {account:string;grainSite:string|null;coins:number;grain:number}
 export interface ServiceRefund extends ServiceFunding {}
 const national=(kind:AssignmentKind)=>kind==='envoy'||kind==='greatworks';
-const commissionMinistries:Partial<Record<AssignmentKind,MinistryId[]>>={...dutyMinistries,relief:['secretariat','finance'],agriculture:['finance'],commerce:['finance'],training:['military'],supply:['military'],inspection:['censorate','personnel']};
-function centralCommission(w:World,actor:string,r:RealmId,kind:AssignmentKind){const ministry=centralMinistry(w,actor);return !!ministry&&presentAt(w,actor,capital(r))&&!!commissionMinistries[kind]?.includes(ministry);}
+const commissionMinistries:Partial<Record<AssignmentKind,MinistryId[]>>={relief:['secretariat','finance'],agriculture:['finance'],commerce:['finance'],training:['military'],supply:['military'],inspection:['censorate','personnel']};
+// Shared duties participate in the core import cycle; read them only when evaluating a command.
+function centralCommission(w:World,actor:string,r:RealmId,kind:AssignmentKind){const ministry=centralMinistry(w,actor);return !!ministry&&presentAt(w,actor,capital(r))&&!!(commissionMinistries[kind]??dutyMinistries[kind])?.includes(ministry);}
 export function canCommission(w:World,actor:string,r:RealmId,site:string,kind:AssignmentKind){
  if(!isAlive(w,actor)||!civilCanAdmin(w,actor,site)||allegianceRealm(w,actor)!==r||w.realm?.cities[site]?.owner!==r||w.realm.cities[site].controller!==r)return false;
  if(governingExecutives(w,r).includes(actor))return true;
