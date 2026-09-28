@@ -9,6 +9,7 @@ import {isAlive} from './lifeState';
 import { validRegency,allegianceBonus,syncRelationships } from './relationships';
 import { courtBonus, syncCourt, type CourtState } from './court';
 import { characterById,historicalCharacters } from '../data/characters';
+import {officeReserves} from '../data/localOfficials';
 import { governmentDefinitions,reformDefinitions,reformIds,successionDefinitions,politicalFigures,dynastyNames,type GovernmentType,type ReformId,type SuccessionId } from '../data/governments';
 import { getScript } from '../data/scripts';
 import { siteById,polities } from '../data/scenario';
@@ -32,7 +33,7 @@ const initialRulers:Record<RealmId,string>={liang:'xiao-yan',east:'yuan-shanjian
 const initialExecutives:Record<RealmId,string[]>={liang:['xiao-yan'],east:['gao-huan','gao-cheng'],west:['yuwen-tai']};
 export const currentRealm=(w:World)=>allegianceRealm(w,w.characterId!)??characterById[w.characterId!].polity as RealmId;
 export function newGovernments(w:World):GovernmentState{
- const day=w.day;const make=(r:RealmId):Government=>({type:'meritocratic',dynasty:r,regimeId:r+'-0',ruler:initialRulers[r],executives:[...initialExecutives[r]],legitimacy:65,support:65,merit:Object.fromEntries(historicalCharacters.filter(c=>c.polity===r).map(c=>[c.id,20])),herd:0,camp:capital[r],lastCamp:0,contracts:{},laws:reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial),stages:[],task:null,cooldowns:{}});const realms={liang:make('liang'),east:make('east'),west:make('west')};
+ const day=w.day;const make=(r:RealmId):Government=>({type:'meritocratic',dynasty:r,regimeId:r+'-0',ruler:initialRulers[r],executives:[...initialExecutives[r]],legitimacy:65,support:65,merit:Object.fromEntries([...historicalCharacters.filter(c=>c.polity===r).map(c=>[c.id,20]),...officeReserves.filter(p=>p.realm===r).map(p=>[p.id,p.initialMerit])]),herd:0,camp:capital[r],lastCamp:0,contracts:{},laws:reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial),stages:[],task:null,cooldowns:{}});const realms={liang:make('liang'),east:make('east'),west:make('west')};
  return {version:1,since:day,lastMonthly:Math.floor(day/30)*30,realms,regimes:realmIds.map(r=>({id:r+'-0',realm:r,dynasty:r,ruler:initialRulers[r],from:day,until:null,predecessor:null,source:null,cities:Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r)})),history:[]};
 }
 export function governmentOf(w:World,r=currentRealm(w)){return w.realm?.governments?.realms[r];}

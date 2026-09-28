@@ -90,7 +90,7 @@ export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>
  else if(c.target&&['family','succession'].includes(c.kind)&&!npcRoute(w,c.target,c.site))reason='亲族无法安全抵达庄园';
  return {reason,cost:d?.cost??0,days:c.delegate?(npcRoute(w,c.delegate,c.site)?.days??0):(route?.days??0),food:route?.food??0,duration:d?.days??0};
 }
-function npcRoute(w:World,id:string,to:string){const from=personResidence(w,id).site,r=relationshipPersonById[id]?.realm??characterById[id]?.polity;if(from===to)return {days:0,route:[from],durations:[]};return r?planRoute(from,to,site=>!w.realm||civilCanAdmin(w,id,site)&&canEnter(w,r,w.realm.cities[site].controller,id)):null;}
+export function npcRoute(w:World,id:string,to:string){const from=personResidence(w,id).site,r=allegianceRealm(w,id);if(from===to)return {days:0,route:[from],durations:[]};return r?planRoute(from,to,site=>!w.realm||civilCanAdmin(w,id,site)&&canEnter(w,r,w.realm.cities[site].controller,id)):null;}
 export function dispatchNPC(w:World,id:string,to:string,prepared?:ReturnType<typeof planRoute>){const s=w.mobility?.residences[id];if(!s||s.journey||s.site===to)return;const route=prepared??npcRoute(w,id,to);if(!route)return;if(route.route[0]!==s.site||route.route.at(-1)!==to)throw new Error('赴任路线已失效');s.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}
 export function mobilityReason(w:World,c:MobilityCommand):string{
  if(!w.mobility||!w.realm||!w.characterId||w.campaign?.status!=='active')return '此局没有行旅事务';

@@ -9,6 +9,7 @@ import {actEnterprise,advanceEnterprises} from './enterprises';
 import {actMilitaryCampaign,advanceMilitaryCampaigns} from './militaryCampaigns';
 import {actArmyOrganization,ensureArmyOrganization} from './armyOrganization';
 import {actAppointments} from './appointmentCycle';
+import {advanceNPCOfficeRecruitment} from './npcOfficeRecruitment';
 import {actLocal,ensureLocalAdministration} from './localAdministration';
 import {reconcileOfficeAllegiance} from './officeEligibility';
 import {ensurePopulation,actPopulation,advancePopulation} from './population';
@@ -245,7 +246,7 @@ export function advance(world: World, days = 1): void {
     advanceAftermath(world);advanceObligations(world);advanceHousehold(world);advanceCommerce(world);
     advanceMilitaryCampaigns(world);
     ensureArmyOrganization(world);
-    restoreInfluence(world,previous);advancePersonalInfluence(world);
+    restoreInfluence(world,previous);advancePersonalInfluence(world);advanceNPCOfficeRecruitment(world);
     evaluateCampaign(world);
     reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');
   }

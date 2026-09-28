@@ -1,4 +1,6 @@
 import {isAdventurer} from './resignation';
+import {civilCanAdmin} from './civilWars';
+import {isAlive} from './lifeState';
 import {governmentOf,governingAuthority} from './government';
 import {realms,type RealmId} from './realm';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
@@ -7,7 +9,7 @@ import {getScript} from '../data/scripts';
 import {familyPrestige} from './family';
 import {personInfluence,awardInfluence} from './personalInfluence';
 import {allegianceRealm,publicOfficeReason} from './officeEligibility';
-import {canonicalTerritory,localHolder,localActive,localSites,localLevel,localTitle,candidateReason,issue,consequence,setLocalHolder,localOfficeCost} from './localAdministration';
+import {canonicalTerritory,localHolder,localActive,localSites,localSeatSite,localLevel,localTitle,candidateReason,issue,consequence,setLocalHolder,localOfficeCost} from './localAdministration';
 import type {World} from './types';
 export const APPOINTMENT_YEARS=3;
 export interface AppointmentRow {territory:string;incumbent:string|null;candidate:string|null;merit:number;prestige:number;family:number;score:number;previousRank:number;edited:boolean}
@@ -22,10 +24,10 @@ function positions(w:World,r:RealmId){return Object.values(territoryNodes).filte
 function rankOf(w:World,id:string,r:RealmId){return positions(w,r).reduce((max,n)=>localHolder(w,n.id,r)===id?Math.max(max,appointmentRank(n.id)):max,0);}
 export function makeAppointmentRound(w:World,r:RealmId,year=appointmentYear(w)):AppointmentRound{
  const g=governmentOf(w,r)!,approver=appointmentApprover(w,r),used=new Set<string>(),posts=positions(w,r),eligible=relationshipPeople.filter(p=>allegianceRealm(w,p.id)===r&&!isAdventurer(w,p.id)&&!publicOfficeReason(w,p.id)&&p.id!==g.ruler&&!g.executives.includes(p.id)&&!Object.values(g.court?.ministries??{}).includes(p.id));
- for(const n of posts){const holder=localHolder(w,n.id,r);if(holder&&(g.type==='feudal'||!eligible.some(p=>p.id===holder)||w.realm!.offices.some(o=>canonicalTerritory(o.territory??'city:'+o.site)===n.id)))used.add(holder);}
+ for(const n of posts){const holder=localHolder(w,n.id,r);if(holder&&(g.type==='feudal'||!civilCanAdmin(w,approver,localSeatSite(w,n.id,r)!)||!eligible.some(p=>p.id===holder)||w.realm!.offices.some(o=>canonicalTerritory(o.territory??'city:'+o.site)===n.id)))used.add(holder);}
  const scores=new Map(eligible.map(p=>[p.id,appointmentFactors(w,p.id,r)])),ranks=new Map(eligible.map(p=>[p.id,rankOf(w,p.id,r)]));
  const rows:AppointmentRow[]=posts.map(n=>{
- const incumbent=localHolder(w,n.id,r),protectedPost=g.type==='feudal'||w.realm!.offices.some(o=>canonicalTerritory(o.territory??'city:'+o.site)===n.id)||!!incumbent&&!scores.has(incumbent);
+ const incumbent=localHolder(w,n.id,r),protectedPost=g.type==='feudal'||!civilCanAdmin(w,approver,localSeatSite(w,n.id,r)!)||w.realm!.offices.some(o=>canonicalTerritory(o.territory??'city:'+o.site)===n.id)||!!incumbent&&!scores.has(incumbent);
  const minimum=appointmentRank(n.id)===3?60:appointmentRank(n.id)===2?35:0;
  const candidate=protectedPost?incumbent:eligible.filter(p=>!used.has(p.id)&&scores.get(p.id)!.score>=minimum&&!candidateReasonForList(w,n.id,p.id,r)).sort((a,b)=>scores.get(b.id)!.score-scores.get(a.id)!.score||Number(b.id===incumbent)-Number(a.id===incumbent)||a.id.localeCompare(b.id))[0]?.id??incumbent;
  if(candidate)used.add(candidate);const factors=candidate?appointmentFactors(w,candidate,r):{merit:0,prestige:0,family:0,score:0};return {territory:n.id,incumbent,candidate,...factors,previousRank:candidate?ranks.get(candidate)??rankOf(w,candidate,r):0,edited:false};
@@ -40,9 +42,10 @@ export function appointmentChange(row:AppointmentRow){return row.candidate===row
 export function appointmentReason(w:World,c:AppointmentCommand,actor=w.characterId!){
  const q=w.realm?.local?.cycle?.rounds[c.realm];if(!w.realm||w.campaign?.status!=='active')return '本局已结束';if(!q||q.year!==c.year||q.status!=='pending')return '本轮铨选已结束';
  if(q.approver!==actor||appointmentApprover(w,c.realm)!==actor)return '须由本国最高执政者批示';if(q.regime!==governmentOf(w,c.realm)?.regimeId)return '政权已更替，原议案失效';
+ if(!isAlive(w,actor))return '授官者已故，须由在世执政者承接';
  if(c.action==='reject'||c.action==='refresh')return '';if(!['approve','edit'].includes(c.action))return '无效铨选操作';
  if(c.action==='edit'){const row=q.rows.find(row=>row.territory===c.territory);if(!row)return '未列入本轮铨选';if(row.candidate===c.candidate)return '人选未变化';const other=q.rows.find(other=>other!==row&&other.candidate===c.candidate);if(personInfluence(w,actor)<localOfficeCost('appoint')*(other?2:1))return '影响力不足：每处修改 20，交换两处需要 40';if(other&&row.candidate){const why=candidateReasonForList(w,other.territory,row.candidate,c.realm);if(why)return '交换职位：'+why;}return candidateReasonForList(w,c.territory,c.candidate,c.realm);}
- for(const row of q.rows){if(!localActive(w,row.territory,c.realm)||localHolder(w,row.territory,c.realm)!==row.incumbent)return '辖区或现任已变化，请重新编制名单';if(row.candidate&&row.candidate!==row.incumbent){const why=candidateReasonForList(w,row.territory,row.candidate,c.realm);if(why)return localTitle(row.territory)+'：'+why;}}
+ for(const row of q.rows){if(!localActive(w,row.territory,c.realm)||localHolder(w,row.territory,c.realm)!==row.incumbent)return '辖区或现任已变化，请重新编制名单';if(row.candidate!==row.incumbent&&!civilCanAdmin(w,actor,localSeatSite(w,row.territory,c.realm)!))return '不能向内战对方控制地区授官';if(row.candidate&&row.candidate!==row.incumbent){const why=candidateReasonForList(w,row.territory,row.candidate,c.realm);if(why)return localTitle(row.territory)+'：'+why;}}
  return '';
 }
 export function actAppointments(w:World,c:AppointmentCommand,actor=w.characterId!){
@@ -61,7 +64,7 @@ export function actAppointments(w:World,c:AppointmentCommand,actor=w.characterId
 }
 export function advanceAppointments(w:World){
  if(!w.realm?.local)return;const year=appointmentYear(w),base=getScript(w.scriptId).year,cycle=w.realm.local.cycle??={lastYear:year,rounds:{}};
- for(const r of realms){const q=cycle.rounds[r];if(!q||q.status!=='pending')continue;const g=governmentOf(w,r)!;if(g.regimeId!==q.regime){q.status='cancelled';q.reason='改朝后原任命名单作废';continue;}q.approver=appointmentApprover(w,r);if(q.approver!==w.characterId&&w.day-q.created>=7){const command={type:'appointments',action:'approve',realm:r,year:q.year} as const;if(appointmentReason(w,command,q.approver)){q.status='cancelled';q.reason='任职条件变化，本轮未颁任命';}else actAppointments(w,command,q.approver);}}
+ for(const r of realms){const q=cycle.rounds[r];if(!q||w.realm.annexed?.[r])continue;const g=governmentOf(w,r)!,approver=appointmentApprover(w,r);if(!isAlive(w,approver))continue;if(q.status==='cancelled'&&approver!==w.characterId&&w.campaign?.status==='active'){cycle.rounds[r]=makeAppointmentRound(w,r,year);continue;}if(q.status!=='pending')continue;if(g.regimeId!==q.regime){q.status='cancelled';q.reason='改朝后原任命名单作废';continue;}q.approver=approver;if(q.approver!==w.characterId&&w.day-q.created>=7&&w.campaign?.status==='active'){const command={type:'appointments',action:'approve',realm:r,year:q.year} as const;if(appointmentReason(w,command,q.approver))cycle.rounds[r]=makeAppointmentRound(w,r,q.year);else actAppointments(w,command,q.approver);}}
  if(year>cycle.lastYear){cycle.lastYear=year;if((year-base)%APPOINTMENT_YEARS===0)for(const r of realms)if(cycle.rounds[r]?.status!=='pending')cycle.rounds[r]=makeAppointmentRound(w,r,year);}
 }
 export function appointmentPauses(w:World){if(w.campaign?.status!=='active')return [];return realms.flatMap(r=>{const q=w.realm?.local?.cycle?.rounds[r];return q?.status==='pending'&&q.approver===w.characterId?[{id:`appointments:${r}:${q.year}`,kind:'appointments' as const,appointmentRealm:r,title:'三年铨选 · '+q.year,body:'审阅地方官任命清单，可批准、维持现任，或花费影响力修改人选。'}]:[];});}
