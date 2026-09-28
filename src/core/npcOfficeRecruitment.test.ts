@@ -30,14 +30,14 @@ describe('持续补缺与后备士人',()=>{
  });
  it('月度合格补缺不挤占个人余额，按办理容量保留现任，重复推进幂等',()=>{
   const w=start(),player=w.realm!.influence,counties=structuredClone(w.realm!.cities);fund(w,'east');w.day=31;advanceNPCOfficeRecruitment(w);
-  const orders=w.realm!.offices.filter(o=>o.realm==='east');expect(occupied(w,'east')).toHaveLength(2);expect(orders).toHaveLength(3);
+  const orders=w.realm!.offices.filter(o=>o.realm==='east');expect(occupied(w,'east')).toHaveLength(1);expect(Object.values(w.mobility!.residences).some(at=>at.journey?.route.at(-1)==='ye')).toBe(true);expect(orders).toHaveLength(3);
   expect(personInfluence(w,'gao-huan')).toBe(200);expect(w.realm!.influence).toBe(player);
   for(const p of countyOfficials)expect(w.realm!.cities[p.home].governor).toBe(counties[p.home].governor);
   const once=structuredClone(w);advanceNPCOfficeRecruitment(w);expect(w).toEqual(once);expect(parseWorld(serializeWorld(w))).toEqual(w);
   const order=orders[0];arrive(w,order);expect(localHolder(w,order.territory!,'east')).toBe(order.candidate);
  });
  it('零余额可常规补缺，失守与忙碌候选人仍受限制',()=>{
-  const w=start();fund(w,'east',0);w.day=31;advanceNPCOfficeRecruitment(w);expect(occupied(w,'east')).toHaveLength(2);expect(w.realm!.offices.filter(o=>o.realm==='east')).toHaveLength(3);expect(personInfluence(w,'gao-huan')).toBe(0);
+  const w=start();fund(w,'east',0);w.day=31;advanceNPCOfficeRecruitment(w);expect(occupied(w,'east')).toHaveLength(1);expect(Object.values(w.mobility!.residences).some(at=>at.journey?.route.at(-1)==='ye')).toBe(true);expect(w.realm!.offices.filter(o=>o.realm==='east')).toHaveLength(3);expect(personInfluence(w,'gao-huan')).toBe(0);
   const lost=start();fund(lost,'east');lost.realm!.cities.ye.controller='west';lost.day=30;advanceNPCOfficeRecruitment(lost);expect(occupied(lost,'east')).toHaveLength(0);expect(lost.realm!.offices.every(o=>o.site!=='ye')).toBe(true);
   const busy=start(),p=officeReserves.find(p=>p.realm==='east')!;busy.retinue!.members[p.id]={host:'gao-huan',joined:0,post:null,site:null,arrears:0};fund(busy,'east');busy.day=30;advanceNPCOfficeRecruitment(busy);expect([...occupied(busy,'east'),...busy.realm!.offices.map(o=>o.candidate)]).not.toContain(p.id);
  });

@@ -57,7 +57,7 @@ export function populationReason(w:World,c:PopulationCommand){
 }
 export function actPopulation(w:World,c:PopulationCommand){const reason=populationReason(w,c);if(reason)throw new Error(reason);ensurePopulation(w);const s=w.realm!,p=s.population!,r=playerRealm(w);
  if(c.action==='return'){const t=p.transfers.find(t=>t.id===c.id)!,path=planRoute(t.route[t.leg],t.from,id=>s.cities[id].controller===r)??{route:[t.from],durations:[]};t.to=t.from;t.route=path.route.length>1?path.route:[t.from,t.from];t.durations=path.durations.length?path.durations:[1];t.leg=0;t.elapsed=0;t.loaded=0;t.returning=true;t.lossRate=Math.min(60,t.lossRate+5);return;}
- enactPoliticalAction(w,r,c.kind==='raid'?'military':'migration');
+ enactPoliticalAction(w,r,c.kind==='raid'?'military':'migration',{source:'transfer:'+p.nextId,site:c.from,actor:w.characterId,authorizer:w.characterId,stage:'commitment',scale:c.amount/200,burden:c.kind==='forced'?1:c.kind==='raid'?2:c.kind==='assisted'?-.5:0});
  const q=populationQuote(w,c),a=s.cities[c.from];s.treasuries[r].coins-=q.coins;s.treasuries[r].grain-=q.grain;
  if(c.kind==='grain'){const local=Math.min(a.grain,c.amount);a.grain-=local;s.treasuries[r].grain-=c.amount-local;}else {a.population-=c.amount;a.order=Math.max(0,a.order-(c.kind==='assisted'?2:c.kind==='forced'?10:25));}
  if(c.kind==='raid'){recordRaid(w,r,a.owner as RealmId);const g=governmentOf(w,r)!;g.legitimacy=Math.max(0,g.legitimacy-5);g.support=Math.max(0,g.support-3);}

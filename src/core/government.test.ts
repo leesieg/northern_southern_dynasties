@@ -48,7 +48,7 @@ describe('政体、改革与政权实体沿革',()=>{
  });
  it('东魏考课深化提高税收与月度功绩，任命门槛实际执行',()=>{
   const w=start('gao-huan');capitalReady(w);const before=cityYield(w,'ye').coins;act(w,{type:'government',action:'law',law:'east-assessment'});finish(w);expect(cityYield(w,'ye').coins).toBeGreaterThan(before);expect(governmentBonus(w,'east').tax).toBe(10);
-  governmentOf(w)!.merit['gao-yang']=0;expect(realmReason(w,{type:'realm',action:'appoint',site:'ye',candidate:'gao-yang'})).toBe('');const support=governmentOf(w)!.support;act(w,{type:'realm',action:'appoint',site:'ye',candidate:'gao-yang'});expect(governmentOf(w)!.support).toBeLessThan(support);
+  governmentOf(w)!.merit['gao-yang']=0;const cmd={type:'realm',action:'appoint',site:'ye',candidate:'gao-yang'} as const;expect(realmReason(w,cmd)).toContain('功绩至少 20');const beforeWorld=structuredClone(w);expect(()=>act(w,cmd)).toThrow('功绩至少 20');expect(w).toEqual(beforeWorld);
  });
  it('封建请任也不能绕过异族领有保护',()=>{
   const w=start('dugu-xin');governmentOf(w)!.type='feudal';w.realm!.cities.changan.governor='yuwen-tai';w.realm!.influence=200;

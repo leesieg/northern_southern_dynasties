@@ -1,3 +1,4 @@
+import {civilCanAdmin} from './civilWars';
 import {survivingRealm} from './polityLifecycle';
 import type {World} from './types';
 import type {Assignment} from './assignments';
@@ -7,16 +8,22 @@ import {allegianceRealm} from './officeEligibility';
 import {governingExecutives,governmentOf} from './government';
 import {countyTerritory,localAncestors,localHolder,localActive,localSuperior} from './localAdministration';
 import {centralAccount,territoryAccount,publicBalance,fiscalRecord,ensureFiscal} from './treasury';
+import {centralMinistry,dutyMinistries} from './officialDuties';
+import {presentAt} from './residence';
+import {capital} from './realm';
+import type {MinistryId} from '../data/court';
 import {isAlive} from './lifeState';
 
 export interface ServiceMandate {issuer:string;automatic:boolean;orderFloor:number;qualityFloor:number;reserve:number}
 export interface ServiceFunding {account:string;grainSite:string|null;coins:number;grain:number}
 export interface ServiceRefund extends ServiceFunding {}
 const national=(kind:AssignmentKind)=>kind==='envoy'||kind==='greatworks';
+const commissionMinistries:Partial<Record<AssignmentKind,MinistryId[]>>={...dutyMinistries,relief:['secretariat','finance'],agriculture:['finance'],commerce:['finance'],training:['military'],supply:['military'],inspection:['censorate','personnel']};
+function centralCommission(w:World,actor:string,r:RealmId,kind:AssignmentKind){const ministry=centralMinistry(w,actor);return !!ministry&&presentAt(w,actor,capital(r))&&!!commissionMinistries[kind]?.includes(ministry);}
 export function canCommission(w:World,actor:string,r:RealmId,site:string,kind:AssignmentKind){
- if(!isAlive(w,actor)||allegianceRealm(w,actor)!==r||w.realm?.cities[site]?.owner!==r||w.realm.cities[site].controller!==r)return false;
+ if(!isAlive(w,actor)||!civilCanAdmin(w,actor,site)||allegianceRealm(w,actor)!==r||w.realm?.cities[site]?.owner!==r||w.realm.cities[site].controller!==r)return false;
  if(governingExecutives(w,r).includes(actor))return true;
- if(national(kind))return false;
+ if(national(kind))return false;if(centralCommission(w,actor,r,kind))return true;
  return [countyTerritory(site),...localAncestors(countyTerritory(site)).map(n=>n.id)].some(t=>localActive(w,t,r)&&localHolder(w,t,r)===actor);
 }
 export function serviceApprover(w:World,t:Pick<Assignment,'realm'|'site'|'kind'|'officer'|'mandate'>){
@@ -26,6 +33,7 @@ export function serviceApprover(w:World,t:Pick<Assignment,'realm'|'site'|'kind'|
   const local=localSuperior(w,countyTerritory(t.site),t.realm,t.officer)?.holder;
   if(local&&canCommission(w,local,t.realm,t.site,t.kind))return local;
  }
+ if(!national(t.kind)){const minister=Object.values(governmentOf(w,t.realm)?.court?.ministries??{}).find(id=>id&&id!==t.officer&&canCommission(w,id,t.realm,t.site,t.kind));if(minister)return minister;}
  return governingExecutives(w,t.realm).find(id=>id!==t.officer);
 }
 export function serviceAuthority(w:World,t:Assignment,actor:string){return actor!==t.officer&&(serviceApprover(w,t)===actor||governingExecutives(w,t.realm).includes(actor));}

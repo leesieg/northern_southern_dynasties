@@ -6,6 +6,8 @@ import {act,advance} from './world';
 import { courtOf,courtReason,movementSummary,movementPower,courtBonus,advanceCourts,foundingPause,controlledShare,courtSalary } from './court';
 import { governmentOf,regimeName,governmentReason,governmentTaskPause } from './government';
 import { officeHierarchy,superiorOffice } from './offices';
+import {validCourt} from './courtSave';
+import {validGovernments} from './governmentSave';
 import { cityYield,realmForecast,armyMonthlyPay } from './realm';
 import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
@@ -30,9 +32,9 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
   const clone=structuredClone(w);courtOf(clone)!.ministries.secretariat=null;pass(w,30);pass(clone,30);expect(w.people[0].coins-clone.people[0].coins).toBe(4);expect(clone.realm!.treasuries.liang.coins-w.realm!.treasuries.liang.coins).toBe(4);
   expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
- it('低功绩任命产生积弊，无履职加成；监察能降低积弊，军务降低军饷',()=>{
-  const w=start();resources(w);act(w,{type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'});expect(courtOf(w)!.corruption).toBe(8);expect(courtBonus(w,'liang').tax).toBe(0);
-  governmentOf(w)!.merit['xiao-yi']=60;act(w,{type:'court',action:'appoint',ministry:'censorate',candidate:'xiao-yi'});pass(w,30);expect(courtOf(w)!.corruption).toBeLessThan(8);
+ it('低功绩不自动指控腐败；职掌效果依对口能力、到任与实际监察结算',()=>{
+  const w=start();resources(w);act(w,{type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'});expect(courtOf(w)!.corruption).toBe(0);expect(courtBonus(w,'liang').tax).toBe(0);
+  courtOf(w)!.corruption=8;governmentOf(w)!.merit['xiao-yi']=60;act(w,{type:'court',action:'appoint',ministry:'censorate',candidate:'xiao-yi'});w.mobility!.residences['xiao-yi']={site:'jiankang',journey:null};w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);expect(courtOf(w)!.corruption).toBeLessThan(8);
   act(w,{type:'court',action:'appoint',ministry:'censorate',candidate:null});act(w,{type:'court',action:'appoint',ministry:'military',candidate:'xiao-yi'});act(w,{type:'realm',action:'muster'});const army=w.realm!.armies[0];expect(armyMonthlyPay(w,army)).toBe(56);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('加入、游说、清议、集团领袖奏议均有成本和冷却，非玩家执政会裁决',()=>{
@@ -48,6 +50,14 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
  });
  it('财政枯竭与天命受疑推动危局，影响真实收益并暂停改革；整饬可恢复',()=>{
   const w=start();resources(w);act(w,{type:'government',action:'adopt',government:'feudal'});const c=courtOf(w)!,g=governmentOf(w)!;c.tension=70;g.legitimacy=20;w.realm!.treasuries.liang.coins=0;w.realm!.treasuries.liang.grain=0;w.day=31;advanceCourts(w);expect(c.phase).toBe('chaos');expect(courtBonus(w,'liang').tax).toBe(-25);expect(governmentTaskPause(w,'liang')).toContain('危局');const tension=c.tension;advanceCourts(w);expect(c.tension).toBe(tension);resources(w);g.legitimacy=90;g.support=90;act(w,{type:'court',action:'audit'});for(let i=0;i<15;i++){w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);}expect(c.phase).toBe('stable');expect(courtBonus(w,'liang').tax).toBe(0);
+ });
+ it('月中建朝保留最近月结事实，新阶段不使旧月结快照失效',()=>{
+  const w=prepareUnification(),g=governmentOf(w)!,c=courtOf(w)!;c.tension=85;w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);
+  expect(c.phase).toBe('chaos');const settled=structuredClone(c.settlement);g.support=90;g.legitimacy=95;
+  act(w,{type:'court',action:'found',mode:'unify',name:'华'});
+  // Test only the final effective workday, without advancing the whole world for 120 days.
+  w.day+=121;c.founding!.progress=119;advanceCourts(w);
+  expect(c.phase).toBe('stable');expect(c.settlement).toEqual(settled);expect(validCourt(w,'liang')).toBe(true);expect(validGovernments(w)).toBe(true);
  });
  it('拥立120日后产生独立国号与前朝记录、撤任，存档可继续推进',()=>{
   const w=claimant(),g=governmentOf(w)!,estate=structuredClone(w.holdings.estate);const controls=Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,[c.owner,c.controller]]));

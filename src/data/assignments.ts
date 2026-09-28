@@ -14,7 +14,7 @@ export const assignmentTemplates={
  hostelworks:{name:'营建驿舍',category:'economy',skill:'stewardship',coins:110,grain:20,work:210,icon:'city',description:'由中枢或度支官员组织修建驿舍。',effect:'驿舍提升 1 级，最高 3 级'},
  greatworks:{name:'兴修水利',category:'economy',skill:'stewardship',coins:180,grain:80,work:400,icon:'estate',description:'由中枢官员主持疏渠筑堰，组织大型水利工程。',effect:'繁荣 +20、秩序 +10、水利 +2'},
  recruitment:{name:'征募兵员',category:'military',skill:'martial',coins:100,grain:80,work:220,icon:'army',description:'由军务或选官职掌主持军户征募。',effect:'补充驻军 200 人；无驻军时组建 200 人军队，消耗对应人口与 5 秩序'},
- taxation:{name:'清查征税',category:'economy',skill:'stewardship',coins:30,grain:0,work:180,icon:'coins',description:'由度支或监察官员清查欠赋，按本城人口与税制征收。',effect:'公款增加 30—150，秩序 −5，每城每季限一次'},
+ taxation:{name:'清查征税',category:'economy',skill:'stewardship',coins:30,grain:0,work:180,icon:'coins',description:'由度支或监察官员清查欠赋，按本城人口与税制征收。',effect:'依现行赋役规则、人口与质量追征，收入及秩序负担随方案改变；每城每季限一次'},
 } as const;
 export type AssignmentKind=keyof typeof assignmentTemplates;
 export const assignmentPlans={balanced:{name:'按部就班',cost:100,work:100,description:'按常额拨款与工期办理，基础质量 100%。'},thorough:{name:'从容详办',cost:80,work:125,description:'预算为常额的八成，工作量增加四分之一，基础质量 115%。'},urgent:{name:'增拨赶办',cost:140,work:80,description:'预算为常额的一点四倍，工作量减少五分之一，基础质量 85%。'}} as const;
@@ -37,6 +37,6 @@ export const assignmentTradeoffs:Record<AssignmentKind,{condition:string;cost:st
  hostelworks:{condition:'对应中央职掌，驿舍未满级且无并行营建',cost:'占用劳力与营建名额；不能替代地方缺粮、低秩序的治理'},
  greatworks:{condition:'对应中央职掌，可用工程承办人',cost:'预算高、工期长，持续占用劳力；与短期救急争夺经费'},
  recruitment:{condition:'对应中央职掌，本城至少 700 人；已有军队须在此驻留且未满员',cost:'兵员来自当地人口，秩序 −5；增兵后长期军粮与军饷增加'},
- taxation:{condition:'对应中央职掌，每城每季限一次',cost:'秩序 −5；追征收入需扣除办理预算，未必划算'},
+ taxation:{condition:'对应中央职掌或当地治理权，每城每季限一次',cost:'核籍需额外工期；追征收入须扣除办理预算，并承担相应秩序负担'},
 };
 export const priorityIcons={economy:'coins',stability:'steadfast',military:'army',diplomacy:'gregarious'} as const;

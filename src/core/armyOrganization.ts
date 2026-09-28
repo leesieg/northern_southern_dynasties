@@ -90,7 +90,7 @@ export function actArmyOrganization(w:World,c:ArmyCommand){
  const reason=armyOrganizationReason(w,c);if(reason)throw new Error(reason);ensureArmyOrganization(w);const s=w.realm!,r=playerRealm(w);
  if(c.action==='raise'){
   const city=s.cities[c.site],payer=authorityGrant(w,w.characterId!,'levy',{realm:r,site:c.site}).account!,cost=troopKinds[c.kind].cost*(c.service==='standing'?2:1),id=s.nextArmyId!++;
-  enactPoliticalAction(w,r,'military');spendGovernmentMuster(w,r);if(payer.startsWith('central:'))s.treasuries[r].coins-=cost;else ensureFiscal(w)!.balances[payer]=publicBalance(w,payer)-cost;
+  enactPoliticalAction(w,r,'military',{source:'regiment:'+id,site:c.site,actor:w.characterId,authorizer:w.characterId,stage:'execution',scale:1,burden:c.service==='levy'?1:.5});spendGovernmentMuster(w,r);if(payer.startsWith('central:'))s.treasuries[r].coins-=cost;else ensureFiscal(w)!.balances[payer]=publicBalance(w,payer)-cost;
   fiscalRecord(w,r,payer,'expense',cost,'征募'+troopKinds[c.kind].name);city.population-=200;city.grain-=60;
   const revolt=civilWar(w,r);if(revolt?.civil?.supporters.includes(w.characterId!))revolt.civil.armies.push(id);
   const target=c.target===undefined?undefined:s.armies.find(a=>a.id===c.target);

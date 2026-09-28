@@ -1,6 +1,6 @@
 import type { RealmId } from '../core/realm';
 export const governmentDefinitions={
- meritocratic:{name:'贤能制',subtitle:'官僚功绩与任职',description:'门阀背景下推行铨选、察举与考课。功绩达 20 可请任，达 40 可请军务；任职不随家业继承。',tax:0,pay:0,attack:0},
+ meritocratic:{name:'贤能制',subtitle:'官僚功绩与任职',description:'门阀背景下推行铨选、察举与考课。任官依现行准则与通道，功绩达 40 可请军务；任职不随家业继承。',tax:0,pay:0,attack:0},
  celestial:{name:'天朝制',subtitle:'天命与中央官僚',description:'控制至少六成已录非边疆城市后可立制。税收 +15%，军饷 +10%；天命低于 25 时税收转为 −20%，低于 15 时退化为贤能制。',tax:15,pay:10,attack:0},
  nomadic:{name:'游牧制',subtitle:'畜群、逐水草与骑军',description:'需北方驻牧地与 200 畜群。税收 −35%、军饷 −25%、攻击 +15%；动员耗 100 畜群，畜群随季节与驻牧压力变化，可迁营。',tax:-35,pay:-25,attack:15},
  khanate:{name:'宫帐制',subtitle:'草原官僚与宫帐',description:'兼具功绩任职与畜群经营；税收 −10%、军饷 −10%、攻击 +10%。动员耗 50 畜群，可迁营，家业交接不继承官职。',tax:-10,pay:-10,attack:10},

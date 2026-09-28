@@ -107,7 +107,8 @@ describe('commission choice tradeoffs',()=>{
  it('quotes actual plan workload with cost, time and quality tradeoffs',()=>{
   const {w,t}=prepared();const normal=assignmentPlanQuote(w,t,'balanced'),slow=assignmentPlanQuote(w,t,'thorough'),fast=assignmentPlanQuote(w,t,'urgent');
   expect(t.required).toBe(normal.work);expect(slow.coins).toBeLessThan(normal.coins);expect(slow.days).toBeGreaterThan(normal.days);expect(slow.quality).toBeGreaterThan(normal.quality);
-  expect(fast.coins).toBeGreaterThan(normal.coins);expect(fast.days).toBeLessThan(normal.days);expect(fast.quality).toBeLessThan(normal.quality);
+  expect(fast.coins).toBeGreaterThan(normal.coins);expect(fast.work).toBeLessThan(normal.work);expect(fast.days).toBe(Math.ceil(fast.work/fast.effort));expect(fast.quality).toBeLessThan(normal.quality);
+  // Extra funds reduce work, but a rushed method can face stronger political resistance.
   expect(normal.days).toBe(Math.ceil(t.required/assignmentEffort(w,t).total));
   const restored=parseWorld(serializeWorld(w));expect(assignmentPlanQuote(restored,serviceTask(restored,t.id)!,'balanced')).toEqual(normal);
  });
