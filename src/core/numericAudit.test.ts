@@ -27,7 +27,7 @@ describe('numeric dependency audit regressions',()=>{
  });
  it('fed local cities do not lose order just because central grain is empty',()=>{
   const empty=start(),full=structuredClone(empty);empty.realm!.treasuries.liang.grain=0;
-  for(const w of [empty,full]){w.realm!.cities.jingkou.grain=200;w.day=30;advanceRealm(w);}
+  for(const w of [empty,full]){w.realm!.cities.jingkou.grain=200;w.day=31;advanceRealm(w);}
   expect(empty.realm!.cities.jingkou.order).toBe(full.realm!.cities.jingkou.order);
  });
  it('relief away from the capital uses local grain and cannot teleport central stocks',()=>{
@@ -39,7 +39,7 @@ describe('numeric dependency audit regressions',()=>{
   expect(parseWorld(serializeWorld(w)).realm!.governments!.realms.liang.cooldowns['politics|tax']).toBe(30);w.day=30;enactPoliticalAction(w,'liang','tax');expect(g.cooldowns['politics|tax']).toBe(60);
  });
  it('registered non-roster officials receive influence and old maps migrate without changing existing balances',()=>{
-  const w=start();awardInfluence(w,'chen-baxian',9);expect(personInfluence(w,'chen-baxian')).toBe(9);w.day=30;advancePersonalInfluence(w);expect(personInfluence(w,'chen-baxian')).toBe(14);
+  const w=start();awardInfluence(w,'chen-baxian',9);expect(personInfluence(w,'chen-baxian')).toBe(9);w.day=31;advancePersonalInfluence(w);expect(personInfluence(w,'chen-baxian')).toBe(14);
   w.realm!.personalInfluence=Object.fromEntries(historicalCharacters.map(p=>[p.id,p.id===w.characterId?w.realm!.influence:7]));const loaded=parseWorld(serializeWorld(w));expect(personInfluence(loaded,'chen-baxian')).toBe(0);expect(personInfluence(loaded,'xiao-gang')).toBe(7);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
  });
  it('public salaries credit NPC office holders and reflect actual treasury expenditure',()=>{
@@ -48,7 +48,7 @@ describe('numeric dependency audit regressions',()=>{
   s.treasuries.liang.coins=0;const empty=w.relationships!.reserves['xiao-gang'];payFiscalOperations(w,'liang');expect(w.relationships!.reserves['xiao-gang']).toBe(empty);
  });
  it('retainer wages transfer to the recipient only once per settlement',()=>{
-  const w=newCampaignWorld('xiao-gang',undefined,'sandbox');actRetinue(w,{type:'retinue',action:'recruit',person:'guest-liang'});const payer=w.people[0].coins,receiver=w.relationships!.reserves['guest-liang'];w.day=30;advanceRetinue(w);expect(w.people[0].coins).toBe(payer-2);expect(w.relationships!.reserves['guest-liang']).toBe(receiver+2);advanceRetinue(w);expect(w.people[0].coins).toBe(payer-2);
+  const w=newCampaignWorld('xiao-gang',undefined,'sandbox');actRetinue(w,{type:'retinue',action:'recruit',person:'guest-liang'});const payer=w.people[0].coins,receiver=w.relationships!.reserves['guest-liang'];w.day=31;advanceRetinue(w);expect(w.people[0].coins).toBe(payer-2);expect(w.relationships!.reserves['guest-liang']).toBe(receiver+2);advanceRetinue(w);expect(w.people[0].coins).toBe(payer-2);
  });
  it('invalid spending and a full intermediate grant account do not partially mutate balances',()=>{
   const w=start(),path=fiscalPath(w,'jiankang');w.realm!.fiscal!.balances[path[1]]=1_000_000;const before=structuredClone(w);

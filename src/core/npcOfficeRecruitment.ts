@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import {relationshipPeople} from '../data/relationships';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {actCourt,courtEnabled,courtReason} from './court';
@@ -31,7 +32,7 @@ function idleCandidates(w:World,r:RealmId){
  * pending review, appoints the player, or moves an incumbent to manufacture a vacancy. */
 export function advanceNPCOfficeRecruitment(w:World){
  const s=w.realm?.local;
- if(!s||w.mode!=='sandbox'||w.campaign?.status!=='active'||w.realm!.event||w.day%30||(s.lastNPCRecruitment??-1)>=w.day)return;
+ if(!s||w.mode!=='sandbox'||w.campaign?.status!=='active'||w.realm!.event||!isMonthStart(w.day,w.scriptId)||(s.lastNPCRecruitment??-1)>=w.day)return;
  s.lastNPCRecruitment=w.day;
  for(const r of realms){
   if(w.realm!.annexed?.[r]||s.cycle?.rounds[r]?.status==='pending')continue;

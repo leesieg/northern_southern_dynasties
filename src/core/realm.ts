@@ -1,3 +1,4 @@
+import {isMonthStart,nextMonthStart} from './calendar';
 import {armyCommander} from './mobility';
 import {advanceMilitaryAI} from './militaryAI';
 import {authorityGrant} from './authority';
@@ -43,7 +44,7 @@ export interface RealmState {
  local?:import('./localAdministration').LocalAdministration;
  population?:import('./population').PopulationState;
  fiscal?:import('./treasury').FiscalState;
- version:1;personalInfluence?:Record<string,number>;lastInfluenceIncome?:number;governments?:GovernmentState;cities:Record<string,Province>;treasuries:Record<RealmId,Treasury>;influence:number;mandate:boolean;
+ version:1;lastMonthly?:number;personalInfluence?:Record<string,number>;lastInfluenceIncome?:number;governments?:GovernmentState;cities:Record<string,Province>;treasuries:Record<RealmId,Treasury>;influence:number;mandate:boolean;
  offices:{site:string;candidate:string;due:number;territory?:string;realm?:RealmId;issuer?:string;acting?:boolean;concurrent?:boolean;issued?:number}[];armies:Army[];
  reparations?:import('./wars').Reparation[];wars?:War[];nextWarId?:number;war:War|null;sieges?:Siege[];
  truces:Record<string,number>;event:{kind:EventKind;site:string;day:number}|null;lastEvent:number;
@@ -126,7 +127,7 @@ export function actRealm(w:World,c:RealmCommand){
  case 'fortify':{const cty=s.cities[c.site],level=fortificationLevel(w,c.site),cost=(level+1)*80,days=(level+1)*30;spendLocal(w,c.site,cost,'修筑城防');cty.fortification={level,due:w.day+days};log(w,siteById[c.site].name+`修筑城防至 ${level+1} 级，支出本城公款 ${cost}，需 ${days} 日。`);break;}
  case 'appoint':case 'petition':{actLocal(w,{type:'local',action:c.action==='appoint'?'appoint':'apply',territory:countyTerritory(c.site),candidate:c.action==='appoint'?c.candidate:w.characterId!});enactPoliticalAction(w,r,'appointment');break;}
  case 'mandate':s.influence-=40;s.mandate=true;log(w,'获得本局军务授权，可以动员与发动边境争夺。');break;
- case 'muster':{enactPoliticalAction(w,r,'military');spendGovernmentMuster(w);const home=w.people[0].home,location=s.cities[home].controller===r?home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;if(executive(w))t.coins-=120;else spendLocal(w,location,120,'地方动员');t.grain-=120;s.cities[location].population-=600;s.armies.push({realm:r,location,troops:600,morale:100,supply:120,journey:null,siege:0});const army=s.armies.at(-1)!;log(w,regimeName(w,r)+`动员 600 人，每 30 日军饷 ${armyMonthlyPay(w,army)} 钱，每日消耗军粮 ${armyDailyFood(w,army)}。`);break;}
+ case 'muster':{enactPoliticalAction(w,r,'military');spendGovernmentMuster(w);const home=w.people[0].home,location=s.cities[home].controller===r?home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;if(executive(w))t.coins-=120;else spendLocal(w,location,120,'地方动员');t.grain-=120;s.cities[location].population-=600;s.armies.push({realm:r,location,troops:600,morale:100,supply:120,journey:null,siege:0});const army=s.armies.at(-1)!;log(w,regimeName(w,r)+`动员 600 人，每月 1 日军饷 ${armyMonthlyPay(w,army)} 钱，每日消耗军粮 ${armyDailyFood(w,army)}。`);break;}
  case 'disband':{if(w.mobility&&(!c.army||s.armies.find(a=>a.realm===r)?.id===c.army)){const leader=w.mobility.commanders[r];if(leader===w.characterId)w.people[0].journey=null;else if(leader&&w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.commanders[r];}const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;const returned=demobilizeArmy(w,a);delete w.mobility?.pendingCommanders?.[a.id!];const leader=w.mobility?.armyCommanders?.[a.id!];if(leader&&w.mobility){if(leader===w.characterId)w.people[0].journey=null;else if(w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.armyCommanders![a.id!];}s.cities[a.location].grain=Math.min(grainCapacity(w,a.location),s.cities[a.location].grain+a.supply);returnArmyConvoy(w,a);s.armies=s.armies.filter(other=>other!==a);log(w,`军队遣散：${returned.traveling} 人按兵团原籍返乡，${returned.settled} 人因原籍失守、道路不通或本地籍而于驻地安置；随军余粮返仓，超仓部分损耗。`);break;}
  case 'war':ensureWars(w);s.influence-=c.goal==='annexation'?120:40;s.wars!.push({id:s.nextWarId!++,goal:c.goal??'territory',demand:300,battles:0,attacker:r,defender:s.cities[c.site].owner as RealmId,target:c.site,started:w.day,score:0});s.war=s.wars![0];diplomaticWar(w,r,s.cities[c.site].owner as RealmId);log(w,regimeName(w,r)+'发起对'+siteById[c.site].name+'的边境争夺。');break;
  case 'march':{const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;march(a,c.site,w.day,w);log(w,regimeName(w,r)+'军前往'+siteById[c.site].name+'，依道路逐日行军。');break;}
@@ -159,7 +160,7 @@ export function settleWar(w:World,war:War,terms:PeaceTerms='white',actor:RealmId
  if(war.civil){settleCivilWar(w,war,terms);return;}
  if(q.annexes){annexPolity(w,war.attacker,war.defender);syncGovernance(w);return;}
  if(q.lands.length){for(const id of q.lands){const city=s.cities[id];city.owner=war.attacker;city.governor=null;delete city.occupiedSince;if(city.fortification?.due!=null){city.fortification.due=null;log(w,siteById[id].name+'原城防工程因割让停建，既有支出不退。');}city.integration={since:w.day,progress:0,funded:false};}log(w,q.lands.map(id=>siteById[id].name).join('、')+'依据议和转归'+regimeName(w,war.attacker)+'，进入地方接管期。');}else log(w,terms==='white'?'双方议定白和平，无新增割地赔款。':'双方接受议和条件。');
- if(q.coins){const from=s.treasuries[q.loser],to=s.treasuries[q.beneficiary],paid=Math.min(from.coins,q.coins,1_000_000-to.coins);from.coins-=paid;to.coins+=paid;if(paid<q.coins)(s.reparations??=[]).push({war:war.id!,from:q.loser,to:q.beneficiary,remaining:q.coins-paid,instalment:50,next:w.day+30});}
+ if(q.coins){const from=s.treasuries[q.loser],to=s.treasuries[q.beneficiary],paid=Math.min(from.coins,q.coins,1_000_000-to.coins);from.coins-=paid;to.coins+=paid;if(paid<q.coins)(s.reparations??=[]).push({war:war.id!,from:q.loser,to:q.beneficiary,remaining:q.coins-paid,instalment:50,next:nextMonthStart(w.day,w.scriptId)});}
  if(q.tributary&&w.diplomacy)w.diplomacy.subjects[q.loser]=q.beneficiary;
  // Only bilateral occupation belongs to this settlement. Third-party control survives.
  for(const city of Object.values(s.cities))if(city.owner!=='frontier'&&city.controller!=='frontier'&&warRealmSide(war,city.owner)&&warRealmSide(war,city.controller)&&warRealmSide(war,city.owner)!==warRealmSide(war,city.controller)){city.controller=city.owner;delete city.occupiedSince;}
@@ -188,7 +189,8 @@ export function advanceRealm(w:World){
  for(const [id,city] of Object.entries(s.cities))if(city.fortification?.due!==null&&city.fortification?.due!==undefined&&city.fortification.due<=w.day){if(city.controller!==city.owner){city.fortification.due++;continue;}city.fortification.level++;city.fortification.due=null;log(w,siteById[id].name+`城防竣工，现为 ${city.fortification.level} 级。`);}
  advanceLocal(w);
  s.offices=s.offices.filter(o=>o.due>w.day||!completeLocalAppointment(w,o));syncGovernance(w);
- if(w.day%30===0){
+ if(isMonthStart(w.day,w.scriptId)&&(s.lastMonthly??0)<w.day){
+ s.lastMonthly=w.day;
  for(const r of realms){if(s.annexed?.[r])continue;const yields=new Map(Object.entries(s.cities).filter(([,c])=>c.controller===r).map(([id])=>[id,cityYield(w,id)]));const t=s.treasuries[r],f=realmForecast(w,r,yields);t.lastIncome=f.income;t.lastExpense=f.expense;t.lastFood=f.food;collectFiscal(w,r,yields);payFiscalOperations(w,r);distributeFiscal(w,r);
  // Army consumption is daily, so only civilian production/consumption is booked here.
  settleLocalGrain(w,r,id=>yields.get(id)!.grain);

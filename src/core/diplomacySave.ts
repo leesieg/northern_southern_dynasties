@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import {personResidence} from './residence';
 import {missionJourney} from './envoyTravel';
 import {capital} from './realm';
@@ -14,7 +15,7 @@ const realm=(v:unknown):v is RealmId=>realms.includes(v as RealmId);
 const str=(v:unknown,max=200)=>typeof v==='string'&&v.length>0&&v.length<=max;
 export function validDiplomacy(w:World){
  const s=w.diplomacy;if(s===undefined)return true;
- if(!w.realm||!obj(s)||s.version!==1||!num(s.since,0,w.day)||!num(s.nextId,1,1_000_000)||!num(s.lastMonth,0,w.day)||s.lastMonth%30||!num(s.lastAI,0,w.day)||!obj(s.pairs)||!obj(s.credit)||!obj(s.subjects)||!obj(s.bases)||!Array.isArray(s.missions)||s.missions.length>6||!Array.isArray(s.history)||s.history.length>100)return false;
+ if(!w.realm||!obj(s)||s.version!==1||!num(s.since,0,w.day)||!num(s.nextId,1,1_000_000)||!num(s.lastMonth,0,w.day)||!isMonthStart(s.lastMonth,w.scriptId)||!num(s.lastAI,0,w.day)||!obj(s.pairs)||!obj(s.credit)||!obj(s.subjects)||!obj(s.bases)||!Array.isArray(s.missions)||s.missions.length>6||!Array.isArray(s.history)||s.history.length>100)return false;
  if(s.returning!==null){const p=s.returning,j=w.people[0].journey;if(!obj(p)||p.actor!==w.characterId||!j||!Array.isArray(p.route)||p.route.join('|')!==j.route.join('|'))return false;}
  const keys=['east|liang','east|west','liang|west'];if(Object.keys(s.pairs).length!==3||Object.keys(s.credit).length!==3||Object.keys(s.bases).length!==3)return false;
  for(const r of realms)if(!num(s.credit[r],0,100)||!str(s.bases[r])||(w.realm.governments&&s.bases[r]!==governmentOf(w,r)?.regimeId))return false;

@@ -1,3 +1,4 @@
+import {nextMonthStart} from './calendar';
 import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {historicalCharacters} from '../data/characters';
 import { describe,it,expect } from 'vitest';
@@ -46,7 +47,7 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
   pass(w,75);courtOf(w)!.petition={group:'dynastic',sponsor:'xiao-gang',due:w.day+15};governmentOf(w)!.type='feudal';pass(w,15);expect(courtOf(w)!.petition).toBeNull();expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('财政枯竭与天命受疑推动危局，影响真实收益并暂停改革；整饬可恢复',()=>{
-  const w=start();resources(w);act(w,{type:'government',action:'adopt',government:'feudal'});const c=courtOf(w)!,g=governmentOf(w)!;c.tension=70;g.legitimacy=20;w.realm!.treasuries.liang.coins=0;w.realm!.treasuries.liang.grain=0;w.day=30;advanceCourts(w);expect(c.phase).toBe('chaos');expect(courtBonus(w,'liang').tax).toBe(-25);expect(governmentTaskPause(w,'liang')).toContain('危局');const tension=c.tension;advanceCourts(w);expect(c.tension).toBe(tension);resources(w);g.legitimacy=90;g.support=90;act(w,{type:'court',action:'audit'});for(let i=0;i<15;i++){w.day+=30;advanceCourts(w);}expect(c.phase).toBe('stable');expect(courtBonus(w,'liang').tax).toBe(0);
+  const w=start();resources(w);act(w,{type:'government',action:'adopt',government:'feudal'});const c=courtOf(w)!,g=governmentOf(w)!;c.tension=70;g.legitimacy=20;w.realm!.treasuries.liang.coins=0;w.realm!.treasuries.liang.grain=0;w.day=31;advanceCourts(w);expect(c.phase).toBe('chaos');expect(courtBonus(w,'liang').tax).toBe(-25);expect(governmentTaskPause(w,'liang')).toContain('危局');const tension=c.tension;advanceCourts(w);expect(c.tension).toBe(tension);resources(w);g.legitimacy=90;g.support=90;act(w,{type:'court',action:'audit'});for(let i=0;i<15;i++){w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);}expect(c.phase).toBe('stable');expect(courtBonus(w,'liang').tax).toBe(0);
  });
  it('拥立120日后产生独立国号与前朝记录、撤任，存档可继续推进',()=>{
   const w=claimant(),g=governmentOf(w)!,estate=structuredClone(w.holdings.estate);const controls=Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,[c.owner,c.controller]]));

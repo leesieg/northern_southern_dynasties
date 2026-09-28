@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import { characterById,historicalCharacters,characterRelations } from '../data/characters';
 import { defaultTraits,heirs,houseMembers,kin,newSocial,traitsFor } from './social';
 import type { World } from './types';
@@ -5,6 +6,8 @@ const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Ar
 const int=(v:unknown,a:number,b:number)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=a&&v<=b;
 export function validSocial(w:World):boolean {
  const s=w.social;if(s===undefined)return true;
+ if(!obj(s))return false;
+ if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthStart(s.lastMonthly,w.scriptId)))return false;
  if(!obj(s)||!w.characterId||s.version!==1||typeof s.founder!=='string'||!Object.hasOwn(characterById,s.founder))return false;
  if(!int(s.stress,0,100)||!int(s.renown,0,999)||!int(s.seed,0,4294967295))return false;
  const base=newSocial(s.founder);

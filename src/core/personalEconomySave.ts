@@ -6,7 +6,7 @@ import type {World} from './types';
 export function validEconomyWorld(w: World): boolean {
   if (w.economy === undefined) return true;
   if (w.mode !== 'sandbox' || !w.realm || !validPersonalEconomy(w.economy, w.day,
-    id => Object.hasOwn(relationshipPersonById, id))) return false;
+    id => Object.hasOwn(relationshipPersonById, id),w.scriptId)) return false;
   const validAccount = (id: string, realm: string) => {
     if (!['liang', 'east', 'west'].includes(realm)) return false;
     if (id === 'central:' + realm) return true;

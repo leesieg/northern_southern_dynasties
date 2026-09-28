@@ -22,7 +22,7 @@ describe('沙盒政治经济军事',()=>{
  it('税率取舍改变生产与秩序，公共建设不重复发放个人收入',()=>{
   const w=sandbox(),r=w.realm!,initial=cityYield(w,'jiankang').coins;
   act(w,{type:'realm',action:'tax',site:'jiankang',tax:'heavy'});expect(cityYield(w,'jiankang').coins).toBeGreaterThan(initial);
-  const p=w.people[0].coins;advance(w,30);expect(r.cities.jiankang.order).toBe(64);expect(w.economy!.budgets[w.characterId!].lastPaid).toBe(2);expect(w.people[0].coins-p+2).toBe(8);expect(r.ledger).toHaveLength(3);expect(realmForecast(w,'liang').income).toBeGreaterThan(0);validate(w);
+  const p=w.people[0].coins;advance(w,31);expect(r.cities.jiankang.order).toBe(64);expect(w.economy!.budgets[w.characterId!].lastPaid).toBe(2);expect(w.people[0].coins-p+2).toBe(8);expect(r.ledger).toHaveLength(3);expect(realmForecast(w,'liang').income).toBeGreaterThan(0);validate(w);
  });
  it('任命延迟生效，撤销前任权限；皇帝不自动取得权臣任命权',()=>{
   const w=sandbox();act(w,{type:'realm',action:'appoint',site:'jiankang',candidate:'xiao-gang'});

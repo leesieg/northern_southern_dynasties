@@ -28,7 +28,7 @@ describe('生活重心',()=>{
   const old=ensureLifestyle(w).xp.stewardship;focus(w,'etiquette');expect(ensureLifestyle(w).xp.stewardship).toBe(old);expect(ensureLifestyle(w).xp.diplomacy).toBe(0);expect(lifestyleBonuses(w).buildCost).toBe(5);expect(lifestyleBonuses(w).acceptance).toBe(5);
  });
  it('月度研习只结算一次、锁定原路线、保存后不重新生成',()=>{
-  const w=newCampaignWorld('gao-huan');focus(w,'strategy');advance(w,30);expect(ensureLifestyle(w).study?.branch).toBe('martial');
+  const w=newCampaignWorld('gao-huan');focus(w,'strategy');advance(w,31);expect(ensureLifestyle(w).study?.branch).toBe('martial');
   const restored=parseWorld(serializeWorld(w)),xp=ensureLifestyle(restored).xp.martial,stress=restored.social!.stress;
   act(restored,{type:'lifestyle',action:'study',choice:'practice'});expect(ensureLifestyle(restored).xp.martial).toBe(xp+45);expect(restored.social!.stress).toBe(stress+8);
   expect(()=>act(restored,{type:'lifestyle',action:'study',choice:'practice'})).toThrow('暂无');expect(ensureLifestyle(restored).study).toBeNull();

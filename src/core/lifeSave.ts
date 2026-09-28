@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import {birthRecords} from '../data/lifespans';
 import {relationshipPersonById} from '../data/relationships';
 import {isAlive,lifeOf} from './lifeState';
@@ -6,7 +7,7 @@ const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Ar
 const int=(n:unknown,min:number,max:number):n is number=>typeof n==='number'&&Number.isSafeInteger(n)&&n>=min&&n<=max;
 export function validLife(w:World){
  const s:unknown=w.life;if(s===undefined)return true;
- if(!obj(s)||s.version!==1||!int(s.since,0,w.day)||!int(s.lastMonthly,Math.floor(s.since/30)*30,w.day)||s.lastMonthly%30||!int(s.seed,0,0xffffffff)||!obj(s.people)||Object.keys(s.people).length!==Object.keys(birthRecords).length)return false;
+ if(!obj(s)||s.version!==1||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthStart(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.people)||Object.keys(s.people).length!==Object.keys(birthRecords).length)return false;
  for(const id of Object.keys(birthRecords)){
   const p=s.people[id];if(!obj(p)||!int(p.health,0,100)||!int(p.careUntil,0,w.day+90))return false;
   if(p.illness!==null&&(!obj(p.illness)||!['fever','wasting','cold','flux'].includes(String(p.illness.kind))||!int(p.illness.since,s.since,w.day)||!int(p.illness.severity,1,3)))return false;

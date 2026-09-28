@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import {commandArmy} from './mobility';
 import {realmAtWar} from './wars';
 import {clearLocalPerson,localActive,localSites,localOfficeLoad} from './localAdministration';
@@ -33,7 +34,7 @@ export const courtOf=(w:World,r=currentRealm(w))=>governmentOf(w,r)?.court;
 export const courtEnabled=(w:World,r:RealmId)=>['celestial','meritocratic','khanate'].includes(governmentOf(w,r)?.type??'');
 export function newCourt(w:World,r:RealmId):CourtState{
  const g=governmentOf(w,r)!;
- return {version:1,since:w.day,lastMonthly:Math.floor(w.day/30)*30,regimeId:g.regimeId,tenure:g.ruler+'|'+governingExecutives(w,r).join('|'),phase:'stable',policy:'consolidation',tension:15,corruption:0,ministries:Object.fromEntries(ministryIds.map(k=>[k,null])) as CourtState['ministries'],members:Object.fromEntries(roster(r).map(p=>[p.id,p.id===g.ruler?'unaligned':p.role==='prince'?'dynastic':p.role==='commander'?'expansion':p.role==='regent'?'reform':'conservative'])),favored:null,boosts:{},cooldowns:{},petition:null,founding:null,history:[]};
+ return {version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),regimeId:g.regimeId,tenure:g.ruler+'|'+governingExecutives(w,r).join('|'),phase:'stable',policy:'consolidation',tension:15,corruption:0,ministries:Object.fromEntries(ministryIds.map(k=>[k,null])) as CourtState['ministries'],members:Object.fromEntries(roster(r).map(p=>[p.id,p.id===g.ruler?'unaligned':p.role==='prince'?'dynastic':p.role==='commander'?'expansion':p.role==='regent'?'reform':'conservative'])),favored:null,boosts:{},cooldowns:{},petition:null,founding:null,history:[]};
 }
 export function ensureCourts(w:World){if(!w.realm?.governments)return;for(const r of realms)governmentOf(w,r)!.court??=newCourt(w,r);}
 function log(w:World,r:RealmId,text:string){const c=courtOf(w,r)!;c.history.push({day:w.day,text});c.history=c.history.slice(-60);}
@@ -169,7 +170,7 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
  if(c.petition&&c.petition.due<=w.day){const actor=governingAuthority(w,r),mayPay=!!actor&&w.realm.treasuries[r].coins>=80&&personInfluence(w,actor)>=20,supported=courtEnabled(w,r)&&!governingExecutives(w,r).includes(w.characterId!)&&movementSummary(w,r,c.petition.group).share>=30;if(!supported||mayPay||w.day-c.petition.due>=60)resolvePetition(w,r,supported&&mayPay,actor??'');}
  if(!courtEnabled(w,r))continue;
  if(c.founding&&!foundingPause(w,r)){c.founding.progress++;if(c.founding.progress>=c.founding.required)foundDynasty(w,r);}
- if(w.day%30!==0||c.lastMonthly>=w.day)continue;c.lastMonthly=w.day;
+ if(!isMonthStart(w.day,w.scriptId)||c.lastMonthly>=w.day)continue;c.lastMonthly=w.day;
  for(const [id,b] of Object.entries(c.boosts))if(b.until<=w.day)delete c.boosts[id];
  const employed=Object.values(c.ministries).filter((id):id is string=>id!==null);
  if(ministryCompetent(w,r,'secretariat'))g.support=cap(g.support+2);

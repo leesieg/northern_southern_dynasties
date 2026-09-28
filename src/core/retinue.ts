@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart,monthIndex} from './calendar';
 import {isSovereign} from './officialDuties';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
@@ -21,7 +22,7 @@ export type RetinuePost=keyof typeof retinuePosts;
 export interface Retainer {host:string;joined:number;post:RetinuePost|null;site:string|null;arrears:number}
 export interface RetinueState {version:1;since:number;lastMonth:number;members:Record<string,Retainer>;cooldowns:Record<string,number>;recommendations:Record<string,{until:number;bonus:number}>;history:{day:number;host:string;person:string;text:string}[]}
 export type RetinueCommand={type:'retinue';action:'recruit'|'dismiss'|'unassign';person:string}|{type:'retinue';action:'assign';person:string;post:RetinuePost;site?:string}|{type:'retinue';action:'work';post:RetinuePost;task:'resupply'|'audit'|'drill'|'recommend'};
-export function ensureRetinue(w:World){if(w.mode==='sandbox')w.retinue??={version:1,since:w.day,lastMonth:Math.floor(w.day/30)*30,members:{},cooldowns:{},recommendations:{},history:[]};if(w.retinue)for(const [id,m] of Object.entries(w.retinue.members))if(isSovereign(w,m.host)||w.relationships?.oaths[id])release(w,id,'因中央任职或已有个人誓约而解除幕府编制');return w.retinue;}
+export function ensureRetinue(w:World){if(w.mode==='sandbox')w.retinue??={version:1,since:w.day,lastMonth:monthStart(w.day,w.scriptId),members:{},cooldowns:{},recommendations:{},history:[]};if(w.retinue)for(const [id,m] of Object.entries(w.retinue.members))if(isSovereign(w,m.host)||w.relationships?.oaths[id])release(w,id,'因中央任职或已有个人誓约而解除幕府编制');return w.retinue;}
 export const retinueMembers=(w:World,host=w.characterId!)=>Object.entries(w.retinue?.members??{}).filter(([,m])=>m.host===host).map(([id,m])=>({id,...m}));
 export function isOfficial(w:World,id:string){return officeHierarchy(w,id).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
 function hasPublicDuties(w:World,id:string){return officeHierarchy(w,id).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
@@ -118,11 +119,11 @@ export function advanceRetinue(w:World){const s=w.retinue;if(!s)return;
   const r=relationshipPersonById[m.host].realm;if(atWar(w,r,relationshipPersonById[id].realm)){release(w,id,'因两国交战离幕');continue;}
   if(m.post&&retinuePosts[m.post].official&&!publicHolders.has(m.host)){m.post=null;m.site=null;log(w,m.host,id,'主公卸任，'+politicalName(id)+'解去幕职。');}
  }
- const month=Math.floor(w.day/30)*30;if(month<=s.lastMonth)return;s.lastMonth=month;
+ const month=monthStart(w.day,w.scriptId);if(!isMonthStart(w.day,w.scriptId)||month<=s.lastMonth)return;s.lastMonth=month;
  for(const [id,m] of Object.entries(s.members)){const wage=m.post?4:2,due=wage*(1+m.arrears);if(money(w,m.host)>=due){pay(w,m.host,due);creditPersonalCoins(w,id,due);m.arrears=0;}else{m.arrears++;log(w,m.host,id,politicalName(id)+'俸钱未付，职务暂停。');if(m.arrears>=2)release(w,id,'因连续欠俸离幕');}}
  for(const [id,r] of Object.entries(s.recommendations))if(r.until<=w.day)delete s.recommendations[id];
  // NPC hosts compete for the same known candidates and pay their own personal reserves.
- if(w.day%90===0)for(const host of relationshipPeople.filter(p=>p.status==='roster'&&p.id!==w.characterId&&isAlive(w,p.id)&&isOfficial(w,p.id))){
+ if(monthIndex(w.day,w.scriptId)%3===0)for(const host of relationshipPeople.filter(p=>p.status==='roster'&&p.id!==w.characterId&&isAlive(w,p.id)&&isOfficial(w,p.id))){
   if(retinueMembers(w,host.id).length||money(w,host.id)<100)continue;
   const candidate=relationshipPeople.find(p=>!retinueQuote(w,{type:'retinue',action:'recruit',person:p.id},host.id).reason);if(!candidate)continue;
   actRetinue(w,{type:'retinue',action:'recruit',person:candidate.id},host.id);

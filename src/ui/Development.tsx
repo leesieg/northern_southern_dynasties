@@ -1,3 +1,4 @@
+import {nextMonthStart} from '../core/calendar';
 import {TerritoryTabs} from './TerritoryNavigation';
 import {EstateWorkshop} from './EstateWorkshop';
 import {localBalance} from '../core/treasury';
@@ -80,6 +81,6 @@ export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRe
         {orderReason&&<p className="service-warning" role="status">{orderReason}</p>}
       </>}
     </ActionDialog>}
-    <p className="construction-note">下一次收支结算：{30-world.day%30} 日后。时间暂停时，工期与收益暂停结算。</p>
+    <p className="construction-note">下一次收支结算：{nextMonthStart(world.day,world.scriptId)-world.day} 日后。时间暂停时，工期与收益暂停结算。</p>
   </div>;
 }

@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import {ageAt} from './lifeState';
 import { relationshipPeople,relationshipPersonById,historicalMarriages,relationshipActionNames } from '../data/relationships';
 import { bondKey,closeKin,powerBasis } from './relationships';
@@ -10,7 +11,7 @@ const person=(v:unknown):v is string=>typeof v==='string'&&Object.hasOwn(relatio
 const keyPair=(key:string)=>{const ids=key.split('|');return ids.length===2&&person(ids[0])&&person(ids[1])&&ids[0]!==ids[1];};
 export function validRelationships(w:World):boolean{
  const s:unknown=w.relationships;if(s===undefined)return true;
- if(!obj(s)||s.version!==1||!w.characterId||!w.social||!int(s.since,0,w.day)||!int(s.lastMonthly,Math.floor(s.since/30)*30,w.day)||s.lastMonthly%30||!int(s.seed,0,0xffffffff)||!obj(s.bonds)||!obj(s.opinions)||!obj(s.hooks)||!obj(s.reserves)||!obj(s.maritalBasis)||!obj(s.oaths)||!obj(s.regencies)||!obj(s.cooldowns)||!Array.isArray(s.marriages)||s.marriages.length>300)return false;
+ if(!obj(s)||s.version!==1||!w.characterId||!w.social||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthStart(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.bonds)||!obj(s.opinions)||!obj(s.hooks)||!obj(s.reserves)||!obj(s.maritalBasis)||!obj(s.oaths)||!obj(s.regencies)||!obj(s.cooldowns)||!Array.isArray(s.marriages)||s.marriages.length>300)return false;
  const n=relationshipPeople.length;if(Object.keys(s.reserves).length!==n||Object.keys(s.maritalBasis).length!==n||!relationshipPeople.every(p=>Object.hasOwn(s.reserves as object,p.id)&&int((s.reserves as Record<string,unknown>)[p.id],0,1_000_000)&&Object.hasOwn(s.maritalBasis as object,p.id)&&['unknown','recorded','simulation','widowed','free'].includes(String((s.maritalBasis as Record<string,unknown>)[p.id]))))return false;
  for(const [key,b] of Object.entries(s.bonds))if(!obj(b)||!person(b.a)||!person(b.b)||b.a===b.b||key!==bondKey(b.a,b.b)||!['friend','confidant','rival','nemesis'].includes(String(b.kind))||!int(b.since,s.since,w.day))return false;
  for(const field of ['opinions','hooks'] as const)for(const [key,v] of Object.entries(s[field] as Record<string,unknown>))if(!keyPair(key)||Object.hasOwn(w.social[field],key)||!int(v,field==='opinions'?-100:0,field==='opinions'?100:3))return false;

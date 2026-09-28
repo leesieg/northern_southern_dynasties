@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {isAlive} from './lifeState';
 import {allegianceRealm} from './officeEligibility';
@@ -7,7 +8,7 @@ import {localHolder,localActive,localLevel,localSites,localSeatSite} from './loc
 import {civilCanAdmin} from './civilWars';
 import {capital} from './realm';
 import type {World} from './types';
-export function ensurePersonalInfluence(w:World){if(!w.realm||!w.characterId)return;w.realm.personalInfluence??=Object.fromEntries(relationshipPeople.map(p=>[p.id,p.id===w.characterId?w.realm!.influence:0]));for(const p of relationshipPeople)w.realm.personalInfluence[p.id]??=0;w.realm.lastInfluenceIncome??=Math.floor(w.day/30)*30;}
+export function ensurePersonalInfluence(w:World){if(!w.realm||!w.characterId)return;w.realm.personalInfluence??=Object.fromEntries(relationshipPeople.map(p=>[p.id,p.id===w.characterId?w.realm!.influence:0]));for(const p of relationshipPeople)w.realm.personalInfluence[p.id]??=0;w.realm.lastInfluenceIncome??=monthStart(w.day,w.scriptId);}
 export function personInfluence(w:World,id:string){return id===w.characterId?w.realm?.influence??0:w.realm?.personalInfluence?.[id]??0;}
 export function awardInfluence(w:World,id:string,amount:number){if(!w.realm||!relationshipPersonById[id])return;ensurePersonalInfluence(w);const value=Math.max(0,Math.min(999,personInfluence(w,id)+amount));w.realm.personalInfluence![id]=value;if(id===w.characterId)w.realm.influence=value;}
 export function snapshotInfluence(w:World){ensurePersonalInfluence(w);if(w.realm&&w.characterId)w.realm.personalInfluence![w.characterId]=w.realm.influence;return w.characterId;}
@@ -43,5 +44,5 @@ export function influenceIncome(w:World,id:string){
  if(loyal)parts.push({label:'在世忠诚效忠者（最多 4）',value:Math.min(4,loyal)});
  return {total:parts.reduce((sum,p)=>sum+p.value,0),parts};
 }
-export function influenceIncomeHint(w:World,id:string){const q=influenceIncome(w,id);return `个人影响力 ${personInfluence(w,id)}/999；每 30 日预计 +${q.total}（${q.parts.map(p=>p.label+' +'+p.value).join('；')||'当前不再积累'}）。职位只计最高一档；办结差事另按实际贡献奖励，家业交接不继承前任余额。`;}
-export function advancePersonalInfluence(w:World){ensurePersonalInfluence(w);if(!w.realm||w.campaign?.status!=='active'||w.day%30||(w.realm.lastInfluenceIncome??-1)>=w.day)return;w.realm.lastInfluenceIncome=w.day;for(const p of relationshipPeople)if(isAlive(w,p.id))awardInfluence(w,p.id,influenceIncome(w,p.id).total);}
+export function influenceIncomeHint(w:World,id:string){const q=influenceIncome(w,id);return `个人影响力 ${personInfluence(w,id)}/999；每月 1 日预计 +${q.total}（${q.parts.map(p=>p.label+' +'+p.value).join('；')||'当前不再积累'}）。职位只计最高一档；办结差事另按实际贡献奖励，家业交接不继承前任余额。`;}
+export function advancePersonalInfluence(w:World){ensurePersonalInfluence(w);if(!w.realm||w.campaign?.status!=='active'||!isMonthStart(w.day,w.scriptId)||(w.realm.lastInfluenceIncome??-1)>=w.day)return;w.realm.lastInfluenceIncome=w.day;for(const p of relationshipPeople)if(isAlive(w,p.id))awardInfluence(w,p.id,influenceIncome(w,p.id).total);}

@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import {allegianceRealm} from './officeEligibility';
 import {relationshipPersonById} from '../data/relationships';
 import {publicFamily} from './publicSuccession';
@@ -18,7 +19,7 @@ const unique=(v:unknown):v is string[]=>Array.isArray(v)&&v.every(x=>typeof x===
 export function validGovernments(w:World):boolean {
  const person=(id:unknown,r:string)=>text(id)&&(relationshipPersonById[id]?.realm===r||allegianceRealm(w,id)===r);
  const state:unknown=w.realm?.governments;if(state===undefined)return true;
- if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||state.lastMonthly%30!==0||state.lastMonthly<Math.floor(state.since/30)*30||!obj(state.realms)||Object.keys(state.realms).length!==3)return false;
+ if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthStart(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==3)return false;
  if(!Array.isArray(state.regimes)||state.regimes.length<3||state.regimes.length>36||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
  if(!state.regimes.every(v=>obj(v)&&ids.includes(v.realm as never)))return false;
  for(const r of ids){const g=state.realms[r];if(!obj(g)||!governmentTypes.includes(g.type as never)||!text(g.dynasty)||!text(g.regimeId)||!person(g.ruler,r)||!unique(g.executives)||g.executives.length>2||!g.executives.every(id=>person(id,r))||!int(g.legitimacy,100)||!int(g.support,100)||!int(g.herd,1000)||!site(g.camp)||!int(g.lastCamp,w.day+90)||!obj(g.merit)||!obj(g.contracts)||!obj(g.cooldowns)||!unique(g.laws)||!unique(g.stages))return false;

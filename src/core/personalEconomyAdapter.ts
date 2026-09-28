@@ -121,7 +121,7 @@ export function economyHost(w: World, snapshot=false): EconomyHost {
     },
     inspectAt:(id,a)=>!!a.site&&!personResidence(w,id).traveling&&personResidence(w,id).site===a.site,
     dispatchInspector:(id,a)=>{if(a.site&&id!==w.characterId)dispatchNPC(w,id,a.site,routes.get(id+'|'+personResidence(w,id).site+'|'+a.site));},
-    day: w.day, actors, actor, personal: privateWallet, account, managedAccounts, auditableAccounts,
+    day: w.day, scriptId:w.scriptId, actors, actor, personal: privateWallet, account, managedAccounts, auditableAccounts,
     inspectors: id => {
       const r = allegianceRealm(w, id);
       return relationshipPeople.filter(p => allegianceRealm(w, p.id) === r && isAlive(w, p.id)
@@ -163,7 +163,7 @@ export function actPersonalEconomy(w: World, c: PersonalEconomyCommand): void {
   const reason = economyCommandReason(w, c); if (reason) throw new Error(reason);
   if (c.action === 'activate') {
     ensureEconomy(w);
-    w.chronicle.push({day:w.day, person:'player', text:'持家账簿已建立，每三十日结算生活开支。'});
+    w.chronicle.push({day:w.day, person:'player', text:'持家账簿已建立，每月 1 日结算生活开支。'});
     w.chronicle = w.chronicle.slice(-100); return;
   }
   ensureEconomy(w);

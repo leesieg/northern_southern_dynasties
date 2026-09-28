@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import {birthRecords} from '../data/lifespans';
 import {characterById} from '../data/characters';
 import {relationshipPersonById} from '../data/relationships';
@@ -80,7 +81,7 @@ export function die(w:World,id:string,cause:'illness'|'age'){
  if(w.realm){syncRelationships(w);for(const r of realms)syncCourt(w,r);if(wasPlayer)handoverOffice(w);syncGovernance(w);syncDiplomacy(w);}
 }
 export function advanceLife(w:World){
- const s=ensureLife(w);if(w.day%30||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
+ const s=ensureLife(w);if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
  for(const id of Object.keys(birthRecords)){
   const p=s.people[id];if(p.death)continue;
   const age=ageAt(w,id)!,self=id===(w.characterId??'fictional'),stress=self?w.social?.stress??0:0,care=p.careUntil>=w.day&&p.careUntil>0;

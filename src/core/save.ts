@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import {validResignations} from './resignation';
 import {validCoordinated} from './coordinatedService';
 import {validCommerce} from './commerce';
@@ -62,16 +63,18 @@ export function validateWorld(value: unknown): asserts value is World {
   if (!integer(value.day,0,365000) || !Array.isArray(value.people) || value.people.length !== 4 || !Array.isArray(value.chronicle) || value.chronicle.length > 100) return fail();
   if(value.scriptId!==undefined&&typeof value.scriptId!=='string')return fail();
   const script=getScript(value.scriptId as string|undefined);
+  if(value.calendarSince!==undefined&&!integer(value.calendarSince,0,value.day))return fail();
   if(value.characterId!==undefined&&!script.characterIds.includes(String(value.characterId)))return fail();
   if(value.resignations!==undefined&&!validResignations(value.resignations))return fail();
   if(value.identities!==undefined&&!validIdentities(value.identities))return fail();
-  if(value.families!==undefined&&!validFamilies(value.families,Number(value.day)))return fail();
+  if(value.families!==undefined&&!validFamilies(value.families,Number(value.day),value.scriptId as string|undefined))return fail();
   if(value.duties!==undefined&&!validDuties(value.duties,Number(value.day),value.mode))return fail();
   if(value.service!==undefined&&!validService(value.service,Number(value.day),value.mode,value as unknown as World))return fail();
   if(value.mobility!==undefined&&(value.mode!=='sandbox'||!validMobility(value.mobility,Number(value.day))))return fail();
-  if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day))))return fail();
+  if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day),value.scriptId as string|undefined)))return fail();
   const h=value.holdings;
   if(!obj(h)||!Array.isArray(h.governedCities)||!h.governedCities.every(site)||new Set(h.governedCities).size!==h.governedCities.length||!obj(h.cities)||!obj(h.estate))return fail();
+  if(h.lastMonthly!==undefined&&(!integer(h.lastMonthly,0,value.day)||!isMonthStart(Number(h.lastMonthly),value.scriptId as string|undefined)))return fail();
   if(typeof h.estate.family!=='string'||!Object.hasOwn(familyById,h.estate.family)||!site(h.estate.location))return fail();
   const checkHolding=(holding:unknown,scope:'city'|'estate')=>{
     if(!obj(holding)||!obj(holding.levels))return false;
@@ -112,6 +115,7 @@ export function validateWorld(value: unknown): asserts value is World {
     }
   }
   if(!validSocial(value as unknown as World)||!validLifestyles(value as unknown as World))return fail();
+  if(value.calendarSince!==undefined&&!integer(value.calendarSince,0,value.day))return fail();
   if(value.characterId!==undefined){
     if(typeof value.characterId!=='string'||!Object.hasOwn(characterById,value.characterId))return fail();
     const c=characterById[value.characterId],p=value.people[0],founder=characterById[(value as unknown as World).social?.founder??value.characterId];
@@ -166,7 +170,7 @@ export function parseWorld(source: string): World {
   world.identities??=initialIdentities();
   const identityDefaults=initialIdentities();
   for(const [id,identity] of Object.entries(world.identities.people))if(!identity.genome.facial)identity.genome.facial=identityDefaults.people[id].genome.facial;
-  world.families??=newFamilyState(world.day);
+  world.families??=newFamilyState(world.day,world.scriptId);
   if(world.realm)for(const c of Object.values(world.realm.cities)){const old=c as typeof c & {households?:number};if(c.population===undefined&&old.households!==undefined){c.population=old.households*5;delete old.households;}}
   ensurePopulation(world);
   ensureLife(world);ensureDuties(world);

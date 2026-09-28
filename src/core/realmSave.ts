@@ -1,3 +1,4 @@
+import {isMonthStart,nextMonthStart} from './calendar';
 import {validCivil} from './civilWars';
 import {validAnnexations} from './polityLifecycle';
 import {activeWars,warRealmSide} from './wars';
@@ -30,7 +31,8 @@ export function validRealm(w:World):boolean {
  if(Object.keys(s.treasuries).length!==3)return false;
  for(const id of realms){const t=s.treasuries[id];if(!obj(t)||!int(t.coins)||!int(t.grain)||!int(t.lastIncome)||!int(t.lastExpense)||!int(t.lastFood,-1_000_000,1_000_000))return false;}
  if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!historicalCharacters.every(p=>Object.hasOwn(s.personalInfluence!,p.id))||Object.entries(s.personalInfluence).some(([id,n])=>!relationshipPersonById[id]||!int(n,0,999))))return false;
- if(s.lastInfluenceIncome!==undefined&&(!int(s.lastInfluenceIncome,0,w.day)||s.lastInfluenceIncome%30!==0))return false;
+ if(s.lastInfluenceIncome!==undefined&&(!int(s.lastInfluenceIncome,0,w.day)||!isMonthStart(s.lastInfluenceIncome,w.scriptId)))return false;
+ if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthStart(s.lastMonthly,w.scriptId)))return false;
  if(!int(s.influence,0,999)||typeof s.mandate!=='boolean'||!int(s.lastEvent,0,w.day)||!obj(s.truces))return false;
  for(const [key,day] of Object.entries(s.truces)){if(!['east|liang','east|west','liang|west'].includes(key)||!int(day,0,w.day+360))return false;}
  if(!Array.isArray(s.offices)||s.offices.length>Object.keys(territoryNodes).length||new Set(s.offices.map(o=>(o?.realm??s.cities[o?.site]?.owner)+'|'+(o?.territory??'county:'+o?.site))).size!==s.offices.length)return false;
@@ -63,10 +65,10 @@ export function validRealm(w:World):boolean {
  if(s.wars!==undefined&&JSON.stringify(s.war)!==JSON.stringify(s.wars[0]??null))return false;
  if(s.sieges!==undefined&&(!Array.isArray(s.sieges)||s.sieges.length>100||new Set(s.sieges.map(v=>`${v.war}|${v.side}|${v.site}`)).size!==s.sieges.length||s.sieges.some(v=>!obj(v)||!int(v.war,1,Number(s.nextWarId)-1)||!wars.some(war=>war.id===v.war)||!['attack','defend'].includes(String(v.side))||!site(v.site)||!int(v.progress,1,100)||!int(v.last,0,w.day)||v.lastAssault!==undefined&&!int(v.lastAssault,0,w.day))))return false;
  if(Object.values(s.cities).some(c=>c.owner!==c.controller&&!wars.some(v=>c.owner!=='frontier'&&c.controller!=='frontier'&&warRealmSide(v,c.owner)&&warRealmSide(v,c.controller)&&warRealmSide(v,c.owner)!==warRealmSide(v,c.controller))))return false;
- if(s.reparations!==undefined&&(!Array.isArray(s.reparations)||s.reparations.length>1000||s.reparations.some(d=>!obj(d)||!int(d.war,1,1000000000)||!realm(d.from)||!realm(d.to)||d.from===d.to||!int(d.remaining,1,10000)||!int(d.instalment,1,10000)||!int(d.next,0,w.day+30)||(d.obligation!==undefined&&(!int(d.obligation,1,1000000000)||!w.obligations?.items.some(q=>q.id===d.obligation&&q.remaining===d.remaining&&q.from==='central:'+d.from&&q.to==='central:'+d.to))))))return false;
+ if(s.reparations!==undefined&&(!Array.isArray(s.reparations)||s.reparations.length>1000||s.reparations.some(d=>!obj(d)||!int(d.war,1,1000000000)||!realm(d.from)||!realm(d.to)||d.from===d.to||!int(d.remaining,1,10000)||!int(d.instalment,1,10000)||!int(d.next,0,nextMonthStart(w.day,w.scriptId))||!isMonthStart(d.next,w.scriptId)||(d.obligation!==undefined&&(!int(d.obligation,1,1000000000)||!w.obligations?.items.some(q=>q.id===d.obligation&&q.remaining===d.remaining&&q.from==='central:'+d.from&&q.to==='central:'+d.to))))))return false;
  if(s.event!==null){const e=s.event;if(!obj(e)||typeof e.kind!=='string'||!Object.hasOwn(eventDefinitions,e.kind)||!site(e.site)||!int(e.day,0,w.day)||e.day!==s.lastEvent)return false;}
  if(!Array.isArray(s.ledger)||s.ledger.length>36)return false;
- for(const l of s.ledger)if(!obj(l)||!realm(l.realm)||!int(l.day,0,w.day)||l.day%30!==0||!int(l.income)||!int(l.expense)||!int(l.food,-1_000_000,1_000_000))return false;
+ for(const l of s.ledger)if(!obj(l)||!realm(l.realm)||!int(l.day,0,w.day)||!(isMonthStart(l.day,w.scriptId)||w.calendarSince!==undefined&&l.day<=w.calendarSince&&l.day%30===0)||!int(l.income)||!int(l.expense)||!int(l.food,-1_000_000,1_000_000))return false;
  const governed=Object.keys(s.cities).filter(id=>s.cities[id].governor===w.characterId&&s.cities[id].controller===playerRealm(w));
  return governed.length===w.holdings.governedCities.length&&governed.every(id=>w.holdings.governedCities.includes(id));
 }

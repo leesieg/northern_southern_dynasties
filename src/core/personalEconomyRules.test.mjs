@@ -1,3 +1,4 @@
+import {monthStart} from './calendar';
 import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import * as R from './personalEconomyRules';
@@ -48,24 +49,24 @@ function openProvenCase(f, amount = 40) {
 test('new/migrated state creates no money, charges no prior periods', () => {
   const f = fixture(); const before = structuredClone(f.wallets);
   const s = R.newPersonalEconomy(720); R.budgetFor(s, 'p', 720);
-  assert.deepEqual(f.wallets, before); assert.equal(s.budgets.p.lastMonth, 720);
+  assert.deepEqual(f.wallets, before); assert.equal(s.budgets.p.lastMonth, monthStart(720));
   assert.equal(R.validPersonalEconomy(s, 720), true);
 });
 test('living rule change does not debit a second time; monthly settlement idempotent', () => {
   const f = fixture(); f.act({action: 'living', standard: 'comfortable'});
-  assert.equal(f.wallets.p, 120); f.advance(30); assert.equal(f.wallets.p, 112);
+  assert.equal(f.wallets.p, 120); f.advance(31); assert.equal(f.wallets.p, 112);
   const snap = JSON.stringify(f.s); R.advanceEconomy(f.s, f.h);
   assert.equal(f.wallets.p, 112); assert.equal(JSON.stringify(f.s), snap); assert.ok(f.valid());
 });
 test('living costs stop at zero and optional luxury downgrades without debt minting', () => {
-  const f = fixture(); f.wallets.p = 5; f.act({action: 'living', standard: 'lavish'}); f.advance(30);
+  const f = fixture(); f.wallets.p = 5; f.act({action: 'living', standard: 'lavish'}); f.advance(31);
   assert.equal(f.wallets.p, 0); assert.equal(f.s.budgets.p.standard, 'modest');
   assert.equal(f.s.budgets.p.lastPaid, 5); assert.equal(f.s.budgets.p.lastBill, 24);
-  f.advance(30); assert.equal(f.wallets.p, 0); assert.ok(f.valid());
+  f.advance(31); assert.equal(f.wallets.p, 0); assert.ok(f.valid());
 });
 test('dead/minor actors are not charged household bills', () => {
   const f = fixture(); f.people.p.alive = false; f.people.inspector.adult = false;
-  f.advance(30); assert.equal(f.wallets.p, 120); assert.equal(f.wallets.inspector, 100);
+  f.advance(31); assert.equal(f.wallets.p, 120); assert.equal(f.wallets.inspector, 100);
 });
 test('new economy cannot be advanced by skipping unprocessed days', () => {
   const f = fixture(); f.h.day = 30; assert.throws(() => R.advanceEconomy(f.s, f.h), /按日/);
@@ -144,7 +145,7 @@ test('players are never automatically embezzled for by NPC AI', () => {
 test('a greedy NPC with opportunity has a real private accumulation goal', () => {
   const f = fixture(); f.people.p.player = false; f.people.p.traits = ['greedy'];
   const choice = R.npcEconomyChoice(f.s, f.h, f.people.p); assert.equal(choice.action, 'embezzle');
-  f.advance(30); assert.equal(f.s.misconduct[0].person, 'p'); assert.ok(f.wallets.p > 120);
+  f.advance(31); assert.equal(f.s.misconduct[0].person, 'p'); assert.ok(f.wallets.p > 120);
 });
 test('honest trait prevents automated theft even under resource pressure', () => {
   const f = fixture(); f.people.p.player = false; f.people.p.traits = ['greedy', 'honest']; f.wallets.p = 0;
@@ -227,7 +228,7 @@ test('recovery moves available assets only and cannot settle the same amount twi
   assert.equal(f.s.misconduct[0].recovered, 15); assert.equal(f.wallets.p, 0); assert.equal(f.balances.county, 475);
   assert.equal(f.sanctions.length, 1);
   assert.throws(() => f.act({action: 'resolve', caseId: q.id, decision: 'recover'}, 'chief'), /已结案/);
-  f.wallets.p = 30; f.advance(16); assert.equal(f.s.misconduct[0].recovered, 40); assert.equal(f.balances.county, 500);
+  f.wallets.p = 30; f.advance(17); assert.equal(f.s.misconduct[0].recovered, 40); assert.equal(f.balances.county, 500);
   const total = f.balances.county; f.advance(30); assert.equal(f.balances.county, total); assert.ok(f.valid());
 });
 test('restitution pauses when destination is lost, without silently rewarding a conqueror', () => {

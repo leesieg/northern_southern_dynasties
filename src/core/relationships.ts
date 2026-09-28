@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import {allegianceRealm} from './officeEligibility';
 import {marriageClanBonus} from './clans';
 import {marriagePrestige} from './family';
@@ -32,7 +33,7 @@ export const bondKey=(a:string,b:string)=>[a,b].sort().join('|');
 export const relationName=(id:string)=>relationshipPersonById[id]?.name??'未录人物';
 export const powerBasis=(w:World,r:RealmId)=>{const g=governmentOf(w,r);return g?g.regimeId+'|'+g.ruler+'|'+g.executives.join('|'):'';};
 export function newRelationships(w:World):RelationshipState{
- const state:RelationshipState={version:1,since:w.day,lastMonthly:Math.floor(w.day/30)*30,seed:546,bonds:{},marriages:historicalMarriages.map((m,i)=>({id:'marriage:historical:'+i,a:m.a,b:m.b,from:w.day,until:null,origin:'historical'})),maritalBasis:Object.fromEntries(relationshipPeople.map(p=>[p.id,p.status==='fictional'?'free':p.id==='xiao-yan'?'widowed':historicalMarriages.some(m=>m.a===p.id||m.b===p.id)?'recorded':'unknown'])),opinions:{},hooks:{},reserves:Object.fromEntries(relationshipPeople.map(p=>[p.id,120])),oaths:{},regencies:{},cooldowns:{},scheme:null,history:[]};
+ const state:RelationshipState={version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:546,bonds:{},marriages:historicalMarriages.map((m,i)=>({id:'marriage:historical:'+i,a:m.a,b:m.b,from:w.day,until:null,origin:'historical'})),maritalBasis:Object.fromEntries(relationshipPeople.map(p=>[p.id,p.status==='fictional'?'free':p.id==='xiao-yan'?'widowed':historicalMarriages.some(m=>m.a===p.id||m.b===p.id)?'recorded':'unknown'])),opinions:{},hooks:{},reserves:Object.fromEntries(relationshipPeople.map(p=>[p.id,120])),oaths:{},regencies:{},cooldowns:{},scheme:null,history:[]};
  for(const r of realms){const g=governmentOf(w,r);if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)state.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}
  return state;
 }
@@ -160,7 +161,7 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
  if(task.kind==='befriend'){const kind=friendship(w,task.actor,task.target);if(kind==='rival'||kind==='nemesis'){log(w,task.actor,task.target,'双方已经决裂，交友行动失效。');}else if(success){setFriendship(w,task.actor,task.target,'friend');changeRelationOpinion(w,task.actor,task.target,20);awardPrestige(w,task.actor,'friendship');log(w,task.actor,task.target,'与'+relationName(task.target)+'成为朋友。');}else {changeRelationOpinion(w,task.actor,task.target,-5);log(w,task.actor,task.target,'培养友谊未能奏效。');}s.cooldowns[pair(task.actor,task.target)+'|befriend']=w.day+30;
  }else {const r=relationshipPersonById[task.actor].realm,g=governmentOf(w,r)!;if(success&&authorityScore(w,task.actor)>=20){s.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:task.target,controller:task.actor,since:w.day,grip:65,origin:'scheme'};resetAuthority(w,r);setFriendship(w,task.actor,task.target,'rival');log(w,task.actor,task.target,'挟制成功：名义君主保留，实际执政权转交'+relationName(task.actor)+'。');}else {changeRelationOpinion(w,task.actor,task.target,-30);setFriendship(w,task.actor,task.target,'rival');w.social!.stress=cap(w.social!.stress+20);log(w,task.actor,task.target,'挟制失败或权力基础丢失，君主成为仇敌，压力 +20。');}}
  }
- if(w.day%30||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
+ if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
  for(const id of Object.keys(s.reserves))if(id!==w.characterId&&isAlive(w,id))s.reserves[id]=cap(s.reserves[id]+5,1_000_000);
  const personal=Object.values(s.bonds).filter(b=>isAlive(w,b.a)&&isAlive(w,b.b)&&(b.a===w.characterId||b.b===w.characterId)),friends=personal.filter(b=>b.kind==='friend'||b.kind==='confidant').length,rivals=personal.filter(b=>b.kind==='rival'||b.kind==='nemesis').length;
  w.social!.stress=cap(w.social!.stress-Math.min(6,friends*2)+(spouseOf(w,w.characterId!)?-2:0)+Math.min(9,rivals*3));

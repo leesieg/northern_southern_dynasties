@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import {civicBuildings,isSovereign,centralMinistry} from './officialDuties';
 import {postStatus} from './retinue';
 import { awardPrestige,memberId } from './family';
@@ -12,19 +13,19 @@ export type Building=CityBuilding|EstateBuilding;
 export interface Project {engineerBonus?:number;supervisor?:string;building:Building;level:number;started:number;due:number;cost:number;modifiers?:{costRate:number;timeRate:number}}
 export interface CityHolding {levels:Record<CityBuilding,number>;project:Project|null}
 export interface Holdings {
-  governedCities:string[];cities:Record<string,CityHolding>;
+  lastMonthly?:number;governedCities:string[];cities:Record<string,CityHolding>;
   estate:{family:string;location:string;levels:Record<EstateBuilding,number>;project:Project|null};
 }
 export const cityBuildings:Record<CityBuilding,{name:string;cost:number;days:number;effect:string}>={
-  market:{name:'市肆',cost:80,days:15,effect:'每级每 30 日营建收益 +8 钱'},
+  market:{name:'市肆',cost:80,days:15,effect:'每级每月 1 日营建收益 +8 钱'},
   granary:{name:'城仓',cost:60,days:12,effect:'公粮仓容每级 +200，降低保管损耗；教学局每期行粮 +10'},
   hostel:{name:'驿舍',cost:70,days:14,effect:'每级使本城整备行粮少花 2 钱'},
 };
 export const estateBuildings:Record<EstateBuilding,{name:string;cost:number;days:number;effect:string}>={
   hall:{name:'主宅',cost:80,days:15,effect:'主宅等级决定可用附属建筑种类，最多 3 种'},
-  fields:{name:'田庄',cost:40,days:10,effect:'每级每 30 日行粮 +6 日份'},
-  workshop:{name:'作坊',cost:50,days:12,effect:'每级每 30 日收入 +6 钱'},
-  storehouse:{name:'庄仓',cost:35,days:8,effect:'每级每 30 日庄园粮食结余 +3 日份'},
+  fields:{name:'田庄',cost:40,days:10,effect:'每级每月 1 日行粮 +6 日份'},
+  workshop:{name:'作坊',cost:50,days:12,effect:'每级每月 1 日收入 +6 钱'},
+  storehouse:{name:'庄仓',cost:35,days:8,effect:'每级每月 1 日庄园粮食结余 +3 日份'},
 };
 export const emptyCity=():CityHolding=>({levels:{market:0,granary:0,hostel:0},project:null});
 export const newHoldings=():Holdings=>({governedCities:[],cities:{},estate:{family:'shen',location:'jiankang',levels:{hall:1,fields:0,workshop:0,storehouse:0},project:null}});
@@ -80,7 +81,8 @@ export function advanceConstruction(world:World){
       log(world,`${name}的${definition.name}竣工，现为 ${p.level} 级。`);
     }
   }
-  if(world.day%30===0){
+  if(isMonthStart(world.day,world.scriptId)&&(h.lastMonthly??0)<world.day){
+    h.lastMonthly=world.day;
     let {coins,food}=estateYield(world);
     if(!world.realm)for(const id of h.governedCities){const c=h.cities[id];if(c){coins+=c.levels.market*8;food+=c.levels.granary*10;}}
     world.people[0].coins=Math.min(1_000_000,world.people[0].coins+coins);world.people[0].food=Math.min(1_000_000,world.people[0].food+food);

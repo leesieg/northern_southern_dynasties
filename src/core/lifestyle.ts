@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart} from './calendar';
 import { characterById } from '../data/characters';
 import { lifestyleBranches,lifestyleFocuses,lifestylePerks,emptyLifestyleBonus,branchPerks,LIFESTYLE_XP_PER_POINT,LIFESTYLE_SWITCH_DAYS,type LifestyleBranch,type LifestyleBonus } from '../data/lifestyles';
 import type { World } from './types';
@@ -61,7 +62,7 @@ export function actLifestyle(w:World,c:LifestyleCommand){
 export function advanceLifestyle(w:World){
  const p=lifestyleProgress(w);if(!p?.focus)return;const branch=lifestyleFocuses[p.focus].branch;
  addXP(p,branch,lifestyleLearning(w).total);
- if(!p.study&&w.day-p.lastStudy>=30){p.study={branch,day:w.day};p.lastStudy=w.day;log(w,`${lifestyleBranches[branch].name}研习待选择，可在生活重心中处理。`);}
+ if(!p.study&&isMonthStart(w.day,w.scriptId)&&monthStart(p.lastStudy,w.scriptId)<w.day){p.study={branch,day:w.day};p.lastStudy=w.day;log(w,`${lifestyleBranches[branch].name}研习待选择，可在生活重心中处理。`);}
 }
 const object=(x:unknown):x is Record<string,unknown>=>!!x&&typeof x==='object'&&!Array.isArray(x);
 const integer=(x:unknown,min:number,max:number)=>Number.isSafeInteger(x)&&Number(x)>=min&&Number(x)<=max;

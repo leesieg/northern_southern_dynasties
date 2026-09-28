@@ -1,3 +1,4 @@
+import {isMonthStart,nextMonthStart} from './calendar';
 import {incurObligation,advanceObligations} from './obligations';
 import {civilPeaceReason} from './civilWars';
 import {annexationReason} from './polityLifecycle';
@@ -45,7 +46,7 @@ export function advanceReparations(w:World){
  for(const d of s.reparations??[]){if(d.obligation!==undefined)continue;
   const source='reparation:'+d.war+':'+d.from+':'+d.to;
   incurObligation(w,source,'central:'+d.from,'central:'+d.to,d.remaining,'议和分期赔款');
-  const claim=w.obligations!.items.find(q=>q.source===source)!;claim.next=d.next;claim.instalment=d.instalment;d.obligation=claim.id;
+  const claim=w.obligations!.items.find(q=>q.source===source)!;claim.next=isMonthStart(d.next,w.scriptId)?d.next:nextMonthStart(w.day,w.scriptId);claim.instalment=d.instalment;d.obligation=claim.id;
  }
  advanceObligations(w);
 }

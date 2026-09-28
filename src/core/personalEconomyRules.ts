@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart,monthIndex} from './calendar';
 /**
  * Personal spending and public-account misconduct rules.
  * The host exposes references to EXISTING wallets, never copied balances.
@@ -25,7 +26,7 @@ export interface PublicAccountRef {
   wallet: WalletRef;
 }
 export interface EconomyHost {
-  day: number;
+  day: number; scriptId?: string;
   actors(): readonly EconomyActor[];
   actor(id: string): EconomyActor | undefined;
   personal(id: string): WalletRef | undefined;
@@ -91,10 +92,10 @@ export function newPersonalEconomy(day: number): PersonalEconomyState {
   return {version: 1, since: day, lastDay: day, seed: 546_2026, nextId: 1,
     budgets: {}, misconduct: [], investigations: [], programmes: [], entries: []};
 }
-export function budgetFor(s: PersonalEconomyState, id: string, day: number): PersonalBudget {
+export function budgetFor(s: PersonalEconomyState, id: string, day: number, scriptId?:string): PersonalBudget {
   // Migration creates no money and never retrospectively charges living costs.
   if (!Object.hasOwn(s.budgets, id)) s.budgets[id] = {
-    standard: 'modest', lastMonth: Math.floor(day / 30) * 30, lastChoice: -1,
+    standard: 'modest', lastMonth: monthStart(day,scriptId), lastChoice: -1,
     missed: 0, lastBill: 0, lastPaid: 0, courses: 0,
     lastDonation: -90, lastBanquet: -30, lastTheft: -30,
   };
@@ -222,7 +223,7 @@ export function economyReason(s: PersonalEconomyState, h: EconomyHost, actor: st
 export function actEconomy(s: PersonalEconomyState, h: EconomyHost, actor: string, c: EconomyCommand): void {
   const reason = economyReason(s, h, actor, c);
   if (reason) throw new Error(reason);
-  const b = budgetFor(s, actor, h.day), wallet = h.personal(actor)!;
+  const b = budgetFor(s, actor, h.day,h.scriptId), wallet = h.personal(actor)!;
   switch (c.action) {
     case 'living':
       b.standard = c.standard; b.lastChoice = h.day;
@@ -321,7 +322,7 @@ function advanceProgrammes(s: PersonalEconomyState, h: EconomyHost): void {
     // Busy days extend the finish date. No full credit for travel or concurrent duties.
     if (!person.available || p.kind === 'banquet' && (!p.target || !h.canMeet(p.actor, p.target))) { p.due++; continue; }
     if (p.due > h.day) continue;
-    p.status = 'completed'; const b = budgetFor(s, p.actor, h.day);
+    p.status = 'completed'; const b = budgetFor(s, p.actor, h.day,h.scriptId);
     if (p.kind === 'study') {
       b.courses = Math.min(9, b.courses + 1);
       h.log(p.actor, '驻留研习完成；每三期获得管理 +1，最高 +3，不奖励功绩。');
@@ -337,7 +338,7 @@ function advanceProgrammes(s: PersonalEconomyState, h: EconomyHost): void {
 }
 export function npcEconomyChoice(s: PersonalEconomyState, h: EconomyHost, person: EconomyActor): EconomyCommand | null {
   if (person.player || !person.alive || !person.adult || !person.realm) return null;
-  const b = budgetFor(s, person.id, h.day), coins = h.personal(person.id)?.read() ?? 0;
+  const b = budgetFor(s, person.id, h.day,h.scriptId), coins = h.personal(person.id)?.read() ?? 0;
   const honest = person.traits.includes('honest'), greedy = person.traits.includes('greedy');
   const generous = person.traits.includes('generous'), ambitious = person.traits.includes('ambitious');
   // Choices use this NPC's own wallet and access, not other people's hidden misconduct.
@@ -357,13 +358,13 @@ export function advanceEconomy(s: PersonalEconomyState, h: EconomyHost): void {
   if (h.day <= s.lastDay) return; // Replay of a settled day is strictly idempotent.
   if (h.day !== s.lastDay + 1) throw new Error('个人经济须按日推进，不能跳过结算');
   s.lastDay = h.day;
-  if(h.day%30===0)archiveEconomy(s,h.day);
+  if(isMonthStart(h.day,h.scriptId))archiveEconomy(s,h.day);
   advanceProgrammes(s, h); advanceInvestigations(s, h);
-  if (h.day % 30 !== 0) return;
+  if (!isMonthStart(h.day,h.scriptId)) return;
   for (const q of s.investigations) if (q.phase === 'closed' && q.resolution === 'recover') recoverCase(s, h, q);
   for (const person of h.actors().slice().sort((a, b) => a.id.localeCompare(b.id))) {
     if (!person.alive || !person.adult) continue;
-    const b = budgetFor(s, person.id, h.day - 1), wallet = h.personal(person.id);
+    const b = budgetFor(s, person.id, h.day - 1,h.scriptId), wallet = h.personal(person.id);
     if (!wallet || b.lastMonth >= h.day) continue;
     b.lastMonth = h.day;
     const living = livingStandards[b.standard], paid = Math.min(wallet.read(), living.monthly);
@@ -379,11 +380,11 @@ export function advanceEconomy(s: PersonalEconomyState, h: EconomyHost): void {
     if (c && !economyReason(s, h, person.id, c)) actEconomy(s, h, person.id, c);
   }
   // Periodic non-player oversight rotates by public account ID, NOT hidden fraud facts.
-  if (h.day % 90 === 0) for (const person of h.actors().slice().sort((a, b) => a.id.localeCompare(b.id))) {
+  if (monthIndex(h.day,h.scriptId)%3===0) for (const person of h.actors().slice().sort((a, b) => a.id.localeCompare(b.id))) {
     if (person.player || !person.alive || !person.adult || (h.personal(person.id)?.read() ?? 0) < 100) continue;
     const accounts = h.auditableAccounts(person.id).slice().sort((a, b) => a.id.localeCompare(b.id));
     if (!accounts.length) continue;
-    const a = accounts[Math.floor(h.day / 90) % accounts.length];
+    const a = accounts[Math.floor(monthIndex(h.day,h.scriptId)/3) % accounts.length];
     const inspector = h.inspectors(person.id).find(id => id !== a.holder && h.actor(id)?.available && !h.actor(id)?.player);
     if (!inspector) continue;
     const c: EconomyCommand = {type: 'economy', action: 'audit', account: a.id, inspector};
@@ -417,14 +418,14 @@ const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'o
 const num = (v: unknown, lo: number, hi: number) => typeof v === 'number' && Number.isSafeInteger(v) && v >= lo && v <= hi;
 const str = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 180 && !['__proto__', 'prototype', 'constructor'].includes(v);
 /** Structural validation before any migration or execution of an imported state. */
-export function validPersonalEconomy(v: unknown, day: number, knownPerson: (id: string) => boolean = () => true): v is PersonalEconomyState {
+export function validPersonalEconomy(v: unknown, day: number, knownPerson: (id: string) => boolean = () => true,scriptId?:string): v is PersonalEconomyState {
   if (!obj(v) || v.version !== 1 || !num(v.since, 0, day) || !num(v.lastDay, Number(v.since), day)
       || v.lastDay !== day || !num(v.seed, 0, 0xffffffff) || !num(v.nextId, 1, Number.MAX_SAFE_INTEGER) || !obj(v.budgets)) return false;
   const person = (id: unknown): id is string => str(id) && knownPerson(id);
   if (Object.keys(v.budgets).length > 10000) return false;
   for (const [id, b] of Object.entries(v.budgets)) {
     if (!person(id) || !obj(b) || !Object.hasOwn(livingStandards, String(b.standard))
-      || !num(b.lastMonth, 0, day) || Number(b.lastMonth) % 30 !== 0 || !num(b.lastChoice, -1, day)
+      || !num(b.lastMonth, 0, day) || !isMonthStart(Number(b.lastMonth),scriptId) || !num(b.lastChoice, -1, day)
       || !num(b.missed, 0, 1000) || !num(b.courses, 0, 9) || !num(b.lastBill, 0, 24)
       || !num(b.lastPaid, 0, Number(b.lastBill)) || !num(b.lastDonation, -90, day)
       || !num(b.lastBanquet, -30, day) || !num(b.lastTheft, -30, day)) return false;

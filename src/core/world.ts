@@ -1,3 +1,4 @@
+import {calendarDate} from './calendar';
 import {actResignation,isAdventurer} from './resignation';
 import {actCoordinated,recordCoordinated} from './coordinatedService';
 import {actCommerce,advanceCommerce} from './commerce';
@@ -263,7 +264,7 @@ export function remainingDays(person: Person): number {
   return j ? j.durations.slice(j.leg).reduce((sum,n)=>sum+n,0)-j.elapsed : 0;
 }
 export function dateLabel(day: number,scriptId?:string): string {
-  const date = new Date(Date.UTC(getScript(scriptId).year, 0, 1 + day));
+  const date = calendarDate(day,scriptId);
   return `${date.getUTCFullYear()} 年 ${date.getUTCMonth()+1} 月 ${date.getUTCDate()} 日`;
 }
 

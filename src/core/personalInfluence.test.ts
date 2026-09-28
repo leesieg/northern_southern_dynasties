@@ -38,18 +38,18 @@ describe('影响力收支与常规履职',()=>{
   const player=start();stable(player);for(const p of followers.slice(2))player.relationships!.oaths[p.id]={lord:'xiao-gang',since:0,loyalty:80};expect(influenceIncome(player,'xiao-gang').total).toBe(8);
  });
  it('月结一次、上限 999，死亡及已结束的局停止收入，玩家镜像不重复计入',()=>{
-  const w=start('xiao-yan');stable(w);w.realm!.influence=990;w.day=30;advancePersonalInfluence(w);
+  const w=start('xiao-yan');stable(w);w.realm!.influence=990;w.day=31;advancePersonalInfluence(w);
   expect(personInfluence(w,'xiao-yan')).toBe(999);expect(w.realm!.personalInfluence!['xiao-yan']).toBe(999);const once=structuredClone(w);advancePersonalInfluence(w);expect(w).toEqual(once);
-  const id=reserve().id;die(w,id,'age');const dead=personInfluence(w,id);w.day=60;advancePersonalInfluence(w);expect(personInfluence(w,id)).toBe(dead);
+  const id=reserve().id;die(w,id,'age');const dead=personInfluence(w,id);w.day=59;advancePersonalInfluence(w);expect(personInfluence(w,id)).toBe(dead);
   w.campaign!.status='lost';w.day=90;const ended=structuredClone(w);advancePersonalInfluence(w);expect(w).toEqual(ended);
  });
  it('世界月结只结算一份收入，存读后推进一致',()=>{
-  const w=start('xiao-yan');stable(w);w.day=29;const initial=personInfluence(w,'xiao-yan'),saved=parseWorld(serializeWorld(w));advance(w,1);advance(saved,1);
-  expect(w).toEqual(saved);expect(personInfluence(w,'xiao-yan')).toBe(initial+influenceIncome(w,'xiao-yan').total);expect(w.realm!.lastInfluenceIncome).toBe(30);
+  const w=start('xiao-yan');stable(w);w.day=30;const initial=personInfluence(w,'xiao-yan'),saved=parseWorld(serializeWorld(w));advance(w,1);advance(saved,1);
+  expect(w).toEqual(saved);expect(personInfluence(w,'xiao-yan')).toBe(initial+influenceIncome(w,'xiao-yan').total);expect(w.realm!.lastInfluenceIncome).toBe(31);
  });
  it('0.4 旧档保留所有余额，缺失结算日期不补发当月，存档拒绝非法日期',()=>{
   const w=start();w.day=30;w.contentVersion='546-map-0.4';delete w.realm!.lastInfluenceIncome;w.realm!.influence=87;const balances=structuredClone(w.realm!.personalInfluence),loaded=parseWorld(serializeWorld(w));
-  expect(loaded.realm!.personalInfluence).toEqual(balances);expect(loaded.realm!.influence).toBe(87);expect(loaded.realm!.lastInfluenceIncome).toBe(30);
+  expect(loaded.realm!.personalInfluence).toEqual(balances);expect(loaded.realm!.influence).toBe(87);expect(loaded.realm!.lastInfluenceIncome).toBe(0);
   const once=structuredClone(loaded);advancePersonalInfluence(loaded);expect(loaded).toEqual(once);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
   loaded.realm!.lastInfluenceIncome=29;expect(()=>serializeWorld(loaded)).toThrow('存档');
  });

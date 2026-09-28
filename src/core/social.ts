@@ -1,3 +1,4 @@
+import {isMonthStart} from './calendar';
 import {expandedPersonById} from '../data/expandedPeople';
 import {expressGenome} from './genetics';
 import {snapshotInfluence,restoreInfluence} from './personalInfluence';
@@ -29,7 +30,7 @@ export type Legacy=keyof typeof legacyDefinitions;
 export type Interaction='gift'|'befriend'|'aid'|'advisor'|'pressure'|'favor';
 export const interactionNames:Record<Interaction,string>={gift:'赠礼',befriend:'长期交好',aid:'请援',advisor:'延请协理',pressure:'施压',favor:'兑现人情'};
 export interface Social {
-  version:1;founder:string;traits:Record<string,Trait[]>;opinions:Record<string,number>;hooks:Record<string,number>;cooldowns:Record<string,number>;
+  version:1;lastMonthly?:number;founder:string;traits:Record<string,Trait[]>;opinions:Record<string,number>;hooks:Record<string,number>;cooldowns:Record<string,number>;
   stress:number;renown:number;legacies:Record<Legacy,number>;heir:string|null;advisor:string|null;
   lineage:{id:string;day:number}[];seed:number;scheme:{target:string;started:number;due:number;chance:number}|null;
 }
@@ -146,7 +147,7 @@ export function applySocial(w:World,command:SocialCommand){
 }
 export function advanceSocial(w:World){
   const s=w.social;if(!s)return;
-  if(w.day%30===0){s.renown=Math.min(999,s.renown+10);s.stress=Math.max(0,s.stress-5-(traitsFor(w).includes('steadfast')?8:0)-s.legacies.learning*3-lifestyleBonuses(w).calm-familyStanding(w).calm);}
+  if(isMonthStart(w.day,w.scriptId)&&(s.lastMonthly??0)<w.day){s.lastMonthly=w.day;s.renown=Math.min(999,s.renown+10);s.stress=Math.max(0,s.stress-5-(traitsFor(w).includes('steadfast')?8:0)-s.legacies.learning*3-lifestyleBonuses(w).calm-familyStanding(w).calm);}
   if(s.scheme&&s.scheme.due<=w.day){
     const task=s.scheme;s.scheme=null;if(['rival','nemesis'].includes(friendship(w,w.characterId!,task.target)??'')){log(w,'双方已经决裂，交好行动失效。');return;}s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;
     const success=s.seed/4294967296*100<task.chance;

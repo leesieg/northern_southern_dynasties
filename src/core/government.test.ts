@@ -34,7 +34,7 @@ describe('政体、改革与政权实体沿革',()=>{
   act(w,{type:'government',action:'adopt',government:type});finish(w);expect(governmentOf(w)!.type).toBe(type);expect(governmentBonus(w,'east')).toBeDefined();
  });
  it('天朝低天命损害税收并发生政体退化，不伪造领土分裂',()=>{
-  const w=start(),g=governmentOf(w)!;g.type='celestial';g.legitimacy=20;expect(governmentBonus(w,'liang').tax).toBe(-20);const owners=Object.values(w.realm!.cities).map(c=>c.owner);g.legitimacy=10;w.day=30;advanceGovernments(w);expect(g.type).toBe('meritocratic');expect(Object.values(w.realm!.cities).map(c=>c.owner)).toEqual(owners);expect(parseWorld(serializeWorld(w))).toEqual(w);
+  const w=start(),g=governmentOf(w)!;g.type='celestial';g.legitimacy=20;expect(governmentBonus(w,'liang').tax).toBe(-20);const owners=Object.values(w.realm!.cities).map(c=>c.owner);g.legitimacy=10;w.day=31;advanceGovernments(w);expect(g.type).toBe('meritocratic');expect(Object.values(w.realm!.cities).map(c=>c.owner)).toEqual(owners);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('游牧畜群约束动员，迁营付费且有冷却；部落支持约束军务',()=>{
   const w=start('gao-huan'),g=governmentOf(w)!;capitalReady(w);const camp=Object.keys(w.realm!.cities).find(id=>w.realm!.cities[id].owner==='east'&&siteById[id].lat>=38)!;

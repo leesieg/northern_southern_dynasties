@@ -1,3 +1,4 @@
+import {monthStart} from './calendar';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,newWorld,advance,act} from './world';
 import {ageAt,ageOf,lifeOf,isAlive,healthCapacity,healthLabel,isDeceased} from './lifeState';
@@ -67,7 +68,7 @@ describe('人物年龄、健康与身后事',()=>{
  });
  it('migrates an old save at its current day without simulating past mortality',()=>{
   const w=newCampaignWorld('gao-huan',undefined,'sandbox');delete w.life;w.day=3650;
-  const b=parseWorld(serializeWorld(w));expect(b.life!.since).toBe(3650);expect(isAlive(b,'xiao-yan')).toBe(true);expect(b.life!.lastMonthly).toBe(3630);
+  const b=parseWorld(serializeWorld(w));expect(b.life!.since).toBe(3650);expect(isAlive(b,'xiao-yan')).toBe(true);expect(b.life!.lastMonthly).toBe(monthStart(w.day,w.scriptId));
  });
  it('ages the same portrait, adds illness and memorial appearance without changing the genome',()=>{
   const w=newCampaignWorld('gao-huan'),before=portraitContext('gao-huan',w);w.day=365*25;

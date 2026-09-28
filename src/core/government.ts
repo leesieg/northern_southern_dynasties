@@ -1,3 +1,4 @@
+import {isMonthStart,monthStart,monthIndex,calendarDate} from './calendar';
 import {realmAtWar} from './wars';
 import {awardDeed} from './deeds';
 import {expandedPersonById} from '../data/expandedPeople';
@@ -34,7 +35,7 @@ const initialExecutives:Record<RealmId,string[]>={liang:['xiao-yan'],east:['gao-
 export const currentRealm=(w:World)=>allegianceRealm(w,w.characterId!)??characterById[w.characterId!].polity as RealmId;
 export function newGovernments(w:World):GovernmentState{
  const day=w.day;const make=(r:RealmId):Government=>({type:'meritocratic',dynasty:r,regimeId:r+'-0',ruler:initialRulers[r],executives:[...initialExecutives[r]],legitimacy:65,support:65,merit:Object.fromEntries([...historicalCharacters.filter(c=>c.polity===r).map(c=>[c.id,20]),...officeReserves.filter(p=>p.realm===r).map(p=>[p.id,p.initialMerit])]),herd:0,camp:capital[r],lastCamp:0,contracts:{},laws:reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial),stages:[],task:null,cooldowns:{}});const realms={liang:make('liang'),east:make('east'),west:make('west')};
- return {version:1,since:day,lastMonthly:Math.floor(day/30)*30,realms,regimes:realmIds.map(r=>({id:r+'-0',realm:r,dynasty:r,ruler:initialRulers[r],from:day,until:null,predecessor:null,source:null,cities:Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r)})),history:[]};
+ return {version:1,since:day,lastMonthly:monthStart(day,w.scriptId),realms,regimes:realmIds.map(r=>({id:r+'-0',realm:r,dynasty:r,ruler:initialRulers[r],from:day,until:null,predecessor:null,source:null,cities:Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r)})),history:[]};
 }
 export function governmentOf(w:World,r=currentRealm(w)){return w.realm?.governments?.realms[r];}
 export function regimeName(w:World|undefined,r:Polity){return r==='frontier'?polities.frontier.name:(w?.realm?.governments?.regimes.find(v=>v.id===w.realm?.governments?.realms[r]?.regimeId)?.name??dynastyNames[w?.realm?.governments?.realms[r]?.dynasty??r]);}
@@ -136,12 +137,12 @@ function completeTask(w:World,r:RealmId){
 export function advanceGovernments(w:World){
  const s=w.realm?.governments;if(!s)return;
  for(const r of realmIds){if(w.realm?.annexed?.[r])continue;const g=s.realms[r];if(g.task?.kind==='succession'){const d=successionDefinitions[g.task.target as SuccessionId];if(![d.ruler,...d.executives].every(id=>isAlive(w,id))){log(w,r,'cancel',g.task.target,'继位人或执政者去世，沿革议程终止。');g.task=null;}}if(g.task&&!governmentTaskPause(w,r)){g.task.progress++;if(g.task.progress>=g.task.required)completeTask(w,r);}}
- if(w.day%30!==0||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
+ if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
  for(const r of realmIds){if(w.realm?.annexed?.[r])continue;const g=s.realms[r],t=w.realm!.treasuries[r],order=averageOrder(w,r);
  g.legitimacy=cap(g.legitimacy+(ownsCapital(w,r)&&order>=60&&t.coins>0&&t.grain>0?1:-3));g.support=cap(g.support+(order>=60?1:-3));
  const active=new Set(Object.values(w.realm!.cities).filter(c=>c.owner===r&&c.controller===r&&c.governor&&c.order>=60).map(c=>c.governor!));
- for(const id of active)awardDeed(w,r,id,'governance:'+Math.floor(w.day/30),(g.laws.includes('east-assessment')?4:2)+(g.court?.ministries.personnel&&(g.merit[g.court.ministries.personnel]??0)>=40?1:0),'本期辖地保持秩序，完成在任治理');
- if(g.type==='nomadic'||g.type==='khanate'){const winter=Math.floor(w.day/30)%12>=9||Math.floor(w.day/30)%12<2;const loss=validCamp(w,r,g.camp)?winter?20:0:40;g.herd=cap(g.herd+(loss?-loss:15),1000);if(g.herd<50)g.support=cap(g.support-4);}
+ for(const id of active)awardDeed(w,r,id,'governance:calendar:'+monthIndex(w.day,w.scriptId),(g.laws.includes('east-assessment')?4:2)+(g.court?.ministries.personnel&&(g.merit[g.court.ministries.personnel]??0)>=40?1:0),'本期辖地保持秩序，完成在任治理');
+ if(g.type==='nomadic'||g.type==='khanate'){const winter=calendarDate(w.day,w.scriptId).getUTCMonth()>=9||calendarDate(w.day,w.scriptId).getUTCMonth()<2;const loss=validCamp(w,r,g.camp)?winter?20:0:40;g.herd=cap(g.herd+(loss?-loss:15),1000);if(g.herd<50)g.support=cap(g.support-4);}
  if(g.type==='celestial'&&g.legitimacy<15){g.type='meritocratic';if(g.task?.kind==='government'&&g.task.target==='meritocratic')g.task=null;log(w,r,'crisis','meritocratic','天命失序，'+regimeName(w,r)+'退为贤能制；已有领土不自动分裂。');}
  }
 }

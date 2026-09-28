@@ -9,13 +9,13 @@ describe('city and family construction rules',()=>{
   it('uses the same estate income forecast and actual private payment without an office',()=>{
     const w=newWorld();w.holdings.estate.levels.workshop=1;w.holdings.governedCities=[];
     expect(estateYield(w)).toEqual({coins:10,food:0});
-    const before=w.people[0].coins;w.day=30;advanceConstruction(w);
+    const before=w.people[0].coins;w.day=31;advanceConstruction(w);
     expect(w.people[0].coins-before).toBe(estateYield(w).coins);
   });
   it('deducts the real cost, persists an unfinished project and completes once',()=>{
     const w=newWorld();act(w,estate('fields'));expect(w.people[0].coins).toBe(140);expect(w.holdings.estate.levels.fields).toBe(0);
     advance(w,9);const restored=parseWorld(serializeWorld(w));advance(restored);expect(restored.holdings.estate.levels.fields).toBe(1);expect(restored.holdings.estate.project).toBeNull();
-    advance(restored,20);expect(restored.people[0].coins).toBe(144);expect(restored.people[0].food).toBe(96);validateWorld(restored);
+    advance(restored,21);expect(restored.people[0].coins).toBe(144);expect(restored.people[0].food).toBe(96);validateWorld(restored);
   });
   it('enforces estate slots, project capacity, home location and affordability atomically',()=>{
     const w=newWorld();act(w,estate('fields'));let before=structuredClone(w);
@@ -23,7 +23,7 @@ describe('city and family construction rules',()=>{
     advance(w,10);before=structuredClone(w);expect(()=>act(w,estate('workshop'))).toThrow('建筑位已满');expect(w).toEqual(before);
     expect(()=>act(w,{...estate('fields'),site:'ye'})).toThrow('家族庄园位于');
     expect(()=>act(w,estate('hall'))).toThrow('盘缠不足');
-    w.people[0].coins=500;act(w,estate('hall'));advance(w,30);expect(w.holdings.estate.levels.hall).toBe(2);expect(buildQuote(w,estate('workshop')).reason).toBe('');
+    w.people[0].coins=500;act(w,estate('hall'));advance(w,31);expect(w.holdings.estate.levels.hall).toBe(2);expect(buildQuote(w,estate('workshop')).reason).toBe('');
   });
   it('requires city authority and rejects construction on counties, realms or invalid categories',()=>{
     const w=newWorld(),before=structuredClone(w);
@@ -33,14 +33,14 @@ describe('city and family construction rules',()=>{
       {type:'build',scope:'county',site:'jiankang',building:'fields'},
       {type:'build',scope:'estate',site:'jiankang',building:'market'},
     ]){expect(()=>act(w,command as GameCommand)).toThrow();expect(w).toEqual(before);}
-    w.holdings.governedCities=['jiankang'];act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});advance(w,30);
+    w.holdings.governedCities=['jiankang'];act(w,{type:'build',scope:'city',site:'jiankang',building:'market'});advance(w,31);
     expect(w.holdings.cities.jiankang.levels.market).toBe(1);expect(w.people[0].coins).toBe(112);validateWorld(w);
   });
   it('keeps family income without an office, while city bonuses require governance',()=>{
     const w=newWorld();w.holdings.cities.jiankang=emptyCity();w.holdings.cities.jiankang.levels.hostel=2;
     expect(provisionCost(w)).toBe(12);w.holdings.governedCities=['jiankang'];expect(provisionCost(w)).toBe(8);
     act(w,{type:'provision'});expect(w.people[0].coins).toBe(172);
-    w.holdings.governedCities=[];act(w,estate('fields'));act(w,{type:'travel',destination:'changan'});advance(w,30);
+    w.holdings.governedCities=[];act(w,estate('fields'));act(w,{type:'travel',destination:'changan'});advance(w,31);
     expect(w.holdings.estate.levels.fields).toBe(1);expect(w.people[0].coins).toBe(136);validateWorld(w);
   });
   it('migrates a genuine version-one journey without changing its route or resources',()=>{

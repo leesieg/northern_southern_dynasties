@@ -40,7 +40,7 @@ export interface World {
   militaryCampaigns?: import('./militaryCampaigns').MilitaryCampaigns;
   deeds?: import('./deeds').Deeds;
   economy?: import('./personalEconomyRules').PersonalEconomyState;
-  version: 2; retinue?:RetinueState; mobility?:MobilityState; service?:ServiceState; duties?:DutiesState; life?:LifeState; diplomacy?:DiplomacyState; relationships?:RelationshipState; families?:FamilyState; lifestyles?:LifestyleState; identities?:IdentityState; mode?:'sandbox'; realm?:RealmState; scriptId?:string; social?:Social; characterId?:string; campaign?:Campaign; holdings: Holdings; contentVersion: string; day: number; people: Person[]; chronicle: Chronicle[];
+  version: 2; retinue?:RetinueState; mobility?:MobilityState; service?:ServiceState; duties?:DutiesState; life?:LifeState; diplomacy?:DiplomacyState; relationships?:RelationshipState; families?:FamilyState; lifestyles?:LifestyleState; identities?:IdentityState; mode?:'sandbox'; realm?:RealmState; scriptId?:string; social?:Social; characterId?:string; campaign?:Campaign; holdings: Holdings; contentVersion: string; calendarSince?:number; day: number; people: Person[]; chronicle: Chronicle[];
 }
 export interface RoutePlan { route: string[]; durations: number[]; days: number; food: number; distance: number }
 export type ArmyBatchCommand = {type:'armyBatch';action:'merge';armies:number[];target:number}|{type:'armyBatch';action:'disband';armies:number[]}|{type:'armyBatch';action:'march';armies:number[];site:string};

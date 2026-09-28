@@ -63,9 +63,9 @@ describe('幕僚的招募、履职与生命周期',()=>{
   act(w,{type:'retinue',action:'work',post:'secretary',task:'recommend'});expect(recommendationBonus(w,'yuan-qin')).toBeGreaterThan(0);w.day=90;expect(recommendationBonus(w,'yuan-qin')).toBe(0);
  });
  it('月俸仅扣一次，欠俸停职、补足恢复，连续欠俸离幕并提示',()=>{
-  const w=start();hire(w);act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});w.day=30;w.people[0].coins=0;const before=pauseSnapshot(w);advanceRetinue(w);
+  const w=start();hire(w);act(w,{type:'retinue',action:'assign',person:'guest-liang',post:'engineer',site:'jiankang'});w.day=31;w.people[0].coins=0;const before=pauseSnapshot(w);advanceRetinue(w);
   expect(postStatus(w,'engineer','jiankang').reason).toContain('欠俸');expect(pauseEvents(before,w).some(e=>e.title==='幕府欠俸')).toBe(true);advanceRetinue(w);expect(w.retinue!.members['guest-liang'].arrears).toBe(1);
-  w.day=60;w.people[0].coins=8;advanceRetinue(w);expect(w.people[0].coins).toBe(0);expect(w.retinue!.members['guest-liang'].arrears).toBe(0);
+  w.day=59;w.people[0].coins=8;advanceRetinue(w);expect(w.people[0].coins).toBe(0);expect(w.retinue!.members['guest-liang'].arrears).toBe(0);
   w.day=90;advanceRetinue(w);w.day=120;const leaving=pauseSnapshot(w);advanceRetinue(w);expect(w.retinue!.members['guest-liang']).toBeUndefined();expect(pauseEvents(leaving,w).some(e=>e.kind==='retinue')).toBe(true);save(w);
  });
  it('主公去世后清理幕职，重病者不能履职',()=>{
