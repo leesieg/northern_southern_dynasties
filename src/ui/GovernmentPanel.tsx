@@ -1,17 +1,30 @@
 import {ConfirmAction} from './ConfirmAction';
 import {useState} from 'react';
 import {ArtIcon,Resource} from './ArtIcon';
+import {ActionDialog} from './ActionDialog';
+import {HoverHint} from './HoverHint';
 import {governmentDefinitions,governmentTypes,reformDefinitions,reformIds} from '../data/governments';
 import {governmentOf,governmentReason,governmentBonus,governmentTaskPause,politicalName,taskName,currentRealm,type GovernmentCommand,type Contract} from '../core/government';
 import {siteById} from '../data/scenario';
 import type {RealmId} from '../core/realm';
 import type {World} from '../core/types';
 import './government.css';
-export function GovernmentPanel({world:w,realm,pending,send}:{world:World;realm?:RealmId;pending:boolean;send:(c:GovernmentCommand)=>void}){
- const [confirmation,setConfirmation]=useState<string|null>(null),[selected,setSelected]=useState(w.people[0].home);
+export function GovernmentPanel({world:w,realm,compact=false,pending,send}:{world:World;realm?:RealmId;compact?:boolean;pending:boolean;send:(c:GovernmentCommand)=>void}){
+ const [confirmation,setConfirmation]=useState<string|null>(null),[selected,setSelected]=useState(w.people[0].home),[detailsOpen,setDetailsOpen]=useState(false);
  const r=realm??currentRealm(w),own=r===currentRealm(w),g=governmentOf(w,r);if(!g)return <p>读取存档后可使用政体制度。</p>;
  const definition=governmentDefinitions[g.type],bonus=governmentBonus(w,r),cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r&&c.controller===r),site=cities.some(([id])=>id===selected)?selected:cities[0]?.[0]??'',task=g.task,laws=reformIds.filter(id=>reformDefinitions[id].realm===r),records=w.realm!.governments!.history.filter(e=>e.realm===r).slice(-4).reverse();
  const action=(c:GovernmentCommand,label:string,consequence?:string)=>{const reason=own?governmentReason(w,c):'他国制度仅供查阅',key=JSON.stringify(c);return <div className="government-action"><button className={consequence?'primary':''} disabled={pending||!!reason} onClick={()=>{if(consequence)setConfirmation(key);else send(c);}}>{label}</button>{reason&&<small>{reason}</small>}{confirmation===key&&consequence&&<ConfirmAction title={label} detail={consequence} confirmLabel="确认执行" danger pending={pending||!!reason} onCancel={()=>setConfirmation(null)} onConfirm={()=>{if(pending||governmentReason(w,c))return;send(c);setConfirmation(null);}}/>}</div>;};
+ if(compact){
+  const council={type:'government',action:'council'} as const,councilReason=own?governmentReason(w,council):'他国事务仅供查阅',cancel={type:'government',action:'cancel'} as const,cancelReason=own?governmentReason(w,cancel):'他国事务仅供查阅';
+  return <section className="court-government-state">
+   <header><ArtIcon name="influence" size={30}/><h3>{definition.name}</h3><HoverHint label="政体与法令" content="查阅现行政体、改革条件、契约与驻牧规则；涉及更改时单独确认。"><button className="court-icon-button" aria-label="打开政体与法令" onClick={()=>setDetailsOpen(true)}><ArtIcon name="estate" size={24}/></button></HoverHint></header>
+   <HoverHint label="政体规则" content={definition.description}><div className="court-government-effects" tabIndex={0}><span>税收 {bonus.tax>=0?'+':''}{bonus.tax}%</span><span>军饷 {bonus.pay>=0?'+':''}{bonus.pay}%</span><span>攻击 {bonus.attack>=0?'+':''}{bonus.attack}%</span></div></HoverHint>
+   <section className="court-current-laws"><h4>现行法令</h4>{g.laws.map(id=><HoverHint key={id} label={reformDefinitions[id].name} content={reformDefinitions[id].effect}><span tabIndex={0}>{reformDefinitions[id].name}</span></HoverHint>)}{!g.laws.length&&<p>尚无已录法令</p>}</section>
+   {task&&<section className="court-policy-agenda"><h4>{taskName(task)}</h4><progress max={task.required} value={task.progress}/><small>{task.progress}/{task.required} 有效日</small><p>{governmentTaskPause(w,r)||'正在实施'}</p>{own&&<HoverHint label="撤回议程" content={cancelReason||'已付成本不退，已产生的支持变化保留。'}><button className="court-icon-button" aria-label="撤回当前议程" disabled={pending||!!cancelReason} onClick={()=>setConfirmation('compact-cancel')}><ArtIcon name="wary" size={23}/></button></HoverHint>}{confirmation==='compact-cancel'&&<ConfirmAction title="撤回议程" detail="已付成本不退，已产生的支持变化保留。" confirmLabel="确认撤回" danger pending={pending||!!cancelReason} onCancel={()=>setConfirmation(null)} onConfirm={()=>{if(pending||governmentReason(w,cancel))return;send(cancel);setConfirmation(null);}}/>}</section>}
+   {own&&<div className="court-government-actions"><HoverHint label="议政协商" content={<>{councilReason||'支出 40 中央公款、15 影响力；支持 +12、合法性 +5，冷却 30 日。'}</>}><button className="court-icon-button" aria-label="议政协商" disabled={pending||!!councilReason} onClick={()=>{if(pending||governmentReason(w,council))return;send(council);}}><ArtIcon name="gregarious" size={25}/></button></HoverHint></div>}
+   {detailsOpen&&<ActionDialog title="政体与法令" onClose={()=>setDetailsOpen(false)} actions={<button onClick={()=>setDetailsOpen(false)}>返回国策</button>}><GovernmentPanel world={w} realm={r} pending={pending} send={send}/></ActionDialog>}
+  </section>;
+ }
  return <div className="government-panel">
   <section className="government-status"><header><ArtIcon name="influence" size={32}/><div><small>现行政体</small><h3>{definition.name}</h3></div></header><p>{definition.description}</p><div className="government-effects"><span>税收 {bonus.tax>=0?'+':''}{bonus.tax}%</span><span>军饷 {bonus.pay>=0?'+':''}{bonus.pay}%</span><span>攻击 {bonus.attack>=0?'+':''}{bonus.attack}%</span></div><div className="government-meters"><label>{g.type==='celestial'?'天命':'合法性'} <b>{g.legitimacy}</b><progress max={100} value={g.legitimacy}/></label><label>{g.type==='tribal'?'部众支持':'朝野支持'} <b>{g.support}</b><progress max={100} value={g.support}/></label></div>{g.laws.length>0&&<small>已施行：{g.laws.map(id=>reformDefinitions[id].name).join('、')}</small>}</section>
   {task&&<section className="government-progress" aria-live="polite"><small>正在推进 · 发起人 {politicalName(task.sponsor)}</small><h3>{taskName(task)}</h3><progress max={task.required} value={task.progress}/><p>{task.progress} / {task.required} 有效实施日 · {governmentTaskPause(w,r)||'正在实施'}</p>{action({type:'government',action:'cancel'},'撤回议程','已付成本不退，已经产生的支持变化保留。')}</section>}
