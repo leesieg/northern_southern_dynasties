@@ -212,3 +212,6 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-map .atlas-place>.atlas-estate-marker::after{display:none}
 .atlas-map .atlas-city-realm,.atlas-map .atlas-city-realm img{width:28px;height:34px;flex-basis:28px}
 .atlas-map .atlas-place-label{border-bottom-color:var(--city-realm,#8c7954)}
+
+.atlas-combat-marker{display:flex;align-items:center;justify-content:center;width:42px;height:42px;padding:4px;border:2px solid #c8ac69;border-radius:50%;background:#422e27;box-shadow:0 3px 10px #0a171dcc;cursor:pointer;z-index:6}
+.atlas-combat-marker[data-kind=siege]{border-radius:5px;background:#223d32}.atlas-combat-marker .art-icon{width:30px;height:30px;pointer-events:none}.atlas-combat-marker:hover{border-color:#f3d69a;background:#5b4130}.atlas-combat-marker:focus-visible{outline:3px solid #f3d69a;outline-offset:3px}

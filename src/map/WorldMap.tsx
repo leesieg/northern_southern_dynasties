@@ -1,3 +1,5 @@
+import {ActionDialog} from '../ui/ActionDialog';
+import {engagementGroups,type EngagementRef} from '../ui/warPresentation';
 import {polityStyle,worldRealms} from '../core/polityRuntime';
 import {updateMarkerPortrait} from './markerPortrait';
 import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
@@ -40,6 +42,7 @@ export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
   militaryModels:boolean;armyMotion:boolean;
   onActivity:(item:OngoingItem)=>void;
+  onEngagement:(selected:EngagementRef)=>void;
   onBrowseActivities:()=>void;
   onEstate:()=>void;
   selectedArmies:number[];onSelectArmy:(id:number,extend:boolean)=>void;
@@ -56,6 +59,7 @@ function armyOrderPreview(w:World,a:Army,id:string){const reason=realmReason(w,{
 export function WorldMap(props:Props){
   const host=useRef<HTMLDivElement>(null),api=useRef<MapAPI|null>(null),current=useRef(props);
   current.current=props;
+  const [combatGroupKey,setCombatGroupKey]=useState<string|null>(null);
   const [activitySite,setActivitySite]=useState<string|null>(null);
   const [error,setError]=useState(''),[warning,setWarning]=useState(''),[ready,setReady]=useState(false),[retry,setRetry]=useState(0);
   const [hover,setHover]=useState<{id:string;x:number;y:number}|null>(null);
@@ -81,6 +85,7 @@ export function WorldMap(props:Props){
     let lastMode='',lastTilt:boolean|undefined,lastWorld:World|undefined,lastSelected='',lastRoute='';
     let hoveredId:string|null=null;
     const allMarkers:Marker[]=[];
+    const combatMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     let estateButton:HTMLButtonElement|undefined;
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
@@ -129,7 +134,7 @@ export function WorldMap(props:Props){
       for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(presentation.strategic&&id!=='player'&&id!==current.current.world.characterId);}
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
       const viewport=container.getBoundingClientRect(),mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
-      const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,-7] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
+      const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,-7] as [number,number]})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
       // Measure the undocked rectangle, so last frame's offset cannot feed back into the next layout.
       for(const {marker,offset} of annotations){
         const element=marker.getElement();if(element.hidden)continue;
@@ -248,6 +253,13 @@ export function WorldMap(props:Props){
           if(view.command)item.button.setAttribute('aria-pressed','false');else item.button.removeAttribute('aria-pressed');
         }
 
+        const combats=engagementGroups(p.world);
+        for(const [key,item] of combatMarkers)if(!combats.some(c=>c.key===key)){item.marker.remove();combatMarkers.delete(key);}
+        for(const combat of combats){let item=combatMarkers.get(combat.key);if(!item){const button=document.createElement('button');button.type='button';button.className='atlas-combat-marker';const marker=new Marker({element:button,anchor:'bottom',offset:[-44,-38]}).setLngLat([combat.lon,combat.lat]).addTo(map);item={marker,button};combatMarkers.set(combat.key,item);}
+         const kind=combat.items.some(i=>i.ref.kind==='battle')?'battle':'siege';item.button.textContent='';const icon=document.createElement('span');icon.className='art-icon';icon.style.backgroundPosition=kind==='battle'?'100% 66.6667%':'33.3333% 100%';item.button.append(icon);
+         if(combat.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(combat.items.length);item.button.append(count);}
+         item.marker.setLngLat([combat.lon,combat.lat]);item.button.dataset.kind=kind;item.button.title=combat.items.map(i=>i.label).join('\n');item.button.setAttribute('aria-label',combat.items.length>1?'查看此地 '+combat.items.length+' 场战事':'查看'+combat.items[0].label);item.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=engagementGroups(current.current.world).find(c=>c.key===combat.key);if(!latest)return;if(latest.items.length===1)current.current.onEngagement(latest.items[0].ref);else{current.current.onBrowseActivities();setCombatGroupKey(combat.key);}};
+        }
         const activityGroups=mapActivities(p.world);
         for(const [site,entry] of activityMarkers)if(!activityGroups.some(g=>g.site===site)){entry.marker.remove();activityMarkers.delete(site);}
         for(const group of activityGroups){let entry=activityMarkers.get(group.site);if(!entry){const button=document.createElement('button');button.className='atlas-activity-marker';const loc=siteById[group.site];const marker=new Marker({element:button,anchor:'left',offset:[18,-22]}).setLngLat([loc.lon,loc.lat]).addTo(map);entry={marker,button};activityMarkers.set(group.site,entry);}
@@ -382,7 +394,7 @@ export function WorldMap(props:Props){
     }catch(e){setError(e instanceof Error?e.message:'无法启动 WebGL 2 地图。');}
     return()=>{
       disposed=true;if(slowLoad)clearTimeout(slowLoad);cancelAnimationFrame(frame);observer?.disconnect();
-      activityMarkers.forEach(e=>e.marker.remove());armyMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
+      combatMarkers.forEach(e=>e.marker.remove());activityMarkers.forEach(e=>e.marker.remove());armyMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
     };
   },[retry]);
 
@@ -393,10 +405,12 @@ export function WorldMap(props:Props){
   const hoverPlan=hoverSite&&!player.journey?personalRoute(props.world,hoverSite.id):null;
   const hoverArmy=props.world.realm?.armies.find(a=>props.selectedArmies.includes(a.id!));
   const hoverOrder=hoverSite&&hoverArmy?armyOrderPreview(props.world,hoverArmy,hoverSite.id):null;
+  const combatGroup=combatGroupKey?engagementGroups(props.world).find(g=>g.key===combatGroupKey):undefined;
   const activityGroup=activitySite?mapActivities(props.world).find(group=>group.site===activitySite):undefined;
   return <div className="world-map atlas-map">
     <div className="map-canvas atlas-canvas" ref={host}/>
     <div className="atlas-paper" aria-hidden="true"/>
+    {combatGroupKey&&<ActionDialog title="此地战事" cancelLabel="返回地图" onClose={()=>setCombatGroupKey(null)} actions={null}><div className="war-event-list">{combatGroup?combatGroup.items.map(item=><button key={item.key} onClick={()=>{setCombatGroupKey(null);props.onEngagement(item.ref);}}><ArtIcon name={item.ref.kind==='battle'?'army':'city'} size={26}/><span>{item.label}</span><b>查看 ›</b></button>):<p>此地已无进行中的战事。</p>}</div></ActionDialog>}
     {activityGroup&&<OngoingItemsDialog title={siteById[activityGroup.site].name+'事务'} icon="city" items={activityGroup.items} onClose={()=>setActivitySite(null)} onOpen={props.onActivity}/>}
     {shownEvent&&<div className="history-map-notice"><strong>{shownEvent.year} 年 · {shownEvent.label}</strong><span>标记为城市攻取记录；底图仍是 546 行政基底，未重建当年疆界。</span></div>}
     {hover&&hoverSite&&!menu&&<div className="territory-tooltip" style={{left:hover.x,top:hover.y}}>

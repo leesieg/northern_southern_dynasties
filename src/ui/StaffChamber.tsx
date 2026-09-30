@@ -41,7 +41,7 @@ import type {GameCommand,World} from '../core/types';
 import './staffChamber.css';
 import './courtAudience.css';
 
-export type CourtTab='central'|'local'|'person'|'finance'|'government'|'situation'|'history';
+export type CourtTab='central'|'factions'|'local'|'person'|'finance'|'government'|'situation'|'history';
 type Props={realm?:RealmId;world:World;pending:boolean;send:(command:GameCommand)=>void;onPerson:(id:string)=>void;onTerritory:(id:string)=>void;onService:(task?:number,site?:string)=>void;tab:CourtTab;onTab:(tab:CourtTab)=>void;region:string;onRegion:(region:string)=>void;person:string;financeView:'treasury'|'audit';treasuryTab:'budget'|'requests'|'ledger'};
 
 function belongsToProvince(territory:string,province:string){
@@ -69,6 +69,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
  const ministryIcons:Record<MinistryId,ArtName>={secretariat:'influence',personnel:'person',finance:'coins',military:'army',censorate:'diligent'};
  const pages:{id:CourtTab;label:string;icon:ArtName;detail:string}[]=[
   {id:'central',label:'朝会',icon:'renown',detail:'君位、掌政、五项中枢职掌与继承安排'},
+  {id:'factions',label:'发起派系',icon:'gregarious',detail:'发起派系、争取支持、公开呈请与查看当前议案'},
   {id:'local',label:'地方官署',icon:'city',detail:'按真实州郡县辖区查阅、授官与请任'},
   {id:'situation',label:'朝局',icon:'influence',detail:'局势、地方压力与政治集团'},
   {id:'government',label:'国策',icon:'estate',detail:'现行政体、任用准则、通道与赋役落实'},
@@ -99,7 +100,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
     {pages.map(page=><HoverHint key={page.id} label={page.label} content={page.detail}><button className="court-rail-button" aria-label={page.label} aria-pressed={active===page.id} onClick={()=>onTab(page.id)}><ArtIcon name={page.icon} size={32}/>{page.id==='central'&&<small aria-hidden="true">{occupied}/5</small>}{page.id==='local'&&localRequests.length>0&&<small aria-hidden="true">{localRequests.length}</small>}</button></HoverHint>)}
    </nav>
    <main className={'court-page court-page--'+active} aria-label={pages.find(page=>page.id===active)?.label??'朝会'}>
-    {active==='central'&&<PowerPoliticsPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson}/>}
+    {active==='factions'&&<PowerPoliticsPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson}/>}
     {active==='central'&&<section className="court-hall" aria-label="中枢席位与继统">
      <div className="court-dais">
       <section className="court-regency" aria-label="实际掌政者">{regents.map(regent=><PositionSeat key={regent} world={w} holder={regent} title="执掌朝政" icon="influence" onPerson={onPerson}/>)}</section>
