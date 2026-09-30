@@ -56,6 +56,7 @@ import './drawerFrame.css';
 import './ceremonialModalTitle.css';
 import './campaignControls.css';
 import './campaignSkin.css';
+import './campaignReference.css';
 
 type IconName='play'|'pause'|'pin'|'layers'|'compass'|'plus'|'minus'|'arrow'|'close'|'save'|'menu';
 function Icon({name,size=18}:{name:IconName;size?:number}){

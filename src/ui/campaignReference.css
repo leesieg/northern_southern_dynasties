@@ -1,0 +1,117 @@
+/* Reference direction: pale fibre paper, black ink title strokes, aged brass fittings. */
+:root{--campaign-paper:#e8e5da;--campaign-ink:#292d29;--campaign-brass:#a48b52;--campaign-brush:url('/art/interface/ink-brush-tray.svg')}
+/* Character selection: roster / portrait or map / biography. */
+.game-entry.is-selecting{color:var(--campaign-ink);background:var(--campaign-paper)}
+.game-entry.is-selecting .entry-backdrop{opacity:.2;filter:grayscale(1);background-image:linear-gradient(90deg,#e8e5da90,#e8e5da),url('/art/menu/realm-dawn.png')}
+.game-entry.is-selecting .entry-content{width:min(1580px,100%)}
+.game-entry.is-selecting .entry-content>h1{color:#34362f;text-shadow:none;font-size:22px}
+.game-entry.is-selecting .campaign-stage-nav{background:transparent;border-color:#77715b50;margin-bottom:8px;padding:5px 0}
+.game-entry.is-selecting .campaign-stage-nav button{color:#686a5f}
+.game-entry.is-selecting .campaign-stage-nav button[aria-current=step]{color:#292d29}
+.game-entry.is-selecting .campaign-stage-nav small{color:#66685b}
+.game-entry.is-selecting .roster-heading>strong{color:#f3eee0;background:var(--campaign-brush) center/100% 100% no-repeat;padding:12px 32px;font:20px var(--serif)}
+.game-entry.is-selecting .roster-heading input{color:#30362f;background:#f5f2e8b8;border-color:#9f987b}
+.game-entry.is-selecting :is(.entry-back,.roster-heading button,.roster-filters button,.roster-context button,.roster-kin button){color:#353a30;border-color:#91877266;background:#efede3a6}
+.game-entry.is-selecting :is(.roster-heading button,.roster-filters button)[aria-pressed=true]{color:#fff5da;background:#30382f;border-color:#a58b4e}
+.game-entry.is-selecting :is(.roster-context,.roster-filters button small){color:#5b6356}
+.game-entry.is-selecting .roster-columns{grid-template-columns:minmax(230px,.85fr) minmax(260px,1.5fr) minmax(270px,1fr);gap:22px}
+.game-entry.is-selecting .roster-explorer{border-right:1px solid #81755677;padding-right:12px}
+.game-entry.is-selecting .roster-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 4px;align-content:start}
+.game-entry.is-selecting .roster-list>button{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;padding:5px 2px;border:1px solid transparent;background:transparent;color:#32372e}
+.game-entry.is-selecting .roster-list>button[aria-pressed=true]{border-color:#9e7e38;background:#b9a46b2a;box-shadow:inset 0 -3px #9b7b3f}
+.game-entry.is-selecting .roster-list>button>.painted-portrait{width:58px;height:58px;aspect-ratio:1;flex:none}
+.game-entry.is-selecting .roster-list>button>span{flex:none}
+.game-entry.is-selecting .roster-list strong{font-size:15px;color:#262e27}
+.game-entry.is-selecting .roster-list small{font-size:10px;color:#5e6458;line-height:1.5}
+.roster-hero{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-height:0;background:radial-gradient(ellipse at 50% 85%,#575c4130,transparent 60%)}
+.game-entry.is-selecting .roster-hero>.painted-portrait{width:min(100%,calc((100dvh - 310px)*.6667));aspect-ratio:2/3;height:auto;flex:none;margin:auto 0 10px}
+.game-entry.is-selecting .roster-hero>.painted-portrait,.roster-hero .painted-portrait-frame{background:transparent;border:0;box-shadow:none}.roster-hero .portrait-role-frame{opacity:.28}
+.roster-hero>button{display:flex;align-items:center;justify-content:center;gap:8px;flex:none;margin:0 0 12px;width:180px;background:#262c28;color:#e8dfcb;border:1px solid #a79262;min-height:34px}
+.game-entry.is-selecting .roster-profile{padding:16px 10px;background:transparent;border:0;border-left:1px solid #887b5750}
+.game-entry.is-selecting .roster-profile :is(h2,h3,p,.roster-title,.eyebrow,small,span){color:#353b30}
+.game-entry.is-selecting .roster-profile h2{font-size:38px;letter-spacing:.14em}
+.game-entry.is-selecting .roster-profile h3{border-bottom:1px solid #92886a;padding-bottom:10px}
+.game-entry.is-selecting .roster-identity{align-items:flex-start;flex-direction:column;gap:6px}
+.game-entry.is-selecting .roster-resources{background:#fff9;border-block:1px solid #a99b7444;padding:8px}
+.game-entry.is-selecting .roster-columns--map{grid-template-columns:minmax(230px,.85fr) minmax(260px,1.5fr) minmax(270px,1fr)}
+.game-entry.is-selecting .roster-columns--map .roster-explorer{display:contents}
+.game-entry.is-selecting .roster-columns--map .roster-map{grid-column:2;grid-row:1;margin:0;align-self:stretch;max-height:none}
+.game-entry.is-selecting .roster-columns--map .roster-list{grid-column:1;grid-row:1;overflow:auto;margin:0}
+.game-entry.is-selecting .roster-columns--map .roster-hero{display:none}
+.game-entry.is-selecting .roster-columns--map .roster-profile{grid-column:3;grid-row:1}
+.game-entry.is-selecting .entry-launch{background:linear-gradient(90deg,transparent,#f3f0e5c9,transparent);border-color:#9f916a;padding:10px 0}
+.game-entry.is-selecting .campaign-launch-summary :is(strong,span),.game-entry.is-selecting .entry-launch .entry-note{color:#414637}
+.game-entry.is-selecting .entry-launch .primary{background:#242c27;border:1px solid #ad9256;color:#f4e8c9;box-shadow:inset 0 0 0 3px #242c27,inset 0 0 0 4px #8f795244}
+/* Shared modal fittings. Conversation scenes retain their image, speaker and response layout. */
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration,dialog.pause-dialog:not(.pause-dialog--audience)){
+ border:1px solid #383a30;border-radius:0;color:var(--campaign-ink);background:linear-gradient(115deg,#ffffff55,transparent 45%),repeating-linear-gradient(4deg,#71684a04 0 1px,transparent 1px 4px),var(--campaign-paper);box-shadow:inset 0 0 0 3px #bba36a,inset 0 0 0 5px #f4ecd5,0 18px 60px #0008;
+}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header,
+dialog.pause-dialog:not(.pause-dialog--audience) header{background:transparent;border-bottom:1px solid #a9925a77;padding:14px 20px;position:relative;flex:none}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header :is(h2,h3),
+dialog.action-confirm-dialog>h2,dialog.pause-dialog:not(.pause-dialog--audience) header h2{
+ color:#f1ecdd;background:var(--campaign-brush) center/100% 100% no-repeat;text-align:center;margin:0 auto;padding:12px 40px;font:22px var(--serif);letter-spacing:.1em;max-width:85%;box-sizing:border-box;
+}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header>button{flex:none;width:36px;height:36px;border-radius:50%;background:#282e29;color:#d9bb72;border:1px solid #a48b52;box-shadow:inset 0 0 0 3px #48493b;font-size:24px}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog)>footer{background:#d5d1c3;border-top:1px solid #a48b5277;color:#333b31;flex:none}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration,dialog.pause-dialog:not(.pause-dialog--audience))::backdrop{background:#25243580;backdrop-filter:blur(2px) saturate(.65)}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) :is(.action-summary,.person-selection-description,.person-selection-tools,.military-preview-rows article,.military-recruit-site,.single-choice-card){background:#f5f2e7;color:#333b31;border-color:#a99a7755}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) >.action-confirm-detail{color:#353b30}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) button:not(.person-option):not(.realm-badge):not(.portrait-button){border-radius:0;border-color:#a49673;background-color:#2e352e;color:#eee7d5}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) button.primary{background:#283d30;color:#f3e4ba;border-color:#9e864b}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) button.danger{background:#60392f;color:#fff0dc}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) button:disabled{opacity:.48}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) :is(button,input,select):focus-visible{outline:2px solid #a37b26;outline-offset:3px}
+:is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal,dialog.pause-dialog--audience){border-radius:0;border-color:#bba36a;box-shadow:0 0 0 1px #252b25,inset 0 0 0 2px #bba36a,0 18px 60px #0008}
+:is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal)>header h2{background:var(--campaign-brush) center/100% 100% no-repeat;color:#f4edda;text-shadow:none}
+/* Actual regiment cards, shared by map roster and military details. */
+.regiment-cards{display:flex;align-items:stretch;gap:4px;overflow-x:auto;min-width:0;padding:4px 2px 7px;scrollbar-width:thin;scrollbar-color:#9d895a transparent}
+.regiment-cards .regiment-card{position:relative;display:flex;flex-direction:column;align-items:center;flex:0 0 60px;width:60px;min-height:98px;padding:0;border:1px solid #8d876f;border-radius:0;background:linear-gradient(110deg,#faf8ed,#d4d2c5);color:#272f27;box-shadow:inset 0 0 0 2px #f0eadb,0 2px 3px #0003;overflow:hidden}
+.regiment-card-name{font:10px/19px var(--serif);white-space:nowrap}
+.troop-illustration{display:block;width:55px;height:70px;flex:none}
+.regiment-card-count{display:flex;align-items:center;justify-content:space-between;gap:3px;width:100%;padding:3px 4px;box-sizing:border-box;background:#385341;color:#fff6df;font:bold 13px/14px var(--serif);margin-top:auto}
+.regiment-card-count small{font:9px/14px var(--serif);color:inherit}
+.regiment-card[data-kind=archer] .regiment-card-count{background:#465b71}.regiment-card[data-kind=heavyHorse] .regiment-card-count{background:#88483e}.regiment-card[data-kind=siege] .regiment-card-count{background:#6a5840}
+.regiment-cards .regiment-card:is(:hover,[aria-pressed=true]){border-color:#e3c67c;box-shadow:inset 0 0 0 2px #b4934a,0 0 5px #d7b76855;filter:brightness(1.08)}
+.regiment-cards .regiment-card:focus-visible{outline:2px solid #e5bd62;outline-offset:1px}
+.focused-shell .army-unit>.regiment-cards{grid-column:2/-1;margin-top:-2px}
+.focused-shell .army-unit:has(.regiment-cards) .army-unit-main{align-items:start}
+.regiment-preview{display:flex;align-items:center;gap:30px}.regiment-preview>.troop-illustration{width:110px;height:148px}.regiment-preview dl{display:grid;grid-template-columns:auto 1fr;gap:12px 20px;margin:0}.regiment-preview dd{margin:0}
+.military-army-record{position:relative}.military-army-record>.military-commander-portrait{float:left;width:66px;padding:0;margin:0 10px 7px 0;border:1px solid #b39a65;background:#dcd5c0}.military-commander-portrait>.painted-portrait{width:64px;aspect-ratio:2/3;margin:0}.military-army-record>.regiment-cards{clear:both}
+/* Near-map labels use the same pale nameplates as the distant paper map. */
+.focused-shell .atlas-map .atlas-place{gap:0;background:#e6e2d5;box-shadow:0 0 0 1px #373d31,0 2px 4px #18241966;min-height:32px}
+.focused-shell .atlas-map .atlas-place-label{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:34px;margin:0;padding:2px 9px;background:#e6e2d5;color:#30392d;border:0;border-bottom:2px solid var(--city-realm);box-shadow:none;text-shadow:none;font:13px/16px var(--serif);letter-spacing:.05em}
+.focused-shell .atlas-map .atlas-place-label small{font-size:9px;line-height:12px;letter-spacing:0;color:inherit;opacity:.8}
+.focused-shell .atlas-map .atlas-city-realm{background:#d4d1bf;filter:none;width:30px;flex-basis:30px}
+.focused-shell .atlas-map .atlas-city-realm img{width:28px;height:32px}
+.atlas-governor{width:34px;height:36px;flex:none;display:grid;place-items:center;padding:0;border:0;background:#c9c4b2;color:#394034;pointer-events:auto;overflow:hidden}
+.atlas-governor canvas,.traveler-face canvas{display:block;width:100%;height:100%;object-fit:cover}
+.focused-shell .atlas-map .atlas-place>.atlas-estate-marker{border-radius:0;margin:0;width:34px;height:36px;background:#39543d;box-shadow:inset 0 0 0 1px #c0b07c;filter:none}
+.focused-shell .atlas-map .atlas-traveler .traveler-pennant{width:27px;height:33px;background:var(--traveler-flag) center/contain no-repeat}
+.focused-shell .atlas-map .atlas-traveler .traveler-pennant::before,.focused-shell .atlas-map .atlas-traveler .traveler-pennant::after{display:none}
+.traveler-face{width:34px;height:34px;border:2px solid #b9a468;background:#dbd4bd;border-radius:50%;overflow:hidden;margin-top:-3px;box-shadow:0 2px 4px #18231b88}
+.focused-shell .atlas-map .atlas-traveler>span{font-size:10px;background:#29372cec;color:#f5ebd0;text-shadow:none;border-color:#a28c5a}
+@media(max-width:1000px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{grid-template-columns:220px minmax(180px,1fr) 250px;gap:10px}.game-entry.is-selecting .roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}.game-entry.is-selecting .roster-heading>strong{font-size:15px;padding-inline:18px}}
+@media(max-width:760px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,1.3fr);overflow:auto}.game-entry.is-selecting .roster-hero{display:none}.game-entry.is-selecting .roster-columns--map .roster-profile{grid-column:2;grid-row:2}.game-entry.is-selecting .roster-columns--map .roster-map{min-height:240px}.game-entry.is-selecting .roster-explorer{min-height:240px}.game-entry.is-selecting .roster-profile{min-height:240px}.game-entry.is-selecting .roster-heading{flex-wrap:wrap}.game-entry.is-selecting .roster-heading input{flex:1}.regiment-preview{gap:12px}.regiment-preview dl{gap:8px}.regiment-preview>.troop-illustration{width:70px}}
+/* Paper-backed form contents keep a consistent readable ink colour. */
+dialog.action-detail-dialog .action-detail-body>p,dialog.action-detail-dialog .action-detail-body>small,dialog.action-confirm-dialog .action-confirm-detail,dialog.war-declaration .war-declaration-body>p,dialog.pause-dialog:not(.pause-dialog--audience) #pause-body{color:#394033}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog) :is(.single-choice-card,.construction-plan-card,.muster-service-card,.person-option){border-radius:0;background:#eeece2;color:#384031;border-color:#9c906b}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog) :is(.single-choice-card,.construction-plan-card,.muster-service-card,.person-option):is(.is-selected,[aria-pressed=true]){background:#d8d4bd;box-shadow:inset 3px 0 #8f753b;border-color:#8f753b}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog) :is(.single-choice-card,.construction-plan-card,.muster-service-card,.person-option) :is(strong,small,b,span){color:inherit}
+dialog.action-detail-dialog :is(.single-choice-cards,.construction-plan-options) legend{color:#4c503d}
+dialog.action-detail-dialog .single-choice-reason,dialog.person-selection-dialog .person-option-reason{color:#8b4134}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog) .service-warning{color:#894435}
+:is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header>button{border-radius:50%}
+.regiment-preview :is(dt,dd){color:#333b30}
+.focused-shell .military-army-record{display:grid;grid-template-columns:66px minmax(0,1fr);gap:8px 12px}
+.focused-shell .military-army-record>.military-commander-portrait{grid-column:1;grid-row:1/3;align-self:start;float:none;margin:0;min-height:0}
+.focused-shell .military-army-record>.military-record-main{grid-column:2}
+.focused-shell .military-army-record>.regiment-cards{grid-column:2;flex-wrap:nowrap;align-items:stretch}
+.focused-shell .military-army-record>:is(span,.hover-hint,p,div:not(.regiment-cards)){grid-column:1/-1}
+.focused-shell .military-army-record:not(:has(.military-commander-portrait))>:is(.military-record-main,.regiment-cards){grid-column:1/-1}
+.focused-shell .army-unit-main:has(.regiment-cards){display:grid;grid-template-columns:42px minmax(0,1fr);gap:4px 7px}
+.focused-shell .army-unit-main:has(.regiment-cards)>.position-seat{grid-row:1/3;align-self:start}
+.focused-shell .army-unit-main>.regiment-cards{grid-column:2;flex-wrap:nowrap}
+.focused-shell .army-unit-main .regiment-card{width:50px;flex-basis:50px;min-height:88px}
+.focused-shell .army-unit-main .troop-illustration{width:46px;height:56px}
+.focused-shell .atlas-map[data-scale=strategic] .atlas-governor,.focused-shell .atlas-map[data-scale=strategic] .atlas-place-label small{display:none}

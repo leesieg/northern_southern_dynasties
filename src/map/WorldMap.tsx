@@ -1,3 +1,5 @@
+import {updateMarkerPortrait} from './markerPortrait';
+import {allegianceRealm} from '../core/officeEligibility';
 import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
 import {atlasPresentation} from './atlasPresentation';
 import {armyHeraldry} from './ArmyHeraldry';
@@ -84,7 +86,7 @@ export function WorldMap(props:Props){
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
-    const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;id:string;capital:boolean}[]=[];
+    const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;portrait:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
     const labels:{marker:Marker;data:typeof atlasLabels[number]}[]=[];
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -203,13 +205,14 @@ export function WorldMap(props:Props){
         for(const person of travelers){
           const entry=people.get(person.id),pos=position(person);
           entry?.marker.setLngLat([pos.lon,pos.lat]);
-          if(entry){entry.marker.getElement().setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+(person.journey?' · 在途':'');const pennant=entry.marker.getElement().querySelector('.traveler-pennant');if(pennant&&person.id==='player')pennant.textContent=familyName(p.world.holdings.estate.family).slice(0,1);}
+          if(entry){const personId=person.id==='player'?(p.world.characterId??'player'):person.id,face=entry.marker.getElement().querySelector<HTMLElement>('.traveler-face'),realm=allegianceRealm(p.world,personId);if(face)updateMarkerPortrait(face,personId,p.world);if(realm)entry.marker.getElement().style.setProperty('--traveler-flag',`url("${armyHeraldry(realm,regimeName(p.world,realm))}")`);entry.marker.getElement().setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+(person.journey?' · 在途':'');const pennant=entry.marker.getElement().querySelector('.traveler-pennant');if(pennant&&person.id==='player')pennant.textContent=familyName(p.world.holdings.estate.family).slice(0,1);}
         }
         for(const item of places){
           const site=siteById[item.id],state=p.world.realm?.cities[item.id],controller=state?.controller??site.polity,owner=state?.owner??site.polity;
           const internal=controller!=='frontier'?civilWar(p.world,controller):undefined,rebel=internal?.civil?.cities.includes(item.id),name=regimeName(p.world,controller);
           item.marker.getElement().style.setProperty('--city-realm',polities[controller].color);
-          item.button.textContent=site.name+(controller!==owner?' · 占':rebel?' · 举兵':'');item.button.dataset.rebel=String(!!rebel);
+          item.button.replaceChildren(document.createTextNode(site.name+(controller!==owner?' · 占':rebel?' · 举兵':'')));const county=document.createElement('small');county.textContent=administration[site.id]?.prefecture??(site.capital?'都城':'县治');item.button.append(county);
+          const governor=state?.owner===state?.controller?state?.governor:undefined;updateMarkerPortrait(item.portrait,governor??undefined,p.world);item.portrait.setAttribute('aria-label',governor?'查看本城治理者':'查看'+site.name+'详情');item.portrait.onclick=event=>{event.stopPropagation();if(governor)current.current.onInspectPeople([governor]);else current.current.onSelect(site.id);};item.button.dataset.rebel=String(!!rebel);
           item.button.title='法理：'+regimeName(p.world,owner)+' / 控制：'+name;
           item.button.setAttribute('aria-label',site.name+'，'+name+'控制，查看城域详情');
           item.flag.src=armyHeraldry(controller,name);item.badge.disabled=controller==='frontier';
@@ -294,9 +297,9 @@ export function WorldMap(props:Props){
           const flag=document.createElement('img');flag.alt='';flag.setAttribute('aria-hidden','true');flag.draggable=false;badge.append(flag);
           badge.onclick=event=>{event.stopPropagation();const realm=current.current.world.realm?.cities[s.id]?.controller??s.polity;if(realm!=='frontier')current.current.onDiplomacy(realm);};
           badge.ondblclick=event=>event.stopPropagation();badge.oncontextmenu=event=>{event.preventDefault();event.stopPropagation();};
-          element.append(badge,button);
+          const portrait=document.createElement('button');portrait.type='button';portrait.className='atlas-governor';element.append(portrait,badge,button);
           const marker=new Marker({element,anchor:'bottom',offset:[0,-7],opacityWhenCovered:.3}).setLngLat([s.lon,s.lat]).addTo(map);
-          places.push({marker,button,badge,flag,id:s.id,capital:!!s.capital});allMarkers.push(marker);
+          places.push({marker,button,badge,flag,portrait,id:s.id,capital:!!s.capital});allMarkers.push(marker);
         }
         estateButton=document.createElement('button');estateButton.type='button';estateButton.className='atlas-estate-marker';
         estateButton.onclick=event=>{event.stopPropagation();setMenu(null);current.current.onEstate();};
@@ -306,7 +309,7 @@ export function WorldMap(props:Props){
           const element=document.createElement('button');element.type='button';element.hidden=true;element.className=`atlas-traveler${person.id==='player'?' player':''}`;
           element.onclick=event=>{event.stopPropagation();setMenu(null);current.current.onInspectPeople([person.id==='player'?(current.current.world.characterId??'player'):person.id]);};element.ondblclick=event=>event.stopPropagation();element.setAttribute('aria-label','查看'+person.name+'详情');
           const pennant=document.createElement('i');pennant.className='traveler-pennant';pennant.setAttribute('aria-hidden','true');pennant.textContent=person.id==='player'?familyName(current.current.world.holdings.estate.family).slice(0,1):'';
-          const label=document.createElement('span');label.textContent=person.name;element.append(pennant,label);
+          const face=document.createElement('div');face.className='traveler-face';face.setAttribute('aria-hidden','true');const label=document.createElement('span');label.textContent=person.name;element.append(pennant,face,label);
           const pos=position(person);
           const marker=new Marker({element,anchor:'bottom',offset:[0,-2],opacityWhenCovered:.5}).setLngLat([pos.lon,pos.lat]).addTo(map);
           people.set(person.id,{marker,label});allMarkers.push(marker);
