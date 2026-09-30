@@ -6,7 +6,7 @@ import type {World} from '../core/types';
 import {siteById} from '../data/scenario';
 import {ARMY_MODEL_PIXELS,armyShowsModel,armyMapPosition,type ArmyMarkerPlacement} from './armyMapPresentation';
 import {militaryModelAssets,animateMilitaryModel,type MilitaryModel,type ArmyModelKind} from './MilitaryModels';
-import {addMilitaryLighting,militaryModelScale,updateMilitaryCamera} from './militaryRendering';
+import {addMilitaryLighting,militaryModelScale,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 // One shared MapLibre canvas/context; representative original military miniatures.
 export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;armyMotion:boolean},onFailure:(reason:string)=>void,onReady:()=>void,getPlacement:(id:number)=>ArmyMarkerPlacement|undefined):CustomLayerInterface{
  // Mercator Y points south. Convert once at the scene boundary so Three keeps right-handed view/model matrices.
@@ -28,9 +28,9 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
     if(!a.id)continue;const units=a.regiments??[],kind:ArmyModelKind=units.some(u=>u.kind==='heavyHorse'||u.kind==='lightHorse')?'horse':units.some(u=>u.kind==='siege')?'siege':'foot',name=regimeName(state.world,a.realm);let m=models.get(a.id);
     if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name){if(m)scene.remove(m.root);m=assets.create(a,kind,name);scene.add(m.root);models.set(a.id,m);}
     const placement=getPlacement(a.id);m.root.visible=!!placement?.model;if(!placement?.model)continue;
-    const {lon,lat}=armyMapPosition(a),offset=placement.offset,point=map.project([lon,lat]),modelAnchor=map.unproject([point.x+offset.x,point.y+offset.y]);
+    const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};
     const elevation=map.queryTerrainElevation(modelAnchor)??0,coord=MercatorCoordinate.fromLngLat(modelAnchor,elevation),scale=militaryModelScale(args.defaultProjectionData.mainMatrix,coord,map.getCanvas().clientWidth,ARMY_MODEL_PIXELS);
-    m.root.matrix.makeTranslation(coord.x-origin.x,origin.y-coord.y,coord.z).scale(new Vector3(scale,scale,scale)).multiply(new Matrix4().makeRotationX(Math.PI/2));
+    positionMilitaryModel(m.root.matrix,coord,origin,scale);
     const visual=visualStates.get(a.id)??'garrison';let heading=-.18;if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]];heading=Math.atan2(to.lon-from.lon,from.lat-to.lat);}m.body.rotation.y=heading;
     m.detail.visible=zoom>=7.4;m.camp.visible=zoom>=7.4&&(visual==='garrison'||visual==='siege');animating=animateMilitaryModel(m,visual,performance.now()/210+a.id,state.armyMotion)||animating;m.banner.rotation.y-=heading;
    }

@@ -1,4 +1,4 @@
-import {AmbientLight,Camera,DirectionalLight,DoubleSide,HemisphereLight,Matrix4,MeshStandardMaterial,Scene,type Texture} from 'three';
+import {AmbientLight,Camera,DirectionalLight,DoubleSide,HemisphereLight,Matrix4,MeshStandardMaterial,Scene,Vector3,type Texture} from 'three';
 
 /** Keep the map's view transform out of the projection: PBR needs the actual eye and view normals. */
 export function updateMilitaryCamera(camera:Camera,projection:ArrayLike<number>,mercatorProjection:ArrayLike<number>,anchor:Matrix4){
@@ -26,4 +26,8 @@ export function militaryModelScale(matrix:ArrayLike<number>,at:{x:number;y:numbe
  const w=matrix[3]*at.x+matrix[7]*at.y+matrix[11]*at.z+matrix[15],x=matrix[0]*at.x+matrix[4]*at.y+matrix[8]*at.z+matrix[12];
  const pixelsPerUnit=Math.abs(width*.5*(matrix[0]*w-x*matrix[3])/(w*w));
  return pixels/pixelsPerUnit;
+}
+
+export function positionMilitaryModel(matrix:Matrix4,at:{x:number;y:number;z:number},origin:{x:number;y:number},scale:number){
+ return matrix.makeTranslation(at.x-origin.x,origin.y-at.y,at.z).scale(new Vector3(scale,scale,scale)).multiply(new Matrix4().makeRotationX(Math.PI/2));
 }

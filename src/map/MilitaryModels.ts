@@ -2,6 +2,7 @@ import {Group,Mesh,InstancedMesh,BoxGeometry,SphereGeometry,CapsuleGeometry,Cyli
 import type {Army} from '../core/realm';
 import {armyHeraldry} from './ArmyHeraldry';
 import {militarySurfaceMaterial} from './militaryRendering';
+import {buildMilitaryFace} from './militaryFace';
 export type ArmyModelKind='foot'|'horse'|'siege';
 interface Actor {root:Group;legs:Group[];arms:Group[];cloak:Group}
 export interface MilitaryModel {root:Group;body:Group;detail:Group;camp:Group;banner:Group;actors:Actor[];horseLegs:Group[];lever?:Group;kind:ArmyModelKind;realm:Army['realm'];bannerName:string}
@@ -12,7 +13,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function geo(key:string,create:()=>BufferGeometry){let g=geometries.get(key);if(!g){g=create();geometries.set(key,g);}return g;}
  const ball=()=>geo('ball',()=>new SphereGeometry(.5,14,10)),box=()=>geo('box',()=>new BoxGeometry(1,1,1)),cap=()=>geo('capsule',()=>new CapsuleGeometry(.5,1,4,12)),cylinder=()=>geo('cylinder',()=>new CylinderGeometry(.5,.5,1,16)),ring=()=>geo('ring',()=>new TorusGeometry(.5,.035,6,24));
  function mat(key:string,color:string,panel?:number,metalness=0){let m=materials.get(key);if(m)return m;let map:Texture|undefined;if(panel!==undefined){map=atlas.clone();map.colorSpace=SRGBColorSpace;map.offset.set((panel%3)/3+.001,panel<3?.501:.001);map.repeat.set(1/3-.002,.5-.002);map.needsUpdate=true;textures.push(map);}m=militarySurfaceMaterial(color,map,metalness);materials.set(key,m);return m;}
- const iron=mat('iron','#ecebe1',1,.20),bronze=mat('bronze','#fff0c6',2,.32),wood=mat('wood','#efd9ac',4),leather=mat('leather','#e5c3a0',3),linen=mat('linen','#fff5da',5),skin=mat('skin','#c3a783'),dark=mat('dark','#28291f'),hair=mat('hair','#302c24'),hooves=mat('hooves','#39352b');
+ const iron=mat('iron','#ecebe1',1,.20),bronze=mat('bronze','#fff0c6',2,.32),wood=mat('wood','#efd9ac',4),leather=mat('leather','#e5c3a0',3),linen=mat('linen','#fff5da',5),skin=mat('skin','#c3a783'),dark=mat('dark','#28291f'),hair=mat('hair','#302c24'),hooves=mat('hooves','#39352b'),eyeWhite=mat('eye-white','#c6b9a0'),iris=mat('iris','#3c3225'),lip=mat('lip','#9b7561');
  function mesh(parent:Group,g:BufferGeometry,m:Material,x:number,y:number,z:number,sx=1,sy=1,sz=1){const o=new Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.frustumCulled=false;parent.add(o);return o;}
  function ellipsoid(parent:Group,m:Material,x:number,y:number,z:number,sx:number,sy:number,sz:number){return mesh(parent,ball(),m,x,y,z,sx,sy,sz);}
  function capsule(parent:Group,m:Material,x:number,y:number,z:number,sx:number,sy:number,sz:number){return mesh(parent,cap(),m,x,y,z,sx,sy/2,sz);}
@@ -34,9 +35,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function soldier(parent:Group,cloth:Material,x=0,z=0,scale=1,shield=true):Actor{
   const root=new Group(),legs:Group[]=[],arms:Group[]=[],cloak=new Group();root.position.set(x,0,z);root.scale.setScalar(scale);parent.add(root);root.add(cloak);mesh(cloak,cloakGeometry(),cloth,0,0,0);
   mesh(root,geo('tunic',()=>new LatheGeometry([new Vector2(.22,0),new Vector2(.215,.18),new Vector2(.145,.39),new Vector2(.19,.66),new Vector2(.115,.72)],16)),cloth,0,.72,0,1,1,.65);
-  armor(root);capsule(root,skin,0,1.48,0,.095,.11,.09);ellipsoid(root,skin,0,1.615,.008,.174,.224,.18);ellipsoid(root,skin,0,1.606,.092,.029,.042,.027);helmet(root);
-  for(const side of [-1,1]){ellipsoid(root,dark,side*.038,1.638,.086,.024,.012,.009);beam(root,hair,[side*.019,1.654,.086],[side*.054,1.652,.081],.012);}
-  ellipsoid(root,hair,0,1.566,.087,.085,.010,.009);
+  armor(root);capsule(root,skin,0,1.48,0,.095,.11,.09);buildMilitaryFace(root,{skin,white:eyeWhite,iris,lip,hair},geo);helmet(root);
   for(const side of [-1,1]){
    const leg=new Group();leg.position.set(side*.105,.80,0);root.add(leg);capsule(leg,cloth,0,-.20,0,.14,.405,.14);const shin=new Group();shin.position.y=-.39;leg.add(shin);capsule(shin,leather,0,-.17,.008,.109,.35,.12);ellipsoid(shin,iron,0,0,.04,.12,.12,.10);ellipsoid(shin,leather,0,-.335,.043,.13,.115,.23);legs.push(leg);
    const arm=new Group();arm.position.set(side*.252,1.37,0);root.add(arm);capsule(arm,cloth,0,-.145,0,.13,.31,.13);ellipsoid(arm,iron,0,-.275,.02,.14,.13,.13);capsule(arm,leather,0,-.415,.022,.11,.28,.105);ellipsoid(arm,skin,0,-.575,.037,.094,.105,.08);arm.rotation.z=side*.12;arms.push(arm);

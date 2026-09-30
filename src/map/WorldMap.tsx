@@ -27,7 +27,7 @@ import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
 import { territoryHit } from './territories';
 import { mapResourceUrl } from './mapResources';
-import {armyShowsModel,armyMapPosition,armyMarkerFootprint,layoutArmyMarkers,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
+import {armyShowsModel,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
 
 setWorkerUrl(mapWorkerUrl);
 setWorkerCount(2);
@@ -110,23 +110,27 @@ export function WorldMap(props:Props){
         if(data.kind==='realm'){const id=data.text==='梁'?'liang':data.text==='东 魏'?'east':'west';marker.getElement().textContent=regimeName(current.current.world,id);}
       }
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
-      const viewport=container.getBoundingClientRect(),obstacles:ScreenRect[]=[];
-      // Runtime layout, not UI acceptance: DOM markers render above the entire WebGL canvas.
-      for(const marker of [...places.map(p=>p.marker),...labels.map(l=>l.marker),...[...people.values()].map(p=>p.marker),...(estateMarker?[estateMarker]:[]),...[...activityMarkers.values()].map(p=>p.marker)]){
+      const viewport=container.getBoundingClientRect(),obstacles:ScreenRect[]=[],mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
+      const annotations:{marker:Marker;offset:[number,number]}[]=[...(estateMarker?[{marker:estateMarker,offset:[0,-55] as [number,number]}]:[]),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...places.map(p=>({marker:p.marker,offset:[0,-7] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
+      // Measure the undocked rectangle, so last frame's offset cannot feed back into the next layout.
+      for(const {marker,offset} of annotations){
         const element=marker.getElement();if(element.hidden)continue;
-        const rect=element.getBoundingClientRect();if(!rect.width||!rect.height)continue;
-        if(rect.right>viewport.left&&rect.left<viewport.right&&rect.bottom>viewport.top&&rect.top<viewport.bottom)obstacles.push({left:rect.left-viewport.left-6,top:rect.top-viewport.top-6,right:rect.right-viewport.left+6,bottom:rect.bottom-viewport.top+6});
+        const rect=element.getBoundingClientRect();if(!rect.width||!rect.height)continue;const previous=marker.getOffset(),dx=previous.x-offset[0],dy=previous.y-offset[1];
+        const bounds={left:rect.left-viewport.left-dx-6,top:rect.top-viewport.top-dy-6,right:rect.right-viewport.left-dx+6,bottom:rect.bottom-viewport.top-dy+6};if(bounds.right>0&&bounds.left<w&&bounds.bottom>0&&bounds.top<h){obstacles.push(bounds);mapMarkers.push({marker,offset,bounds});}
       }
-      armyPlacements=layoutArmyMarkers(armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat])};}),obstacles,{width:w,height:h},models);
+      const anchors=armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
+      const fixed=models?anchoredArmyModels(anchors.filter(a=>a.available),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
+      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!fixed.has(a.key)),[...obstacles,...modelBounds],view)]);
+      const placed:ScreenRect[]=[],armyBounds=[...armyPlacements.values()].map(p=>p.bounds);for(const item of mapMarkers){const dock=models?dockMapMarker(item.bounds,armyBounds,placed):{offset:{x:0,y:0},bounds:item.bounds},offset:[number,number]=[item.offset[0]+dock.offset.x,item.offset[1]+dock.offset.y],previous=item.marker.getOffset();if(previous.x!==offset[0]||previous.y!==offset[1])item.marker.setOffset(offset);placed.push(dock.bounds);}
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
         const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=!placement;if(!placement)continue;
         const {offset,model}=placement,size=armyMarkerFootprint(model);
         item.button.dataset.presentation=model?'model':'card';
         item.button.style.setProperty('--army-target-width',size.width+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
+        item.button.style.setProperty('--army-badge-bottom',armyModelBadgeBottom(map.getPitch())+'px');
         item.button.style.setProperty('--army-link-length',Math.hypot(offset.x,offset.y)>12?Math.hypot(offset.x,offset.y)+'px':'0px');item.button.style.setProperty('--army-link-angle',Math.atan2(-offset.y,-offset.x)+'rad');
-        if(model){const pos=armyMapPosition(a),point=map.project([pos.lon,pos.lat]);item.marker.setLngLat(map.unproject([point.x+offset.x,point.y+offset.y])).setOffset([0,size.bottom]);}
-        else{const pos=armyMapPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);}
+        const pos=armyMapPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);
       }
       if(models)map.triggerRepaint();
     }
