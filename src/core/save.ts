@@ -1,3 +1,6 @@
+import {migrateArmyFood} from './armyOrganization';
+import {ensureCustody} from './custody';
+import {validCustody} from './custodySave';
 import {isMonthStart} from './calendar';
 import {validResignations} from './resignation';
 import {validCoordinated} from './coordinatedService';
@@ -138,6 +141,7 @@ export function validateWorld(value: unknown): asserts value is World {
   }
   if(!validRelationships(value as unknown as World)||!validLife(value as unknown as World))return fail();
   if(!validLocalAdministration(value as unknown as World)||!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
+  if(!validCustody(value as unknown as World))return fail();
   if(!validCoordinated(value as unknown as World)||!validCommerce(value as unknown as World)||!validHousehold(value as unknown as World)||!validMilitaryNominations(value as unknown as World)||!validDefections(value as unknown as World)||!validMilitaryCareer(value as unknown as World)||!validAftermath(value as unknown as World)||!validObligations(value as unknown as World)||!validRequestReceipts(value as unknown as World)||!validEnterprises(value as unknown as World)||!validMilitaryCampaigns(value as unknown as World))return fail();
   if(!validEconomyWorld(value as unknown as World)||!validDeeds(value as unknown as World))return fail();
   for (const event of value.chronicle) {
@@ -183,6 +187,6 @@ export function parseWorld(source: string): World {
   ensureDiplomacy(world);
   if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
-  ensureMobility(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
+  ensureMobility(world);ensureCustody(world);migrateArmyFood(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
   return world;
 }

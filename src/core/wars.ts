@@ -7,7 +7,7 @@ import type {World} from './types';
 import type {RealmId} from './realm';
 import {peaceCostForCity,snapshotWarValues,warScoreFor,warWillToContinue} from './warScoring';
 
-export interface War {objective?:{side:'attack'|'defend'|null;since:number};civil?:import('./civilWars').CivilWar;goal?:'territory'|'reparations'|'tributary'|'annexation'|'defection';demand?:number;battles?:number;casualties?:{attack:number;defend:number};allies?:Partial<Record<RealmId,'attack'|'defend'>>;values?:Record<string,number>;disputes?:string[];id?:number;attacker:RealmId;defender:RealmId;target:string;started:number;score:number}
+export interface War {peaceReviewed?:number;peaceOffer?:{from:RealmId;to:RealmId;terms:PeaceTerms;created:number;until:number};objective?:{side:'attack'|'defend'|null;since:number};civil?:import('./civilWars').CivilWar;goal?:'territory'|'reparations'|'tributary'|'annexation'|'defection';demand?:number;battles?:number;casualties?:{attack:number;defend:number};allies?:Partial<Record<RealmId,'attack'|'defend'>>;values?:Record<string,number>;disputes?:string[];id?:number;attacker:RealmId;defender:RealmId;target:string;started:number;score:number}
 export function warRealmSide(war:War,r:RealmId):'attack'|'defend'|null{return r===war.attacker?'attack':r===war.defender?'defend':war.allies?.[r]??null;}
 /** Old saves expose a single war until their first authoritative mutation. */
 export function activeWars(w:World):War[]{return w.realm?.wars??(w.realm?.war?[w.realm.war]:[]);}

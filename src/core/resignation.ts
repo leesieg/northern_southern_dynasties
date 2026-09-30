@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import {scenarioOffices} from '../data/offices';
 import {relationshipPersonById} from '../data/relationships';
 import {ministryIds} from '../data/court';
@@ -22,7 +23,7 @@ export function resignationReason(w:World,office:string,id=w.characterId!){
  if(!w.realm||!id||!isAlive(w,id))return '当前无法辞官';
  const post=resignablePosts(w,id).find(p=>p.id===office);if(!post)return '已不在此职位';
  if(post.sovereign)return '君位须通过继承交接，不能直接空置';
- if(w.mobility?.captivity&&id===w.characterId)return '被拘禁期间不能交接';
+ if(detained(w,id))return '被拘禁期间不能交接';
  if(w.people[0].journey&&id===w.characterId)return '抵达目的地后办理交接';
  if(w.diplomacy?.missions.some(q=>q.envoy===id))return '须先完成使团使命与返程';
  if(w.militaryCampaigns?.items.some(q=>q.commander===id&&q.status==='active'))return '须先结束战役委任';

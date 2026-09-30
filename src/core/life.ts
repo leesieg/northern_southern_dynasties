@@ -30,11 +30,12 @@ export function careReason(w:World,id:string){
 }
 export function actLife(w:World,c:LifeCommand){ensureLife(w);if(c.action!=='care')throw new Error('未知养护行动');const reason=careReason(w,c.target);if(reason)throw new Error(reason);w.people[0].coins-=30;w.life!.people[c.target].careUntil=w.day+90;log(w,'为'+personName(c.target)+'延医照料九十日，支出 30 钱。');}
 /** One-way transition. All live appointments are reconciled before control can pass. */
-export function die(w:World,id:string,cause:'illness'|'age'){
+export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'){
  const s=ensureLife(w),p=s.people[id];if(!p||p.death)return;
  const wasPlayer=id===(w.characterId??'fictional'),next=wasPlayer?heirs(w).find(c=>c.id===w.social?.heir)??heirs(w)[0]:undefined;
+ if(w.custody){delete w.custody.records[id];for(const q of w.custody.warrants)if(q.person===id&&q.status==='pending')q.status='cancelled';}if(id===w.characterId&&w.mobility)w.mobility.captivity=null;
  p.health=0;p.death={day:w.day,cause};p.careUntil=0;
- log(w,`${personName(id)}${cause==='illness'?'病逝':'寿终'}，享年 ${ageAt(w,id)} 岁。`);
+ log(w,`${personName(id)}${{illness:'病逝',age:'寿终',battle:'战死',execution:'被处决'}[cause]}，享年 ${ageAt(w,id)} 岁。`);
  if(w.social){if(w.social.heir===id)w.social.heir=null;if(w.social.advisor===id)w.social.advisor=null;if(w.social.scheme?.target===id||wasPlayer)w.social.scheme=null;}
  const rs=w.relationships;
  if(rs){

@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import {survivingRealm} from './polityLifecycle';
 import {clearLocalPerson} from './localAdministration';
 import {acceptance} from './social';
@@ -14,7 +15,7 @@ export const officeCandidates=(w:World,r:RealmId)=>relationshipPeople.filter(p=>
 export function publicOfficeReason(w:World,id:string){
  if(!relationshipPersonById[id])return '尚未登场的人物';if(!isAlive(w,id))return '不能任命已故人物';if((ageAt(w,id)??(relationshipPersonById[id].adult?18:0))<16)return '须成年后任官';
  if(w.diplomacy?.missions.some(m=>m.envoy===id))return '须先完成使团使命与返程';
- if(w.mobility?.captivity&&id===w.characterId)return '被拘禁期间不能赴任';
+ if(detained(w,id))return '被拘禁期间不能赴任';
  if(w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===id))return '须先交接战役委任';
  if(w.retinue?.members[id])return '须先解除幕府职务';
  if(w.realm?.offices.some(o=>o.candidate===id))return '已有任命在途';

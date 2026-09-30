@@ -8,7 +8,7 @@ import {SingleChoiceCards} from './SingleChoiceCards';
 export type MilitaryChoice={kind:'automation'|'priority';army:number}|{kind:'supplyPolicy'};
 export function MilitaryChoiceDialog({world:w,choice,pending,send,onClose}:{world:World;choice:MilitaryChoice;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void}){
  const army=choice.kind==='supplyPolicy'?undefined:w.realm?.armies.find(a=>a.id===choice.army);
- const [value,setValue]=useState<string>(()=>choice.kind==='supplyPolicy'?w.realm?.supplyPolicies?.[playerRealm(w)]??'normal':choice.kind==='automation'?army?.automation??'direct':String(army?.supplyPriority??1));
+ const [value,setValue]=useState<string>(()=>choice.kind==='supplyPolicy'?w.realm?.supplyPolicies?.[playerRealm(w)]??'normal':choice.kind==='automation'?army?.automation??'delegated':String(army?.supplyPriority??1));
  const options=choice.kind==='automation'?[
   {id:'direct',title:'亲自下令',description:'保留当前行程；抵达后等待你的军令。'},
   {id:'delegated',title:'自主行军',description:'将领按实际战事与补给选择集结、救援或撤退；不自动追加征募或预算。'},

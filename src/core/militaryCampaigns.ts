@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import {relationOpinion} from './relationships';
 import {armyCommander} from './mobility';
 import type {World} from './types';
@@ -42,9 +43,10 @@ export function actMilitaryCampaign(w:World,c:MilitaryCampaignCommand){const why
  else {const q=s.items.find(q=>q.id===c.id)!;if(c.action==='cancel')finish(w,q,'cancelled','撤销战役，余款退回，军队保留原地');else{balance(w,q.source,publicBalance(w,q.source)-100);q.remaining+=100;q.budget+=100;fiscalRecord(w,q.realm,q.source,'campaign:'+q.id,100,'追加战役军饷');}}
 }
 function refund(w:World,q:MilitaryCampaign){const n=Math.min(q.remaining,1_000_000-publicBalance(w,q.source));balance(w,q.source,publicBalance(w,q.source)+n);q.remaining-=n;fiscalRecord(w,q.realm,'campaign:'+q.id,q.source,n,'战役结余退还');}
-function finish(w:World,q:MilitaryCampaign,status:MilitaryCampaign['status'],reason:string){q.status=status;q.reason=reason;const a=w.realm!.armies.find(a=>a.id===q.army);if(a&&isAlive(w,q.commander)&&allegianceRealm(w,q.commander)===a.realm&&w.mobility){w.mobility.armyCommanders??={};w.mobility.armyCommanders[a.id!]=q.commander;}if(q.commander===w.characterId)w.people[0].journey=null;else if(w.mobility?.residences[q.commander])w.mobility.residences[q.commander].journey=null;refund(w,q);if(status==='success')awardDeed(w,q.realm,q.commander,'military-campaign:'+q.id,Math.max(1,Math.round(15*(a?.troops??0)/q.strength)),reason);w.chronicle.push({day:w.day,person:'player',text:'战役 '+q.id+'：'+reason});w.chronicle=w.chronicle.slice(-100);}
+function finish(w:World,q:MilitaryCampaign,status:MilitaryCampaign['status'],reason:string){q.status=status;q.reason=reason;const a=w.realm!.armies.find(a=>a.id===q.army);if(a&&isAlive(w,q.commander)&&!detained(w,q.commander)&&allegianceRealm(w,q.commander)===a.realm&&w.mobility){w.mobility.armyCommanders??={};w.mobility.armyCommanders[a.id!]=q.commander;}if(!detained(w,q.commander)){if(q.commander===w.characterId)w.people[0].journey=null;else if(w.mobility?.residences[q.commander])w.mobility.residences[q.commander].journey=null;}refund(w,q);if(status==='success')awardDeed(w,q.realm,q.commander,'military-campaign:'+q.id,Math.max(1,Math.round(15*(a?.troops??0)/q.strength)),reason);w.chronicle.push({day:w.day,person:'player',text:'战役 '+q.id+'：'+reason});w.chronicle=w.chronicle.slice(-100);}
+export function interruptCommanderCampaigns(w:World,id:string){for(const q of w.militaryCampaigns?.items??[])if(q.commander===id&&q.status==='active')finish(w,q,'failed','统帅被拘押，委任中止、结余退回原账户');}
 export function advanceMilitaryCampaigns(w:World){if(!w.realm)return;for(const q of w.militaryCampaigns?.items??[]){if(q.status!=='active'){if(q.remaining)refund(w,q);continue;}const a=w.realm.armies.find(a=>a.id===q.army);
- if(!a||!isAlive(w,q.commander)||allegianceRealm(w,q.commander)!==q.realm||!activeWars(w).some(v=>v.id===q.war)){finish(w,q,'failed','部队、统帅或战争已经变化');continue;}
+ if(!a||!isAlive(w,q.commander)||detained(w,q.commander)||allegianceRealm(w,q.commander)!==q.realm||!activeWars(w).some(v=>v.id===q.war)){finish(w,q,'failed','部队、统帅或战争已经变化');continue;}
  const breached=w.day>q.deadline||a.troops*100<=q.strength*(100-q.lossLimit);if(breached&&!a.journey){finish(w,q,'failed',w.day>q.deadline?'超过战役期限':'已达到授权损失上限');continue;}
  if(q.lastDay>=w.day)continue;q.lastDay=w.day;
  // Commander follows this specific army rather than the national first-army proxy.

@@ -45,7 +45,7 @@ describe('资源统一月初结算',()=>{
  });
  it('军饷与旧欠在月初支付，日常耗粮不改为月结',()=>{
   const w=newCampaignWorld('xiao-yan',undefined,'sandbox');actRealm(w,{type:'realm',action:'muster'});const a=w.realm!.armies[0];a.arrears=10;
-  const food=()=>w.realm!.armies.reduce((n,a)=>n+a.supply,0)+Object.values(w.realm!.cities).reduce((n,c)=>n+c.grain,0)+Object.values(w.realm!.treasuries).reduce((n,t)=>n+t.grain,0),supply=food();w.day=30;advanceRealm(w);expect(food()).toBeLessThan(supply);expect(a.arrears).toBe(10);expect(w.realm!.fiscal!.entries.some(e=>e.reason==='军饷与补发欠饷')).toBe(false);
+  const food=()=>w.realm!.armies.reduce((n,a)=>n+a.supply,0)+Object.values(w.realm!.cities).reduce((n,c)=>n+c.grain,0)+Object.values(w.realm!.treasuries).reduce((n,t)=>n+t.grain,0),supply=food();w.day=30;advanceRealm(w);expect(food()).toBeLessThanOrEqual(supply);expect(a.foodRemainder).toBeGreaterThan(0);expect(a.arrears).toBe(10);expect(w.realm!.fiscal!.entries.some(e=>e.reason==='军饷与补发欠饷')).toBe(false);
   w.day=31;const pay=armyMonthlyPay(w,a);advanceRealm(w);expect(a.arrears).toBe(0);const entry=w.realm!.fiscal!.entries.find(e=>e.reason==='军饷与补发欠饷');expect(entry).toMatchObject({day:31,coins:pay+10});
   advanceRealm(w);expect(w.realm!.fiscal!.entries.filter(e=>e.reason==='军饷与补发欠饷')).toHaveLength(1);
  });

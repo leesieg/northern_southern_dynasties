@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import {dispatchNPC} from './mobility';
 import {planRoute} from './world';
 import {canEnter} from './diplomacy';
@@ -39,7 +40,7 @@ function available(w: World, id: string): boolean {
     && !(w.duties?.task?.phase !== 'closed' && w.duties?.task?.officer === id)
     && !w.mobility?.appointments[id] && !w.retinue?.members[id]
     && !w.social?.lineage.slice(0, -1).some(p => p.id === id)
-    && !(id === w.characterId && w.mobility?.captivity);
+    && !(detained(w,id));
 }
 export function economyHost(w: World, snapshot=false): EconomyHost {
   const routes=new Map<string,ReturnType<typeof planRoute>>();

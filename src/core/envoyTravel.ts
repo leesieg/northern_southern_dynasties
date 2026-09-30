@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import type {World,Journey} from './types';
 import type {Envoy,DiplomacyAction} from './diplomacy';
 import {civilCanAdmin} from './civilWars';
@@ -20,7 +21,7 @@ export function envoyReason(w:World,id:string,from:RealmId,to:RealmId){
  if((ageAt(w,id)??(relationshipPersonById[id]?.adult?18:0))<16)return '使者须成年';
  if(lifeOf(w,id)?.illness?.severity===3)return '重病期间不能出使';
  if(personResidence(w,id).traveling||serviceBusy(w,id)||w.realm?.offices.some(o=>o.candidate===id))return '此人正在出行或办理事务';
- if(w.mobility?.captivity&&id===w.characterId)return '被拘押期间不能出使';
+ if(detained(w,id))return '被拘押期间不能出使';
  if(w.realm?.cities[capital(to)].controller!==to)return '对方首都失守，无法接见';
  if(!envoyRoute(w,id,from,to))return '没有可通行的使节路线';
  return '';

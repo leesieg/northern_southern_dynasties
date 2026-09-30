@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import {isMonthStart,monthStart,monthIndex} from './calendar';
 import {isSovereign} from './officialDuties';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
@@ -47,7 +48,7 @@ export function retinueQuote(w:World,c:RetinueCommand,host=w.characterId!){
  else if(isSovereign(w,host)&&!['dismiss','unassign'].includes(c.action))reason='君主通过中央官职任命与委办公务，不另设幕府';
  else if(w.social?.lineage.slice(0,-1).some(p=>p.id===host))reason='退居后不能重新经营幕府';
  else if(w.retinue?.members[host])reason='已入他人幕府，不能另立幕府';
- else if(host===w.characterId&&w.mobility?.captivity)reason='被拘押期间无法安排幕府';
+ else if(detained(w,host))reason='被拘押期间无法安排幕府';
  else if(c.action==='recruit'){
   const p=relationshipPersonById[c.person],at=personResidence(w,c.person),to=personResidence(w,host).site;
   if(c.person===w.characterId&&host!==w.characterId)reason='须本人同意，不自动入幕';

@@ -23,7 +23,7 @@ export interface RelationshipState {
  bonds:Record<string,{a:string;b:string;kind:Friendship;since:number}>;marriages:Marriage[];
  maritalBasis:Record<string,'unknown'|'recorded'|'simulation'|'widowed'|'free'>;
  opinions:Record<string,number>;hooks:Record<string,number>;reserves:Record<string,number>;
- allegiances?:Record<string,{realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
+ allegiances?:Record<string,{source?:'custody';realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
  cooldowns:Record<string,number>;scheme:{kind:'befriend'|'control';actor:string;target:string;started:number;due:number;chance:number;basis:string|null}|null;
  history:{day:number;actor:string;target:string|null;text:string}[];
 }

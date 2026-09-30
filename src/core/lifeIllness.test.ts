@@ -1,3 +1,4 @@
+import {nextMonthStart} from './calendar';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld} from './world';
 import {advanceLife} from './life';
@@ -21,7 +22,7 @@ describe('temporary illness course',()=>{
   const w=newCampaignWorld('gao-huan',undefined,'sandbox'),p=w.life!.people['gao-huan'];
   p.illness={kind,since:0,severity:1};p.health=75;
   expect(parseWorld(serializeWorld(w)).life!.people['gao-huan'].illness?.kind).toBe(kind);
-  w.day=illnessCourse[kind].duration;advanceLife(w);
+  w.day=nextMonthStart(illnessCourse[kind].duration-1,w.scriptId);advanceLife(w);
   expect(p.illness).toBeNull();expect(p.health).toBeGreaterThan(75);expect(validLife(w)).toBe(true);
   const snapshot=structuredClone(w.life);advanceLife(w);expect(w.life).toEqual(snapshot);
  });

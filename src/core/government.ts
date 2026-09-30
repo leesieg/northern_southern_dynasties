@@ -1,3 +1,5 @@
+import {detained} from './custodyState';
+import {relationshipPeople} from '../data/relationships';
 import {isMonthStart,monthStart,monthIndex,calendarDate} from './calendar';
 import {realmAtWar} from './wars';
 import {awardDeed} from './deeds';
@@ -6,7 +8,7 @@ import {enactPoliticalAction} from './politicalActions';
 import {officeName,allegianceRealm} from './officeEligibility';
 import {clanStanding} from './clans';
 import {nominationReason,type NominateCommand,type PublicHeirs} from './publicSuccession';
-import {isAlive} from './lifeState';
+import {isAlive,ageAt} from './lifeState';
 import { validRegency,allegianceBonus,syncRelationships } from './relationships';
 import { courtBonus, syncCourt, type CourtState } from './court';
 import { characterById,historicalCharacters } from '../data/characters';
@@ -45,7 +47,8 @@ export function newGovernments(w:World):GovernmentState{
 export function governmentOf(w:World,r=currentRealm(w)){return w.realm?.governments?.realms[r];}
 export function regimeName(w:World|undefined,r:Polity){return r==='frontier'?polities.frontier.name:(w?.realm?.governments?.regimes.find(v=>v.id===w.realm?.governments?.realms[r]?.regimeId)?.name??dynastyNames[w?.realm?.governments?.realms[r]?.dynasty??r]);}
 export function politicalName(id:string){return officeName(id);}
-export function governingExecutives(w:World,r=currentRealm(w)):string[]{if(w.realm?.annexed?.[r])return [];const g=governmentOf(w,r);const c=validRegency(w,r);return (c&&c.origin!=='scenario'?[c.controller]:g?.executives??initialExecutives[r]).filter(id=>isAlive(w,id));}
+export function constitutionalExecutives(w:World,r=currentRealm(w)):string[]{if(w.realm?.annexed?.[r])return [];const g=governmentOf(w,r),c=validRegency(w,r);return (c&&c.origin!=='scenario'?[c.controller]:g?.executives??initialExecutives[r]).filter(id=>isAlive(w,id));}
+export function governingExecutives(w:World,r=currentRealm(w)):string[]{const g=governmentOf(w,r),officials=constitutionalExecutives(w,r),free=officials.filter(id=>!detained(w,id));if(free.length||!g||!officials.length)return free;const candidates=[g.ruler,...Object.values(g.court?.ministries??{}),...relationshipPeople.filter(p=>allegianceRealm(w,p.id)===r).sort((a,b)=>(g.merit[b.id]??0)-(g.merit[a.id]??0)).map(p=>p.id)];const proxy=candidates.find((id):id is string=>!!id&&isAlive(w,id)&&!detained(w,id)&&(ageAt(w,id)??0)>=16&&allegianceRealm(w,id)===r);return proxy?[proxy]:[];}
 export function governmentExecutive(w:World){if(!w.characterId)return false;return governingExecutives(w).includes(w.characterId);}
 export function governingAuthority(w:World,r=currentRealm(w)){return governingExecutives(w,r)[0];}
 export function governmentYear(w:World,day=w.day){return new Date(Date.UTC(getScript(w.scriptId).year,0,1+day)).getUTCFullYear();}
@@ -72,7 +75,7 @@ export function spendGovernmentMuster(w:World,r=currentRealm(w)){const g=governm
 const averageOrder=(w:World,r:RealmId)=>{const cities=Object.values(w.realm!.cities).filter(c=>c.owner===r&&c.controller===r);return cities.length?cities.reduce((n,c)=>n+c.order,0)/cities.length:0;};
 function ownsCapital(w:World,r:RealmId){const c=w.realm!.cities[capital[r]];return c.owner===r&&c.controller===r;}
 function nativeCities(w:World,r:RealmId){return Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r);}
-export function governmentTaskPause(w:World,r:RealmId){const g=governmentOf(w,r);if(!g?.task)return '';if(['celestial','meritocratic','khanate'].includes(g.type)&&g.court?.phase==='chaos')return '朝廷危局，改革暂停';if(realmAtWar(w,r))return '战争期间暂停';if(!ownsCapital(w,r))return '失去都城控制，暂停';if(g.support<40)return '支持低于 40，需议政争取';if(averageOrder(w,r)<40)return '平均秩序低于 40，需先赈济';if(g.task.kind==='government'){const target=g.task.target;if(target==='celestial'&&(g.legitimacy<80||!hasHegemony(w,r)))return '天命或统一程度不足，暂停';if((target==='nomadic'||target==='khanate')&&(!validCamp(w,r,g.camp)||g.herd<(target==='nomadic'?200:100)))return '失去驻牧地，暂停';}return '';}
+export function governmentTaskPause(w:World,r:RealmId){const g=governmentOf(w,r);if(!g?.task)return '';if(detained(w,g.task.sponsor))return '主持者被拘押，履职暂停';if(['celestial','meritocratic','khanate'].includes(g.type)&&g.court?.phase==='chaos')return '朝廷危局，改革暂停';if(realmAtWar(w,r))return '战争期间暂停';if(!ownsCapital(w,r))return '失去都城控制，暂停';if(g.support<40)return '支持低于 40，需议政争取';if(averageOrder(w,r)<40)return '平均秩序低于 40，需先赈济';if(g.task.kind==='government'){const target=g.task.target;if(target==='celestial'&&(g.legitimacy<80||!hasHegemony(w,r)))return '天命或统一程度不足，暂停';if((target==='nomadic'||target==='khanate')&&(!validCamp(w,r,g.camp)||g.herd<(target==='nomadic'?200:100)))return '失去驻牧地，暂停';}return '';}
 function hasHegemony(w:World,r:RealmId){const cities=Object.values(w.realm!.cities).filter(c=>c.owner!=='frontier');return nativeCities(w,r).length>=Math.ceil(cities.length*.6);}
 export function validCamp(w:World,r:RealmId,site:string){const c=w.realm!.cities[site];return !!c&&c.owner===r&&c.controller===r&&siteById[site].lat>=38;}
 export function governmentReason(w:World,c:GovernmentCommand):string{

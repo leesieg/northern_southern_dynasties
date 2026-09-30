@@ -4,10 +4,11 @@ import {loadRoad,loadingDays} from './roadCapacity';
 import {attributes} from './social';
 import {enactPoliticalAction} from './politicalActions';
 import {siteById} from '../data/scenario';
-import {governmentExecutive,governmentOf} from './government';
+import {governingExecutives,governmentOf} from './government';
 import {playerRealm,capital,type RealmId,type Army} from './realm';
 import {planRoute,legDays} from './world';
 import {atWar,recordRaid} from './diplomacy';
+import {detained} from './custodyState';
 import type {World} from './types';
 export interface PopulationTransfer {serviceTask?:number;loaded?:number;id:number;realm:RealmId;from:string;to:string;kind:'assisted'|'forced'|'raid'|'grain'|'demobilized';sent:number;arrived:number;lost:number;route:string[];durations:number[];leg:number;elapsed:number;created:number;status:'traveling'|'arrived'|'returned';returning?:boolean;lossRate:number}
 export interface PopulationState {version:1;nextId:number;lastDay:number;transfers:PopulationTransfer[]}
@@ -27,17 +28,17 @@ export function demobilizationPlan(w:World,a:Army){const s=w.realm!,groups=new M
 export function demobilizeArmy(w:World,a:Army){const plan=demobilizationPlan(w,a);if(plan.reason)throw new Error(plan.reason);ensurePopulation(w);for(const group of plan.routes){w.realm!.population!.transfers.push({id:w.realm!.population!.nextId++,realm:a.realm,from:a.location,to:group.to,kind:'demobilized',sent:group.amount,arrived:0,lost:0,route:group.route.route,durations:group.route.durations,leg:0,elapsed:0,created:w.day,status:'traveling',lossRate:group.lossRate});}const settled=plan.local.reduce((n,v)=>n+v.amount,0);w.realm!.cities[a.location].population+=settled;return {traveling:plan.routes.reduce((n,v)=>n+v.amount,0),settled};}
 export function civilianFood(w:World,site:string){return Math.ceil(w.realm!.cities[site].population/150);}
 export function grainCapacity(w:World,site:string){return 100+Math.ceil(w.realm!.cities[site].population/30)+(w.holdings.cities[site]?.levels.granary??0)*200;}
-export function populationQuote(w:World,c:Extract<PopulationCommand,{action:'transfer'}>){
- const r=playerRealm(w),route=planRoute(c.from,c.to,id=>w.realm!.cities[id]?.controller===r),days=(route?.days??0)+(route?.durations.reduce((n,_,i)=>n+loadingDays(route.route[i],route.route[i+1],c.amount),0)??0);
- const governor=w.realm!.cities[c.from]?.governor,skill=governor?Math.floor(attributes(w,governor).stewardship/6):0;
+export function populationQuote(w:World,c:Extract<PopulationCommand,{action:'transfer'}>,r=playerRealm(w)){
+ const route=planRoute(c.from,c.to,id=>w.realm!.cities[id]?.controller===r),days=(route?.days??0)+(route?.durations.reduce((n,_,i)=>n+loadingDays(route.route[i],route.route[i+1],c.amount),0)??0);
+ const governor=w.realm!.cities[c.from]?.governor,skill=governor&&!detained(w,governor)?Math.floor(attributes(w,governor).stewardship/6):0;
  const lossRate=Math.max(1,Math.min(60,(c.kind==='assisted'?2:c.kind==='forced'?10:c.kind==='raid'?20:3)+Math.ceil(days/(c.kind==='assisted'?10:5))-skill+(w.realm!.cities[c.from]?.order<40?5:0)));
  return {route,days,lossRate,arrived:Math.floor(c.amount*(100-lossRate)/100),coins:Math.ceil(c.amount*(c.kind==='assisted'?.12:c.kind==='grain'?.08:.04))+Math.ceil(days/3),grain:c.kind==='grain'?0:Math.ceil(c.amount*days/600)};
 }
-export function populationReason(w:World,c:PopulationCommand){
+export function populationReason(w:World,c:PopulationCommand,actor=w.characterId!,r=playerRealm(w)){
  if(!w.realm||!w.characterId||w.campaign?.status!=='active')return '仅历史沙盒可用';
- if(w.realm.event)return '先处理待决事务';
- const r=playerRealm(w),s=w.realm;
- if(c.action==='return'){const t=s.population?.transfers.find(t=>t.id===c.id);if(!t||t.realm!==r||t.status!=='traveling'||t.returning)return '没有可撤回的队伍';if(!governmentExecutive(w))return '须由实际执政者下令';return s.cities[t.from].controller!==r?'原籍已失守':t.route[t.leg]===t.from?'':planRoute(t.route[t.leg],t.from,id=>s.cities[id].controller===r)?'':'返程道路中断';}
+ if(w.realm.event&&actor===w.characterId)return '先处理待决事务';
+ const s=w.realm;
+ if(c.action==='return'){const t=s.population?.transfers.find(t=>t.id===c.id);if(!t||t.realm!==r||t.status!=='traveling'||t.returning)return '没有可撤回的队伍';if(!governingExecutives(w,r).includes(actor))return '须由实际执政者下令';return s.cities[t.from].controller!==r?'原籍已失守':t.route[t.leg]===t.from?'':planRoute(t.route[t.leg],t.from,id=>s.cities[id].controller===r)?'':'返程道路中断';}
  if(!['assisted','forced','raid','grain'].includes(c.kind)||!Number.isSafeInteger(c.amount)||c.amount<1)return '数量须为正整数';
  const a=s.cities[c.from],b=s.cities[c.to];if(!a||!b||c.from===c.to)return '请选择不同的有效城市';
  if((s.population?.transfers.filter(t=>t.status==='traveling').length??0)>=30)return '在途队伍已达上限';
@@ -47,18 +48,18 @@ export function populationReason(w:World,c:PopulationCommand){
  const army=s.armies.find(a=>a.realm===r&&!a.journey&&a.location===c.from);
  if(!s.mandate||!army||!atWar(w,r,a.owner as RealmId)||a.owner===r)return '须有军务授权、驻军并占领交战敌城';
  if(c.amount>army.troops||c.amount>Math.floor(a.population*.2))return '掠夺人数不得超过驻军人数与当地人口的两成';
- }else if(!governmentExecutive(w)&&!(c.kind==='grain'&&a.governor===w.characterId))return '迁民政策须有实际执政权，调粮亦可由本县主官发起';
+ }else if(!governingExecutives(w,r).includes(actor)&&!(c.kind==='grain'&&a.governor===actor))return '迁民政策须有实际执政权，调粮亦可由本县主官发起';
  if(c.kind!=='raid'&&a.owner!==r)return '迁民须从本国城市出发';
  if(c.kind==='grain'){if(c.amount>a.grain+(c.from===capital(r)?s.treasuries[r].grain:0))return '本城公粮不足';if(b.grain+c.amount>grainCapacity(w,c.to))return '目的地仓容不足';}
  else if(b.population+c.amount+(s.population?.transfers.filter(t=>t.to===c.to&&t.status==='traveling'&&t.kind!=='grain').reduce((n,t)=>n+t.sent,0)??0)>1_000_000)return '目的地人口承载已达上限';
  else if(c.amount>a.population-100)return '须保留至少 100 人';
- const q=populationQuote(w,c);if(!q.route)return '没有安全的本国运输道路';
+ const q=populationQuote(w,c,r);if(!q.route)return '没有安全的本国运输道路';
  if(s.treasuries[r].coins<q.coins||s.treasuries[r].grain<q.grain)return '中央钱粮不足以组织队伍';return '';
 }
-export function actPopulation(w:World,c:PopulationCommand){const reason=populationReason(w,c);if(reason)throw new Error(reason);ensurePopulation(w);const s=w.realm!,p=s.population!,r=playerRealm(w);
+export function actPopulation(w:World,c:PopulationCommand,actor=w.characterId!,r=playerRealm(w)){const reason=populationReason(w,c,actor,r);if(reason)throw new Error(reason);ensurePopulation(w);const s=w.realm!,p=s.population!;
  if(c.action==='return'){const t=p.transfers.find(t=>t.id===c.id)!,path=planRoute(t.route[t.leg],t.from,id=>s.cities[id].controller===r)??{route:[t.from],durations:[]};t.to=t.from;t.route=path.route.length>1?path.route:[t.from,t.from];t.durations=path.durations.length?path.durations:[1];t.leg=0;t.elapsed=0;t.loaded=0;t.returning=true;t.lossRate=Math.min(60,t.lossRate+5);return;}
- enactPoliticalAction(w,r,c.kind==='raid'?'military':'migration',{source:'transfer:'+p.nextId,site:c.from,actor:w.characterId,authorizer:w.characterId,stage:'commitment',scale:c.amount/200,burden:c.kind==='forced'?1:c.kind==='raid'?2:c.kind==='assisted'?-.5:0});
- const q=populationQuote(w,c),a=s.cities[c.from];s.treasuries[r].coins-=q.coins;s.treasuries[r].grain-=q.grain;
+ enactPoliticalAction(w,r,c.kind==='raid'?'military':'migration',{source:'transfer:'+p.nextId,site:c.from,actor,authorizer:actor,stage:'commitment',scale:c.amount/200,burden:c.kind==='forced'?1:c.kind==='raid'?2:c.kind==='assisted'?-.5:0});
+ const q=populationQuote(w,c,r),a=s.cities[c.from];s.treasuries[r].coins-=q.coins;s.treasuries[r].grain-=q.grain;
  if(c.kind==='grain'){const local=Math.min(a.grain,c.amount);a.grain-=local;s.treasuries[r].grain-=c.amount-local;}else {a.population-=c.amount;a.order=Math.max(0,a.order-(c.kind==='assisted'?2:c.kind==='forced'?10:25));}
  if(c.kind==='raid'){recordRaid(w,r,a.owner as RealmId);const g=governmentOf(w,r)!;g.legitimacy=Math.max(0,g.legitimacy-5);g.support=Math.max(0,g.support-3);}
  p.transfers.push({id:p.nextId++,realm:r,from:c.from,to:c.to,kind:c.kind,sent:c.amount,arrived:0,lost:0,route:q.route!.route,durations:q.route!.durations,leg:0,elapsed:0,created:w.day,status:'traveling',lossRate:q.lossRate});
@@ -71,7 +72,7 @@ export function advancePopulation(w:World){if(!w.realm)return;ensurePopulation(w
  p.transfers=[...p.transfers.filter(t=>t.status!=='traveling').slice(-60),...p.transfers.filter(t=>t.status==='traveling')];w.chronicle=w.chronicle.slice(-100);
 }
 /** Local harvest after civilian consumption. The capital is the central grain depot. */
-export function settleLocalGrain(w:World,r:RealmId,yieldFor:(id:string)=>number){const s=w.realm!;for(const [id,c] of Object.entries(s.cities)){if(c.controller!==r)continue;const net=yieldFor(id)-civilianFood(w,id);const before=c.grain;c.grain=Math.max(0,c.grain+net);if(before+net<0){const deaths=Math.min(c.population-100,Math.ceil(-(before+net)*10));c.population-=Math.max(0,deaths);c.order=Math.max(0,c.order-8);}const loss=Math.floor(c.grain*Math.max(.005,.03-(w.holdings.cities[id]?.levels.granary??0)*.008));c.grain=Math.min(grainCapacity(w,id),c.grain-loss);if(id===capital(r)&&c.owner===r&&!civilWar(w,r)?.civil?.cities.includes(id)){const reserve=civilianFood(w,id)*2,transfer=Math.max(0,c.grain-reserve);c.grain-=transfer;s.treasuries[r].grain=Math.min(1_000_000,s.treasuries[r].grain+transfer);}}}
+export function settleLocalGrain(w:World,r:RealmId,yieldFor:(id:string)=>number){const s=w.realm!;for(const [id,c] of Object.entries(s.cities)){if(c.controller!==r)continue;const net=yieldFor(id)-civilianFood(w,id);let before=c.grain;if(id===capital(r)&&c.owner===r&&!civilWar(w,r)?.civil?.cities.includes(id)){const supplement=Math.min(s.treasuries[r].grain,Math.max(0,-(before+net)));s.treasuries[r].grain-=supplement;before+=supplement;}c.grain=Math.max(0,before+net);if(before+net<0){const deaths=Math.min(c.population-100,Math.ceil(-(before+net)*10));c.population-=Math.max(0,deaths);c.order=Math.max(0,c.order-8);}const loss=Math.floor(c.grain*Math.max(.005,.03-(w.holdings.cities[id]?.levels.granary??0)*.008));c.grain=Math.min(grainCapacity(w,id),c.grain-loss);if(id===capital(r)&&c.owner===r&&!civilWar(w,r)?.civil?.cities.includes(id)){const reserve=civilianFood(w,id)*2,transfer=Math.max(0,c.grain-reserve);c.grain-=transfer;s.treasuries[r].grain=Math.min(1_000_000,s.treasuries[r].grain+transfer);}}}
 export function validPopulation(w:World){
  const p=w.realm?.population;if(p===undefined)return true;
  const int=(v:unknown,max=1_000_000):v is number=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;

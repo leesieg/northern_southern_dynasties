@@ -17,7 +17,7 @@ export function monthlyIllnessRisk(age:number,stress=0,vigorous=false){return Ma
 export function illnessKind(age:number,draw:number):Illness {return age>=60?(draw<.35?'wasting':draw<.65?'cold':draw<.85?'flux':'fever'):(draw<.55?'cold':draw<.8?'flux':'fever');}
 export interface PersonLife {
  health:number;illness:{kind:Illness;since:number;severity:1|2|3}|null;
- careUntil:number;death:{day:number;cause:'illness'|'age'}|null;
+ careUntil:number;death:{day:number;cause:'illness'|'age'|'battle'|'execution'}|null;
 }
 export interface LifeSuccession {realm:RealmId;regimeId:string;stage:string|null;day:number;deceased:string;ruler:string;executives:string[]}
 export interface LifeState {version:1;since:number;lastMonthly:number;seed:number;people:Record<string,PersonLife>;successions:LifeSuccession[]}

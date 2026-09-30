@@ -22,8 +22,10 @@ export const troopKinds={
 export type TroopKind=keyof typeof troopKinds;
 export interface Regiment {institution?:number;commanderLoyalty?:number;loyalTo?:string;cohesion?:number;id:string;kind:TroopKind;service:'levy'|'standing';origin:string;troops:number;experience:number;trainingStarted?:number;readyDay?:number}
 export type ArmyCommand={type:'army';action:'raise';site:string;kind:TroopKind;service:Regiment['service'];target?:number}|{type:'army';action:'split';army:number;regiment:string}|{type:'army';action:'merge';army:number;target:number};
+export function migrateArmyFood(w:World){const s=w.realm;if(s&&s.foodVersion!==2){for(const a of s.armies)if(a.foodRemainder!==undefined)a.foodRemainder*=150;s.foodVersion=2;}}
 export function ensureArmyOrganization(w:World){
  const s=w.realm;if(!s)return;
+ migrateArmyFood(w);
  s.nextArmyId=Math.max(s.nextArmyId??1,...s.armies.map(a=>(a.id??0)+1));
  for(const a of s.armies){a.id??=s.nextArmyId++;a.payer??=centralAccount(a.realm);a.arrears??=0;a.foodRemainder??=0;
   a.regiments??=[{id:a.id+':1',kind:'shield',service:'levy',origin:a.location,troops:a.troops,experience:0}];
@@ -53,10 +55,10 @@ export function armyMatchupFactor(ours:Army[],theirs:Army[],day:number){
  const edge=(a:Map<TroopKind,number>,b:Map<TroopKind,number>)=>.2*share(a,'spear')*(share(b,'lightHorse')+share(b,'heavyHorse'))+.15*(share(a,'lightHorse')+share(a,'heavyHorse'))*share(b,'archer')+.1*share(a,'archer')*(share(b,'shield')+share(b,'spear'))+.1*share(a,'shield')*share(b,'spear');
  return Math.min(1.2,Math.max(.85,1+edge(own,enemy)-edge(enemy,own)*.5));
 }
+/** One grain feeds 4,500 person-days; military provisioning carries a 50% overhead. */
+export function projectArmyFood(a:Army,dailyRate:number,days=1){const total=(a.foodRemainder??0)+a.troops*dailyRate*3*days;return {need:Math.floor(total/900000),remainder:total%900000};}
 export function consumeArmyFood(w:World,a:Army,dailyRate:number){
- // Rate is expressed in hundredths of a ration per 60 soldiers; preserve the fractional remainder.
- const total=(a.foodRemainder??0)+a.troops*dailyRate,need=Math.floor(total/6000);a.foodRemainder=total%6000;
- void w;return need;
+ const q=projectArmyFood(a,dailyRate);a.foodRemainder=q.remainder;void w;return q.need;
 }
 export function payArmy(w:World,a:Army,want:number){
  const campaign=armyCampaign(w,a);

@@ -1,3 +1,4 @@
+import {CustodyPanel} from './CustodyPanel';
 import {useState,useEffect,type ReactNode} from 'react';
 import {ArtIcon,type ArtName} from './ArtIcon';
 import {ConfirmAction} from './ConfirmAction';
@@ -115,6 +116,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
      </div>
      {!courtEnabled(w,realm)&&<p className="court-hall-notice">当前政体暂停中央履职与俸给</p>}
     </section>}
+    {active==='local'&&own&&(Object.values(w.custody?.records??{}).some(p=>p.cause==='arrest'&&p.captor===realm)||w.custody?.warrants.some(q=>q.realm===realm&&q.status==='pending'))&&<CustodyPanel world={w} domestic pending={pending} send={send} onPerson={onPerson}/>}
     {active==='local'&&<section className="court-local-desk">
      <header className="court-desk-heading"><h3>地方官署</h3><label className="court-jurisdiction"><ArtIcon name="city" size={23}/><select aria-label="选择州域" value={selectedRegion} onChange={event=>onRegion(event.target.value)}>{provinces.map(node=><option key={node.id} value={node.territory!}>{territoryNodes[node.territory!].name}</option>)}{!provinces.length&&<option value="">全部已录辖区</option>}</select></label>{own&&<HoverHint label="任职文书" content={localRequests.length?'查看自己的地方任职申请、举荐与待审文书':'查看自己的任职文书与既有批复'}><button className="court-icon-button" aria-label="查看地方任职文书" onClick={()=>setRequestsOpen(true)}><ArtIcon name="diligent" size={25}/>{localRequests.length>0&&<b>{localRequests.length}</b>}</button></HoverHint>}</header>
      <div className="court-local-columns">{(['province','prefecture','county'] as const).map(level=>{const group=localHere.filter(node=>territoryNodes[node.territory!]?.level===level);return <section className={'court-local-column court-local-column--'+level} key={level}>

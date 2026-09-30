@@ -1,3 +1,6 @@
+import {actPeaceOffer} from './realmStrategy';
+import {ensureCustody,actCustody,advanceCustody} from './custody';
+import {advanceRealmGovernanceAI} from './realmGovernanceAI';
 import {executeArmyDeployment} from './armyDeployment';
 import {calendarDate} from './calendar';
 import {actResignation,isAdventurer} from './resignation';
@@ -113,7 +116,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   ensureDiplomacy(w);
   ensureLifestyle(w);
   ensureLife(w);
-  ensureMobility(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);ensurePopulation(w);ensureLocalAdministration(w,true);
+  ensureMobility(w);ensureCustody(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);ensurePopulation(w);ensureLocalAdministration(w,true);
   return w;
 }
 function record(world: World, person: Person, text: string) {
@@ -145,9 +148,11 @@ export function act(world: World, command: GameCommand): void {
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
 function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
   const person = world.people[0];
-  ensureLife(world);
+  ensureLife(world);ensureCustody(world);
   if(!isAlive(world,world.characterId??'fictional'))throw new Error('人物已经去世。');
-  if(world.mobility?.captivity&&command.type!=='health'&&!(command.type==='mobility'&&command.action==='ransom'))throw new Error('被拘押期间须先筹赎返。');
+  if(world.mobility?.captivity&&command.type!=='health'&&command.type!=='custody'&&!(command.type==='mobility'&&command.action==='ransom'))throw new Error('被拘押期间须先筹赎返。');
+  if(command.type==='peaceOffer'){actPeaceOffer(world,command);return;}
+  if(command.type==='custody'){actCustody(world,command);return;}
   if(command.type==='health'){actLife(world,command);return;}
   if(command.type==='travel'&&lifeOf(world,world.characterId??'fictional')?.illness?.severity===3)throw new Error('重病期间无法远行，请先延医休养。');
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
@@ -208,7 +213,7 @@ export function advance(world: World, days = 1): void {
   for (let d = 0; d < days; d++) {
     if(world.campaign&&world.campaign.status!=='active')break;
     if(world.realm?.event)break;
-    ensureLife(world);
+    ensureLife(world);ensureCustody(world);
     ensureEconomy(world);
     const previous=snapshotInfluence(world);
     const fiscalBefore=fiscalSnapshot(world);
@@ -217,7 +222,7 @@ export function advance(world: World, days = 1): void {
     advanceConstruction(world);
     for (const p of world.people) {
       if(!isAlive(world,p.id==='player'?world.characterId??'fictional':p.id))continue;
-      if(p.id==='player'&&commandArmy(world))continue;
+      if(p.id==='player'&&(commandArmy(world)||world.custody?.records[world.characterId!]))continue;
       if(p.id==='player'&&world.diplomacy?.missions.some(m=>m.envoy===world.characterId))continue;
       if (p.journey) {
         const j = p.journey;
@@ -245,6 +250,7 @@ export function advance(world: World, days = 1): void {
     advanceFamilies(world);
     advanceSocial(world);
     advanceGovernments(world);
+    advanceRealmGovernanceAI(world);
     advancePopulation(world);
     advanceRealm(world);
     advanceFiscal(world);
@@ -256,6 +262,7 @@ export function advance(world: World, days = 1): void {
     advanceLife(world);
     advanceRetinue(world);
     advanceMobility(world);
+    advanceCustody(world);
     advanceDuties(world);
     recordCoordinated(world);advanceService(world);recordCoordinated(world);
     advancePersonalEconomy(world);

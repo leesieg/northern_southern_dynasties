@@ -1,3 +1,4 @@
+import {detained} from './custodyState';
 import {armyCommander} from './mobility';
 import type {World} from './types';
 import type {RealmId,Army} from './realm';
@@ -12,6 +13,7 @@ export type Capability='appoint'|'delegate'|'spendPublic'|'levy'|'command'|'decl
 export interface AuthorityScope {realm:RealmId;site?:string;territory?:string;account?:string;army?:Army;amount?:number}
 export function authorityGrant(w:World,actor:string,capability:Capability,scope:AuthorityScope){
  const denied=(reason:string)=>({allowed:false,reason,source:'',account:null as string|null,available:0,expires:null as number|null});
+ if(detained(w,actor))return denied('被拘押期间没有履职与指挥权限');
  if(!w.realm||!isAlive(w,actor)||allegianceRealm(w,actor)!==scope.realm)return denied('人物不在世或不效忠该政权');
  if(capability!=='command'&&scope.site&&!civilCanAdmin(w,actor,scope.site))return denied('目标由内战对方控制');
  const central=governingExecutives(w,scope.realm).includes(actor),t=scope.territory??(scope.site?countyTerritory(scope.site):null),territories=t?[t,...localAncestors(t).slice().reverse().map(n=>n.id)]:[],held=territories.find(id=>localActive(w,id,scope.realm)&&localHolder(w,id,scope.realm)===actor),account=central?'central:'+scope.realm:held?territoryAccount(w,scope.realm,held):null,campaign=scope.army?armyCampaign(w,scope.army):undefined;

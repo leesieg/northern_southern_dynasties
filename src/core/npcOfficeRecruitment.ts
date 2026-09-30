@@ -32,10 +32,10 @@ function idleCandidates(w:World,r:RealmId){
  * pending review, appoints the player, or moves an incumbent to manufacture a vacancy. */
 export function advanceNPCOfficeRecruitment(w:World){
  const s=w.realm?.local;
- if(!s||w.mode!=='sandbox'||w.campaign?.status!=='active'||w.realm!.event||!isMonthStart(w.day,w.scriptId)||(s.lastNPCRecruitment??-1)>=w.day)return;
+ if(!s||w.mode!=='sandbox'||w.campaign?.status!=='active'||!isMonthStart(w.day,w.scriptId)||(s.lastNPCRecruitment??-1)>=w.day)return;
  s.lastNPCRecruitment=w.day;
  for(const r of realms){
-  if(w.realm!.annexed?.[r]||s.cycle?.rounds[r]?.status==='pending')continue;
+  if(w.realm!.annexed?.[r]||w.realm!.event&&appointmentApprover(w,r)===w.characterId||s.cycle?.rounds[r]?.status==='pending')continue;
   const chief=appointmentApprover(w,r);
   if(!isAlive(w,chief))continue;
   const posts=Object.values(territoryNodes).filter(n=>n.level!=='realm'&&canonicalTerritory(n.id)===n.id&&localSites(w,n.id,r).length&&localActive(w,n.id,r)).sort((a,b)=>Number(['county','city'].includes(b.level))-Number(['county','city'].includes(a.level))||appointmentRank(b.id)-appointmentRank(a.id)||a.id.localeCompare(b.id));

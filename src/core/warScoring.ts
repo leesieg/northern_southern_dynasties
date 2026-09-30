@@ -1,3 +1,4 @@
+import {armyDailyFood} from './realm';
 import {siteById} from '../data/scenario';
 import type {World} from './types';
 import type {RealmId} from './realm';
@@ -60,7 +61,7 @@ export function warWillToContinue(w:World,war:War,realm:RealmId){
  const own=w.realm!.armies.filter(a=>a.realm===realm&&side(war,a.realm)===ownSide&&!(w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.army===a.id&&q.war!==war.id))),enemy=w.realm!.armies.filter(a=>side(war,a.realm)===enemySide);
  const strength=(armies:typeof own)=>armies.reduce((sum,a)=>sum+a.troops*Math.max(.2,a.morale/100),0);
  const ownStrength=strength(own),enemyStrength=strength(enemy),treasury=w.realm!.treasuries[realm];
- const lowSupply=own.filter(a=>a.supply<Math.max(1,Math.ceil(a.troops/60))*5).length;
+ const lowSupply=own.filter(a=>a.supply<armyDailyFood(w,a)*5).length;
  const arrears=own.reduce((sum,a)=>sum+(a.arrears??0),0);
  const otherFronts=Math.max(0,w.realm!.wars?.filter(v=>v!==war&&side(v,realm)).length??0);
  const score=warScoreFor(w,war,realm);

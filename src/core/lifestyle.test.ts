@@ -5,7 +5,7 @@ import {act,advance} from './world';
 import { ensureLifestyle,lifestyleProgress,lifestylePoints,lifestyleLearning,lifestyleBonuses,lifestyleMasteries } from './lifestyle';
 import { lifestylePerks,branchPerks,type LifestyleBranch } from '../data/lifestyles';
 import { buildingModifiers,interactionQuote,acceptance } from './social';
-import { cityYield,armyDailyFood,armyMonthlyPay,advanceRealm,type Army } from './realm';
+import { cityYield,armyDailyFood,armyMonthlyPay,advanceRealm,siegeRequirement,type Army } from './realm';
 import { buildQuote } from './construction';
 import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
@@ -50,15 +50,15 @@ describe('生活重心',()=>{
   act(d,{type:'interact',target:'xiao-gang',action:'gift'});expect(d.people[0].coins).toBe(coins-24);expect(d.social!.opinions['xiao-yan|xiao-gang']).toBe(opinion+20);
  });
  it('军事军粮和军饷实际降低，敌军不会获得玩家技能',()=>{
-  const w=trained('martial'),a=army('liang'),b=army('east','ye');w.realm!.armies=[a,b];expect(armyDailyFood(w,a)).toBe(9);expect(armyMonthlyPay(w,a)).toBe(51);expect(armyDailyFood(w,b)).toBe(10);
-  advanceRealm(w);expect(a.supply).toBe(112);expect(b.supply).toBe(110);
-  w.realm!.mandate=false;expect(armyDailyFood(w,a)).toBe(10);
+  const w=trained('martial'),a=army('liang'),b=army('east','ye');w.realm!.armies=[a,b];expect(armyDailyFood(w,a)).toBeCloseTo(.17);expect(armyMonthlyPay(w,a)).toBe(51);expect(armyDailyFood(w,b)).toBeCloseTo(.2);
+  advanceRealm(w);expect(a.supply).toBe(120);expect(b.supply).toBe(120);expect(a.foodRemainder).toBeLessThan(b.foodRemainder!);
+  w.realm!.mandate=false;expect(armyDailyFood(w,a)).toBeCloseTo(.2);
  });
  it('军事技能提高实际野战伤害并缩短围城',()=>{
   const w=trained('martial');w.realm!.war={attacker:'liang',defender:'east',target:'ye',started:w.day,score:0};w.realm!.armies=[army('liang','ye'),army('east','ye')];advanceRealm(w);
   expect(w.realm!.armies[1].troops).toBeLessThan(w.realm!.armies[0].troops);
-  const siege=trained('martial');siege.realm!.war={attacker:'liang',defender:'east',target:'ye',started:siege.day,score:0};const a=army('liang','ye');a.siege=29;siege.realm!.armies=[a];siege.realm!.treasuries.east.coins=0;
-  advanceRealm(siege);expect(siege.realm!.cities.ye.controller).toBe('liang');
+  const siege=trained('martial');siege.realm!.war={attacker:'liang',defender:'east',target:'ye',started:siege.day,score:0};const a=army('liang','ye');a.troops=4000;a.siege=29;siege.realm!.armies=[a];siege.realm!.treasuries.east.coins=0;
+  const improved=siegeRequirement(siege,a);siege.realm!.mandate=false;expect(siegeRequirement(siege,a)).toBeGreaterThan(improved);siege.realm!.mandate=true;advanceRealm(siege);expect(a.siege).toBeGreaterThan(29);
  });
  it('继任者拥有独立记录，前任专长和经验不遗传',()=>{
   const w=trained('stewardship'),before=structuredClone(lifestyleProgress(w));act(w,{type:'heir',target:'xiao-yi'});act(w,{type:'handover'});

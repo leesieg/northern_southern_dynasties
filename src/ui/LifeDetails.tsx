@@ -20,7 +20,7 @@ export function LifeSummary({world,id}:{world:World;id:string}){
 export function LifeDetails({world:w,id,pending,send}:{world:World;id:string;pending:boolean;send:(c:GameCommand)=>void}){
  const life=lifeOf(w,id),birth=birthRecords[id];if(!life||!birth)return null;
  const reason=careReason(w,id),illness=life.illness;
- return <section className="person-health"><h3><ArtIcon name="steadfast" size={26}/>{life.death?'生卒':'身体与养护'}</h3><p>{birth.basis==='estimate'?'约生于 ':birth.basis==='fictional'?'生于 ':'生于 '}{birth.year} 年{life.death?' · '+dateLabel(life.death.day,w.scriptId)+' '+(life.death.cause==='illness'?'病逝':'寿终'):''}</p>{birth.basis==='estimate'&&<small>生年不详 · 约龄</small>}
+ return <section className="person-health"><h3><ArtIcon name="steadfast" size={26}/>{life.death?'生卒':'身体与养护'}</h3><p>{birth.basis==='estimate'?'约生于 ':birth.basis==='fictional'?'生于 ':'生于 '}{birth.year} 年{life.death?' · '+dateLabel(life.death.day,w.scriptId)+' '+(({illness:'病逝',age:'寿终',battle:'战死',execution:'被处决'}[life.death.cause])):''}</p>{birth.basis==='estimate'&&<small>生年不详 · 约龄</small>}
  {!life.death&&<><div className="health-gauge"><meter min={0} max={100} low={40} high={65} optimum={100} value={life.health} aria-label="健康"/><span>{healthLabel(w,id)}</span></div>
  {illness?<p>{illnessNames[illness.kind]} · {['轻症','病势加重','重症'][illness.severity-1]}。{illness.severity===3?'暂不能远行。':''}患病使军事能力降低 {illness.severity*2}。</p>:<p>静养可恢复身体；年岁增长会逐渐削弱体力。</p>}
  {life.careUntil>w.day?<p className="health-care">延医照料中 · 余 {life.careUntil-w.day} 日</p>:<HoverHint label="延医照料" content={reason||'延医照料九十日，增加康复机会，降低恶化风险'}><button disabled={pending||!!reason} onClick={()=>send({type:'health',action:'care',target:id})}>延医照料 · 30 钱</button></HoverHint>}

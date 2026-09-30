@@ -134,7 +134,7 @@ export function App(){
     if(event.kind==='arrival'||event.kind==='journey'){if(event.site){chooseCity(event.site);focus('selected');}}
     else if(event.kind==='economy')openCourt('finance',undefined,false,'budget','audit');
     else if(event.kind==='mobility')openPerson(game.world!.characterId!,false);
-    else if(event.kind==='health'||event.kind==='inheritance')openPerson(event.person??game.world!.characterId!,false);
+    else if(event.kind==='custody'||event.kind==='health'||event.kind==='inheritance')openPerson(event.person??game.world!.characterId!,false);
     else if(event.kind==='retinue')openRetinue(undefined,false);
     else if(event.kind==='court'||event.kind==='situation')openCourt('situation',undefined,false);
     else if(event.kind==='local')openCourt('local',undefined,false);

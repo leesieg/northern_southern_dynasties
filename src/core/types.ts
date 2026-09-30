@@ -30,6 +30,7 @@ export interface Person {
 }
 export interface Chronicle { day: number; text: string; person: string }
 export interface World {
+ custody?:import('./custodyState').CustodyState;
  militaryNominations?:import('./militaryNominations').MilitaryNominations;
   defections?:import('./defections').Defections;
   militaryCareer?:import('./militaryCareer').MilitaryCareer;
@@ -48,7 +49,7 @@ export interface World {
 }
 export interface RoutePlan { route: string[]; durations: number[]; days: number; food: number; distance: number }
 export type ArmyBatchCommand = {type:'armyBatch';action:'merge';armies:number[];target:number}|{type:'armyBatch';action:'disband';armies:number[]}|{type:'armyBatch';action:'march';armies:number[];site:string};
-export type GameCommand = ArmyDeploymentCommand | import('./militaryDefection').MilitaryDefectionCommand | import('./militaryNominations').MilitaryNominationCommand | import('./siegePhases').SiegeDecisionCommand | import('./separatePeace').SeparatePeaceCommand | import('./defections').DefectionCommand | import('./militaryCareer').MilitaryCareerCommand | import('./recruitmentPlans').RecruitmentPlanCommand | ArmyBatchCommand | import('./resignation').ResignationCommand | import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
+export type GameCommand = import('./realmStrategy').PeaceOfferCommand | import('./custodyState').CustodyCommand | ArmyDeploymentCommand | import('./militaryDefection').MilitaryDefectionCommand | import('./militaryNominations').MilitaryNominationCommand | import('./siegePhases').SiegeDecisionCommand | import('./separatePeace').SeparatePeaceCommand | import('./defections').DefectionCommand | import('./militaryCareer').MilitaryCareerCommand | import('./recruitmentPlans').RecruitmentPlanCommand | ArmyBatchCommand | import('./resignation').ResignationCommand | import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
   | { type: 'travel'; destination: string }
   | { type: 'provision' }
   | { type: 'commission' }

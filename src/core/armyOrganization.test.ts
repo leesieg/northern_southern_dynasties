@@ -43,7 +43,7 @@ describe('army organization and conservation',()=>{
  });
  it('carries fractional daily rations rather than rounding every army every day',()=>{
   const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy'});const a=w.realm!.armies[0];
-  let used=0;for(let i=0;i<30;i++)used+=consumeArmyFood(w,a,100);expect(used).toBe(100);expect(a.foodRemainder).toBe(0);
+  let used=0;for(let i=0;i<30;i++)used+=consumeArmyFood(w,a,100);expect(used).toBe(2);expect(a.foodRemainder).toBe(0);
  });
  it('applies terrain to cavalry and reconciles casualties to remaining regiments',()=>{
   const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'heavyHorse',service:'levy'});const a=w.realm!.armies[0];
