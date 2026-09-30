@@ -169,8 +169,8 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 
 /* Scale-aware campaign atlas: the geography stays real beneath the paper. */
 .atlas-map{--atlas-paper-strength:1}
-.atlas-paper{opacity:calc(.16 + var(--atlas-paper-strength)*.84);background:radial-gradient(ellipse at 50% 42%,transparent 42%,#68513226),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23756545' opacity='.13' filter='url(%23grain)' d='M0 0h180v180H0z'/%3E%3C/svg%3E");box-shadow:inset 0 0 90px #68533823}
-.atlas-canvas .maplibregl-canvas{filter:saturate(.88) contrast(1.04)}
+.atlas-paper{opacity:calc(.05 + var(--atlas-paper-strength)*.95);background:radial-gradient(ellipse at 50% 42%,transparent 42%,#68513226),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23756545' opacity='.13' filter='url(%23grain)' d='M0 0h180v180H0z'/%3E%3C/svg%3E");box-shadow:inset 0 0 90px #68533823}
+.atlas-canvas .maplibregl-canvas{filter:saturate(.96) contrast(1.025)}
 .atlas-map .atlas-place-label{min-height:30px;border:1px solid #b9a17499;border-left:3px solid var(--city-realm,#8c7954);padding:3px 9px;color:#ece0bb;background:linear-gradient(90deg,#192d27ee,#25372cd9);text-shadow:0 1px 2px #101e18;box-shadow:0 2px 5px #14231f44;border-radius:1px;font-size:13px;letter-spacing:1px}
 .atlas-map .atlas-place-label.capital{font-size:17px;letter-spacing:3px;border-top:2px solid #c1a46a}
 .atlas-map .atlas-place-label.county{font-size:11px}

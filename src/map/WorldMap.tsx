@@ -1,3 +1,4 @@
+import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
 import {atlasPresentation} from './atlasPresentation';
 import {armyHeraldry} from './ArmyHeraldry';
 import {armyVisualState} from '../core/armyPresentation';
@@ -247,7 +248,7 @@ export function WorldMap(props:Props){
       for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
       map.setPaintProperty('territory-fill','fill-opacity',p.mode==='diplomacy'?.55:0);
-      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:['interpolate',['linear'],['zoom'],3,.22,5,.18,8,.07]);
+      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:['interpolate',['linear'],['zoom'],3,.22,5,.16,8,.035]);
       if(lastMode!==p.mode){
         map.setLayoutProperty('prefecture-boundary','visibility','none');
         map.setLayoutProperty('hierarchy-lines','visibility',p.mode==='domains'?'visible':'none');
@@ -279,6 +280,7 @@ export function WorldMap(props:Props){
       home();
       map.on('style.load',()=>{
         if(!map||disposed)return;
+        for(const name of ATLAS_MATERIALS)if(!map.hasImage(name))map.addImage(name,atlasMaterial(name),{pixelRatio:2});
         styleReady=true;
         void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();},id=>armyPlacements.get(String(id))));}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
         for(const s of sites){

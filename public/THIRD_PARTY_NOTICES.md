@@ -28,7 +28,7 @@ OpenFreeMap © OpenMapTiles，数据来自 OpenStreetMap：
 - <https://openmaptiles.org/>
 - <https://www.openstreetmap.org/copyright>
 
-使用公开 TileJSON `https://tiles.openfreemap.org/planet`，运行时仅显示水面、自然河流和林地；未显示现代行政区、城市名称、建筑或交通道路。底层数据为现代自然地理，不等于历史疆界与古河道。
+使用公开 TileJSON `https://tiles.openfreemap.org/planet`，运行时仅显示水面、自然河流，以及林地、草地、沙地等地表覆盖；未显示现代行政区、城市名称、建筑或交通道路。底层数据为现代自然地理，不等于历史疆界与古河道，也不代表南北朝时期林地或土地利用范围。林冠、地表颗粒与水面细纹由本作原创静态纹理表现，不是新增地理观测数据。
 
 ## 本地备用图层
 

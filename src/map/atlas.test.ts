@@ -53,3 +53,20 @@ describe('atlas data and style contracts (no UI)',()=>{
     for(const f of features){const p=f.properties!;expect(p.height).toBeGreaterThan(p.base);expect(f.geometry.coordinates[0][0]).toEqual(f.geometry.coordinates[0].at(-1));}
   });
 });
+
+it('keeps canopy and water pigments inside their source masks and supplies bounded static RGBA tiles',async()=>{
+ const {ATLAS_MATERIALS,atlasMaterial}=await import('./atlasMaterials');
+ const layers=atlasStyle().layers;
+ expect(layers.find(layer=>layer.id==='woodland-canopy')).toMatchObject({source:'natural','source-layer':'landcover',filter:['==',['get','class'],'wood']});
+ expect(layers.find(layer=>layer.id==='water-silk')).toMatchObject({source:'natural','source-layer':'water'});
+ const patterns=layers.flatMap(layer=>layer.type==='fill'&&typeof layer.paint?.['fill-pattern']==='string'?[layer.paint['fill-pattern']]:[]);
+ expect(new Set(patterns)).toEqual(new Set(ATLAS_MATERIALS));
+ for(const name of ATLAS_MATERIALS){
+  const image=atlasMaterial(name);
+  expect(image.data.length).toBe(image.width*image.height*4);
+  expect(image.width&(image.width-1)).toBe(0);expect(image.height&(image.height-1)).toBe(0);
+  const alpha=image.data.filter((_,i)=>i%4===3);
+  expect(Math.max(...alpha)).toBeGreaterThan(0);expect(Math.max(...alpha)).toBeLessThan(200);
+  expect(atlasMaterial(name).data).toEqual(image.data);
+ }
+});
