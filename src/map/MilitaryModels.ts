@@ -2,6 +2,7 @@ import {Group,Mesh,InstancedMesh,BoxGeometry,SphereGeometry,CapsuleGeometry,Cyli
 import type {Army} from '../core/realm';
 import {armyHeraldry} from './ArmyHeraldry';
 import {militarySurfaceMaterial} from './militaryRendering';
+import {militaryGarmentGeometry,militaryLamellaGeometry} from './militarySculpt';
 import {buildMilitaryFace} from './militaryFace';
 export type ArmyModelKind='foot'|'horse'|'siege';
 interface Actor {root:Group;legs:Group[];arms:Group[];cloak:Group}
@@ -20,40 +21,58 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function beam(parent:Group,m:Material,from:number[],to:number[],width:number){const a=new Vector3(from[0],from[1],from[2]),b=new Vector3(to[0],to[1],to[2]),delta=b.clone().sub(a),mid=a.clone().add(b).multiplyScalar(.5),o=mesh(parent,cylinder(),m,mid.x,mid.y,mid.z,width,delta.length(),width);o.quaternion.setFromUnitVectors(new Vector3(0,1,0),delta.normalize());return o;}
  function cloakGeometry(){return geo('cloak',()=>{const vertices:number[]=[],uv:number[]=[],indices:number[]=[];for(let row=0;row<=10;row++)for(let col=0;col<=8;col++){const t=row/10,u=col/8;vertices.push((u-.5)*(.32+t*.23),1.42-t*.97,-.145-t*.10-Math.sin(u*Math.PI*8)*.025*t);uv.push(u,1-t);}for(let r=0;r<10;r++)for(let c=0;c<8;c++){const i=r*9+c;indices.push(i,i+9,i+1,i+1,i+9,i+10);}const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(vertices,3));g.setAttribute('uv',new Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();return g;});}
  function armor(parent:Group){
-  ellipsoid(parent,iron,0,1.18,.015,.43,.55,.25);
-  const plate=geo('lame',()=>new BoxGeometry(.046,.071,.016)),count=72,o=new InstancedMesh(plate,iron,count),matrix=new Matrix4(),color=new Color();let i=0;
-  for(const side of [1,-1])for(let row=0;row<4;row++)for(let col=0;col<9;col++){const theta=(col-4)*.25;matrix.makeTranslation(Math.sin(theta)*.19,.98+row*.08,side*Math.cos(theta)*.135);matrix.multiply(new Matrix4().makeRotationY(side*theta));o.setMatrixAt(i,matrix);o.setColorAt(i++,color.setRGB(.83+row*.035,.82+row*.033,.76+row*.035));}
-  o.frustumCulled=false;parent.add(o);mesh(parent,cylinder(),leather,0,.96,0,.43,.044,.28);mesh(parent,box(),bronze,0,.966,.148,.066,.05,.018);
-  const skirt=new InstancedMesh(plate,iron,24);let k=0;
-  for(const side of [-1,1])for(let row=0;row<2;row++)for(let col=0;col<6;col++){const theta=(col-2.5)*.32;matrix.makeTranslation(Math.sin(theta)*.22,.78+row*.075,side*Math.cos(theta)*.16);matrix.multiply(new Matrix4().makeRotationY(side*theta));skirt.setMatrixAt(k++,matrix);}skirt.frustumCulled=false;parent.add(skirt);
-  for(const x of [-.23,.23])ellipsoid(parent,iron,x,1.4,0,.20,.105,.25);
+  mesh(parent,geo('fitted-cuirass',()=>militaryGarmentGeometry([[.96,.155,.108],[1.04,.18,.12],[1.20,.215,.135],[1.34,.213,.117],[1.41,.16,.095]])),leather,0,0,0);
+  const transforms:Matrix4[]=[],matrix=new Matrix4();
+  // Each ring wraps continuously around the ribcage; row offsets break the tiled grid.
+  for(let row=0;row<6;row++)for(let col=0;col<26;col++){
+   const t=(col+(row%2)*.5)/26*Math.PI*2,w=.163+Math.sin(row/5*Math.PI*.76)*.053,d=.119+Math.sin(row/5*Math.PI)*.018;
+   matrix.makeTranslation(Math.sin(t)*w,1.005+row*.065,Math.cos(t)*d);matrix.multiply(new Matrix4().makeRotationY(t));transforms.push(matrix.clone());
+  }
+  for(let row=0;row<3;row++)for(let col=0;col<26;col++){
+   const t=(col+(row%2)*.5)/26*Math.PI*2;matrix.makeTranslation(Math.sin(t)*(.205-row*.012),.785+row*.064,Math.cos(t)*(.16-row*.009));matrix.multiply(new Matrix4().makeRotationY(t));transforms.push(matrix.clone());
+  }
+  for(const side of [-1,1])for(let row=0;row<3;row++)for(let col=0;col<5;col++){
+   const t=(col-2)*.4;matrix.makeTranslation(side*(.215+row*.018),1.397-row*.045,Math.sin(t)*.12);matrix.multiply(new Matrix4().makeRotationY(side*Math.PI/2));matrix.multiply(new Matrix4().makeRotationX(t*.35));transforms.push(matrix.clone());
+  }
+  const plates=new InstancedMesh(geo('forged-lamella',militaryLamellaGeometry),iron,transforms.length),rivets=new InstancedMesh(geo('armor-rivet',()=>new SphereGeometry(.0032,6,4)),bronze,transforms.length*2),color=new Color();
+  transforms.forEach((m,i)=>{plates.setMatrixAt(i,m);const shade=.79+(i*13%11)*.017;plates.setColorAt(i,color.setRGB(shade,shade,shade*.94));for(const [j,x] of [-.012,.012].entries())rivets.setMatrixAt(i*2+j,m.clone().multiply(new Matrix4().makeTranslation(x,.021,.012)));});
+  plates.frustumCulled=false;rivets.frustumCulled=false;parent.add(plates,rivets);
+  mesh(parent,geo('belt',()=>militaryGarmentGeometry([[.935,.176,.132],[.976,.174,.131]])),leather,0,0,0);mesh(parent,box(),bronze,0,.956,.145,.058,.04,.012);
+  for(const side of [-1,1]){beam(parent,leather,[side*.07,1.38,.112],[side*.14,1.05,.131],.012);mesh(parent,box(),bronze,side*.13,1.10,.145,.023,.031,.007);}
  }
  function helmet(parent:Group){
   const shell=geo('helmet',()=>new LatheGeometry([new Vector2(0,0),new Vector2(.098,0),new Vector2(.105,.045),new Vector2(.091,.115),new Vector2(.045,.175),new Vector2(0,.20)],20));mesh(parent,shell,iron,0,1.67,0);
   const rim=mesh(parent,ring(),bronze,0,1.682,0,.205,.205,.205);rim.rotation.x=Math.PI/2;
   for(const side of [-1,1]){ellipsoid(parent,iron,side*.085,1.59,-.005,.038,.14,.11);beam(parent,leather,[side*.083,1.63,.068],[side*.044,1.525,.073],.016);}
   ellipsoid(parent,bronze,0,1.845,0,.027,.065,.027);
+  beam(parent,bronze,[-.072,1.692,.075],[.072,1.692,.075],.009);
+  const neckGuard=geo('helmet-neck-guard',()=>militaryGarmentGeometry([[1.54,.105,.086],[1.61,.106,.09],[1.68,.102,.085]]));
+  // Rear half only: leave the face and throat open.
+  const guard=geo('open-neck-guard',()=>{const g=neckGuard.clone(),pos=g.getAttribute('position'),index=g.getIndex()!,keep:number[]=[];for(let i=0;i<index.count;i+=3){const ids=[index.getX(i),index.getX(i+1),index.getX(i+2)];if(ids.every(j=>pos.getZ(j)<.025))keep.push(...ids);}g.setIndex(keep);return g;});mesh(parent,guard,iron,0,0,-.018);
+
  }
  function soldier(parent:Group,cloth:Material,x=0,z=0,scale=1,shield=true):Actor{
   const root=new Group(),legs:Group[]=[],arms:Group[]=[],cloak=new Group();root.position.set(x,0,z);root.scale.setScalar(scale);parent.add(root);root.add(cloak);mesh(cloak,cloakGeometry(),cloth,0,0,0);
-  mesh(root,geo('tunic',()=>new LatheGeometry([new Vector2(.22,0),new Vector2(.215,.18),new Vector2(.145,.39),new Vector2(.19,.66),new Vector2(.115,.72)],16)),cloth,0,.72,0,1,1,.65);
+  mesh(root,geo('tailored-tunic',()=>militaryGarmentGeometry([[.65,.235,.153],[.72,.225,.15],[.85,.19,.13],[.97,.151,.11],[1.18,.19,.12],[1.36,.21,.11],[1.45,.09,.077]],.055)),cloth,0,0,0);
   armor(root);capsule(root,skin,0,1.48,0,.095,.11,.09);buildMilitaryFace(root,{skin,white:eyeWhite,iris,lip,hair},geo);helmet(root);
   for(const side of [-1,1]){
-   const leg=new Group();leg.position.set(side*.105,.80,0);root.add(leg);capsule(leg,cloth,0,-.20,0,.14,.405,.14);const shin=new Group();shin.position.y=-.39;leg.add(shin);capsule(shin,leather,0,-.17,.008,.109,.35,.12);ellipsoid(shin,iron,0,0,.04,.12,.12,.10);ellipsoid(shin,leather,0,-.335,.043,.13,.115,.23);legs.push(leg);
-   const arm=new Group();arm.position.set(side*.252,1.37,0);root.add(arm);capsule(arm,cloth,0,-.145,0,.13,.31,.13);ellipsoid(arm,iron,0,-.275,.02,.14,.13,.13);capsule(arm,leather,0,-.415,.022,.11,.28,.105);ellipsoid(arm,skin,0,-.575,.037,.094,.105,.08);arm.rotation.z=side*.12;arms.push(arm);
+   const leg=new Group();leg.position.set(side*.105,.80,0);root.add(leg);mesh(leg,geo('trouser-folds',()=>militaryGarmentGeometry([[-.4,.053,.058],[-.30,.064,.068],[-.17,.081,.075],[0,.075,.073]],.065)),cloth,0,0,0);const shin=new Group();shin.position.y=-.39;leg.add(shin);capsule(shin,leather,0,-.17,.008,.109,.35,.12);ellipsoid(shin,iron,0,0,.04,.12,.12,.10);ellipsoid(shin,leather,0,-.335,.043,.13,.115,.23);legs.push(leg);
+   const arm=new Group();arm.position.set(side*.252,1.37,0);root.add(arm);mesh(arm,geo('folded-sleeve',()=>militaryGarmentGeometry([[-.29,.057,.06],[-.21,.074,.068],[-.10,.083,.074],[0,.064,.067]],.06)),cloth,0,0,0);ellipsoid(arm,iron,0,-.275,.02,.14,.13,.13);capsule(arm,leather,0,-.415,.022,.11,.28,.105);ellipsoid(arm,skin,0,-.575,.037,.094,.105,.08);arm.rotation.z=side*.12;arms.push(arm);
   }
+  const scabbard=new Group();scabbard.position.set(-.20,.93,-.07);scabbard.rotation.z=-.22;root.add(scabbard);mesh(scabbard,box(),lacquer,0,-.22,0,.035,.44,.027);for(const y of [-.42,-.05])mesh(scabbard,box(),bronze,0,y,0,.039,.018,.031);beam(scabbard,leather,[0,0,0],[0,.13,0],.026);mesh(scabbard,box(),bronze,0,.008,0,.095,.012,.035);
   if(shield){const left=arms[0];left.rotation.x=-.35;
    const shieldShape=geo('lacquer-shield',()=>{const s=new Shape();s.moveTo(-.14,-.25);s.lineTo(.14,-.25);s.lineTo(.19,-.16);s.lineTo(.17,.20);s.lineTo(0,.29);s.lineTo(-.17,.20);s.lineTo(-.19,-.16);s.closePath();return new ExtrudeGeometry(s,{depth:.034,bevelEnabled:true,bevelThickness:.008,bevelSize:.012,bevelSegments:1,steps:1});});
    mesh(left,shieldShape,wood,-.01,-.41,.12);mesh(left,shieldShape,lacquer,-.01,-.41,.153,.88,.9,.35);
    beam(left,bronze,[-.01,-.62,.174],[-.01,-.20,.174],.016);ellipsoid(left,bronze,-.01,-.40,.19,.095,.095,.042);
    for(const x of [-.13,.11])for(const y of [-.57,-.29])ellipsoid(left,bronze,x,y,.174,.018,.018,.012);
   }
-  beam(root,wood,[.34,.035,.025],[.34,2.02,.025],.018);
-  const blade=geo('blade',()=>{const s=new Shape();s.moveTo(0,-.10);s.lineTo(.035,.01);s.lineTo(0,.17);s.lineTo(-.035,.01);s.closePath();return new ExtrudeGeometry(s,{depth:.012,bevelEnabled:true,bevelThickness:.004,bevelSize:.004,bevelSegments:1,steps:1});});mesh(root,blade,iron,.34,2.045,.02);const fringe=mesh(root,geo('spear-tassel',()=>new CylinderGeometry(.018,.06,.15,8)),tassel,.34,1.94,.025);fringe.rotation.z=-.12;return {root,legs,arms,cloak};
+  const weapon=new Group();weapon.position.set(0,-.575,.04);arms[1].add(weapon);
+  beam(weapon,wood,[0,-.70,0],[0,1.285,0],.016);
+  const blade=geo('blade',()=>{const s=new Shape();s.moveTo(0,-.10);s.lineTo(.035,.01);s.lineTo(0,.17);s.lineTo(-.035,.01);s.closePath();return new ExtrudeGeometry(s,{depth:.012,bevelEnabled:true,bevelThickness:.004,bevelSize:.004,bevelSegments:1,steps:1});});mesh(weapon,blade,iron,0,1.31,-.005);const fringe=mesh(weapon,geo('spear-tassel',()=>new CylinderGeometry(.018,.06,.15,8)),tassel,0,1.205,0);fringe.rotation.z=-.12;return {root,legs,arms,cloak};
  }
  function horse(parent:Group,cloth:Material){
   const root=new Group(),horseLegs:Group[]=[],coat=mat('horse','#72604c'),mane=mat('mane','#3a332a');parent.add(root);
-  ellipsoid(root,coat,0,.90,0,.48,.57,1.13);ellipsoid(root,coat,0,.91,-.39,.43,.50,.40);ellipsoid(root,coat,0,.96,.38,.40,.52,.42);
+  const trunk=mesh(root,geo('horse-barrel',()=>militaryGarmentGeometry([[-.58,.065,.10],[-.47,.18,.225],[-.30,.233,.272],[0,.24,.285],[.29,.204,.263],[.47,.157,.20],[.55,.06,.095]])),coat,0,.92,0);trunk.rotation.x=Math.PI/2;
   const neck=capsule(root,coat,0,1.26,.47,.33,.69,.32);neck.rotation.x=.48;ellipsoid(root,coat,0,1.58,.72,.23,.29,.40);ellipsoid(root,coat,0,1.50,.90,.21,.19,.25);
   for(const side of [-1,1]){const ear=ellipsoid(root,coat,side*.085,1.77,.665,.065,.19,.065);ear.rotation.z=-side*.2;ellipsoid(root,dark,side*.113,1.63,.777,.015,.021,.018);ellipsoid(root,dark,side*.083,1.54,1.012,.038,.022,.01);}
   for(const x of [-.18,.18])for(const z of [-.37,.36]){const leg=new Group();leg.position.set(x,.84,z);root.add(leg);capsule(leg,coat,0,-.17,0,.11,.37,.11);capsule(leg,coat,0,-.52,.015,.073,.37,.08);ellipsoid(leg,hooves,0,-.73,.032,.115,.10,.16);horseLegs.push(leg);}
