@@ -9,16 +9,25 @@ export function updateMilitaryCamera(camera:Camera,projection:ArrayLike<number>,
 }
 
 export function addMilitaryLighting(scene:Scene){
- const sky=new HemisphereLight('#fff4df','#b9baa1',1.45);sky.position.set(0,0,1); // Mercator Z is up, not Three's default Y.
- const key=new DirectionalLight('#fff1d6',2.2);key.position.set(-.7,-1,1.8);
- const fill=new DirectionalLight('#e0e9ee',1.1);fill.position.set(.8,1,.8);
- scene.add(new AmbientLight('#eee4cc',.65),sky,key,fill);
+ const sky=new HemisphereLight('#f5f7ff','#b9b2a9',1.65);sky.position.set(0,0,1); // Mercator Z is up, not Three's default Y.
+ const key=new DirectionalLight('#fff4e7',2.0);key.position.set(-.7,-1,1.8);
+ const fill=new DirectionalLight('#edf2ff',1.45);fill.position.set(.8,1,.8);
+ scene.add(new AmbientLight('#f3f1ee',.85),sky,key,fill);
 }
 
 export function militarySurfaceMaterial(color:string,map?:Texture,metalness=0){
  // The atlas is painted color, not a height map. Sculpted geometry supplies the relief.
  // Weathered metal keeps a diffuse component in this lightweight pass without an HDR environment.
- return new MeshStandardMaterial({color,map:map??null,roughness:metalness?.72:.94,metalness,side:DoubleSide});
+ const material=new MeshStandardMaterial({color,map:map??null,roughness:metalness?.72:.88,metalness,side:DoubleSide});
+ if(map){
+  // Painted atlas shadows must not multiply the physical lighting at full strength.
+  // Blend albedo in linear space, keeping real light response (no emissive floor).
+  material.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`vec3 militaryBaseAlbedo = diffuseColor.rgb;
+#include <map_fragment>
+diffuseColor.rgb = mix(militaryBaseAlbedo, diffuseColor.rgb, 0.48);`);};
+  material.customProgramCacheKey=()=> 'military-albedo-v1';
+ }
+ return material;
 }
 
 /** Match a screen unit at this anchor, including perspective and terrain, instead of only using zoom. */
