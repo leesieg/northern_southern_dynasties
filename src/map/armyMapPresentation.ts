@@ -3,7 +3,7 @@ import {siteById} from '../data/scenario';
 
 // Visual scale only; marker targets and the shared model layer use the same anchors.
 export const ARMY_MODEL_ZOOM=6.5;
-export const ARMY_MODEL_PIXELS=56;
+export const ARMY_MODEL_PIXELS=72;
 export const armyShowsModel=(zoom:number,enabled:boolean)=>enabled&&zoom>=ARMY_MODEL_ZOOM;
 export function armyMapPosition(a:Army){
  let {lon,lat}=siteById[a.location];
@@ -15,4 +15,4 @@ export function armyMapPeers(armies:Army[],a:Army){
  for(const b of armies){if(b===a)break;const other=armyMapPosition(b);if(Math.abs(at.lon-other.lon)<.00001&&Math.abs(at.lat-other.lat)<.00001)peer++;}
  return peer;
 }
-export const armyModelOffset=(peer:number)=>({x:(peer%3)*104,y:Math.floor(peer/3)*128});
+export const armyModelOffset=(peer:number)=>({x:(peer%3)*136,y:Math.floor(peer/3)*160});

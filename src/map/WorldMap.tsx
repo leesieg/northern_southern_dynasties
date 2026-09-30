@@ -1,3 +1,5 @@
+import {armyHeraldry} from './ArmyHeraldry';
+import {armyVisualState} from '../core/armyPresentation';
 import {militaryArmyView} from '../core/militaryView';
 import {civilWar} from '../core/civilWars';
 import {mapActivities} from '../core/mapActivities';
@@ -75,7 +77,7 @@ export function WorldMap(props:Props){
     const allMarkers:Marker[]=[];
     const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     let estateMarker:Marker|undefined,estateButton:HTMLButtonElement|undefined;
-    const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLSpanElement;strength:HTMLSpanElement;label:HTMLElement}>();
+    const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
     let militaryLayerReady=false;
     const places:{marker:Marker;button:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
@@ -111,7 +113,7 @@ export function WorldMap(props:Props){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
         const peer=armyMapPeers(armies,a),offset=armyModelOffset(peer);
         item.button.dataset.presentation=models?'model':'card';
-        item.marker.setOffset(models?[offset.x,offset.y+20]:[(peer%3)*158,68+Math.floor(peer/3)*58]);
+        item.marker.setOffset(models?[offset.x,offset.y+20]:[(peer%3)*164,70+Math.floor(peer/3)*62]);
       }
     }
     function focusSite(id:string){
@@ -168,7 +170,7 @@ export function WorldMap(props:Props){
           const key=String(a.id??a.realm+':'+i);let item=armyMarkers.get(key);
           if(!item){
             const button=document.createElement('button');button.type='button';button.className='atlas-army-marker';button.dataset.presentation='card';
-            const flag=document.createElement('span');flag.className='atlas-army-flag';flag.setAttribute('aria-hidden','true');
+            const flag=document.createElement('img');flag.className='atlas-army-flag';flag.alt='';flag.setAttribute('aria-hidden','true');flag.draggable=false;
             const body=document.createElement('span');body.className='atlas-army-card-body';
             const label=document.createElement('small');label.className='atlas-army-label';
             const strength=document.createElement('span');strength.className='atlas-army-strength';body.append(label,strength);button.append(flag,body);
@@ -179,7 +181,7 @@ export function WorldMap(props:Props){
           }
           const {lon,lat}=armyMapPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polities[a.realm].color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
-          item.flag.textContent=name.length>2?name.slice(0,2):name;item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength+' 人':view.strength.replace('区域情报 ','估 ');
+          item.flag.src=armyHeraldry(a.realm,name);item.button.dataset.state=armyVisualState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
           item.button.title=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
           item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人':''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
           if(view.command)item.button.setAttribute('aria-pressed','false');else item.button.removeAttribute('aria-pressed');
