@@ -112,3 +112,60 @@
 .focused-shell .court-local-seat{border-color:#aa925957;background:linear-gradient(110deg,#29392c,#1a2d23);box-shadow:inset 2px 0 #ad955b33}
 .focused-shell .court-icon-button{border-radius:50%;background:var(--bronze-seal) center/100% 100% no-repeat;border:0;box-shadow:none}
 @media(max-width:700px){.focused-shell .modal:is(.estate-modal,.audience-modal)>header h2{font-size:18px;letter-spacing:2px;padding-inline:4px}.focused-shell .modal:is(.estate-modal,.audience-modal){border-width:7px;border-image-width:9px}}
+
+/* Estate canvas reaches the inner frame; title and ledger float over its sky. */
+.focused-shell .modal.estate-modal{padding:0;background:#243728;overflow:visible}
+.focused-shell .modal.estate-modal>header{position:absolute;inset:0 0 auto;z-index:12;min-height:48px;padding:5px 44px 10px;pointer-events:none;background:linear-gradient(#101b16bd,#14231948,transparent)}
+.focused-shell .modal.estate-modal>header h2{padding:5px 12px;color:#f6e6bd;text-shadow:0 2px 4px #07130a,0 0 12px #14281a;font-size:23px}
+.focused-shell .modal.estate-modal>header .drawer-actions{pointer-events:auto;top:7px;right:7px}
+.focused-shell .estate-canvas-workshop{position:relative}
+.focused-shell .estate-canvas-workshop .estate-workshop-heading{position:absolute;inset:49px 12px auto;z-index:10;margin:0;padding:5px 8px;gap:10px;border:0;background:linear-gradient(90deg,#15231ac9,#19291d99,transparent);color:#ede0ba;pointer-events:none}
+.focused-shell .estate-workshop-heading>button{pointer-events:auto;margin-left:auto;background:var(--ink-tray) center/100% no-repeat;border:0;padding:6px 12px;color:#eee0b9}
+.focused-shell .estate-canvas-workshop .estate-painting{margin:0;border:0;box-shadow:none}
+.focused-shell .estate-canvas-workshop .estate-painting-stage{height:auto;min-height:0;max-height:none;aspect-ratio:3/2}
+.focused-shell .estate-canvas-workshop .estate-landscape{object-fit:cover;width:100%;height:100%}
+.focused-shell .estate-canvas-workshop .estate-plot-popover{z-index:14}
+.focused-shell .estate-family-overlay{z-index:14}
+/* Retinue uses the court's room, upper host seat and a shared row of officers. */
+.focused-shell .modal.retinue-modal{width:min(1080px,calc(100vw - 48px));height:min(800px,calc(100dvh - 120px));max-height:calc(100dvh - 96px);padding:0;display:flex;flex-direction:column;overflow:hidden;border:10px solid transparent;border-image:url('/art/interface/ceremonial-frame.svg') 24 / 12px stretch;border-radius:0;background:#1b2a22;box-shadow:0 20px 60px #030d09c9;outline:1px solid #0d1711}
+.focused-shell .modal.retinue-modal::before{display:none}
+.focused-shell .modal.retinue-modal>header{position:relative;flex:none;min-height:48px;margin:0;padding:6px 70px 10px;border:0;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none}
+.focused-shell .modal.retinue-modal>header h2{padding:6px 20px;border:0;background:none;box-shadow:none;font:22px/1.4 var(--serif);letter-spacing:4px}
+.focused-shell .modal.retinue-modal>header::before,.focused-shell .modal.retinue-modal>header::after{display:none}
+.focused-shell .modal.retinue-modal>header .drawer-actions{top:7px;right:6px}
+.focused-shell .modal.retinue-modal>header .drawer-actions button{width:34px;height:34px;padding:8px;border:0;border-radius:50%;background:var(--bronze-seal) center/contain no-repeat}
+.focused-shell .retinue-chamber{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;margin:0;padding:14px 22px;background:linear-gradient(#d0bf9310,#18282135 45%,#101d18d9),url('/art/court/audience-hall-v1.png') center 47%/cover;overflow:auto;scrollbar-width:thin;scrollbar-color:#a58a56 #18271c}
+.focused-shell .retinue-chamber-master{position:relative;display:grid;grid-template-columns:92px minmax(120px,240px) minmax(180px,1fr);grid-template-rows:auto auto auto;align-self:stretch;align-items:center;gap:3px 18px;flex:none;min-height:150px;padding:0 12px 10px;border:0;border-bottom:1px solid #c1a46666;background:linear-gradient(transparent,#15251999);box-shadow:none;text-shadow:0 1px 3px #07160b}
+.focused-shell .retinue-chamber-master::before{display:none}
+.focused-shell .retinue-master-portrait{grid-column:1;grid-row:1/4;width:92px;height:138px;max-height:none;margin:0;border-color:#b39b65;box-shadow:0 3px 8px #07130a88}
+.focused-shell .retinue-master-rank,.focused-shell .retinue-chamber-master h3,.focused-shell .retinue-chamber-master p{grid-column:2;margin:0}.focused-shell .retinue-chamber-master p{color:#d1d4bb}
+.focused-shell .retinue-master-seal{top:10px;left:0;font-size:12px;width:22px}
+.focused-shell .retinue-master-metrics{grid-column:3;grid-row:1/4;margin:0;padding:10px 0;border:0;background:var(--ink-tray) center/100% 100% no-repeat}
+.focused-shell .retinue-chamber-work{min-height:0;flex:1}.focused-shell .retinue-work-heading{border:0;background:var(--ink-tray) center/100% 100% no-repeat;padding:9px 14px}
+.focused-shell .retinue-chamber .retinue-seats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start;margin:10px 0}
+.focused-shell .retinue-modal .retinue-seats>.position-seat{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:0;padding:4px 4px 8px;border:0;border-bottom:1px solid #b49c62;background:linear-gradient(transparent 20%,#15261cc9);box-shadow:none;text-align:center}
+.focused-shell .retinue-modal .retinue-seats>.position-seat::after{display:none}
+.focused-shell .retinue-modal .retinue-seats .position-image{width:74px;aspect-ratio:2/3;max-width:100%;border-color:#b19a68}
+.focused-shell .retinue-modal .retinue-seats .painted-portrait{margin:0;aspect-ratio:2/3}
+.focused-shell .retinue-modal .retinue-seats .position-title{min-height:34px;padding:5px 10px;background:var(--ink-tray) center/100% 100% no-repeat;border:0;box-shadow:none;color:#eeddaf}
+.focused-shell .retinue-modal .retinue-seats .position-status{font-size:11px;color:#d1d3bb}.focused-shell .retinue-modal .retinue-seats .position-name{font:16px var(--serif);color:#fff0c7;text-shadow:0 1px 3px #091b0d}
+.focused-shell .retinue-modal .retinue-actions{justify-content:center;flex-wrap:wrap}
+.focused-shell .retinue-modal .retinue-roster{border-top:1px solid #baa06477;margin-top:12px;padding-top:7px}
+/* City construction follows the estate: scene, discoverable plots, local quote. */
+.city-construction-scene{position:relative;isolation:isolate;margin:10px 0;border:1px solid #a8915c;background:#203026;box-shadow:0 0 0 2px #102118}
+.city-construction-scene .city-view{margin:0;border:0}.city-construction-scene .city-viewport{height:440px}
+.city-construction-scene .city-view>header{top:10px;left:10px;right:10px;padding:6px 8px;background:linear-gradient(90deg,#15271dbb,transparent)}
+.city-construction-scene .city-view-controls{position:absolute;right:5px;top:48px;z-index:2;display:grid;gap:3px;margin:0}.city-construction-scene .city-view-controls button{width:32px;height:32px;padding:2px;border:0;background:var(--bronze-seal) center/contain no-repeat}
+.city-construction-scene .city-view-hint{position:absolute;bottom:67px;left:8px;right:8px;margin:0;padding:4px;background:#14251ca8;color:#e3d4af;pointer-events:none}
+.city-construction-scene .city-plot-register{position:absolute;bottom:0;left:0;right:0;z-index:2;border:0;padding:5px;gap:4px;background:linear-gradient(transparent,#14251cd9)}
+.city-construction-scene .city-plot-register button{min-height:55px;border:1px solid #9c875e;padding:7px 3px;background:#e2d4b3ed;gap:3px;box-shadow:0 2px 4px #14241966}.city-construction-scene .city-plot-register strong{color:#373c2a}.city-construction-scene .city-plot-register span{color:#635b40}
+.city-construction-scene .city-plot-register button[aria-pressed=true]{background:#384833;border-color:#eed19a}.city-construction-scene .city-plot-register button[aria-pressed=true] :is(strong,span){color:#f4e3b9}
+.city-construction-popover{position:absolute;z-index:3;left:10px;right:46px;bottom:96px;max-height:310px;overflow:auto;padding:12px;border:1px solid #b6a070;background:linear-gradient(115deg,#293a2bfa,#15281efa);box-shadow:0 8px 22px #09190baa;color:#ded9be;scrollbar-width:thin}
+.city-construction-popover h3{font:17px var(--serif);color:#efddb0;margin:0 30px 7px 0}.city-construction-popover h3 small{font:11px var(--sans)}.city-construction-popover p{font-size:12px;line-height:1.55;margin:7px 0}.city-construction-popover>small{display:block;font-size:11px;line-height:1.5;margin:6px 0;color:#c6c6ac}.city-construction-popover>button.primary{width:100%;min-height:38px;margin-top:8px}
+.scene-preview-close{position:absolute;top:4px;right:4px;width:30px;height:30px;border:0;background:var(--bronze-seal) center/contain no-repeat;font:20px var(--serif);color:#e7d4a8}
+.city-construction-scene .city-view-error{position:absolute;top:85px;left:8px;right:42px;z-index:2}.city-construction-scene .city-model-loading{margin:0;min-height:440px}
+@media(max-width:760px){.focused-shell .retinue-chamber{padding:10px}.focused-shell .retinue-chamber-master{grid-template-columns:80px minmax(0,1fr);gap:4px 12px}.focused-shell .retinue-master-portrait{width:80px;height:120px}.focused-shell .retinue-master-metrics{grid-column:2;grid-row:4;margin-top:5px}.focused-shell .retinue-chamber .retinue-seats{grid-template-columns:repeat(2,minmax(0,1fr))}.focused-shell .retinue-chamber-master p{display:none}}
+@media(max-height:650px){.focused-shell .retinue-chamber-master{min-height:110px}.focused-shell .retinue-master-portrait{width:72px;height:108px}.focused-shell .retinue-chamber-master p{display:none}}
+/* Keep local overlays below the floating title/ledger, with their own scroll area. */
+.focused-shell .estate-canvas-workshop .estate-plot-popover{--plot-top:clamp(92px,24%,130px);top:var(--plot-top)!important;max-height:calc(100% - var(--plot-top) - 12px);box-sizing:border-box}
+.focused-shell .estate-canvas-workshop .estate-family-overlay{inset:92px 12px 12px;box-sizing:border-box}

@@ -26,9 +26,9 @@ import {LocalRequests} from './LocalAdministration';
 import './cityNavigation.css';
 import { ArtIcon } from './ArtIcon';
 import { buildingModifiers,traitsFor } from '../core/social';
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { siteById } from '../data/scenario';
-import { buildQuote, cityBuildings, emptyCity, type Building, type CityBuilding } from '../core/construction';
+import { buildQuote, cityBuildings, emptyCity, type CityBuilding } from '../core/construction';
 import type { GameCommand, World } from '../core/types';
 
 const CityViewport=lazy(()=>import('../city/CityViewport'));
@@ -49,9 +49,10 @@ export function LocationDevelopment({world,selected,onSelect,onPerson,onRetinue,
   </section>;
 }
 export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRetinue,pending=false,selectedCityBuilding=null}:{onPerson?:(id:string)=>void;onService?:()=>void;onRetinue?:()=>void;pending?:boolean;selectedCityBuilding?:CityBuilding|null;world:World;scope:'city'|'estate';site:string;send:(command:GameCommand)=>void}){
+  const [orderOpen,setOrderOpen]=useState(false);
   const [orderedBuilding,setOrderedBuilding]=useState<CityBuilding|null>(selectedCityBuilding),[officer,setOfficer]=useState(''),[plan,setPlan]=useState<AssignmentPlan>('balanced');
-  useEffect(()=>setOrderedBuilding(selectedCityBuilding),[selectedCityBuilding]);
-  if(scope==='estate')return <EstateWorkshop world={world} send={send}/>;
+  useEffect(()=>{setOrderedBuilding(selectedCityBuilding);setOrderOpen(false);},[selectedCityBuilding]);
+  if(scope==='estate')return <EstateWorkshop world={world} send={send} pending={pending}/>;
   const holding=world.holdings.cities[site]??emptyCity(),definitions=cityBuildings,project=holding.project;
   const r=world.realm?playerRealm(world):null,actor=world.characterId!,delegated=!!r&&canCommission(world,actor,r,site,'marketworks')&&(!world.holdings.governedCities.includes(site)||isSovereign(world));
   const selected=orderedBuilding,kind=selected?(Object.keys(civicBuildings) as AssignmentKind[]).find(k=>civicBuildings[k as keyof typeof civicBuildings]===selected):undefined;
@@ -67,13 +68,17 @@ export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRe
     {world.social&&!delegated&&<HoverHint label="营建费用与修正" content={<p>{world.realm?`使用本城公库（余额 ${localBalance(world,site)} 钱）；不足时前往公库页申请拨款。`:''}新工程造价 {buildingModifiers(world).costRate}% · 工期 {constructionModifiers(world,scope,site).timeRate}%，已计入报价。{traitsFor(world).includes('diligent')&&'勤勉：每次动工压力 +6。'}现有工程不受后续修正影响。</p>}><span className="construction-note"><ArtIcon name="coins" size={22}/>{world.realm?'本城公库 · 报价明细':'营建报价明细'}</span></HoverHint>}
     {project&&<div className="construction-progress" role="status"><strong>{cityBuildings[project.building as CityBuilding].name} · 扩建至 {project.level} 级</strong><progress value={world.day-project.started} max={project.due-project.started}/><span>还需 {project.due-world.day} 日 · 已支付 {project.cost} 钱</span></div>}
     {active&&<p className="construction-note">{siteById[site].name}已有营建差事，由{politicalName(active.officer)}承办；本城不能并行开工。{onService&&<button onClick={onService}>查看差事簿 →</button>}</p>}
-    <div className="building-list">{Object.entries(definitions).map(([id,d])=>{
-      const command={type:'build' as const,scope,site,building:id as Building};
-      const quote=buildQuote(world,command),level=(holding.levels as Record<string,number>)[id];
-      const duty=(Object.keys(civicBuildings) as AssignmentKind[]).find(k=>civicBuildings[k as keyof typeof civicBuildings]===id),blocked=delegated?serviceReason(world,{type:'service',action:'open',kind:duty!,site,officer:chosen,plan}):quote.reason;
-      return <article key={id} className={`building-row ${(selected===id)?'is-selected':''}`}><div><h4>{d.name}<span>{level} / 3 级</span></h4><p>{d.effect}</p></div>{level<3&&<small title={delegated?'按选定方案核定差事预算':`造价 ${quote.cost} 钱，工期 ${quote.days} 日`}><ArtIcon name="coins" size={24}/>{delegated?'委任营建':`${quote.cost} · ${quote.days} 日`}</small>}<HoverHint label={d.name+'营建要求'} content={blocked|| (delegated?'选择方案和承办人后下令，核准专款后开办。':`支付 ${quote.cost} 钱，工期 ${quote.days} 日`)}><button disabled={pending||(delegated?level>=3||!!active:!!blocked)} onClick={()=>delegated?setOrderedBuilding(id as CityBuilding):send(command)}>{level>=3?'已满级':delegated?'选定工程':level?'扩建至 '+quote.level+' 级':'兴建'}</button></HoverHint></article>;
-    })}</div>
-    {delegated&&kind&&r&&<ActionDialog title={`下令营建 · ${definitions[selected!].name}`} onClose={()=>setOrderedBuilding(null)} actions={world.service?.enabled?<button className="primary" disabled={pending||!!orderReason} onClick={()=>{if(!order||serviceReason(world,order))return;send(order);setOrderedBuilding(null);}}>确认下令 · {assignmentPlans[plan].name}</button>:null}>
+    <CityConstructionScene world={world} site={site} selected={selected} onSelect={id=>{setOrderedBuilding(id);setOrderOpen(false);}} onClose={()=>setOrderedBuilding(null)}>
+      {selected&&(()=>{const command={type:'build',scope:'city',site,building:selected} as const,q=buildQuote(world,command),level=holding.levels[selected],d=definitions[selected];return <>
+        <h3>{d.name} <small>{level} / 3 级</small></h3><p>{d.effect}</p>
+        {project?.building===selected&&<p>施工中 · 余 {Math.max(0,project.due-world.day)} 日</p>}
+        {delegated?<><p>由承办人赴任营建，下一步选择方案与人员并核准专款。</p><button className="primary" disabled={pending||level>=3||!!active} onClick={()=>setOrderOpen(true)}>{level>=3?'已满级':'选择承办人与方案'}</button>{active&&<small>本城已有营建差事，不能并行开工。</small>}</>:<>
+          <div className="estate-plot-cost"><ArtIcon name="coins" size={22}/><b>{q.cost} 钱</b><span>{q.days} 日</span></div><small>来源：{world.realm?'本城公库':'个人盘缠'} · 确认后动工</small>
+          <button className="primary" disabled={pending||!!q.reason} onClick={()=>{if(pending||buildQuote(world,command).reason)return;send(command);setOrderedBuilding(null);}}> {level>=3?'已满级':`确认${level?'扩建':'兴建'} · ${q.cost} 钱`}</button>{q.reason&&<small role="status">{q.reason}</small>}
+        </>}
+      </>;})()}
+    </CityConstructionScene>
+    {orderOpen&&delegated&&kind&&r&&<ActionDialog title={`下令营建 · ${definitions[selected!].name}`} onClose={()=>setOrderOpen(false)} actions={world.service?.enabled?<button className="primary" disabled={pending||!!orderReason} onClick={()=>{if(!order||serviceReason(world,order))return;send(order);setOrderedBuilding(null);}}>确认下令 · {assignmentPlans[plan].name}</button>:null}>
       {!world.service?.enabled?<p>开启公务办理后，可选承办人和方案，下达本城营建委任。<button onClick={()=>send({type:'service',action:'begin'})} disabled={pending}>开启公务办理</button></p>:<>
         <div className="action-summary"><p>下令人：{politicalName(actor)} · 承办：{chosen?politicalName(chosen):'待选'} · 方案：<strong>{assignmentPlans[plan].name}</strong></p><p>核准后从 {payer?accountName(payer.account):'主管公库'}（现有 {payer?publicBalance(world,payer.account):0} 钱）与{payer?.grainSite?'本城公粮':'中央公粮'}划拨 {budget?.coins} 钱／{budget?.grain} 粮，赴任并实际办理后生效。</p><p>预计核准、赴任后约 {quote?.days??0} 个有效办理日；阻碍和等待另计。</p></div>
         <PersonChoice world={world} title="承办人" value={chosen} onChange={setOfficer} onPerson={onPerson} pending={pending} options={candidates.map(c=>({id:c.id,score:attributes(world,c.id).stewardship,metric:'管理',reason:serviceReason(world,{type:'service',action:'open',kind,site,officer:c.id,plan})}))}/>
@@ -83,4 +88,14 @@ export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRe
     </ActionDialog>}
     <p className="construction-note">下一次收支结算：{nextMonthStart(world.day,world.scriptId)-world.day} 日后。时间暂停时，工期与收益暂停结算。</p>
   </div>;
+}
+
+function CityConstructionScene({world,site,selected,onSelect,onClose,children}:{world:World;site:string;selected:CityBuilding|null;onSelect:(id:CityBuilding)=>void;onClose:()=>void;children:ReactNode}){
+ const scene=useRef<HTMLDivElement>(null),close=useRef<HTMLButtonElement>(null);
+ useEffect(()=>{if(!selected)return;close.current?.focus();return()=>{scene.current?.querySelector<HTMLButtonElement>(`[data-city-building="${selected}"]`)?.focus();};},[selected]);
+ const dismiss=onClose;
+ return <div className="city-construction-scene" ref={scene}>
+  <Suspense fallback={<div className="city-model-loading">正在载入营建城景…</div>}><CityViewport holding={world.holdings.cities[site]??emptyCity()} day={world.day} name={siteById[site].name} capital={!!siteById[site].capital} selected={selected} onSelect={onSelect}/></Suspense>
+  {selected&&<section className="city-construction-popover" aria-label={cityBuildings[selected].name+'营建详情'} onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();dismiss();}}}><button ref={close} className="scene-preview-close" aria-label="关闭营建详情" onClick={dismiss}>×</button>{children}</section>}
+ </div>;
 }

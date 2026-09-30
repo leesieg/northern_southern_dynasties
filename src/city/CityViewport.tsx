@@ -66,7 +66,7 @@ export default function CityViewport({holding,day,name,capital,selected,onSelect
     {failure&&<div className="city-view-error" role="alert">{failure}<button onClick={()=>setRetry(n=>n+1)}>重新加载模型</button></div>}
     <div className="city-view-controls" aria-label="城市模型视角">{(['left','right','out','in','reset'] as ViewAction[]).map(id=><ViewControl key={id} action={id} disabled={!!failure} onClick={()=>view.current?.move(id)}/>)}</div>
     <p className="city-view-hint">拖动旋转 · 滚轮缩放 · 点选营建地块</p>
-    <div className="city-plot-register">{parts.map(p=><button key={p.id} aria-pressed={selected===p.id} onClick={()=>onSelect(p.id)}><strong>{cityBuildings[p.id].name}</strong><span>{p.progress!==null?`施工 · ${p.remaining}日`:p.level?`${p.level} / 3级`:'尚未营建'}</span>{p.progress!==null&&<progress aria-label={`${cityBuildings[p.id].name}施工进度`} value={p.progress} max={1}/>}</button>)}</div>
+    <div className="city-plot-register">{parts.map(p=><button key={p.id} data-city-building={p.id} aria-pressed={selected===p.id} onClick={()=>onSelect(p.id)}><strong>{cityBuildings[p.id].name}</strong><span>{p.progress!==null?`施工 · ${p.remaining}日`:p.level?`${p.level} / 3级`:'尚未营建'}</span>{p.progress!==null&&<progress aria-label={`${cityBuildings[p.id].name}施工进度`} value={p.progress} max={1}/>}</button>)}</div>
 
   </section>;
 }
