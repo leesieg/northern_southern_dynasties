@@ -1,3 +1,5 @@
+import {activeWars} from './wars';
+import {worldRealms} from './polityRuntime';
 import {isMonthStart,monthStart} from './calendar';
 import {allegianceRealm} from './officeEligibility';
 import {marriageClanBonus} from './clans';
@@ -12,18 +14,18 @@ import { attributes,acceptance,pair,interactionQuote,applySocial,traitsFor,trait
 import { awardPrestige } from './family';
 import { governmentOf,currentRealm,governingExecutives,governmentExecutive } from './government';
 import { syncCourt } from './court';
-import { realms,type RealmId } from './realm';
+import { type RealmId } from './realm';
 import type { World } from './types';
 import {localPoliticalBasis} from './officePower';
 export type Friendship='friend'|'confidant'|'rival'|'nemesis';
 export interface Marriage {id:string;a:string;b:string;from:number;until:number|null;origin:'historical'|'simulation'}
-export interface Regency {realm:RealmId;regimeId:string;basis:string;ruler:string;controller:string;since:number;grip:number;origin:'scenario'|'scheme'|'restored'}
+export interface Regency {realm:RealmId;regimeId:string;basis:string;ruler:string;controller:string;since:number;grip:number;origin:'scenario'|'scheme'|'restored'|'custody'}
 export interface RelationshipState {
  version:1;since:number;lastMonthly:number;seed:number;
  bonds:Record<string,{a:string;b:string;kind:Friendship;since:number}>;marriages:Marriage[];
  maritalBasis:Record<string,'unknown'|'recorded'|'simulation'|'widowed'|'free'>;
  opinions:Record<string,number>;hooks:Record<string,number>;reserves:Record<string,number>;
- allegiances?:Record<string,{source?:'custody';realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
+ allegiances?:Record<string,{source?:'custody'|'pact'|'partition'|'retained';realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
  cooldowns:Record<string,number>;scheme:{kind:'befriend'|'control';actor:string;target:string;started:number;due:number;chance:number;basis:string|null}|null;
  history:{day:number;actor:string;target:string|null;text:string}[];
 }
@@ -34,7 +36,7 @@ export const relationName=(id:string)=>relationshipPersonById[id]?.name??'未录
 export const powerBasis=(w:World,r:RealmId)=>{const g=governmentOf(w,r);return g?g.regimeId+'|'+g.ruler+'|'+g.executives.join('|'):'';};
 export function newRelationships(w:World):RelationshipState{
  const state:RelationshipState={version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:546,bonds:{},marriages:historicalMarriages.map((m,i)=>({id:'marriage:historical:'+i,a:m.a,b:m.b,from:w.day,until:null,origin:'historical'})),maritalBasis:Object.fromEntries(relationshipPeople.map(p=>[p.id,p.status==='fictional'?'free':p.id==='xiao-yan'?'widowed':historicalMarriages.some(m=>m.a===p.id||m.b===p.id)?'recorded':'unknown'])),opinions:{},hooks:{},reserves:Object.fromEntries(relationshipPeople.map(p=>[p.id,120])),oaths:{},regencies:{},cooldowns:{},scheme:null,history:[]};
- for(const r of realms){const g=governmentOf(w,r);if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)state.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}
+ for(const r of worldRealms(w)){const g=governmentOf(w,r);if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)state.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}
  return state;
 }
 export function ensureRelationships(w:World){if(w.social&&w.characterId)w.relationships??=newRelationships(w);}
@@ -153,7 +155,7 @@ export function actRelationship(w:World,command:RelationshipCommand){const q=rel
  }
  log(w,a,b,relationName(a)+'对'+relationName(b)+'执行「'+relationshipActionNames[action]+'」。');
 }
-export function syncRelationships(w:World){const s=w.relationships;if(!s)return;for(const r of realms){const old=s.regencies[r],g=governmentOf(w,r);if(!old||old.basis!==powerBasis(w,r)){if(old){delete s.regencies[r];log(w,old.controller,old.ruler,'政权执政格局变更，旧控制关系结束。');}if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)s.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}}
+export function syncRelationships(w:World){const s=w.relationships;if(!s)return;for(const r of worldRealms(w)){if(w.realm?.annexed?.[r]){delete s.regencies[r];continue;}const old=s.regencies[r],g=governmentOf(w,r);if(old?.origin==='custody'&&(!w.custody?.records[g!.ruler]||!activeWars(w).some(v=>v.civil&&v.id===w.custody!.records[g!.ruler].war))){delete s.regencies[r];}if(!s.regencies[r]||old?.basis!==powerBasis(w,r)){if(old){delete s.regencies[r];log(w,old.controller,old.ruler,'政权执政格局变更，旧控制关系结束。');}if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)s.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}}
  if(s.scheme&&(s.scheme.actor!==w.characterId||s.scheme.kind==='control'&&s.scheme.basis!==powerBasis(w,relationshipPersonById[s.scheme.actor].realm))){log(w,s.scheme.actor,s.scheme.target,'人物或朝廷已变，关系计谋失效；成本不退。');s.scheme=null;}
 }
 export function advanceRelationships(w:World){const s=w.relationships;if(!s)return;syncRelationships(w);
@@ -166,7 +168,7 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
  const personal=Object.values(s.bonds).filter(b=>isAlive(w,b.a)&&isAlive(w,b.b)&&(b.a===w.characterId||b.b===w.characterId)),friends=personal.filter(b=>b.kind==='friend'||b.kind==='confidant').length,rivals=personal.filter(b=>b.kind==='rival'||b.kind==='nemesis').length;
  w.social!.stress=cap(w.social!.stress-Math.min(6,friends*2)+(spouseOf(w,w.characterId!)?-2:0)+Math.min(9,rivals*3));
  for(const [id,o] of Object.entries(s.oaths)){const kind=friendship(w,id,o.lord);o.loyalty=cap(o.loyalty+(kind==='rival'||kind==='nemesis'?-15:relationshipBonus(w,id,o.lord)>10?3:relationOpinion(w,o.lord,id)>=40?2:-1));if(o.loyalty===0){delete s.oaths[id];log(w,id,o.lord,'效忠者离心，誓约自动解除。');}}
- for(const r of realms){const c=validRegency(w,r);if(c&&c.origin!=='restored'){c.grip=cap(c.grip-(governmentOf(w,r)!.support>=60?1:4));if(c.grip===0)restoreRule(w,r);}}
+ for(const r of worldRealms(w)){const c=validRegency(w,r);if(c&&c.origin!=='restored'){c.grip=cap(c.grip-(governmentOf(w,r)!.support>=60?1:4));if(c.grip===0)restoreRule(w,r);}}
 }
 
 /** Personal receipts use the same wallet whether the holder is playable or an NPC. */

@@ -1,3 +1,4 @@
+import {polityStyle,worldRealms} from '../core/polityRuntime';
 import {updateMarkerPortrait} from './markerPortrait';
 import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
 import {atlasPresentation} from './atlasPresentation';
@@ -9,7 +10,7 @@ import {mapActivities} from '../core/mapActivities';
 import type {OngoingItem} from '../core/ongoing';
 import {mapTravelers} from '../core/residence';
 import { diplomaticColor,personalRoute } from '../core/diplomacy';
-import {realmReason,canMarchThrough} from '../core/realm';
+import {realmReason,canMarchThrough,capital} from '../core/realm';
 import type { Army,RealmId } from '../core/realm';
 import type { ExpressionSpecification } from 'maplibre-gl';
 import { regimeName } from '../core/government';
@@ -88,6 +89,7 @@ export function WorldMap(props:Props){
     const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;portrait:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
     const labels:{marker:Marker;data:typeof atlasLabels[number]}[]=[];
+    const realmLabels=new globalThis.Map<RealmId,Marker>();
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setReady(false);setError('');setWarning('');setHover(null);setMenu(null);
 
@@ -115,8 +117,14 @@ export function WorldMap(props:Props){
       for(const {marker,data} of labels){
         const point=map.project([data.lon,data.lat]);
         const hidden=zoom<data.minZoom||zoom>data.maxZoom||data.kind==='realm'&&!['political','diplomacy'].includes(current.current.mode)||(data.kind==='prefecture'||data.kind==='province')&&current.current.mode!=='domains'||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y)<38);
-        marker.getElement().hidden=hidden;if(data.kind==='realm'){const r:RealmId=data.text.includes('东')?'east':data.text.includes('西')?'west':'liang';marker.getElement().textContent=regimeName(current.current.world,r);}
-        if(data.kind==='realm'){const id=data.text==='梁'?'liang':data.text==='东 魏'?'east':'west';marker.getElement().textContent=regimeName(current.current.world,id);}
+        marker.getElement().hidden=hidden;
+      }
+      const world=current.current.world;
+      for(const r of worldRealms(world)){
+        let marker=realmLabels.get(r);
+        if(!marker){const element=document.createElement('button');element.className='atlas-geographic-label realm';element.style.pointerEvents='auto';element.onclick=e=>{e.stopPropagation();current.current.onDiplomacy(r);};marker=new Marker({element,anchor:'center',opacityWhenCovered:.4}).setLngLat([0,0]).addTo(map);realmLabels.set(r,marker);allMarkers.push(marker);}
+        const old=atlasLabels.find(v=>v.kind==='realm'&&v.text===(r==='liang'?'梁':r==='east'?'东 魏':r==='west'?'西 魏':'')),site=siteById[capital(r,world)],moved=!!world.realm?.identities?.[r],coords:[number,number]=old&&!moved?[old.lon,old.lat]:[site.lon,site.lat],offset=moved?-50:0,point=map.project(coords),element=marker.getElement();
+        marker.setLngLat(coords).setOffset([0,offset]);element.textContent=regimeName(world,r);element.setAttribute('aria-label','查看'+regimeName(world,r)+'外交');element.hidden=!!world.realm?.annexed?.[r]||zoom<2||zoom>6||!['political','diplomacy'].includes(current.current.mode)||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y-offset)<38);
       }
       for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(presentation.strategic&&id!=='player'&&id!==current.current.world.characterId);}
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
@@ -209,12 +217,12 @@ export function WorldMap(props:Props){
         for(const item of places){
           const site=siteById[item.id],state=p.world.realm?.cities[item.id],controller=state?.controller??site.polity,owner=state?.owner??site.polity;
           const internal=controller!=='frontier'?civilWar(p.world,controller):undefined,rebel=internal?.civil?.cities.includes(item.id),name=regimeName(p.world,controller);
-          item.marker.getElement().style.setProperty('--city-realm',polities[controller].color);
+          item.marker.getElement().style.setProperty('--city-realm',polityStyle(p.world,controller).color);
           item.button.replaceChildren(document.createTextNode(site.name+(controller!==owner?' · 占':rebel?' · 举兵':'')));const county=document.createElement('small');county.textContent=administration[site.id]?.prefecture??(site.capital?'都城':'县治');item.button.append(county);
           const governor=state?.owner===state?.controller?state?.governor:undefined;updateMarkerPortrait(item.portrait,governor??undefined,p.world);item.portrait.setAttribute('aria-label',governor?'查看本城治理者':'查看'+site.name+'详情');item.portrait.onclick=event=>{event.stopPropagation();if(governor)current.current.onInspectPeople([governor]);else current.current.onSelect(site.id);};item.button.dataset.rebel=String(!!rebel);
           item.button.title='法理：'+regimeName(p.world,owner)+' / 控制：'+name;
           item.button.setAttribute('aria-label',site.name+'，'+name+'控制，查看城域详情');
-          item.flag.src=armyHeraldry(controller,name);item.badge.disabled=controller==='frontier';
+          item.flag.src=armyHeraldry(controller,name,p.world);item.badge.disabled=controller==='frontier';
           item.badge.title=controller==='frontier'?'周边地区，尚无统一国家档案':name+' · 查看国家详情';item.badge.setAttribute('aria-label',item.badge.title);
         }
         const currentArmies=p.world.realm?.armies??[];
@@ -233,8 +241,8 @@ export function WorldMap(props:Props){
             const marker=new Marker({element:button,anchor:'bottom',offset:[0,68]}).setLngLat([105,34]).addTo(map);item={marker,button,flag,strength,label};armyMarkers.set(key,item);
           }
           const {lon,lat}=armyMapPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
-          item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polities[a.realm].color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
-          item.flag.src=armyHeraldry(a.realm,name);item.button.dataset.state=armyVisualState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
+          item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
+          item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyVisualState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
           item.button.title=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
           item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人':''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
           if(view.command)item.button.setAttribute('aria-pressed','false');else item.button.removeAttribute('aria-pressed');
@@ -313,8 +321,8 @@ export function WorldMap(props:Props){
           people.set(person.id,{marker,label});allMarkers.push(marker);
         }
 
-        for(const data of atlasLabels){
-          const element=document.createElement(data.kind==='realm'?'button':'span');element.className=`atlas-geographic-label ${data.kind}`;element.textContent=data.text;if(data.kind==='realm'){const realm:RealmId=data.text.includes('东')?'east':data.text.includes('西')?'west':'liang';element.style.pointerEvents='auto';element.onclick=e=>{e.stopPropagation();current.current.onDiplomacy(realm);};element.setAttribute('aria-label','查看'+data.text+'外交');}
+        for(const data of atlasLabels.filter(v=>v.kind!=='realm')){
+          const element=document.createElement('span');element.className=`atlas-geographic-label ${data.kind}`;element.textContent=data.text;
           const marker=new Marker({element,anchor:'center',opacityWhenCovered:.4}).setLngLat([data.lon,data.lat]).addTo(map);
           labels.push({marker,data});allMarkers.push(marker);
         }

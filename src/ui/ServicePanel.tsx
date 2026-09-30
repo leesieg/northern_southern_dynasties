@@ -1,3 +1,4 @@
+import {worldRealms} from '../core/polityRuntime';
 import {canCommission,serviceApprover} from '../core/serviceMandates';
 import {ServiceChoiceOverview} from './ServiceChoiceOverview';
 import {HoverHint} from './HoverHint';
@@ -10,7 +11,7 @@ import {useEffect,useState} from 'react';
 import {assignmentTemplates,assignmentTradeoffs,assignmentPhases,assignmentPlans,servicePriorities,priorityIcons,type AssignmentKind,type AssignmentPlan,type ServicePriority} from '../data/assignments';
 import {serviceChief,serviceCandidates,serviceRealm,serviceReason,assignmentOptions,careerStanding,recommendedPriority,routineServiceKinds} from '../core/assignments';
 import {governmentOf,politicalName,regimeName} from '../core/government';
-import {realms,capital,type RealmId} from '../core/realm';
+import {capital,type RealmId} from '../core/realm';
 import {siteById} from '../data/scenario';
 import {AssignmentPanel,type ServiceProps} from './AssignmentPanel';
 import {PetitionAudience} from './PetitionAudience';
@@ -36,7 +37,7 @@ export function ServicePanel(props:ServiceProps&{initialTaskId?:number;initialSi
  const {world:w,pending,send,onPerson}=props,r=serviceRealm(w.characterId!,w)!,s=w.service;
  const [offerOpen,setOfferOpen]=useState(!!props.initialSite&&!props.initialTaskId),[selected,setSelected]=useState<number|null>(props.initialTaskId??null),[kind,setKind]=useState<AssignmentKind>('relief'),[category,setCategory]=useState<ServicePriority>('stability'),[city,setCity]=useState(props.initialSite??''),[officer,setOfficer]=useState(''),[target,setTarget]=useState<RealmId>(r==='west'?'east':'west'),[planDraft,setPlanDraft]=useState<AssignmentPlan|null>(null);
  if(!s?.enabled)return <section className="service-welcome"><ArtIcon name="influence" size={56}/><h3>赴任议事</h3><p>从一城一事做起，与同僚共理国事。执政者议定目标、任命与考课；官员和宗室请命办理，积累功绩与声望。</p><button className="primary" disabled={pending} onClick={()=>send({type:'service',action:'begin'})}>赴任议事</button></section>;
- const chief=serviceChief(w,r)===w.characterId,candidates=serviceCandidates(w,r),cities=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r),site=cities.includes(city)?city:cities.includes(capital(r))?capital(r):cities[0]??'',commission=canCommission(w,w.characterId!,r,site,kind),candidate=commission?(candidates.some(c=>c.id===officer)?officer:candidates.find(c=>c.id!==w.characterId)?.id??candidates[0]?.id??''):w.characterId!,canPreselectPlan=commission&&!!candidate&&candidate!==w.characterId;
+ const chief=serviceChief(w,r)===w.characterId,candidates=serviceCandidates(w,r),cities=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r),site=cities.includes(city)?city:cities.includes(capital(r,w))?capital(r,w):cities[0]??'',commission=canCommission(w,w.characterId!,r,site,kind),candidate=commission?(candidates.some(c=>c.id===officer)?officer:candidates.find(c=>c.id!==w.characterId)?.id??candidates[0]?.id??''):w.characterId!,canPreselectPlan=commission&&!!candidate&&candidate!==w.characterId;
  const draftBaseCommand={type:'service',action:'open',kind,site,officer:candidate,...(kind==='envoy'?{target}:{})} as const;
  const command={...draftBaseCommand,...(canPreselectPlan&&planDraft?{plan:planDraft}:{})} as const,baseReason=serviceReason(w,command),reason=baseReason||(canPreselectPlan&&!planDraft?'请选择办理方案':''),task=selected?s.tasks.find(t=>t.id===selected):undefined;
  const relevant=s.tasks.filter(t=>t.realm===r&&(chief||t.officer===w.characterId||t.helper===w.characterId||t.invitation?.person===w.characterId||serviceApprover(w,t)===w.characterId)),active=relevant.filter(t=>t.phase!=='closed'),archive=relevant.filter(t=>t.phase==='closed').slice().reverse(),canRoutine=cities.some(id=>canCommission(w,w.characterId!,r,id,'relief'));
@@ -55,7 +56,7 @@ export function ServicePanel(props:ServiceProps&{initialTaskId?:number;initialSi
      </section>
      <section className="service-commission-order"><header><span>二 · 定人定地</span><h3>委给谁，在何处办理</h3></header><div className="service-commission-place"><label>办理城邑<select value={site} onChange={e=>{setCity(e.target.value);setPlanDraft(null);}}>{cities.map(id=><option key={id} value={id}>{siteById[id].name}</option>)}</select></label>{site&&<p><strong>{serviceNeed(w,kind,site).tier}</strong>{serviceNeed(w,kind,site).reason}<small>暂缓：{serviceNeed(w,kind,site).neglect}</small></p>}</div>
       {commission&&<PersonChoice world={w} title="承办人" value={candidate} onChange={id=>{setOfficer(id);setPlanDraft(null);}} pending={pending} onPerson={onPerson} options={candidates.map(c=>({id:c.id,score:attributes(w,c.id)[assignmentTemplates[kind].skill],metric:'职务能力',reason:serviceReason(w,{...draftBaseCommand,officer:c.id})}))}/>}
-      {kind==='envoy'&&<div className="realm-choice-row" role="group" aria-label="出使政权">{realms.filter(x=>x!==r).map(x=><span key={x} data-selected={target===x}><RealmBadge realm={x} world={w}/><button aria-label={'选择出使'+regimeName(w,x)} aria-pressed={target===x} onClick={()=>{setTarget(x);setPlanDraft(null);}}>{target===x?'已选':'选择'}</button></span>)}</div>}
+      {kind==='envoy'&&<div className="realm-choice-row" role="group" aria-label="出使政权">{worldRealms(w).filter(x=>x!==r).map(x=><span key={x} data-selected={target===x}><RealmBadge realm={x} world={w}/><button aria-label={'选择出使'+regimeName(w,x)} aria-pressed={target===x} onClick={()=>{setTarget(x);setPlanDraft(null);}}>{target===x?'已选':'选择'}</button></span>)}</div>}
       <ServiceChoiceOverview world={w} kind={kind} site={site} officer={candidate} realm={r} target={target} plan={canPreselectPlan?planDraft:null} onPlan={canPreselectPlan?setPlanDraft:undefined} pending={pending}/>
      </section>
     </div>

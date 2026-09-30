@@ -1,8 +1,10 @@
+import {civilWar,warArmySide} from './civilWars';
+import {worldRealms} from './polityRuntime';
 import type {World} from './types';
 import {roads,siteById} from '../data/scenario';
 import {relationshipPeople} from '../data/relationships';
 import {isMonthStart} from './calendar';
-import {realms,capital,playerRealm,realmForecast,armyDailyFood,armyMonthlyPay,warApproach,declareRealmWar,declareRealmWarReason,settleWar,type RealmId} from './realm';
+import {capital,playerRealm,realmForecast,armyDailyFood,armyMonthlyPay,warApproach,declareRealmWar,declareRealmWarReason,settleWar,type RealmId} from './realm';
 import {activeWars,realmAtWar,peaceQuote,warRealmSide} from './wars';
 import {warWillToContinue,warScoreFor} from './warScoring';
 import {governingAuthority,governingExecutives,governmentOf} from './government';
@@ -17,7 +19,7 @@ import {mobilizeRealm,defensiveReserve} from './militaryAI';
 
 export interface RealmStrategy {phase:'rest'|'prepare'|'war'|'recover';target:string|null;since:number;reviewed:number;reason:string}
 export type RealmStrategies=Partial<Record<RealmId,RealmStrategy>>;
-function log(w:World,r:RealmId,text:string){w.realm!.strategy??={};const previous=w.realm!.strategy[r];if(previous?.reason!==text){w.chronicle.push({day:w.day,person:'player',text:siteById[capital(r)].name+'朝廷：'+text});w.chronicle=w.chronicle.slice(-100);}}
+function log(w:World,r:RealmId,text:string){w.realm!.strategy??={};const previous=w.realm!.strategy[r];if(previous?.reason!==text){w.chronicle.push({day:w.day,person:'player',text:siteById[capital(r,w)].name+'朝廷：'+text});w.chronicle=w.chronicle.slice(-100);}}
 function set(w:World,r:RealmId,phase:RealmStrategy['phase'],target:string|null,reason:string){log(w,r,reason);const old=w.realm!.strategy?.[r];w.realm!.strategy![r]={phase,target,reason,since:old?.phase===phase&&old.target===target?old.since:w.day,reviewed:w.day};}
 /** Border objectives, a safe own approach and a funded finite campaign are required. */
 export function strategicTargets(w:World,r:RealmId){
@@ -27,7 +29,7 @@ export function strategicTargets(w:World,r:RealmId){
 export function appointAICommanders(w:World,r:RealmId){
  if(!w.mobility)return;
  for(const a of w.realm!.armies.filter(a=>a.realm===r&&!a.journey&&!armyCommander(w,a)&&!w.mobility!.pendingCommanders?.[a.id!])){
-  const candidate=relationshipPeople.filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&!publicOfficeReason(w,p.id)&&!governingExecutives(w,r).includes(p.id)).sort((x,y)=>attributes(w,y.id).martial-attributes(w,x.id).martial).find(p=>presentAt(w,p.id,a.location)||!!npcRoute(w,p.id,a.location));
+  const candidate=relationshipPeople.filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&(!civilWar(w,r)||civilWar(w,r)!.civil!.supporters.includes(p.id)===(warArmySide(w,civilWar(w,r)!,a)==='attack'))&&!publicOfficeReason(w,p.id)&&!governingExecutives(w,r).includes(p.id)).sort((x,y)=>attributes(w,y.id).martial-attributes(w,x.id).martial).find(p=>presentAt(w,p.id,a.location)||!!npcRoute(w,p.id,a.location));
   if(!candidate)continue;
   if(presentAt(w,candidate.id,a.location))installCommander(w,a,candidate.id);
   else {w.mobility.pendingCommanders??={};w.mobility.pendingCommanders[a.id!]={person:candidate.id,ordered:w.day};dispatchNPC(w,candidate.id,a.location);}
@@ -36,7 +38,7 @@ export function appointAICommanders(w:World,r:RealmId){
 export function advanceRealmStrategy(w:World){
  if(!w.realm||!isMonthStart(w.day,w.scriptId))return;
  const s=w.realm;
- for(const r of realms){const actor=governingAuthority(w,r);if(!actor||actor===w.characterId||s.annexed?.[r]||(s.strategy?.[r]?.reviewed??-1)>=w.day)continue;
+ for(const r of worldRealms(w)){const actor=governingAuthority(w,r);if(!actor||actor===w.characterId||s.annexed?.[r]||(s.strategy?.[r]?.reviewed??-1)>=w.day)continue;
   const wars=activeWars(w).filter(v=>!v.civil&&[v.attacker,v.defender].includes(r));
   if(wars.length){
    appointAICommanders(w,r);
@@ -64,7 +66,7 @@ export function advanceRealmStrategy(w:World){
   }
  }
 }
-export function validRealmStrategy(w:World){const s=w.realm?.strategy;if(s===undefined)return true;return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([r,v])=>realms.includes(r as RealmId)&&v&&['rest','prepare','war','recover'].includes(v.phase)&&(v.target===null||!!siteById[v.target])&&Number.isSafeInteger(v.since)&&v.since>=0&&v.since<=w.day&&Number.isSafeInteger(v.reviewed)&&v.reviewed>=v.since&&v.reviewed<=w.day&&typeof v.reason==='string'&&v.reason.length<=200);}
+export function validRealmStrategy(w:World){const s=w.realm?.strategy;if(s===undefined)return true;return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([r,v])=>worldRealms(w).includes(r as RealmId)&&v&&['rest','prepare','war','recover'].includes(v.phase)&&(v.target===null||!!siteById[v.target])&&Number.isSafeInteger(v.since)&&v.since>=0&&v.since<=w.day&&Number.isSafeInteger(v.reviewed)&&v.reviewed>=v.since&&v.reviewed<=w.day&&typeof v.reason==='string'&&v.reason.length<=200);}
 
 export type PeaceOfferCommand={type:'peaceOffer';war:number;accept:boolean};
 export function peaceOfferReason(w:World,c:PeaceOfferCommand){const war=activeWars(w).find(v=>v.id===c.war),q=war?.peaceOffer,r=playerRealm(w);if(!q||q.to!==r||q.until<w.day)return '当前没有有效的议和提议';if(!governingExecutives(w,r).includes(w.characterId!))return '须由实际执政者裁定';if(typeof c.accept!=='boolean')return '无效裁定';return c.accept?peaceQuote(w,war!,q.from,q.terms).reason:'';}

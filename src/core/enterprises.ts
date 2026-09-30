@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {relatives} from '../data/families';
 import type {World} from './types';
 import type {RealmId} from './realm';
@@ -53,5 +54,5 @@ export function advanceEnterprises(w:World){if(!w.enterprises||!w.realm)return;c
  }
 }
 export function validEnterprises(w:World){const s=w.enterprises;if(s===undefined)return true;const n=(v:unknown,max=1_000_000)=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;
- return !!s&&n(s.nextId)&&s.nextId>0&&Array.isArray(s.items)&&s.items.length<=256&&new Set(s.items.map(e=>e?.id)).size===s.items.length&&s.items.every(e=>e&&n(e.id,s.nextId-1)&&e.id>0&&!!relationshipPersonById[e.owner]&&!!siteById[e.site]&&['workshop','agriculture'].includes(e.kind)&&n(e.capital)&&n(e.opened,w.day)&&Number.isSafeInteger(e.lastOrder)&&e.lastOrder>=-90&&e.lastOrder<=w.day&&n(e.earned,1e9)&&n(e.spent,1e9)&&typeof e.closed==='boolean'&&(!e.closed||!e.order&&e.capital===0)&&(e.order===null||!!e.order&&['liang','east','west'].includes(e.order.realm)&&e.order.account===e.order.realm+'|city:'+e.site&&n(e.order.lastWorked,w.day)&&e.order.lastWorked>=e.order.started&&n(e.order.escrow,100)&&e.order.price===100&&n(e.order.progress,e.order.required)&&e.order.required===(e.order.method==='careful'?30:20)&&['careful','swift'].includes(e.order.method)&&n(e.order.started,w.day)&&e.order.deadline===e.order.started+90));
+ return !!s&&n(s.nextId)&&s.nextId>0&&Array.isArray(s.items)&&s.items.length<=256&&new Set(s.items.map(e=>e?.id)).size===s.items.length&&s.items.every(e=>e&&n(e.id,s.nextId-1)&&e.id>0&&!!relationshipPersonById[e.owner]&&!!siteById[e.site]&&['workshop','agriculture'].includes(e.kind)&&n(e.capital)&&n(e.opened,w.day)&&Number.isSafeInteger(e.lastOrder)&&e.lastOrder>=-90&&e.lastOrder<=w.day&&n(e.earned,1e9)&&n(e.spent,1e9)&&typeof e.closed==='boolean'&&(!e.closed||!e.order&&e.capital===0)&&(e.order===null||!!e.order&&worldRealms(w).includes(e.order.realm)&&e.order.account===e.order.realm+'|city:'+e.site&&n(e.order.lastWorked,w.day)&&e.order.lastWorked>=e.order.started&&n(e.order.escrow,100)&&e.order.price===100&&n(e.order.progress,e.order.required)&&e.order.required===(e.order.method==='careful'?30:20)&&['careful','swift'].includes(e.order.method)&&n(e.order.started,w.day)&&e.order.deadline===e.order.started+90));
 }

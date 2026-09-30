@@ -1,3 +1,4 @@
+import {realmOrigin} from '../core/polityRuntime';
 import { useId } from 'react';
 import { regimeName } from '../core/government';
 import type { Polity,World } from '../core/types';
@@ -11,7 +12,7 @@ const palettes={
  frontier:{light:'#92978a',cloth:'#535e53',dark:'#2b352f'},
 };
 export function RealmFlag({realm,world,name,compact=false,showLabel=true}:{realm:Polity;world?:World;name?:string;compact?:boolean;showLabel?:boolean}){
- const id=useId().replace(/:/g,''),p=palettes[realm],label=name??regimeName(world,realm),regional=['东魏','西魏','北齐','北周'].includes(label),glyph=realm==='frontier'?'境':regional?label.slice(1):label;
+ const id=useId().replace(/:/g,''),p=palettes[realmOrigin(world,realm)],label=name??regimeName(world,realm),regional=['东魏','西魏','北齐','北周'].includes(label),glyph=realm==='frontier'?'境':regional?label.slice(1):label;
  return <span className={`realm-flag${compact?' compact':''}`}>
  <svg viewBox="0 0 112 138" aria-hidden="true" focusable="false">
  <defs><linearGradient id={id+'-cloth'} x1="0" y1="0" x2="1" y2="0"><stop stopColor={p.dark}/><stop offset=".23" stopColor={p.cloth}/><stop offset=".48" stopColor={p.light}/><stop offset=".65" stopColor={p.cloth}/><stop offset="1" stopColor={p.dark}/></linearGradient><linearGradient id={id+'-gold'} x1="0" y1="0" x2="0" y2="1"><stop stopColor="#f0d49b"/><stop offset=".5" stopColor="#b18c4d"/><stop offset="1" stopColor="#e2c181"/></linearGradient></defs>

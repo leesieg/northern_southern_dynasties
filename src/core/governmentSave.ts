@@ -1,8 +1,10 @@
+import {allegianceRealm} from './officeEligibility';
+import {worldRealms,realmOrigin} from './polityRuntime';
+import {validArrangement} from './powerPoliticsSave';
 import {validGovernanceRules} from './governanceRules';
 import {policyDomains} from './politicalActions';
 import {policyDefinition,policyDimensions,type PolicyDimension} from '../data/governancePolicies';
 import {isMonthStart,monthStart} from './calendar';
-import {allegianceRealm} from './officeEligibility';
 import {relationshipPersonById} from '../data/relationships';
 import {publicFamily} from './publicSuccession';
 import {ageAt,isAlive} from './lifeState';
@@ -16,23 +18,23 @@ import { governmentYear } from './government';
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const int=(v:unknown,max:number,min=0):v is number=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=min&&v<=max;
 const text=(v:unknown,max=100):v is string=>typeof v==='string'&&v.length>0&&v.length<=max;
-const ids=['liang','east','west'] as const;
 const site=(id:unknown)=>text(id)&&Object.hasOwn(siteById,id);
 const unique=(v:unknown):v is string[]=>Array.isArray(v)&&v.every(x=>typeof x==='string')&&new Set(v).size===v.length;
 export function validGovernments(w:World):boolean {
- const person=(id:unknown,r:string)=>text(id)&&(relationshipPersonById[id]?.realm===r||allegianceRealm(w,id)===r);
+ const ids=worldRealms(w);const person=(id:unknown,_r:string)=>text(id)&&!!relationshipPersonById[id];
  const state:unknown=w.realm?.governments;if(state===undefined)return true;
- if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthStart(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==3)return false;
- if(!Array.isArray(state.regimes)||state.regimes.length<3||state.regimes.length>36||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
+ if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthStart(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==ids.length||ids.length>9)return false;
+ if(!Array.isArray(state.regimes)||state.regimes.length<3||state.regimes.length>108||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
  if(!state.regimes.every(v=>obj(v)&&ids.includes(v.realm as never)))return false;
- for(const r of ids){const g=state.realms[r];if(!obj(g)||!governmentTypes.includes(g.type as never)||!text(g.dynasty)||!text(g.regimeId)||!person(g.ruler,r)||!unique(g.executives)||g.executives.length>2||!g.executives.every(id=>person(id,r))||!int(g.legitimacy,100)||!int(g.support,100)||!int(g.herd,1000)||!site(g.camp)||!int(g.lastCamp,w.day+90)||!obj(g.merit)||!obj(g.contracts)||!obj(g.cooldowns)||!unique(g.laws)||!unique(g.stages))return false;
+ for(const r of ids){const origin=realmOrigin(w,r),g=state.realms[r];if(!obj(g)||!governmentTypes.includes(g.type as never)||!text(g.dynasty)||!text(g.regimeId)||!person(g.ruler,r)||!unique(g.executives)||g.executives.length>2||!g.executives.every(id=>person(id,r))||!int(g.legitimacy,100)||!int(g.support,100)||!int(g.herd,1000)||!site(g.camp)||!int(g.lastCamp,w.day+90)||!obj(g.merit)||!obj(g.contracts)||!obj(g.cooldowns)||!unique(g.laws)||!unique(g.stages))return false;
+ if(!w.realm?.annexed?.[r]&&[g.ruler,...g.executives].some(id=>allegianceRealm(w,id as string)!==r))return false;
  if(g.resignedExecutives!==undefined&&(!unique(g.resignedExecutives)||!g.resignedExecutives.every(id=>person(id,r))))return false;
  const expectedExecutives=(ids:readonly string[])=>{const remaining=ids.filter(id=>!(g.resignedExecutives as string[]|undefined)?.includes(id));return (remaining.length?remaining:[String(g.ruler)]).join('|');};
  const roster=historicalCharacters.filter(c=>c.polity===r);if(Object.entries(g.merit).some(([id,n])=>!relationshipPersonById[id]||!int(n,100))||!roster.every(p=>Object.hasOwn(g.merit as object,p.id)&&int((g.merit as Record<string,unknown>)[p.id],100)))return false;
- if(!g.laws.every(id=>reformIds.includes(id as ReformId)&&reformDefinitions[id as ReformId].realm===r)||!reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial).every(id=>(g.laws as string[]).includes(id)))return false;
+ if(!g.laws.every(id=>reformIds.includes(id as ReformId)&&reformDefinitions[id as ReformId].realm===origin)||!reformIds.filter(id=>reformDefinitions[id].realm===origin&&reformDefinitions[id].initial).every(id=>(g.laws as string[]).includes(id)))return false;
  if(!g.laws.every(id=>(reformDefinitions[id as ReformId].requires as readonly string[]).every(parent=>(g.laws as string[]).includes(parent))))return false;
- const route=successionIds.filter(id=>successionDefinitions[id].realm===r);if(!g.stages.every((id,i)=>id===route[i]))return false;
- const versions=state.regimes.filter(v=>v?.realm===r),latest=versions.at(-1);const natural=w.life?.successions.filter(e=>e.realm===r&&e.regimeId===g.regimeId&&e.stage===((g.stages as string[]).at(-1)??null));const succession=natural?.at(-1);if(succession){if(g.ruler!==succession.ruler||g.executives.join('|')!==expectedExecutives(succession.executives))return false;}else if(latest?.kind==='sandbox'){if(g.ruler!==latest.ruler||g.executives.join('|')!==expectedExecutives([latest.ruler])||g.dynasty!==latest.dynasty)return false;}else {const completed=g.stages.at(-1);if(completed){const d=successionDefinitions[completed as SuccessionId];if(g.ruler!==d.ruler||g.executives.join('|')!==expectedExecutives(d.executives)||g.dynasty!==(d.nextDynasty??r))return false;}else if(g.dynasty!==r||g.ruler!==({liang:'xiao-yan',east:'yuan-shanjian',west:'yuan-baoju'})[r]||g.executives.join('|')!==expectedExecutives(({liang:['xiao-yan'],east:['gao-huan','gao-cheng'],west:['yuwen-tai']})[r]))return false;}
+ const route=successionIds.filter(id=>successionDefinitions[id].realm===r);if(!g.stages.every((id,i)=>route.includes(id as SuccessionId)&&(i===0||route.indexOf(id as SuccessionId)>route.indexOf((g.stages as string[])[i-1] as SuccessionId))))return false;
+ const versions=state.regimes.filter(v=>v?.realm===r),latest=versions.at(-1);const natural=w.life?.successions.filter(e=>e.realm===r&&e.regimeId===g.regimeId&&e.stage===((g.stages as string[]).at(-1)??null));const succession=natural?.at(-1);if(succession&&(!g.arrangement||succession.day>=(g.arrangement as unknown as {since:number}).since)){if(g.ruler!==succession.ruler||g.executives.join('|')!==expectedExecutives(succession.executives))return false;}else if(g.arrangement){if(!validArrangement(g.arrangement)||!int((g.arrangement as unknown as {since:number}).since,w.day)||g.ruler!==g.arrangement.beneficiary||g.executives.join('|')!==expectedExecutives([g.arrangement.executive]))return false;}else if(latest?.kind==='sandbox'){if(g.ruler!==latest.ruler||g.executives.join('|')!==expectedExecutives([latest.ruler])||g.dynasty!==latest.dynasty)return false;}else {const completed=g.stages.at(-1);if(completed){const d=successionDefinitions[completed as SuccessionId];if(g.ruler!==d.ruler||g.executives.join('|')!==expectedExecutives(d.executives)||g.dynasty!==(d.nextDynasty??r))return false;}else if(g.dynasty!==r||g.ruler!==({liang:'xiao-yan',east:'yuan-shanjian',west:'yuan-baoju'} as Record<string,string>)[r]||g.executives.join('|')!==expectedExecutives(({liang:['xiao-yan'],east:['gao-huan','gao-cheng'],west:['yuwen-tai']} as Record<string,string[]>)[r]))return false;}
  if(g.heirs!==undefined){const h=g.heirs;if(!obj(h)||!['ruler','executive'].every(k=>h[k]===null||person(h[k],r)&&isAlive(w,h[k] as string)&&(ageAt(w,h[k] as string)??0)>=16)||h.ruler===g.ruler||h.executive===g.executives[0])return false;
  if(h.ruler!==null&&publicFamily(h.ruler as string)!==publicFamily(g.ruler as string)?!validDynastyName(h.dynasty):h.dynasty!==null)return false;}
  if(!validGovernanceRules(g.rules,w.day,w,r)||!validCourt(w,r))return false;
@@ -48,10 +50,10 @@ export function validGovernments(w:World):boolean {
  if(versions.length<1||versions.length>12)return false;
  for(let i=0;i<versions.length;i++){
  const v=versions[i];if(!obj(v)||!person(v.ruler,r)||!int(v.from,w.day)||v.from<state.since||v.until!==null&&!int(v.until,w.day,v.from)||!unique(v.cities)||!v.cities.every(site)||v.predecessor!==(i===0?null:versions[i-1].id))return false;
- if(i===0){if(v.id!==r+'-0'||v.dynasty!==r||v.from!==state.since||v.kind!==undefined||v.name!==undefined||v.source!==null)return false;}
+ if(i===0&&r.startsWith('realm-')){const identity=w.realm?.identities?.[r];if(!identity||v.id!==r+'-0'||v.dynasty!==r||v.from!==identity.created||v.kind!=='political'||!validDynastyName(v.name)||v.source!==null)return false;}else if(i===0){if(v.id!==r+'-0'||v.dynasty!==r||v.from!==state.since||v.kind!==undefined||v.name!==undefined||v.source!==null)return false;}
  else {
  if(v.from!==versions[i-1].until)return false;
- if(v.kind==='inheritance'){const transition=w.life?.successions.find(e=>e.realm===r&&e.regimeId===v.id&&e.day===v.from&&e.ruler===v.ruler);if(v.id!==`${r}-inheritance-${v.from}-${i}`||v.dynasty!==v.id||!validDynastyName(v.name)||v.source!==null||!transition||publicFamily(transition.deceased)===publicFamily(v.ruler as string))return false;}
+ if(v.kind==='political'){if(v.id!==`${r}-political-${v.from}-${i}`||v.dynasty!==v.id||!validDynastyName(v.name)||!unique(v.executives)||v.executives.length!==1||!v.executives.every(id=>person(id,r)))return false;}else if(v.kind==='inheritance'){const transition=w.life?.successions.find(e=>e.realm===r&&e.regimeId===v.id&&e.day===v.from&&e.ruler===v.ruler);if(v.id!==`${r}-inheritance-${v.from}-${i}`||v.dynasty!==v.id||!validDynastyName(v.name)||v.source!==null||!transition||publicFamily(transition.deceased)===publicFamily(v.ruler as string))return false;}
  else if(v.kind==='sandbox'){if(v.id!==`${r}-sandbox-${v.from}`||v.dynasty!==v.id||!validDynastyName(v.name)||v.source!==null||!text(v.ruler)||!Object.hasOwn(characterById,v.ruler))return false;}
  else {const d=successionDefinitions[route[1]];if(!(g.stages as string[]).includes(route[1])||governmentYear(w,v.from)<d.year||i!==1||v.kind!==undefined||v.name!==undefined||v.id!==r+'-'+d.nextDynasty||v.dynasty!==d.nextDynasty||v.ruler!==d.ruler||v.source!==d.source.url)return false;}
  }

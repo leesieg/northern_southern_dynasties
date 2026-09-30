@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {relationshipPersonById} from '../data/relationships';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {validPersonalEconomy} from './personalEconomyRules';
@@ -8,7 +9,7 @@ export function validEconomyWorld(w: World): boolean {
   if (w.mode !== 'sandbox' || !w.realm || !validPersonalEconomy(w.economy, w.day,
     id => Object.hasOwn(relationshipPersonById, id),w.scriptId)) return false;
   const validAccount = (id: string, realm: string) => {
-    if (!['liang', 'east', 'west'].includes(realm)) return false;
+    if (!worldRealms(w).includes(realm as never)) return false;
     if (id === 'central:' + realm) return true;
     if (!id.startsWith(realm + '|')) return false;
     const t = id.slice(realm.length + 1), n = territoryNodes[t];

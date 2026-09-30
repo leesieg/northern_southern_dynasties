@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {localHolder,localActive,localSeatSite,localTitle,countyTerritory,localAncestors} from './localAdministration';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {isAlive} from './lifeState';
@@ -5,7 +6,7 @@ import { ministryIds,ministries } from '../data/court';
 import { characterById } from '../data/characters';
 import { scenarioOffices } from '../data/offices';
 import { governmentOf,governingExecutives } from './government';
-import { realms,type RealmId } from './realm';
+import { type RealmId } from './realm';
 import type { World } from './types';
 export interface OfficeNode {
  id:string;realm:RealmId;regimeId:string;name:string;holder:string|null;parentId:string|null;
@@ -16,7 +17,7 @@ export interface OfficeNode {
 /** Materialized from authoritative saved state; never maintain a second mutable set of holders. */
 export function officeHierarchy(w:World,person?:string):OfficeNode[]{
  const nodes:OfficeNode[]=[];
- for(const r of realms){
+ for(const r of worldRealms(w)){
   const g=governmentOf(w,r);if(!g)continue;
   const root=`office:${r}:sovereign`,chief=`office:${r}:executive:0`;
   const relation=g.type==='feudal'?'liege':g.type==='tribal'||g.type==='nomadic'?'chief':'administration';

@@ -1,3 +1,4 @@
+import {worldRealms,isRealmId} from './polityRuntime';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {policyDefinition} from '../data/governancePolicies';
 import {historicalCharacters} from '../data/characters';
@@ -6,20 +7,19 @@ import type {World} from './types';
 import {relationshipPersonById,relationshipPeople} from '../data/relationships';
 import {assignmentTemplates,assignmentPlans,assignmentPhases,servicePriorities} from '../data/assignments';
 import {siteById} from '../data/scenario';
-import {realms} from './realm';
 import {assignmentBudget,type Assignment} from './assignments';
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const int=(v:unknown,min:number,max:number):v is number=>Number.isSafeInteger(v)&&Number(v)>=min&&Number(v)<=max;
 const text=(v:unknown,max:number):v is string=>typeof v==='string'&&v.length<=max;
 const key=(v:unknown,map:object):v is string=>typeof v==='string'&&Object.hasOwn(map,v);
 const person=(v:unknown):v is string=>key(v,relationshipPersonById);
-const realm=(v:unknown)=>realms.includes(v as typeof realms[number]);
+const realm=(v:unknown)=>isRealmId(v);
 const priorities=Object.keys(servicePriorities);
 const localSnapshot=(v:unknown,start:number,end:number)=>obj(v)&&int(v.day,start,end)&&int(v.order,0,100)&&int(v.grain,0,1000000)&&int(v.prosperity,0,100)&&int(v.irrigation,0,10)&&int(v.building,0,3);
 const localChange=(v:unknown)=>obj(v)&&Object.keys(v).length===5&&['order','grain','prosperity','irrigation','building'].every(k=>int(v[k],-2000000,2000000));
 export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean {
- if(mode!=='sandbox'||!obj(v)||v.version!==1||!int(v.since,0,day)||!int(v.lastDay,v.since,day)||typeof v.enabled!=='boolean'||!int(v.nextId,1,1000000)||!obj(v.councils)||Object.keys(v.councils).length!==3||!obj(v.careers)||Object.keys(v.careers).some(id=>!relationshipPersonById[id]))return false;
- for(const r of realms){const c=v.councils[r];if(!obj(c)||!int(c.season,Math.floor(v.since/90),Math.floor(day/90))||!key(c.priority,servicePriorities)||typeof c.decided!=='boolean'||!int(c.completed,0,10000)||!text(c.lastResult,300)||!Array.isArray(c.petitioned)||new Set(c.petitioned).size!==c.petitioned.length||c.petitioned.some(p=>!person(p)||relationshipPersonById[p].realm!==r))return false;const reply=c.reply;if(reply!==null&&(!obj(reply)||!person(reply.actor)||relationshipPersonById[reply.actor].realm!==r||!int(reply.day,v.since,day)||!text(reply.text,200)))return false;const p=c.proposal;if(p!==null&&(!obj(p)||!person(p.actor)||relationshipPersonById[p.actor].realm!==r||!key(p.priority,servicePriorities)||!int(p.day,v.since,day)||!c.petitioned.includes(p.actor)))return false;}
+ if(mode!=='sandbox'||!obj(v)||v.version!==1||!int(v.since,0,day)||!int(v.lastDay,v.since,day)||typeof v.enabled!=='boolean'||!int(v.nextId,1,1000000)||!obj(v.councils)||Object.keys(v.councils).length!==worldRealms(w).length||!obj(v.careers)||Object.keys(v.careers).some(id=>!relationshipPersonById[id]))return false;
+ for(const r of worldRealms(w)){const c=v.councils[r];if(!obj(c)||!int(c.season,Math.floor(v.since/90),Math.floor(day/90))||!key(c.priority,servicePriorities)||typeof c.decided!=='boolean'||!int(c.completed,0,10000)||!text(c.lastResult,300)||!Array.isArray(c.petitioned)||new Set(c.petitioned).size!==c.petitioned.length||c.petitioned.some(p=>!person(p)||relationshipPersonById[p].realm!==r&&(!w||allegianceRealm(w,p)!==r)))return false;const reply=c.reply;if(reply!==null&&(!obj(reply)||!person(reply.actor)||relationshipPersonById[reply.actor].realm!==r&&(!w||allegianceRealm(w,reply.actor)!==r)||!int(reply.day,v.since,day)||!text(reply.text,200)))return false;const p=c.proposal;if(p!==null&&(!obj(p)||!person(p.actor)||relationshipPersonById[p.actor].realm!==r&&(!w||allegianceRealm(w,p.actor)!==r)||!key(p.priority,servicePriorities)||!int(p.day,v.since,day)||!c.petitioned.includes(p.actor)))return false;}
  if(historicalCharacters.some(c=>!Object.hasOwn(v.careers as object,c.id)))return false;
  for(const id of Object.keys(v.careers)){const p=v.careers[id];if(!obj(p)||Object.keys(p).length!==4||priorities.some(k=>!int(p[k],0,100000)))return false;}
  if(v.routine!==undefined&&(!Array.isArray(v.routine)||v.routine.length>512||new Set(v.routine.map(m=>obj(m)?[m.realm,m.issuer,m.kind].join('|'):null)).size!==v.routine.length||v.routine.some(m=>!obj(m)||!realm(m.realm)||!person(m.issuer)||!['relief','marketworks','granaryworks','hostelworks'].includes(String(m.kind)))))return false;
@@ -56,7 +56,7 @@ export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean
   if(t.season>=Math.floor(day/90)-1&&!v.used.includes([t.season,t.realm,t.kind,t.site,t.target??''].join('|')))return false;
   if(t.helper!==null&&(!person(t.helper)||(w?allegianceRealm(w,t.helper):relationshipPersonById[t.helper].realm)!==t.realm||t.helper===t.officer))return false;
   if(!Array.isArray(t.invited)||t.invited.length>relationshipPeople.length||new Set(t.invited).size!==t.invited.length||t.invited.some(p=>!person(p)))return false;
-  if(t.invitation!==null&&(!obj(t.invitation)||!person(t.invitation.person)||relationshipPersonById[t.invitation.person].realm!==t.realm||!int(t.invitation.day,t.created,day)||!t.invited.includes(t.invitation.person)||t.helper!==null||t.invitation.person===t.officer))return false;
+  if(t.invitation!==null&&(!obj(t.invitation)||!person(t.invitation.person)||relationshipPersonById[t.invitation.person].realm!==t.realm&&allegianceRealm(w!,t.invitation.person)!==t.realm||!int(t.invitation.day,t.created,day)||!t.invited.includes(t.invitation.person)||t.helper!==null||t.invitation.person===t.officer))return false;
   if(!obj(t.contributors)||Object.keys(t.contributors).length>relationshipPeople.length)return false;let total=0;
   for(const [p,c] of Object.entries(t.contributors)){if(!person(p)||!obj(c)||!int(c.lead,0,10000)||!int(c.support,0,10000))return false;total+=c.lead+c.support;}
   if(total!==t.progress)return false;

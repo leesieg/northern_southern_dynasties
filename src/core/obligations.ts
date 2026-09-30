@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {isMonthStart,nextMonthStart} from './calendar';
 import type {World} from './types';
 import {economyHost} from './personalEconomyAdapter';
@@ -10,11 +11,11 @@ import {publicBalance,ensureFiscal,fiscalRecord} from './treasury';
 export interface Obligation {id:number;source:string;from:string;to:string;original:number;remaining:number;paid:number;offset:number;next:number;instalment:number;reason:string;created:number}
 export interface Obligations {nextId:number;items:Obligation[]}
 export function accountWallet(w:World,key:string){if(key.startsWith('person:'))return economyHost(w).personal(key.slice(7));if(!w.realm)return;
- const r=key.startsWith('central:')?key.slice(8):key.split('|')[0];if(!['liang','east','west'].includes(r))return;
+ const r=key.startsWith('central:')?key.slice(8):key.split('|')[0];if(!worldRealms(w).includes(r as RealmId))return;
  if(!key.startsWith('central:')&&!Object.hasOwn(w.realm.fiscal?.balances??{},key))return;
  return {key,capacity:1_000_000,read:()=>publicBalance(w,key),write:(n:number)=>{if(key.startsWith('central:'))w.realm!.treasuries[r as RealmId].coins=n;else ensureFiscal(w)!.balances[key]=n;}};
 }
-export function transferAccount(w:World,from:string,to:string,amount:number,reason:string){const a=accountWallet(w,from),b=accountWallet(w,to);if(!a||!b||a.key===b.key||!Number.isSafeInteger(amount)||amount<0||a.read()<amount||b.read()+amount>b.capacity)throw new Error('款项来源、余额或收款容量不足');a.write(a.read()-amount);b.write(b.read()+amount);const r=(from.startsWith('person:')?to:from).replace('central:','').split('|')[0] as RealmId;if(['liang','east','west'].includes(r))fiscalRecord(w,r,from,to,amount,reason);}
+export function transferAccount(w:World,from:string,to:string,amount:number,reason:string){const a=accountWallet(w,from),b=accountWallet(w,to);if(!a||!b||a.key===b.key||!Number.isSafeInteger(amount)||amount<0||a.read()<amount||b.read()+amount>b.capacity)throw new Error('款项来源、余额或收款容量不足');a.write(a.read()-amount);b.write(b.read()+amount);const r=(from.startsWith('person:')?to:from).replace('central:','').split('|')[0] as RealmId;if(worldRealms(w).includes(r as RealmId))fiscalRecord(w,r,from,to,amount,reason);}
 /** Debt is a claim, never a second cash balance. Sources identify the original authorization. */
 export function incurObligation(w:World,source:string,from:string,to:string,amount:number,reason:string){const s=w.obligations??={nextId:1,items:[]};const old=s.items.find(d=>d.source===source);if(old){if(old.from!==from||old.to!==to||old.original!==amount)throw new Error('同一债权来源不能重复记入不同款项');return;}if(!accountWallet(w,from)||!accountWallet(w,to)||from===to||!Number.isSafeInteger(amount)||amount<=0)throw new Error('无效债权');s.items.push({id:s.nextId++,source,from,to,original:amount,remaining:amount,paid:0,offset:0,next:nextMonthStart(w.day,w.scriptId),instalment:50,reason,created:w.day});}
 function successorAccount(w:World,key:string){if(key.startsWith('central:'))return 'central:'+survivingRealm(w,key.slice(8) as RealmId);if(key.includes('|')){const [r,...tail]=key.split('|');return survivingRealm(w,r as RealmId)+'|'+tail.join('|');}const id=key.slice(7);if(!isAlive(w,id)){const at=w.social?.lineage.findIndex(p=>p.id===id)??-1,heir=at>=0?w.social?.lineage[at+1]?.id:relatives(id,'descendants').find(p=>isAlive(w,p.id))?.id;if(heir&&relationshipPersonById[heir])return 'person:'+heir;}return key;}

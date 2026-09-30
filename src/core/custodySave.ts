@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import type {World} from './types';
 import {relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
@@ -6,8 +7,8 @@ import {realms} from './realm';
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const num=(n:unknown,max:number):n is number=>Number.isSafeInteger(n)&&Number(n)>=0&&Number(n)<=max;
 const person=(id:unknown):id is string=>typeof id==='string'&&!!relationshipPersonById[id];
-const realm=(id:unknown)=>realms.includes(id as typeof realms[number]);
 export function validCustody(w:World){
+ const realm=(id:unknown)=>worldRealms(w).includes(id as typeof realms[number]);
  const s=w.custody;if(s===undefined)return true;
  if(!w.realm||w.mode!=='sandbox'||!obj(s)||s.version!==1||!num(s.nextId,1e9)||s.nextId<1||!num(s.lastDay,w.day)||!num(s.lastMonth,w.day)||!obj(s.records)||!Array.isArray(s.history)||s.history.length>200||!Array.isArray(s.warrants)||s.warrants.length>2000||!Array.isArray(s.promises)||s.promises.length>2000||!Array.isArray(s.guarantees)||s.guarantees.length>2000)return false;
  for(const [id,p] of Object.entries(s.records)){

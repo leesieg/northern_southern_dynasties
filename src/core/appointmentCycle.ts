@@ -1,8 +1,9 @@
+import {worldRealms} from './polityRuntime';
 import {isAdventurer} from './resignation';
 import {civilCanAdmin} from './civilWars';
 import {isAlive} from './lifeState';
 import {governmentOf,governingAuthority} from './government';
-import {realms,type RealmId} from './realm';
+import {type RealmId} from './realm';
 import {relationshipPeople} from '../data/relationships';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {getScript} from '../data/scripts';
@@ -66,7 +67,7 @@ export function actAppointments(w:World,c:AppointmentCommand,actor=w.characterId
 }
 export function advanceAppointments(w:World){
  if(!w.realm?.local)return;const year=appointmentYear(w),base=getScript(w.scriptId).year,cycle=w.realm.local.cycle??={lastYear:year,rounds:{}};
- for(const r of realms){const q=cycle.rounds[r];if(!q||w.realm.annexed?.[r])continue;const g=governmentOf(w,r)!,approver=appointmentApprover(w,r);if(!isAlive(w,approver))continue;if(q.status==='cancelled'&&approver!==w.characterId&&w.campaign?.status==='active'){cycle.rounds[r]=makeAppointmentRound(w,r,year);continue;}if(q.status!=='pending')continue;if(g.regimeId!==q.regime){q.status='cancelled';q.reason='改朝后原任命名单作废';continue;}q.approver=approver;if(q.approver!==w.characterId&&w.day-q.created>=7&&w.campaign?.status==='active'){const command={type:'appointments',action:'approve',realm:r,year:q.year} as const;if(appointmentReason(w,command,q.approver))cycle.rounds[r]=makeAppointmentRound(w,r,q.year);else actAppointments(w,command,q.approver);}}
- if(year>cycle.lastYear){cycle.lastYear=year;if((year-base)%APPOINTMENT_YEARS===0)for(const r of realms)if(cycle.rounds[r]?.status!=='pending')cycle.rounds[r]=makeAppointmentRound(w,r,year);}
+ for(const r of worldRealms(w)){const q=cycle.rounds[r];if(!q||w.realm.annexed?.[r])continue;const g=governmentOf(w,r)!,approver=appointmentApprover(w,r);if(!isAlive(w,approver))continue;if(q.status==='cancelled'&&approver!==w.characterId&&w.campaign?.status==='active'){cycle.rounds[r]=makeAppointmentRound(w,r,year);continue;}if(q.status!=='pending')continue;if(g.regimeId!==q.regime){q.status='cancelled';q.reason='改朝后原任命名单作废';continue;}q.approver=approver;if(q.approver!==w.characterId&&w.day-q.created>=7&&w.campaign?.status==='active'){const command={type:'appointments',action:'approve',realm:r,year:q.year} as const;if(appointmentReason(w,command,q.approver))cycle.rounds[r]=makeAppointmentRound(w,r,q.year);else actAppointments(w,command,q.approver);}}
+ if(year>cycle.lastYear){cycle.lastYear=year;if((year-base)%APPOINTMENT_YEARS===0)for(const r of worldRealms(w))if(cycle.rounds[r]?.status!=='pending')cycle.rounds[r]=makeAppointmentRound(w,r,year);}
 }
-export function appointmentPauses(w:World){if(w.campaign?.status!=='active')return [];return realms.flatMap(r=>{const q=w.realm?.local?.cycle?.rounds[r];return q?.status==='pending'&&q.approver===w.characterId?[{id:`appointments:${r}:${q.year}`,kind:'appointments' as const,appointmentRealm:r,title:'三年铨选 · '+q.year,body:'审阅地方官任命清单，可批准、维持现任，或花费影响力修改人选。'}]:[];});}
+export function appointmentPauses(w:World){if(w.campaign?.status!=='active')return [];return worldRealms(w).flatMap(r=>{const q=w.realm?.local?.cycle?.rounds[r];return q?.status==='pending'&&q.approver===w.characterId?[{id:`appointments:${r}:${q.year}`,kind:'appointments' as const,appointmentRealm:r,title:'三年铨选 · '+q.year,body:'审阅地方官任命清单，可批准、维持现任，或花费影响力修改人选。'}]:[];});}

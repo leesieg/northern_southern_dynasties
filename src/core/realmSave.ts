@@ -1,3 +1,5 @@
+import {validRealmIdentities} from './politySeparation';
+import {worldRealms} from './polityRuntime';
 import {validRealmStrategy} from './realmStrategy';
 import {isMonthStart,nextMonthStart} from './calendar';
 import {validCivil} from './civilWars';
@@ -18,12 +20,13 @@ import { legDays } from './world';
 import type { World } from './types';
 const obj=(x:unknown):x is Record<string,unknown>=>!!x&&typeof x==='object'&&!Array.isArray(x);
 const int=(n:unknown,min=0,max=1_000_000):n is number=>typeof n==='number'&&Number.isSafeInteger(n)&&n>=min&&n<=max;
-const realm=(id:unknown):id is typeof realms[number]=>realms.includes(id as typeof realms[number]);
 const site=(id:unknown):id is string=>typeof id==='string'&&Object.hasOwn(siteById,id);
 const character=(id:unknown):id is string=>typeof id==='string'&&Object.hasOwn(characterById,id);
 export function validRealm(w:World):boolean {
+ const realm=(id:unknown):id is typeof realms[number]=>worldRealms(w).includes(id as typeof realms[number]);
  if(w.mode===undefined)return w.realm===undefined;
  if(w.mode!=='sandbox'||!character(w.characterId)||!w.social||w.campaign?.id!=='stewardship'||!(w.campaign.status==='active'&&w.campaign.finishedDay===null||w.campaign.status==='lost'&&w.campaign.finishedDay===w.day&&!!lifeOf(w,w.characterId)?.death))return false;
+ if(!validRealmIdentities(w))return false;
  if(!validRealmStrategy(w))return false;
  if(!validAnnexations(w))return false;
  if(!validPopulation(w))return false;
@@ -33,20 +36,20 @@ export function validRealm(w:World):boolean {
  for(const c of Object.values(s.cities))if(c.administration!==undefined&&(!obj(c.administration)||!int(c.administration.day,0,w.day)||!int(c.administration.need)||!int(c.administration.paid,0,c.administration.need)))return false;
  for(const c of Object.values(s.cities))if(c.militaryRequisition!==undefined&&(!obj(c.militaryRequisition)||!int(c.militaryRequisition.month,0,w.day)||!isMonthStart(c.militaryRequisition.month,w.scriptId)||!int(c.militaryRequisition.grain,0,1e9)||c.militaryRequisition.burden!==Math.ceil(c.militaryRequisition.grain/100)))return false;
  if(s.foodVersion!==undefined&&s.foodVersion!==2)return false;
- if(Object.keys(s.treasuries).length!==3)return false;
- for(const id of realms){const t=s.treasuries[id];if(!obj(t)||!int(t.coins)||!int(t.grain)||!int(t.lastIncome)||!int(t.lastExpense)||!int(t.lastFood,-1_000_000,1_000_000))return false;}
- if(s.supplyPolicies!==undefined&&(!obj(s.supplyPolicies)||Object.entries(s.supplyPolicies).some(([r,p])=>!realm(r)||!['civilian','normal','emergency'].includes(p))))return false;
+ if(Object.keys(s.treasuries).length!==worldRealms(w).length)return false;
+ for(const id of worldRealms(w)){const t=s.treasuries[id];if(!obj(t)||!int(t.coins)||!int(t.grain)||!int(t.lastIncome)||!int(t.lastExpense)||!int(t.lastFood,-1_000_000,1_000_000))return false;}
+ if(s.supplyPolicies!==undefined&&(!obj(s.supplyPolicies)||Object.entries(s.supplyPolicies).some(([r,p])=>!realm(r)||!['civilian','normal','emergency'].includes(p!))))return false;
  if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!historicalCharacters.every(p=>Object.hasOwn(s.personalInfluence!,p.id))||Object.entries(s.personalInfluence).some(([id,n])=>!relationshipPersonById[id]||!int(n,0,999))))return false;
  if(s.lastInfluenceIncome!==undefined&&(!int(s.lastInfluenceIncome,0,w.day)||!isMonthStart(s.lastInfluenceIncome,w.scriptId)))return false;
  if(s.lastMilitaryDay!==undefined&&!int(s.lastMilitaryDay,0,w.day))return false;
  if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthStart(s.lastMonthly,w.scriptId)))return false;
  if(!int(s.influence,0,999)||typeof s.mandate!=='boolean'||!int(s.lastEvent,0,w.day)||!obj(s.truces))return false;
- for(const [key,day] of Object.entries(s.truces)){if(!['east|liang','east|west','liang|west'].includes(key)||!int(day,0,w.day+360))return false;}
+ for(const [key,day] of Object.entries(s.truces)){if(!worldRealms(w).some(a=>worldRealms(w).some(b=>a!==b&&[a,b].sort().join('|')===key))||!int(day,0,w.day+360))return false;}
  if(!Array.isArray(s.offices)||s.offices.length>Object.keys(territoryNodes).length||new Set(s.offices.map(o=>(o?.realm??s.cities[o?.site]?.owner)+'|'+(o?.territory??'county:'+o?.site))).size!==s.offices.length)return false;
  for(const o of s.offices)if(!obj(o)||!site(o.site)||(typeof o.candidate!=='string'||!relationshipPersonById[o.candidate])||!int(o.due,w.day+1,w.day+1000)||o.territory!==undefined&&(!Object.hasOwn(territoryNodes,String(o.territory))||territoryNodes[String(o.territory)].level==='realm'||!descendantSites(String(o.territory)).includes(o.site as string)||!realm(o.realm)||typeof o.issuer!=='string'||!relationshipPersonById[o.issuer]||typeof o.acting!=='boolean'||o.concurrent!==undefined&&typeof o.concurrent!=='boolean'||!int(o.issued,0,w.day)))return false;
  if(!validTraffic(w))return false;
  if(!Array.isArray(s.armies)||s.armies.length>48)return false;
- for(const [r,id] of Object.entries(w.mobility?.commanders??{}))if(allegianceRealm(w,id)!==r)return false;
+ for(const [r,id] of Object.entries(w.mobility?.commanders??{}))if(allegianceRealm(w,id!)!==r)return false;
  if(Object.keys(w.mobility?.armyCommanders??{}).some(id=>!s.armies!.some(a=>a.id===Number(id))))return false;const seen=new Set<string>();
  if(Object.keys(w.mobility?.pendingCommanders??{}).some(id=>!s.armies!.some(a=>a.id===Number(id))))return false;
  for(const a of s.armies){if(!obj(a)||!realm(a.realm)||seen.has(a.id!==undefined?String(a.id):a.realm)||!site(a.location)||!int(a.troops,100,6000)||!int(a.morale,0,100)||!int(a.supply,0,6000)||!int(a.siege,0,100))return false;seen.add(a.id!==undefined?String(a.id):a.realm);
@@ -67,7 +70,8 @@ export function validRealm(w:World):boolean {
  if(j.elapsed>=j.durations[j.leg]||j.durations.slice(0,j.leg).reduce((n:number,d:number)=>n+d,0)+j.elapsed!==w.day-j.started)return false;}
  }
  if(s.armyDebts!==undefined&&(!Array.isArray(s.armyDebts)||s.armyDebts.length>1000||s.armyDebts.some(d=>!obj(d)||!realm(d.realm)||typeof d.account!=='string'||d.account!=='central:'+d.realm&&!(d.account.startsWith('person:')&&relationshipPersonById[d.account.slice(7)])&&(!d.account.startsWith(d.realm+'|')||!Object.hasOwn(territoryNodes,d.account.split('|')[1]))||!int(d.coins,1,1000000000))))return false;
- if(s.wars!==undefined&&(!Array.isArray(s.wars)||s.wars.length>6||!int(s.nextWarId,1,1000000000)))return false;
+ if((s.wars??[]).filter(v=>!v.civil).length>6)return false;
+ if(s.wars!==undefined&&(!Array.isArray(s.wars)||s.wars.length>15||!int(s.nextWarId,1,1000000000)))return false;
  const wars=activeWars(w),pairs=new Set<string>(),ids=new Set<number>();
  for(const v of wars){if(!obj(v)||!realm(v.attacker)||!realm(v.defender)||!validCivil(w,v)||!site(v.target)||!int(v.started,0,w.day)||!int(v.score,-100,100))return false;
  if(v.peaceReviewed!==undefined&&!int(v.peaceReviewed,0,w.day)||v.peaceOffer!==undefined&&(!obj(v.peaceOffer)||!realm(v.peaceOffer.from)||!realm(v.peaceOffer.to)||v.peaceOffer.from===v.peaceOffer.to||![v.attacker,v.defender].includes(v.peaceOffer.from)||![v.attacker,v.defender].includes(v.peaceOffer.to)||!['white','demand','yield'].includes(v.peaceOffer.terms)||!int(v.peaceOffer.created,v.started,w.day)||v.peaceOffer.until!==v.peaceOffer.created+15))return false;

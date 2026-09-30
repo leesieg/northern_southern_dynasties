@@ -23,7 +23,7 @@ export function influenceIncome(w:World,id:string){
  const offer=(value:number,name:string,sites:string[])=>{if(value<bonus||!sites.length)return;if(value>bonus){area=new Set();bonus=value;label=name;}for(const site of sites)area.add(site);};
  if(r&&g&&!w.realm.annexed?.[r]){
   const controlled=Object.keys(w.realm.cities).filter(site=>w.realm!.cities[site].owner===r&&w.realm!.cities[site].controller===r&&civilCanAdmin(w,id,site));
-  if(controlled.includes(capital(r))){
+  if(controlled.includes(capital(r,w))){
    if(g.ruler===id)offer(4,'在位君主',controlled);
    if(governingExecutives(w,r).includes(id))offer(10,'实际执政',controlled);
    if(courtEnabled(w,r)&&Object.values(g.court?.ministries??{}).includes(id))offer(6,'中央职掌',controlled);

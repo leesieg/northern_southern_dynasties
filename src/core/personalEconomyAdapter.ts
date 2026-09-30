@@ -1,3 +1,4 @@
+import {capital} from './realm';
 import {detained} from './custodyState';
 import {dispatchNPC} from './mobility';
 import {planRoute} from './world';
@@ -69,7 +70,7 @@ export function economyHost(w: World, snapshot=false): EconomyHost {
     if (key.startsWith('central:')) {
       const r = key.slice(8) as RealmId;
       if (!Object.hasOwn(w.realm.treasuries, r)) return undefined;
-      return {id: key, realm: r, name: '中央国库', site: ({liang:'jiankang',east:'ye',west:'changan'})[r],
+      return {id: key, realm: r, name: '中央国库', site: capital(r,w),
         holder: governingExecutives(w, r)[0] ?? null,
         wallet: {key, capacity: 1_000_000, read: () => w.realm!.treasuries[r].coins,
           write: n => {w.realm!.treasuries[r].coins = n;}}};

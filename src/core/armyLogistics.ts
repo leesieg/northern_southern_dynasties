@@ -27,7 +27,7 @@ function advanceConvoy(w:World,a:Army){const c=a.convoy;if(!c)return;if(!convoyP
 }
 function dispatch(w:World,a:Army){if(a.convoy||a.troops<=0)return;a.logisticsReason='';const s=w.realm!,to=a.journey?a.journey.route.slice(a.journey.leg+1).reverse().find(id=>armyControls(w,a,id)):a.location;
  if(!to||!armyControls(w,a,to)){a.logisticsReason='前方无安全补给据点';return;}
- const sources=Object.entries(s.cities).filter(([id])=>armyControls(w,a,id)).map(([id,c])=>({id,local:Math.max(0,c.grain-supplyReserve(w,id,a.realm)),bank:!a.owner&&id===capital(a.realm)&&!civilWar(w,a.realm)?.civil?.armies.includes(a.id!)?s.treasuries[a.realm].grain:0,path:id===to?{route:[id],durations:[],days:0}:planRoute(id,to,node=>canEnter(w,a.realm,s.cities[node].controller,undefined,true)&&(!civilWar(w,a.realm)||armyControls(w,a,node)))})).filter(v=>v.path&&v.local+v.bank>0).sort((x,y)=>x.path!.days-y.path!.days),source=sources[0];
+ const sources=Object.entries(s.cities).filter(([id])=>armyControls(w,a,id)).map(([id,c])=>({id,local:Math.max(0,c.grain-supplyReserve(w,id,a.realm)),bank:!a.owner&&id===capital(a.realm,w)&&!civilWar(w,a.realm)?.civil?.armies.includes(a.id!)?s.treasuries[a.realm].grain:0,path:id===to?{route:[id],durations:[],days:0}:planRoute(id,to,node=>canEnter(w,a.realm,s.cities[node].controller,undefined,true)&&(!civilWar(w,a.realm)||armyControls(w,a,node)))})).filter(v=>v.path&&v.local+v.bank>0).sort((x,y)=>x.path!.days-y.path!.days),source=sources[0];
  if(!source){a.logisticsReason='安全粮源不足或通路中断';return;}const lead=source.path!.days;if(a.journey&&!lead){a.logisticsReason='前方据点已有储粮，抵达后领取';return;}const need=Math.max(0,armySupplyTarget(w,a,lead)-a.supply-incomingArmySupply(w,a));if(!need)return;
  const city=s.cities[source.id],workers=Math.max(0,Math.floor(city.population*.1)-mobilizedTransportLabor(w,source.id)),mobilization=Math.max(.25,Math.min(1.5,((governmentOf(w,a.realm)?.support??60)+city.order)/120));
  let amount=Math.floor(Math.min(need,source.local+source.bank,lead?Math.min(600,workers*10*mobilization):6000));const wallet=accountWallet(w,a.payer??'central:'+a.realm);if(a.owner)amount=Math.min(amount,Math.max(0,(wallet?.read()??0)-(lead?1:0)));
@@ -52,7 +52,7 @@ export function distributeGarrisonFood(w:World){
  if(!w.realm)return;const s=w.realm;
  for(const [site,city] of Object.entries(s.cities)){
   const eligible=s.armies.filter(a=>!a.owner&&!a.journey&&armyControls(w,a,site)&&a.location===site&&a.supply+incomingArmySupply(w,a)<armySupplyTarget(w,a));if(!eligible.length)continue;
-  const r=eligible[0].realm,bank=site===capital(r)&&!civilWar(w,r)?.civil?.cities.includes(site)?s.treasuries[r]:null;
+  const r=eligible[0].realm,bank=site===capital(r,w)&&!civilWar(w,r)?.civil?.cities.includes(site)?s.treasuries[r]:null;
   for(const priority of [2,1,0]){
    const armies=eligible.filter(a=>(a.supplyPriority??1)===priority);if(!armies.length)continue;
    const local=Math.max(0,city.grain-supplyReserve(w,site,r)),needs=armies.map(a=>armySupplyTarget(w,a)-a.supply-incomingArmySupply(w,a)),total=needs.reduce((n,v)=>n+v,0),take=Math.min(local+(bank?.grain??0),total);let used=0;

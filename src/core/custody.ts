@@ -1,10 +1,11 @@
+import {worldRealms} from './polityRuntime';
 import {retainPersonalFollowers,detachRetainer} from './allegianceTransition';
 import {awardInfluence} from './personalInfluence';
 import type {World} from './types';
 import type {Army,RealmId} from './realm';
 import type {CustodyCommand,Detention} from './custodyState';
 import {detained} from './custodyState';
-import {realms,syncGovernance} from './realm';
+import {syncGovernance} from './realm';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
 import {isAlive,lifeOf} from './lifeState';
@@ -37,13 +38,13 @@ function mirror(w:World){if(w.mobility){const p=w.custody?.records[w.characterId
 function movePerson(w:World,id:string,site:string){ensureMobility(w);const residence=w.mobility!.residences[id];if(residence){residence.site=site;residence.journey=null;}if(id===w.characterId){w.people[0].location=site;w.people[0].journey=null;}}
 /** Custody suspends authority and movement; it leaves allegiance and living offices intact. */
 export function detainPerson(w:World,id:string,captor:RealmId,site:string,cause:Detention['cause'],source:string,army:Army|null=null){
- const s=ensureCustody(w);if(!s||detained(w,id)||!isAlive(w,id)||!relationshipPersonById[id]||!siteById[site]||!realms.includes(captor))return false;
+ const s=ensureCustody(w);if(!s||detained(w,id)||!isAlive(w,id)||!relationshipPersonById[id]||!siteById[site]||!worldRealms(w).includes(captor))return false;
  const origin=allegianceRealm(w,id);if(!origin)return false;
  s.records[id]={person:id,captor,site,cause,source,origin,captorPerson:army?armyCommander(w,army)??null:governingAuthority(w,captor)??null,army:army?.id??null,since:w.day,treatment:'guarded',talked:null,terms:'',escapeAfter:w.day+30,ransom:Math.min(400,80+Math.floor((governmentOf(w,origin)?.merit[id]??0)/2)),offer:null};
  const civil=civilWar(w,captor);if(army&&civil){s.records[id].war=civil.id;s.records[id].side=warArmySide(w,civil,army)??undefined;}
  movePerson(w,id,site);interruptCommanderCampaigns(w,id);
  if(w.diplomacy){for(const m of w.diplomacy.missions.filter(m=>m.envoy===id)){w.diplomacy.history.push({day:w.day,from:m.from,to:m.to,text:'使者被拘押，使命中止；已支付的出使成本不退。'});}w.diplomacy.history=w.diplomacy.history.slice(-80);w.diplomacy.missions=w.diplomacy.missions.filter(m=>m.envoy!==id);if(w.diplomacy.returning?.actor===id)w.diplomacy.returning=null;}
- if(w.mobility){for(const [key,leader] of Object.entries(w.mobility.armyCommanders??{}))if(leader===id)delete w.mobility.armyCommanders![Number(key)];for(const r of realms)if(w.mobility.commanders[r]===id)delete w.mobility.commanders[r];for(const [key,v] of Object.entries(w.mobility.pendingCommanders??{}))if(v.person===id)delete w.mobility.pendingCommanders![Number(key)];}
+ if(w.mobility){for(const [key,leader] of Object.entries(w.mobility.armyCommanders??{}))if(leader===id)delete w.mobility.armyCommanders![Number(key)];for(const r of worldRealms(w))if(w.mobility.commanders[r]===id)delete w.mobility.commanders[r];for(const [key,v] of Object.entries(w.mobility.pendingCommanders??{}))if(v.person===id)delete w.mobility.pendingCommanders![Number(key)];}
  if(w.relationships?.scheme&&(w.relationships.scheme.actor===id||w.relationships.scheme.target===id))w.relationships.scheme=null;
  if(army){const leader=armyCommander(w,army);if(leader){const g=governmentOf(w,captor);if(g)g.merit[leader]=Math.min(100,(g.merit[leader]??0)+5);awardInfluence(w,leader,3);}}
  record(w,id,captor,source,cause==='arrest'?'依拘捕令收押，等待审理':'被俘，原有效忠与家产保留，军务及履职暂停');mirror(w);return true;
@@ -64,7 +65,7 @@ export function evacuatePerson(w:World,id:string,route:NonNullable<ReturnType<ty
 export function captureCityPeople(w:World,site:string,captor:RealmId,source:string,peaceful=false){
  const s=w.realm!,origin=s.cities[site].controller;if(origin===captor||origin==='frontier')return;
  const army=s.armies.find(a=>a.realm===captor&&a.location===site&&!a.journey)??null;
- const important=new Set([s.cities[site].governor,...realms.flatMap(r=>{const g=governmentOf(w,r);return g?[g.ruler,...g.executives,...Object.values(g.court?.ministries??{})]:[];}),...s.armies.map(a=>armyCommander(w,a))].filter((v):v is string=>!!v));
+ const important=new Set([s.cities[site].governor,...worldRealms(w).flatMap(r=>{const g=governmentOf(w,r);return g?[g.ruler,...g.executives,...Object.values(g.court?.ministries??{})]:[];}),...s.armies.map(a=>armyCommander(w,a))].filter((v):v is string=>!!v));
  for(const id of important){if(allegianceRealm(w,id)!==origin||detained(w,id)||!presentAt(w,id,site))continue;
   const escape=Object.keys(s.cities).filter(to=>to!==site&&s.cities[to].controller===origin).map(to=>planRoute(site,to,node=>s.cities[node].controller===origin)).find(p=>!!p);
   if(peaceful){if(escape)evacuatePerson(w,id,escape);record(w,id,captor,source,escape?'开城议降，正在沿安全道路撤离，效忠不变':'开城议降，获准留居为自由人物，当前无返国道路');continue;}
@@ -121,7 +122,7 @@ export function custodyReason(w:World,c:CustodyCommand,actor=w.characterId!):str
 function changeAllegiance(w:World,p:Detention,actor:string,offer:'stipend'|'office'){
  const id=p.person,rs=w.relationships!,oldChief=governingAuthority(w,p.origin);
  retainPersonalFollowers(w,id,p.origin);
- delete rs.oaths[id];detachRetainer(w,id);clearLocalPerson(w,id);for(const r of realms){const g=governmentOf(w,r);if(g?.court)for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])if(g.court.ministries[m]===id)g.court.ministries[m]=null;}
+ delete rs.oaths[id];detachRetainer(w,id);clearLocalPerson(w,id);for(const r of worldRealms(w)){const g=governmentOf(w,r);if(g?.court)for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])if(g.court.ministries[m]===id)g.court.ministries[m]=null;}
  const war=civilWar(w,p.captor);if(p.war===war?.id&&p.side){if(p.side==='attack'&&!war!.civil!.supporters.includes(id))war!.civil!.supporters.push(id);else if(p.side==='defend')war!.civil!.supporters=war!.civil!.supporters.filter(v=>v!==id);}
  (rs.allegiances??={})[id]={realm:p.captor,from:p.origin,since:w.day,army:0,source:'custody'};rs.oaths[id]={lord:actor,since:w.day,loyalty:60};
  w.realm!.offices=w.realm!.offices.filter(q=>q.candidate!==id);

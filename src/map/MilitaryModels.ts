@@ -1,3 +1,5 @@
+import {realmOrigin} from '../core/polityRuntime';
+import type {World} from '../core/types';
 import {Group,Mesh,InstancedMesh,BoxGeometry,SphereGeometry,CapsuleGeometry,CylinderGeometry,TorusGeometry,LatheGeometry,PlaneGeometry,BufferGeometry,Float32BufferAttribute,Shape,ExtrudeGeometry,MeshStandardMaterial,MeshBasicMaterial,TextureLoader,CanvasTexture,SRGBColorSpace,DoubleSide,Matrix4,Vector2,Vector3,Color,type Material,type Texture} from 'three';
 import type {Army} from '../core/realm';
 import {armyHeraldry} from './ArmyHeraldry';
@@ -6,7 +8,7 @@ import {militaryGarmentGeometry,militaryLamellaGeometry} from './militarySculpt'
 import {buildMilitaryFace} from './militaryFace';
 export type ArmyModelKind='foot'|'horse'|'siege';
 interface Actor {root:Group;legs:Group[];arms:Group[];cloak:Group}
-export interface MilitaryModel {root:Group;body:Group;detail:Group;camp:Group;banner:Group;actors:Actor[];horseLegs:Group[];lever?:Group;kind:ArmyModelKind;realm:Army['realm'];bannerName:string}
+export interface MilitaryModel {root:Group;body:Group;detail:Group;camp:Group;banner:Group;actors:Actor[];horseLegs:Group[];lever?:Group;kind:ArmyModelKind;realm:Army['realm'];origin:ReturnType<typeof realmOrigin>;bannerName:string}
 /** Original miniature meshes: shared geometry/textures, articulated bodies, no per-soldier simulation. */
 export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void){
  const geometries=new Map<string,BufferGeometry>(),materials=new Map<string,Material>(),textures:Texture[]=[],loader=new TextureLoader();
@@ -89,21 +91,21 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
   beam(root,iron,[-.44,1.15,.10],[.44,1.15,.10],.075);const lever=new Group();lever.position.set(0,1.15,.10);lever.rotation.x=-.32;root.add(lever);beam(lever,wood,[0,-.37,0],[0,1.02,0],.065);beam(lever,linen,[0,1.02,0],[0,.60,.24],.015);ellipsoid(lever,leather,0,.59,.25,.17,.13,.13);
   for(const side of [-1,1])beam(root,linen,[0,.80,.18],[side*.32,.15,.57],.016);return lever;
  }
- function banner(parent:Group,realm:Army['realm'],name:string){
+ function banner(parent:Group,realm:Army['realm'],name:string,world?:World){
   const group=new Group();group.position.set(-.40,0,-.16);parent.add(group);beam(group,wood,[0,.025,0],[0,2.30,0],.026);beam(group,bronze,[-.02,2.22,0],[.54,2.22,0],.020);ellipsoid(group,bronze,0,2.34,0,.040,.075,.040);
-  const key='banner|'+realm+'|'+name;let material=materials.get(key);if(!material){const texture=loader.load(armyHeraldry(realm,name),()=>repaint());texture.colorSpace=SRGBColorSpace;textures.push(texture);material=new MeshStandardMaterial({map:texture,transparent:true,alphaTest:.12,side:DoubleSide,roughness:.95,depthWrite:true});materials.set(key,material);}
+  const key='banner|'+realmOrigin(world,realm)+'|'+realm+'|'+name;let material=materials.get(key);if(!material){const texture=loader.load(armyHeraldry(realm,name,world),()=>repaint());texture.colorSpace=SRGBColorSpace;textures.push(texture);material=new MeshStandardMaterial({map:texture,transparent:true,alphaTest:.12,side:DoubleSide,roughness:.95,depthWrite:true});materials.set(key,material);}
   const g=geo('flag-cloth',()=>{const g=new PlaneGeometry(.54,.67,10,12),p=g.getAttribute('position');for(let i=0;i<p.count;i++)p.setZ(i,Math.sin((p.getX(i)+.27)*13)*.028);g.computeVertexNormals();return g;});mesh(group,g,material,.25,1.895,.022);return group;
  }
  function camp(parent:Group){const group=new Group();parent.add(group);group.position.set(-.55,0,-.58);group.scale.setScalar(.46);const shape=geo('tent',()=>{const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute([-.6,0,-.6,.6,0,-.6,0,.7,-.6,-.6,0,.6,.6,0,.6,0,.7,.6],3));g.setAttribute('uv',new Float32BufferAttribute([0,0,1,0,.5,1,0,0,1,0,.5,1],2));g.setIndex([0,3,2,2,3,5,2,5,1,1,5,4,0,2,1,3,4,5]);g.computeVertexNormals();return g;});mesh(group,shape,linen,0,0,0);for(const side of [-1,1])for(const z of [-1,1])beam(group,linen,[side*.5,.1,z*.5],[side*.8,.02,z*.85],.018);return group;}
  function shadow(parent:Group,kind:ArmyModelKind){let m=materials.get('shadow');if(!m){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;const c=canvas.getContext('2d')!,g=c.createRadialGradient(64,64,8,64,64,63);g.addColorStop(0,'rgba(16,23,18,.38)');g.addColorStop(.6,'rgba(16,23,18,.20)');g.addColorStop(1,'rgba(16,23,18,0)');c.fillStyle=g;c.fillRect(0,0,128,128);const map=new CanvasTexture(canvas);textures.push(map);m=new MeshBasicMaterial({map,transparent:true,depthWrite:false,side:DoubleSide});materials.set('shadow',m);}const o=mesh(parent,geo('shadow',()=>new PlaneGeometry(1,1)),m,0,.012,0,kind==='foot'?1.20:1.55,kind==='foot'?1.10:1.9,1);o.rotation.x=-Math.PI/2;}
  return {
-  create(a:Army,kind:ArmyModelKind,name:string):MilitaryModel{
+  create(a:Army,kind:ArmyModelKind,name:string,world?:World):MilitaryModel{
    const root=new Group(),body=new Group(),detail=new Group(),actors:Actor[]=[],horseLegs:Group[]=[];root.matrixAutoUpdate=false;root.add(body);body.add(detail);shadow(body,kind);
-   const cloth=mat('cloth-'+a.realm,a.realm==='liang'?'#729080':a.realm==='east'?'#9b6872':'#b19a68',0),main=soldier(body,cloth,0,kind==='siege'?-.50:0,kind==='horse'?.87:1,kind!=='horse');actors.push(main);mesh(main.root,geo('helmet-plume',()=>new LatheGeometry([new Vector2(.025,0),new Vector2(.038,.05),new Vector2(.02,.13),new Vector2(0,.16)],8)),tassel,0,1.84,-.01);let lever:Group|undefined;
+   const origin=realmOrigin(world,a.realm),cloth=mat('cloth-'+origin,origin==='liang'?'#729080':origin==='east'?'#9b6872':'#b19a68',0),main=soldier(body,cloth,0,kind==='siege'?-.50:0,kind==='horse'?.87:1,kind!=='horse');actors.push(main);mesh(main.root,geo('helmet-plume',()=>new LatheGeometry([new Vector2(.025,0),new Vector2(.038,.05),new Vector2(.02,.13),new Vector2(0,.16)],8)),tassel,0,1.84,-.01);let lever:Group|undefined;
    if(kind==='horse'){const h=horse(body,cloth);horseLegs.push(...h.horseLegs);main.root.position.set(0,.58,-.09);main.legs.forEach((leg,i)=>{leg.rotation.x=-.7;leg.rotation.z=(i?1:-1)*.36;});main.arms.forEach(arm=>arm.rotation.x=-.7);}
    else if(kind==='siege'){lever=trebuchet(body);main.root.position.x=.57;actors.push(soldier(detail,cloth,-.56,-.46,.84,false));}
    else{actors.push(soldier(detail,cloth,-.38,-.34,.86),soldier(detail,cloth,.38,-.38,.84));}
-   return {root,body,detail,camp:camp(body),banner:banner(body,a.realm,name),actors,horseLegs,lever,kind,realm:a.realm,bannerName:name};
+   return {root,body,detail,camp:camp(body),banner:banner(body,a.realm,name,world),actors,horseLegs,lever,kind,realm:a.realm,origin,bannerName:name};
   },
   pruneBanners(active:Set<string>){for(const [key,m] of materials)if(key.startsWith('banner|')&&!active.has(key)){const t=(m as MeshStandardMaterial).map;if(t){t.dispose();const i=textures.indexOf(t);if(i>=0)textures.splice(i,1);}m.dispose();materials.delete(key);}},
   dispose(){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());geometries.clear();materials.clear();textures.length=0;}

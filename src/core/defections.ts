@@ -1,6 +1,7 @@
+import {worldRealms} from './polityRuntime';
 import type {World} from './types';
 import type {RealmId} from './realm';
-import {realms,occupyCity,playerRealm,syncGovernance} from './realm';
+import {occupyCity,playerRealm,syncGovernance} from './realm';
 import {activeWars,bilateralWar,ensureWars} from './wars';
 import {snapshotWarValues} from './warScoring';
 import {civilianFood} from './population';
@@ -30,9 +31,9 @@ export function advanceDefections(w:World){if(!w.realm)return;const s=w.defectio
  if(!isMonthStart(w.day,w.scriptId))return;
  for(const [site,city] of Object.entries(w.realm.cities)){if(city.owner==='frontier'||city.controller!==city.owner||city.order>=35||city.grain>=civilianFood(w,site)||s.items.some(q=>q.site===site&&(q.status==='pending'||w.day-q.created<180)))continue;
  const from=city.owner,chief=governingAuthority(w,from),attitude=city.governor?relationOpinion(w,city.governor,chief):0,garrison=w.realm.armies.filter(a=>a.realm===from&&a.location===site&&!a.journey&&a.troops>=100&&a.morale>=40),loyalGarrison=garrison.some(a=>a.regiments?.some(u=>(u.institution??60)>=60)||armyCommander(w,a)===chief);if(attitude>20||loyalGarrison&&attitude>-30)continue;const crisis=(governmentOf(w,from)?.support??100)<40||courtOf(w,from)?.phase==='chaos'||activeWars(w).some(v=>!!v.civil&&v.attacker===from||v.attacker===from||v.defender===from);if(!crisis)continue;
- const to=realms.filter(r=>r!==from&&!w.realm!.annexed?.[r]&&roads.some(e=>!e.legacyOnly&&(e.from===site&&w.realm!.cities[e.to].controller===r||e.to===site&&w.realm!.cities[e.from].controller===r))).sort((a,b)=>w.realm!.treasuries[b].coins-w.realm!.treasuries[a].coins)[0];if(!to||!w.realm.armies.some(a=>a.realm===to&&a.troops>=200&&a.morale>=40))continue;
+ const to=worldRealms(w).filter(r=>r!==from&&!w.realm!.annexed?.[r]&&roads.some(e=>!e.legacyOnly&&(e.from===site&&w.realm!.cities[e.to].controller===r||e.to===site&&w.realm!.cities[e.from].controller===r))).sort((a,b)=>w.realm!.treasuries[b].coins-w.realm!.treasuries[a].coins)[0];if(!to||!w.realm.armies.some(a=>a.realm===to&&a.troops>=200&&a.morale>=40))continue;
  s.items.push({id:s.nextId++,site,from,to,created:w.day,status:'pending',reason:'地方失序且缺粮，朝廷保护削弱；主官与驻军未能维持效忠，接纳国有可用军力'});
  }
  s.items=s.items.filter(q=>q.status==='pending'||w.day-q.created<360);
 }
-export function validDefections(w:World){const s=w.defections;if(s===undefined)return true;return !!s&&Number.isSafeInteger(s.nextId)&&s.nextId>0&&Number.isSafeInteger(s.lastDay)&&s.lastDay>=0&&s.lastDay<=w.day&&Array.isArray(s.items)&&s.items.length<=1000&&new Set(s.items.map(q=>q.id)).size===s.items.length&&s.items.every(q=>q&&Number.isSafeInteger(q.id)&&q.id>0&&q.id<s.nextId&&!!siteById[q.site]&&realms.includes(q.from)&&realms.includes(q.to)&&q.from!==q.to&&Number.isSafeInteger(q.created)&&q.created>=0&&q.created<=w.day&&['pending','accepted','rejected','withdrawn'].includes(q.status)&&typeof q.reason==='string'&&q.reason.length<=200);}
+export function validDefections(w:World){const s=w.defections;if(s===undefined)return true;return !!s&&Number.isSafeInteger(s.nextId)&&s.nextId>0&&Number.isSafeInteger(s.lastDay)&&s.lastDay>=0&&s.lastDay<=w.day&&Array.isArray(s.items)&&s.items.length<=1000&&new Set(s.items.map(q=>q.id)).size===s.items.length&&s.items.every(q=>q&&Number.isSafeInteger(q.id)&&q.id>0&&q.id<s.nextId&&!!siteById[q.site]&&worldRealms(w).includes(q.from)&&worldRealms(w).includes(q.to)&&q.from!==q.to&&Number.isSafeInteger(q.created)&&q.created>=0&&q.created<=w.day&&['pending','accepted','rejected','withdrawn'].includes(q.status)&&typeof q.reason==='string'&&q.reason.length<=200);}

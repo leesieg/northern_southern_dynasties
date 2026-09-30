@@ -1,3 +1,7 @@
+import {applyPowerArrangement,actPower} from './powerPolitics';
+import {governingAuthority} from './government';
+import {awardInfluence} from './personalInfluence';
+import {successionDefinitions,dynastyNames,type SuccessionId} from '../data/governments';
 import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import { describe,it,expect } from 'vitest';
 import {act,advance} from './world';
@@ -12,6 +16,7 @@ function pass(w:World,days:number){for(let i=0;i<days;i++){if(w.realm!.event)act
 function atYear(w:World,year:number){w.day=Math.round((Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000);if(w.economy)w.economy.lastDay=w.day;}
 function capitalReady(w:World){w.realm!.influence=300;w.realm!.treasuries[playerRealm(w)].coins=10000;governmentOf(w)!.support=80;governmentOf(w)!.legitimacy=90;}
 function finish(w:World){const required=governmentOf(w)!.task!.required;pass(w,required);expect(governmentOf(w)!.task).toBeNull();expect(parseWorld(serializeWorld(w))).toEqual(w);}
+function history(w:World,stage:SuccessionId){const r=playerRealm(w),g=governmentOf(w)!,d=successionDefinitions[stage],sponsor=governingAuthority(w,r);awardInfluence(w,sponsor,100);actPower(w,{type:'power',action:'propose',goal:d.nextDynasty?'dynasty':d.ruler!==g.ruler?'ruler':'executive',beneficiary:d.ruler,executive:d.executives[0],name:d.nextDynasty?dynastyNames[d.nextDynasty]:undefined,sourceStage:stage},sponsor);applyPowerArrangement(w,r,w.politics!.proposals[r]!);expect(parseWorld(serializeWorld(w))).toEqual(w);}
 describe('政体、改革与政权实体沿革',()=>{
  it('546 开局已有东西魏前期制度，不可重复改革或提前受禅',()=>{
   const west=start('yuwen-tai');expect(governmentOf(west)!.laws).toEqual(['west-register','west-six']);expect(()=>act(west,{type:'government',action:'law',law:'west-six'})).toThrow('已施行');expect(()=>act(west,{type:'government',action:'law',law:'west-militia'})).toThrow('550');
@@ -55,26 +60,9 @@ describe('政体、改革与政权实体沿革',()=>{
   expect(realmReason(w,{type:'realm',action:'petition',site:'changan'})).toContain('异族');
   const before=structuredClone(w);expect(()=>act(w,{type:'realm',action:'petition',site:'changan'})).toThrow('异族');expect(w).toEqual(before);
  });
- it('西魏从府兵到六官，再由宇文觉受禅建周，宇文护执政',()=>{
-  const w=start('yuwen-tai');atYear(w,550);capitalReady(w);act(w,{type:'government',action:'law',law:'west-militia'});finish(w);expect(governmentBonus(w,'west').pay).toBe(-15);
-  atYear(w,556);capitalReady(w);act(w,{type:'government',action:'law',law:'west-offices'});finish(w);capitalReady(w);act(w,{type:'government',action:'succession',stage:'west-regency'});finish(w);expect(governmentOf(w)!.ruler).toBe('yuan-kuo');expect(executive(w)).toBe(false);
-  atYear(w,557);capitalReady(w);
-  // This scenario isolates the succession chain; political crises are tested separately.
-  governmentOf(w)!.court!.tension=15;governmentOf(w)!.court!.phase='stable';
-  act(w,{type:'government',action:'succession',stage:'zhou-accession'});finish(w);expect(regimeName(w,'west')).toBe('北周');expect(governmentOf(w)!.ruler).toBe('yuwen-jue');expect(governmentOf(w)!.executives).toEqual(['yuwen-hu']);
- });
- it('高洋受禅建立新实体，撤销旧授权但不替换玩家人物或家业',()=>{
-  const w=start('gao-huan');atYear(w,549);capitalReady(w);act(w,{type:'government',action:'succession',stage:'east-regency'});finish(w);expect(executive(w)).toBe(false);
-  atYear(w,550);capitalReady(w);const estate=structuredClone(w.holdings.estate);act(w,{type:'government',action:'succession',stage:'qi-accession'});finish(w);expect(regimeName(w,'east')).toBe('北齐');expect(w.characterId).toBe('gao-huan');expect(w.holdings.estate).toEqual(estate);expect(w.realm!.mandate).toBe(false);expect(governmentOf(w)!.regimeId).toBe('east-qi');
- });
- it('梁陈更替记录真实受禅双方，保存丢失城与占领关系，不自动改变历史边界',()=>{
-  const w=start();atYear(w,555);capitalReady(w);w.realm!.cities.jiangling.owner='west';w.realm!.cities.jiangling.controller='west';
-  act(w,{type:'government',action:'succession',stage:'chen-regency'});finish(w);expect(governmentOf(w)!.ruler).toBe('xiao-fangzhi');expect(governmentOf(w)!.executives).toEqual(['chen-baxian']);expect(executive(w)).toBe(false);expect(w.holdings.governedCities).toEqual([]);
-  atYear(w,557);capitalReady(w);const before=w.realm!.governments!.regimes.find(v=>v.id==='liang-0')!;act(w,{type:'government',action:'succession',stage:'chen-accession'});finish(w);
-  const current=w.realm!.governments!.regimes.find(v=>v.id==='liang-chen')!;expect(current.predecessor).toBe(before.id);expect(before.until).toBe(current.from);expect(current.cities).not.toContain('jiangling');expect(w.realm!.cities.jiangling.owner).toBe('west');expect(regimeName(w,'liang')).toBe('陈');expect(governmentOf(w)!.ruler).toBe('chen-baxian');
-  // A playable old-house member may earn fresh office under the new court.
-  capitalReady(w);expect(realmReason(w,{type:'realm',action:'petition',site:'jiankang'})).toBe('');act(w,{type:'realm',action:'petition',site:'jiankang'});pass(w,8);expect(w.holdings.governedCities).toContain('jiankang');expect(parseWorld(serializeWorld(w))).toEqual(w);
- });
+ it('历史西魏议案允许宇文觉居君位、宇文护执政，不依靠自动换朝',()=>{const w=start('yuwen-tai');atYear(w,556);capitalReady(w);history(w,'west-regency');expect(governmentOf(w)!.ruler).toBe('yuan-kuo');expect(executive(w)).toBe(false);atYear(w,557);history(w,'zhou-accession');expect(regimeName(w,'west')).toBe('北周');expect(governmentOf(w)!.ruler).toBe('yuwen-jue');expect(governmentOf(w)!.executives).toEqual(['yuwen-hu']);expect(governmentOf(w)!.stages).toEqual(['west-regency','zhou-accession']);});
+ it('历史北齐议案保留玩家、家业与真实前朝记录',()=>{const w=start('gao-huan');atYear(w,549);capitalReady(w);history(w,'east-regency');expect(executive(w)).toBe(false);atYear(w,550);const estate=structuredClone(w.holdings.estate);history(w,'qi-accession');expect(regimeName(w,'east')).toBe('北齐');expect(w.characterId).toBe('gao-huan');expect(w.holdings.estate).toEqual(estate);expect(w.realm!.mandate).toBe(false);expect(governmentOf(w)!.regimeId).toContain('east-political-');expect(w.realm!.governments!.regimes.at(-1)!.source).toBe(successionDefinitions['qi-accession'].source.url);});
+ it('梁陈议案保存已失辖地、响应公职及真实受益人，不转移全国边界',()=>{const w=start();atYear(w,555);capitalReady(w);w.realm!.cities.jiangling.owner='west';w.realm!.cities.jiangling.controller='west';w.realm!.cities.jiangling.governor=null;history(w,'chen-regency');expect(governmentOf(w)!.ruler).toBe('xiao-fangzhi');expect(governmentOf(w)!.executives).toEqual(['chen-baxian']);expect(executive(w)).toBe(false);atYear(w,557);const before=w.realm!.governments!.regimes.find(v=>v.id==='liang-0')!;history(w,'chen-accession');const current=w.realm!.governments!.regimes.find(v=>v.id===governmentOf(w)!.regimeId)!;expect(current.predecessor).toBe(before.id);expect(before.until).toBe(current.from);expect(current.cities).not.toContain('jiangling');expect(w.realm!.cities.jiangling.owner).toBe('west');expect(regimeName(w,'liang')).toBe('陈');expect(governmentOf(w)!.ruler).toBe('chen-baxian');});
  it('旧沙盒迁移不改资产、军队、治理权；教学局不强制添加政体',()=>{
   const w=start();pass(w,35);delete w.realm!.governments;const migrated=parseWorld(serializeWorld(w));expect(migrated.realm!.governments!.since).toBe(35);expect(migrated.holdings).toEqual(w.holdings);expect(migrated.realm!.treasuries).toEqual(w.realm!.treasuries);expect(migrated.realm!.armies).toEqual(w.realm!.armies);
   const old=newCampaignWorld();expect(parseWorld(serializeWorld(old)).realm).toBeUndefined();

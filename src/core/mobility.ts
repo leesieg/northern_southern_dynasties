@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {actCustody,custodyReason,ensureCustody} from './custody';
 import {detained} from './custodyState';
 import {isAdventurer} from './resignation';
@@ -16,7 +17,7 @@ import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
 import {isAlive,lifeOf,ageAt} from './lifeState';
 import {personResidence,presentAt} from './residence';
-import {capital,playerRealm,realms,type RealmId} from './realm';
+import {capital,playerRealm,type RealmId} from './realm';
 import {governmentOf,governingExecutives,politicalName} from './government';
 import {personalRoute,canEnter,atWar} from './diplomacy';
 import {planRoute,remainingDays} from './world';
@@ -48,7 +49,7 @@ export function ensureMobility(w:World){
 }
 export function activeActivity(w:World,id=actor(w)){return w.mobility?.activities.find(a=>a.actor===id&&!a.delegate&&!['done','cancelled'].includes(a.phase));}
 export function armyCommander(w:World,a:Army){const id=armyCampaign(w,a)?.commander??w.mobility?.armyCommanders?.[a.id!]??(w.realm?.armies.find(v=>v.realm===a.realm)===a?w.mobility?.commanders[a.realm]:undefined);return id&&!detained(w,id)?id:undefined;}
-export function commandArmy(w:World,id=actor(w)){if(detained(w,id))return;const mandate=w.militaryCampaigns?.items.find(q=>q.commander===id&&q.status==='active');if(mandate)return w.realm?.armies.find(a=>a.id===mandate.army);const assigned=w.realm?.armies.find(a=>w.mobility?.armyCommanders?.[a.id!]===id);if(assigned)return assigned;const r=realms.find(r=>w.mobility?.commanders[r]===id);return r?w.realm?.armies.find(a=>a.realm===r&&a.troops>0):undefined;}
+export function commandArmy(w:World,id=actor(w)){if(detained(w,id))return;const mandate=w.militaryCampaigns?.items.find(q=>q.commander===id&&q.status==='active');if(mandate)return w.realm?.armies.find(a=>a.id===mandate.army);const assigned=w.realm?.armies.find(a=>w.mobility?.armyCommanders?.[a.id!]===id);if(assigned)return assigned;const r=worldRealms(w).find(r=>w.mobility?.commanders[r]===id);return r?w.realm?.armies.find(a=>a.realm===r&&a.troops>0):undefined;}
 export function installCommander(w:World,a:Army,id:string,legacy=false){const s=w.mobility!;if(legacy){s.commanders[a.realm]=id;if(s.armyCommanders)delete s.armyCommanders[a.id!];}else{if(w.realm!.armies.find(v=>v.realm===a.realm)===a)delete s.commanders[a.realm];s.armyCommanders??={};s.armyCommanders[a.id!]=id;}delete s.pendingCommanders?.[a.id!];s.stance='balanced';log(w,politicalName(id)+'抵营接掌第 '+a.id+' 军。');}
 export function departureReason(w:World){if(w.diplomacy?.missions.some(m=>m.envoy===w.characterId))return '正在奉使，请待交涉与返程结束';if(w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===w.characterId))return '请先交接战役委任';return w.mobility?.captivity?'身陷囹圄，须先赎返':commandArmy(w)?'正在随军，须先在己方驻地卸任统帅':activeActivity(w)&&['working','decision'].includes(activeActivity(w)!.phase)?'正在参加当地事务，请先结束或取消':'';}
 export function departureImpact(w:World){return (w.service?.tasks??[]).filter(t=>t.phase!=='closed'&&t.officer===w.characterId&&t.started).map(t=>t.helper&&presentAt(w,t.helper,t.site)&&!['training','inspection'].includes(t.kind)?`${siteById[t.site].name}差事由${politicalName(t.helper)}留守，按其贡献核定考绩`:`${siteById[t.site].name}差事将暂停，限期继续计算`);}
@@ -77,7 +78,7 @@ export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>
  else if(['visit','banquet','mentor','audience','family','succession'].includes(c.kind)&&!c.target)reason='须选择会面人物';
  else if(c.target&&(w.relationships?.scheme?.target===c.target||w.social?.scheme?.target===c.target||w.mobility.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.delegate===c.target||a.actor===c.target&&!a.delegate))||w.mobility.appointments[c.target]||personResidence(w,c.target).traveling||w.duties?.task?.phase!=='closed'&&w.duties?.task?.officer===c.target||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===c.target||t.helper===c.target))||commandArmy(w,c.target)))reason='对方已有安排或正在途中';
  else if(c.target&&relationOpinion(w,id,c.target)<(traitsFor(w,c.target).includes('wary')?10:-20)&&spouseOf(w,id)!==c.target)reason='对方不愿会面，请先通信改善关系';
- else if(c.kind==='audience'&&(c.site!==capital(r)||!governingExecutives(w,r).includes(c.target!)))reason='请到本国朝廷拜见执政者';
+ else if(c.kind==='audience'&&(c.site!==capital(r,w)||!governingExecutives(w,r).includes(c.target!)))reason='请到本国朝廷拜见执政者';
  else if(c.kind==='mentor'&&!w.lifestyles?.people[id]?.focus)reason='请先选择生活重心';
  else if(c.kind==='mentor'&&attributes(w,c.target!)[lifestyleFocuses[w.lifestyles!.people[id].focus!].branch]<=attributes(w,id)[lifestyleFocuses[w.lifestyles!.people[id].focus!].branch])reason='对方在当前生活重心对应的能力须高于你';
  else if(['family','succession'].includes(c.kind)&&(c.site!==w.holdings.estate.location||relationshipPersonById[c.target!]?.family!==characterById[id]?.family))reason='请在自家庄园与同族议事';
@@ -155,7 +156,7 @@ function resolve(w:World,a:Activity,choice:'measured'|'decisive'){
 export function advanceMobility(w:World){
  const s=w.mobility;if(!s||!w.realm||s.lastDay>=w.day)return;s.lastDay=w.day;
  const investigations=new Map(w.economy?.investigations.filter(q=>q.phase==='investigating').map(q=>[q.inspector,q])??[]);
- const offices=officeHierarchy(w),heldOffices=new Map<string,typeof offices>(),executives=Object.fromEntries(realms.map(r=>[r,governingExecutives(w,r)]));
+ const offices=officeHierarchy(w),heldOffices=new Map<string,typeof offices>(),executives=Object.fromEntries(worldRealms(w).map(r=>[r,governingExecutives(w,r)]));
  for(const office of offices)if(office.holder&&office.active){const list=heldOffices.get(office.holder)??[];list.push(office);heldOffices.set(office.holder,list);}
  for(const [id,location] of Object.entries(s.residences)){
   if(detained(w,id)||w.diplomacy?.missions.some(m=>m.envoy===id)||id===w.characterId||!isAlive(w,id)||commandArmy(w,id)||lifeOf(w,id)?.illness?.severity===3)continue;
@@ -163,11 +164,11 @@ export function advanceMobility(w:World){
   if(Object.values(s.pendingCommanders??{}).some(v=>v.person===id))continue;
   const posting=w.realm.offices.find(o=>o.candidate===id);if(posting&&posting.due<=w.day+1){dispatchNPC(w,id,posting.site);continue;}
   const appointment=s.appointments[id];if(appointment&&appointment.until>=w.day){dispatchNPC(w,id,appointment.site);continue;}
-  const investigation=investigations.get(id);if(investigation){const key=investigation.account;const destination=key.startsWith('central:')?capital(investigation.realm as RealmId):localSeatSite(w,key.split('|')[1],investigation.realm as RealmId);if(destination)dispatchNPC(w,id,destination);continue;}
+  const investigation=investigations.get(id);if(investigation){const key=investigation.account;const destination=key.startsWith('central:')?capital(investigation.realm as RealmId,w):localSeatSite(w,key.split('|')[1],investigation.realm as RealmId);if(destination)dispatchNPC(w,id,destination);continue;}
   const task=w.service?.tasks.find(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id));const duty=w.duties?.task;
   const pendingActivity=s.activities.find(a=>a.delegate===id&&!['done','cancelled'].includes(a.phase));
   const held=heldOffices.get(id)??[],office=held.find(n=>n.kind==='city'&&n.site===location.site)??held.find(n=>n.kind==='city')??held.find(n=>n.kind==='office');const realm=allegianceRealm(w,id);
-  const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??office?.seatSite??(office&&realm?capital(realm):undefined))??(realm&&executives[realm].includes(id)?capital(realm):characterById[id]?.home);
+  const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??office?.seatSite??(office&&realm?capital(realm,w):undefined))??(realm&&executives[realm].includes(id)?capital(realm,w):characterById[id]?.home);
   if(destination&&!commandArmy(w,id))dispatchNPC(w,id,destination);
   }
   for(const [key,pending] of Object.entries(s.pendingCommanders??{})){const army=w.realm.armies.find(a=>a.id===Number(key)),id=pending.person;if(!army||!isAlive(w,id)||allegianceRealm(w,id)!==army.realm||armyCampaign(w,army)){delete s.pendingCommanders![Number(key)];log(w,politicalName(id)+'的统帅赴任令因身份、军队或委任变化而结束。');continue;}if(!army.journey&&presentAt(w,id,army.location)){installCommander(w,army,id);continue;}const destination=army.journey?.route.at(-1)??army.location;if(id===w.characterId){if(!w.people[0].journey&&w.people[0].location!==destination){const route=personalRoute(w,destination);if(route&&w.people[0].food>=route.food){w.people[0].food-=route.food;w.people[0].journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}}}else if(!s.residences[id]?.journey)dispatchNPC(w,id,destination);}
@@ -184,7 +185,7 @@ export function advanceMobility(w:World){
 /** Call after the army simulation so an attached ruler cannot move independently. */
 export function syncArmyTravel(w:World){
  const s=w.mobility;if(!s||!w.realm)return;
- const assignments=[...realms.filter(r=>s.commanders[r]).map(realm=>({id:s.commanders[realm]!,realm,army:w.realm!.armies.find(a=>a.realm===realm&&a.troops>0),key:undefined as number|undefined})),...Object.entries(s.armyCommanders??{}).map(([key,id])=>({id,realm:allegianceRealm(w,id)??playerRealm(w),army:w.realm!.armies.find(a=>a.id===Number(key)&&a.troops>0),key:Number(key)}))];
+ const assignments=[...worldRealms(w).filter(r=>s.commanders[r]).map(realm=>({id:s.commanders[realm]!,realm,army:w.realm!.armies.find(a=>a.realm===realm&&a.troops>0),key:undefined as number|undefined})),...Object.entries(s.armyCommanders??{}).map(([key,id])=>({id,realm:allegianceRealm(w,id)??playerRealm(w),army:w.realm!.armies.find(a=>a.id===Number(key)&&a.troops>0),key:Number(key)}))];
  for(const {id,realm,army,key} of assignments){const self=id===w.characterId,clear=()=>{if(key!==undefined)delete s.armyCommanders![key];else delete s.commanders[realm];};
   if(!isAlive(w,id)||army&&allegianceRealm(w,id)!==army.realm){clear();if(s.residences[id])s.residences[id].journey=null;if(self)w.people[0].journey=null;continue;}
   if(!army){if(!self&&s.residences[id])s.residences[id].journey=null;if(self)w.people[0].journey=null;clear();continue;}

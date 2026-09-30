@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {siteById} from '../data/scenario';
 import {relationshipPersonById} from '../data/relationships';
 import type {World} from './types';
@@ -23,7 +24,7 @@ export function awardDeed(w:World,realm:RealmId,person:string,source:string,amou
 export function validDeeds(w:World){
  if(w.deeds===undefined)return true;
  const s=w.deeds;if(!s||s.version!==1||!s.opening||typeof s.opening!=='object'||Array.isArray(s.opening)||!s.settled||typeof s.settled!=='object'||Array.isArray(s.settled)||!Array.isArray(s.recent)||s.recent.length>512)return false;
- const validKey=(key:string)=>{const [r,id,...rest]=key.split('|');return ['liang','east','west'].includes(r)&&Object.hasOwn(relationshipPersonById,id)&&rest.length===0;};
+ const validKey=(key:string)=>{const [r,id,...rest]=key.split('|');return worldRealms(w).includes(r as never)&&Object.hasOwn(relationshipPersonById,id)&&rest.length===0;};
  return Object.entries(s.opening).every(([k,n])=>validKey(k)&&Number.isSafeInteger(n)&&n>=0&&n<=100)
  &&Object.entries(s.settled).every(([k,v])=>k.length<=500&&validKey(k.split('|').slice(0,2).join('|'))&&k.split('|').length>=3&&Array.isArray(v)&&v.length%2===0&&v.every((n,i)=>Number.isSafeInteger(n)&&n>=0&&(i%2?n>=v[i-1]:i===0||n>v[i-1]+1)))
  &&s.recent.every(d=>d&&(d.evidence===undefined||validEvidence(d.evidence,d.source))&&typeof d.source==='string'&&typeof d.reason==='string'&&d.reason.length<=500&&validKey(d.realm+'|'+d.person)&&Number.isSafeInteger(d.day)&&d.day>=0&&d.day<=w.day&&Number.isSafeInteger(d.amount)&&Math.abs(d.amount)<=100&&contains(s.settled[d.realm+'|'+d.person+'|'+d.source.slice(0,d.source.lastIndexOf(':'))]??[],Number(d.source.slice(d.source.lastIndexOf(':')+1))));

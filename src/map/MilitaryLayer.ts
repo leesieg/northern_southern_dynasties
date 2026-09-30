@@ -1,3 +1,4 @@
+import {realmOrigin} from '../core/polityRuntime';
 import {Camera,Scene,WebGLRenderer,Matrix4,Vector3,ACESFilmicToneMapping} from 'three';
 import {MercatorCoordinate,type Map,type CustomLayerInterface} from 'maplibre-gl';
 import {armyVisualState} from '../core/armyPresentation';
@@ -26,7 +27,7 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
    const ids=new Set(armies.map(a=>a.id!));for(const [id,m] of models)if(!ids.has(id)){scene.remove(m.root);models.delete(id);}let animating=false;
    for(const a of armies){
     if(!a.id)continue;const units=a.regiments??[],kind:ArmyModelKind=units.some(u=>u.kind==='heavyHorse'||u.kind==='lightHorse')?'horse':units.some(u=>u.kind==='siege')?'siege':'foot',name=regimeName(state.world,a.realm);let m=models.get(a.id);
-    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name){if(m)scene.remove(m.root);m=assets.create(a,kind,name);scene.add(m.root);models.set(a.id,m);}
+    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)scene.remove(m.root);m=assets.create(a,kind,name,state.world);scene.add(m.root);models.set(a.id,m);}
     const placement=getPlacement(a.id);m.root.visible=!!placement?.model;if(!placement?.model)continue;
     const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};
     const elevation=map.queryTerrainElevation(modelAnchor)??0,coord=MercatorCoordinate.fromLngLat(modelAnchor,elevation),scale=militaryModelScale(args.defaultProjectionData.mainMatrix,coord,map.getCanvas().clientWidth,ARMY_MODEL_PIXELS);
@@ -34,7 +35,7 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
     const visual=visualStates.get(a.id)??'garrison';let heading=-.18;if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]];heading=Math.atan2(to.lon-from.lon,from.lat-to.lat);}m.body.rotation.y=heading;
     m.detail.visible=zoom>=7.4;m.camp.visible=zoom>=7.4&&(visual==='garrison'||visual==='siege');animating=animateMilitaryModel(m,visual,performance.now()/210+a.id,state.armyMotion)||animating;m.banner.rotation.y-=heading;
    }
-   assets.pruneBanners(new Set([...models.values()].map(m=>'banner|'+m.realm+'|'+m.bannerName)));
+   assets.pruneBanners(new Set([...models.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));
    updateMilitaryCamera(camera,args.projectionMatrix,args.defaultProjectionData.mainMatrix,anchor);renderer.resetState();renderer.render(scene,camera);renderer.resetState();if(animating)map.triggerRepaint();
   }catch(e){failure(e);}
  },onRemove(){models.clear();assets?.dispose();renderer?.dispose();assets=undefined;renderer=undefined;map=undefined;}};

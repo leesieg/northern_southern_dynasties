@@ -1,8 +1,8 @@
+import {worldRealms} from './polityRuntime';
 import {ensureArmyOrganization} from './armyOrganization';
 import {syncCourt} from './court';
 import type {World} from './types';
 import type {RealmId} from './realm';
-import {realms} from './realm';
 import {ensureFiscal,fiscalRecord} from './treasury';
 import {returnArmyConvoy} from './armyLogistics';
 import {siteById} from '../data/scenario';
@@ -31,10 +31,10 @@ export function annexPolity(w:World,winner:RealmId,loser:RealmId){const why=anne
  for(const q of f.requests)if(q.realm===loser&&q.status==='pending'){q.status='cancelled';q.changed=w.day;q.reply='原政权终止，未支出公款由接管朝廷统筹';}
  const g=s.governments?.realms[loser];if(g){g.task=null;if(g.court){for(const k of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])g.court.ministries[k]=null;g.court.petition=null;}}
  if(w.mobility){delete w.mobility.commanders[loser];for(const key of Object.keys(w.mobility.armyCommanders??{}))if(!w.realm!.armies.some(a=>a.id===Number(key)))delete w.mobility.armyCommanders![Number(key)];if(w.mobility.captivity?.captor===loser)w.mobility.captivity=null;}
- if(w.diplomacy){for(const p of Object.values(w.diplomacy.pairs))if([p.a,p.b].includes(loser))p.treaties=[];w.diplomacy.missions=w.diplomacy.missions.filter(m=>m.from!==loser&&m.to!==loser);delete w.diplomacy.subjects[loser];for(const r of realms)if(w.diplomacy.subjects[r]===loser)delete w.diplomacy.subjects[r];}
+ if(w.diplomacy){for(const p of Object.values(w.diplomacy.pairs))if([p.a,p.b].includes(loser))p.treaties=[];w.diplomacy.missions=w.diplomacy.missions.filter(m=>m.from!==loser&&m.to!==loser);delete w.diplomacy.subjects[loser];for(const r of worldRealms(w))if(w.diplomacy.subjects[r]===loser)delete w.diplomacy.subjects[r];}
  // A third state's war ends without granting its objectives or transferring its occupations.
  s.wars=s.wars?.filter(v=>![v.attacker,v.defender].includes(loser));for(const v of s.wars??[])if(v.allies)delete v.allies[loser];s.war=s.wars?.[0]??null;for(const c of Object.values(s.cities))if(c.controller===loser)c.controller=c.owner;
- syncCourt(w,loser);ensureArmyOrganization(w);advanceAnnexations(w);
+ if(w.relationships)delete w.relationships.regencies[loser];syncCourt(w,loser);ensureArmyOrganization(w);advanceAnnexations(w);
 }
 export function advanceAnnexations(w:World){const s=w.realm;if(!s)return;for(const [old,value] of Object.entries(s.annexed??{})){const a=value!,r=old as RealmId,to=survivingRealm(w,a.into),from=s.treasuries[r],dest=s.treasuries[to];for(const resource of ['coins','grain'] as const){const n=Math.min(from[resource],1_000_000-dest[resource]);from[resource]-=n;dest[resource]+=n;a[resource]+=n;}const f=s.fiscal;if(f)for(const [key,n] of Object.entries(f.balances))if(key.startsWith(r+'|')&&n){const target=to+key.slice(r.length),paid=Math.min(n,1_000_000-(f.balances[target]??0));f.balances[key]-=paid;f.balances[target]=(f.balances[target]??0)+paid;}}}
-export function validAnnexations(w:World){const s=w.realm?.annexed;if(s===undefined)return true;return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([r,a])=>realms.includes(r as RealmId)&&a&&realms.includes(a.into)&&r!==a.into&&survivingRealm(w,a.into)!==r&&Number.isInteger(a.day)&&a.day>=0&&a.day<=w.day&&Array.isArray(a.sites)&&a.sites.length>0&&new Set(a.sites).size===a.sites.length&&a.sites.every(id=>!!w.realm?.cities[id])&&['coins','grain','debt'].every(k=>Number.isSafeInteger(a[k as 'coins'])&&a[k as 'coins']>=0)&&!Object.values(w.realm!.cities).some(c=>c.owner===r||c.controller===r));}
+export function validAnnexations(w:World){const s=w.realm?.annexed;if(s===undefined)return true;return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([r,a])=>worldRealms(w).includes(r as RealmId)&&a&&worldRealms(w).includes(a.into)&&r!==a.into&&survivingRealm(w,a.into)!==r&&Number.isInteger(a.day)&&a.day>=0&&a.day<=w.day&&Array.isArray(a.sites)&&a.sites.length>0&&new Set(a.sites).size===a.sites.length&&a.sites.every(id=>!!w.realm?.cities[id])&&['coins','grain','debt'].every(k=>Number.isSafeInteger(a[k as 'coins'])&&a[k as 'coins']>=0)&&!Object.values(w.realm!.cities).some(c=>c.owner===r||c.controller===r));}

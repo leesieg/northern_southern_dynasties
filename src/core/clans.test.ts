@@ -9,6 +9,8 @@ import {realmReason} from './realm';
 import {parseWorld,serializeWorld} from './save';
 import {pauseSnapshot,pauseEvents} from './pauseEvents';
 import {lifeOf} from './lifeState';
+import {appointmentEvaluation} from './appointmentRules';
+import {countyTerritory} from './localAdministration';
 import {courtOf,courtReason} from './court';
 const start=(id='yuan-qin')=>newCampaignWorld(id,undefined,'sandbox');
 describe('本国世族评定与行动收益',()=>{
@@ -27,16 +29,16 @@ describe('本国世族评定与行动收益',()=>{
   const before=pauseSnapshot(w);w.families!.prestige['yuwen-tai']=101;expect(clanStanding(w,'yuan-qin')?.rank).toBe(2);expect(clanStanding(w,'yuan-qin')?.petition).toBe(8);expect(pauseEvents(before,w).some(e=>e.kind==='clan')).toBe(true);
   lifeOf(w,'yuwen-tai')!.death={day:0,cause:'age'};expect(familyPrestige(w,'yuwen')).toBe(101);expect(realmClans(w,'west').find(r=>r.family.id==='yuwen')?.members.some(p=>p.id==='yuwen-tai')).toBe(false);expect(realmClans(w,'west').some(r=>r.family.id==='yuwen')).toBe(true);
  });
- it('门第降低文官功绩门槛，不降低军务功绩门槛',()=>{
+ it('门第降低文官功绩入口，不替代现行任职通道或军务门槛',()=>{
   const w=start();governmentOf(w)!.type='meritocratic';governmentOf(w)!.merit['yuan-qin']=14;
   expect(meritAccess(w,'office')).toBe(false);expect(appointmentReason(w,'yuan-qin','changan')).not.toBe('');w.families!.prestige['yuan-qin']=100;
-  expect(meritAccess(w,'office')).toBe(true);expect(appointmentReason(w,'yuan-qin','changan')).toBe('');expect(meritAccess(w,'military')).toBe(false);
+  expect(meritAccess(w,'office')).toBe(true);expect(appointmentReason(w,'yuan-qin','changan')).toContain('任职通道');expect(meritAccess(w,'military')).toBe(false);
  });
- it('门第与典签荐举真实影响求官接受度，过期荐举不再有效',()=>{
+ it('门第与典签荐举进入现行任用评价，过期荐举不再计分',()=>{
   const w=start();governmentOf(w)!.type='tribal';w.realm!.cities.changan.governor='yuwen-tai';w.holdings.governedCities=w.holdings.governedCities.filter(id=>id!=='changan');w.realm!.influence=100;const target=governingAuthority(w,'west'),key=pair(w.characterId!,target);
   w.social!.opinions[key]=0;const base=acceptance(w,target).reduce((n,p)=>n+p.value,0);w.social!.opinions[key]=50-base;
-  expect(realmReason(w,{type:'realm',action:'petition',site:'changan'})).not.toBe('');w.families!.prestige['yuan-qin']=100;expect(realmReason(w,{type:'realm',action:'petition',site:'changan'})).toBe('');
-  w.families!.prestige['yuan-qin']=0;w.retinue!.recommendations['yuan-qin']={until:90,bonus:10};expect(realmReason(w,{type:'realm',action:'petition',site:'changan'})).toBe('');w.day=90;expect(realmReason(w,{type:'realm',action:'petition',site:'changan'})).not.toBe('');
+  const evaluation=()=>appointmentEvaluation(w,'west','yuan-qin',{territory:countyTerritory('changan'),site:'changan'},target),ordinary=evaluation().score;w.families!.prestige['yuan-qin']=100;expect(evaluation().score).toBeGreaterThan(ordinary);expect(realmReason(w,{type:'realm',action:'petition',site:'changan'})).toBe('');
+  w.families!.prestige['yuan-qin']=0;w.retinue!.recommendations['yuan-qin']={until:90,bonus:10};expect(evaluation().score).toBe(ordinary+10);w.day=90;expect(evaluation().score).toBe(ordinary);
  });
  it('门第实际改变联姻接受度，首次婚姻记账，重婚和重复授勋无效',()=>{
   const w=start('xiao-yan'),target='guest-liang';w.people[0].coins=1000;w.social!.renown=100;
@@ -51,10 +53,10 @@ describe('本国世族评定与行动收益',()=>{
   const w=start('yuan-qin');w.families!.prestige['yuan-qin']=1000;expect(relationshipQuote(w,{type:'relationship',action:'marry',target:'yuan-kuo'}).reason).not.toBe('');
   const married=start('gao-huan');married.families!.prestige['gao-huan']=1000;expect(relationshipQuote(married,{type:'relationship',action:'marry',target:'guest-east'}).reason).not.toBe('');
  });
- it('中央请任接受度含门第，仍保留四十功绩的资格线',()=>{
+ it('中央请任评价含门第，不能绕过现行考课法定条件',()=>{
   const w=start(),court=courtOf(w,'west')!,g=governmentOf(w)!,target=governingAuthority(w,'west');for(const key of Object.keys(court.ministries))court.ministries[key as keyof typeof court.ministries]=null;
   const ministry=Object.keys(court.ministries)[0] as keyof typeof court.ministries,command={type:'court' as const,action:'seek-office' as const,ministry};
   g.merit['yuan-qin']=40;w.realm!.influence=100;const base=acceptance(w,target).reduce((n,p)=>n+p.value,0);changeRelationOpinion(w,'yuan-qin',target,50-base);
-  expect(courtReason(w,command)).not.toBe('');w.families!.prestige['yuan-qin']=100;expect(courtReason(w,command)).toBe('');g.merit['yuan-qin']=39;expect(courtReason(w,command)).toContain('40');g.merit['yuan-qin']=40;act(w,command);expect(court.ministries[ministry]).toBe('yuan-qin');expect(parseWorld(serializeWorld(w))).toEqual(w);
+  const score=appointmentEvaluation(w,'west','yuan-qin',{ministry},target).score;w.families!.prestige['yuan-qin']=100;expect(appointmentEvaluation(w,'west','yuan-qin',{ministry},target).score).toBeGreaterThan(score);expect(courtReason(w,command)).toBe('');const laws=[...g.laws];g.laws.push('west-offices');g.merit['yuan-qin']=19;expect(courtReason(w,command)).toContain('常额');g.laws=laws;g.merit['yuan-qin']=40;act(w,command);expect(court.ministries[ministry]).toBe('yuan-qin');expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
 });

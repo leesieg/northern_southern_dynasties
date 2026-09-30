@@ -1,3 +1,4 @@
+import {allegianceRealm} from './officeEligibility';
 import {isMonthStart} from './calendar';
 import { characterById,historicalCharacters,characterRelations } from '../data/characters';
 import { defaultTraits,heirs,houseMembers,kin,newSocial,traitsFor } from './social';
@@ -21,7 +22,7 @@ export function validSocial(w:World):boolean {
  if(s.lineage[0].id!==s.founder||s.lineage[0].day!==0||previous!==w.characterId)return false;
  const target=(id:unknown):id is string=>typeof id==='string'&&Object.hasOwn(characterById,id)&&id!==w.characterId&&!s.lineage.slice(0,-1).some(p=>p.id===id);
  if(s.heir!==null&&!heirs(w).some(c=>c.id===s.heir))return false;
- if(s.advisor!==null&&(!target(s.advisor)||characterById[s.advisor].polity!==characterById[w.characterId].polity))return false;
+ if(s.advisor!==null&&(!target(s.advisor)||allegianceRealm(w,s.advisor)!==allegianceRealm(w,w.characterId)))return false;
  if(!obj(s.cooldowns))return false;
  for(const [key,value] of Object.entries(s.cooldowns)){const parts=key.split('|');if(!Object.hasOwn(characterById,parts[0])||!int(value,0,w.day+30))return false;if(parts.length===2){if(parts[1]!=='rest')return false;}else if(parts.length!==3||!Object.hasOwn(characterById,parts[1])||parts[0]===parts[1]||!['gift','aid','pressure'].includes(parts[2]))return false;}
  if(s.scheme!==null){const p=s.scheme;if(!obj(p)||!target(p.target)||!int(p.started,0,w.day)||!int(p.due,w.day+1,w.day+18)||p.due!==p.started+(traitsFor(w).includes('wary')?18:14)||!int(p.chance,5,95))return false;}

@@ -1,10 +1,10 @@
+import {worldRealms} from './polityRuntime';
 import {detained} from './custodyState';
 import {scenarioOffices} from '../data/offices';
 import {relationshipPersonById} from '../data/relationships';
 import {ministryIds} from '../data/court';
 import {officeHierarchy} from './offices';
 import {governmentOf,governingExecutives} from './government';
-import {realms} from './realm';
 import {setLocalHolder} from './localAdministration';
 import {isAlive} from './lifeState';
 import type {World} from './types';
@@ -31,7 +31,7 @@ export function resignationReason(w:World,office:string,id=w.characterId!){
  if(w.economy?.investigations.some(q=>q.inspector===id&&q.phase==='investigating'))return '须先完成查核';
  if(w.mobility?.activities.some(q=>!['done','cancelled'].includes(q.phase)&&(q.actor===id||q.delegate===id)))return '须先完成或取消当前活动';
  if(w.realm.offices.some(q=>q.candidate===id)||w.mobility?.appointments[id])return '须先完成在途任命';
- if(realms.some(r=>governmentOf(w,r)?.task?.sponsor===id))return '须先完成或取消主持中的改革';
+ if(worldRealms(w).some(r=>governmentOf(w,r)?.task?.sponsor===id))return '须先完成或取消主持中的改革';
  if(office==='command'&&w.realm.armies.some(a=>a.journey&&(w.mobility?.armyCommanders?.[a.id!]===id||w.realm!.armies.find(b=>b.realm===a.realm)===a&&w.mobility?.commanders[a.realm]===id)))return '军队驻扎后才能交接统军';
  return '';
 }
@@ -41,7 +41,7 @@ export function actResignation(w:World,c:ResignationCommand){
  const node=officeHierarchy(w,id).find(n=>n.id===c.office);
  if(c.office==='retinue')delete w.retinue!.members[id];
  else if(c.office==='command'){
-  for(const r of realms)if(w.mobility?.commanders[r]===id)delete w.mobility.commanders[r];
+  for(const r of worldRealms(w))if(w.mobility?.commanders[r]===id)delete w.mobility.commanders[r];
   for(const [key,person] of Object.entries(w.mobility?.armyCommanders??{}))if(person===id)delete w.mobility!.armyCommanders![Number(key)];
  }else if(node?.territory)setLocalHolder(w,node.territory,node.realm,null);
  else if(node?.kind==='executive'){

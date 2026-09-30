@@ -44,7 +44,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
   ||event.kind==='service'&&!event.assignmentId&&!!council&&serviceChief(world,playerRealm(world))===world.characterId
  );
  const body=event.kind==='service'&&task&&task.phase!=='closed'?(task.invitation?.person===world.characterId?'同僚邀你协办，请答复。':'差事进展：'+assignmentPhases[task.phase]+'。'):event.kind==='duties'&&world.duties?.task?'粮务进展：'+dutyPhaseNames[world.duties.task.phase]+'。':event.body;
- const label=event.kind==='custody'?'前往人物处置':event.kind==='military'?'裁定军事事项':event.kind==='economy'?'前往政务监察':event.kind==='court'||event.kind==='situation'?'查看朝局':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
+ const label=event.kind==='power'?'审阅政治议案':event.kind==='custody'?'前往人物处置':event.kind==='military'?'裁定军事事项':event.kind==='economy'?'前往政务监察':event.kind==='court'||event.kind==='situation'?'查看朝局':event.kind==='mobility'?'查看人物':event.kind==='service'?'前往差事簿':event.kind==='arrival'?'查看所在地':event.kind==='diplomacy'?'查看邦交':event.kind==='duties'?'前往地方差事':'前往政务';
  return <dialog ref={ref} className={`pause-dialog ${audience?'pause-dialog--audience':'paper-dialog'}`} aria-labelledby="pause-title" aria-describedby={audience?undefined:'pause-body'} onCancel={e=>{e.preventDefault();if(!pending&&(!actionable||audience))onClose();}} onKeyDown={e=>{if(e.key==='Escape')e.stopPropagation();}}>
  {audience&&<div className="pause-audience-decoration" ref={setDecorHost}/>}
  <AudienceDecorHostContext.Provider value={audience?decorHost:null}>

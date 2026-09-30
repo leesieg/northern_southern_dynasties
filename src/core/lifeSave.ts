@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {isMonthStart,monthStart} from './calendar';
 import {birthRecords} from '../data/lifespans';
 import {relationshipPersonById} from '../data/relationships';
@@ -16,7 +17,7 @@ export function validLife(w:World){
  if(!Array.isArray(s.successions)||s.successions.length>Object.keys(birthRecords).length)return false;
  let last=s.since;const departed=new Set<string>();
  for(const e of s.successions){
-  if(!obj(e)||!['liang','east','west'].includes(String(e.realm))||typeof e.regimeId!=='string'||e.stage!==null&&typeof e.stage!=='string'||!int(e.day,last,w.day)||typeof e.deceased!=='string'||departed.has(e.deceased)||lifeOf(w,e.deceased)?.death?.day!==e.day||!Array.isArray(e.executives)||e.executives.length>2||new Set(e.executives).size!==e.executives.length)return false;
+  if(!obj(e)||!worldRealms(w).includes(e.realm as never)||typeof e.regimeId!=='string'||e.stage!==null&&typeof e.stage!=='string'||!int(e.day,last,w.day)||typeof e.deceased!=='string'||departed.has(e.deceased)||lifeOf(w,e.deceased)?.death?.day!==e.day||!Array.isArray(e.executives)||e.executives.length>2||new Set(e.executives).size!==e.executives.length)return false;
   const person=(id:unknown)=>typeof id==='string'&&relationshipPersonById[id]?.realm===e.realm;
   if(!person(e.deceased)||!person(e.ruler)||!e.executives.every(person)||e.executives.some(id=>{const death=lifeOf(w,id)?.death;return death&&death.day<Number(e.day);}))return false;
   departed.add(e.deceased);last=e.day;

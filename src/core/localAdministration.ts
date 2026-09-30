@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {civilCanAdmin} from './civilWars';
 import {awardDeed} from './deeds';
 import {relationshipPersonById} from '../data/relationships';
@@ -15,7 +16,7 @@ import {creditPersonalCoins,changeRelationOpinion} from './relationships';
 import {personResidence,presentAt} from './residence';
 import {dispatchNPC,npcRoute} from './mobility';
 import {planRoute} from './world';
-import {realms,type RealmId} from './realm';
+import {type RealmId} from './realm';
 import {detained} from './custodyState';
 import type {World} from './types';
 import {courtOf} from './court';
@@ -91,7 +92,7 @@ export function advanceLocal(w:World){const s=ensureLocalAdministration(w);if(!s
 export function payLocalOfficials(w:World,r:RealmId,pay:(key:string,amount:number,reason:string)=>number){for(const [key,s] of Object.entries(w.realm?.local?.seats??{})){const t=key.split('|')[1];if(!key.startsWith(r+'|')||!['province','prefecture'].includes(localLevel(t)!)||!s.holder||!localActive(w,t,r))continue;const room=s.holder===w.characterId?1_000_000-w.people[0].coins:1_000_000-(w.relationships?.reserves[s.holder]??1_000_000);const n=pay(key,Math.min(Math.max(0,room),localLevel(t)==='province'?12:8),localTitle(t)+'俸禄');creditPersonalCoins(w,s.holder,n);}}
 
 /** One voluntary, affordable NPC application per realm and quarter; no invented candidates. */
-function recruitLocal(w:World){const state=w.realm!.local!;for(const r of realms){const candidates=relationshipPeople.filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&!publicOfficeReason(w,p.id)&&personInfluence(w,p.id)>=10&&!state.requests.some(q=>q.candidate===p.id&&q.status==='pending'));let best:{person:string;territory:string;score:number}|undefined;
+function recruitLocal(w:World){const state=w.realm!.local!;for(const r of worldRealms(w)){const candidates=relationshipPeople.filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&!publicOfficeReason(w,p.id)&&personInfluence(w,p.id)>=10&&!state.requests.some(q=>q.candidate===p.id&&q.status==='pending'));let best:{person:string;territory:string;score:number}|undefined;
  for(const p of candidates){const scores=new Map<string,number>();const held=Object.entries(state.seats).filter(([key])=>key.startsWith(r+'|')&&localHolder(w,key.split('|')[1],r)===p.id).map(([key])=>key.split('|')[1]);const rank=held.some(t=>localLevel(t)==='province')?3:held.some(t=>localLevel(t)==='prefecture')?2:Object.values(w.realm!.cities).some(c=>c.governor===p.id)?1:0;
  for(const t of Object.values(territoryNodes)){const targetRank=t.level==='province'?3:t.level==='prefecture'?2:t.level==='county'?1:0;if(!targetRank||targetRank!==rank+1||!localSites(w,t.id,r).length||localHolder(w,t.id,r)||!localActive(w,t.id,r))continue;const approver=localAppointer(w,t.id,r,p.id),key=targetRank+'|'+approver;let score=scores.get(key);if(score===undefined){score=localMeritFactors(w,t.id,p.id,approver,r).reduce((n,v)=>n+v.value,0);scores.set(key,score);}if(score<20||best&&score<=best.score)continue;const cmd={type:'local',action:'apply',territory:t.id,candidate:p.id} as const;if(!localReason(w,cmd,p.id))best={person:p.id,territory:t.id,score};}}
  if(best)actLocal(w,{type:'local',action:'apply',territory:best.territory,candidate:best.person},best.person);

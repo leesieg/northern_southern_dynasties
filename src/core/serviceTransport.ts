@@ -7,14 +7,14 @@ import {planRoute} from './world';
 import {armySupplyCapacity} from './armyLogistics';
 export interface ServiceDelivery {transfer:number|null;sent:number;arrived:number;delivered:number;lost:number;status:'traveling'|'arrived'|'returned'}
 export function supplyDepartureReason(w:World,t:Assignment){
- if(t.kind!=='supply')return '';const from=t.funding?.find(f=>f.grain>0)?.grainSite??capital(t.realm);
+ if(t.kind!=='supply')return '';const from=t.funding?.find(f=>f.grain>0)?.grainSite??capital(t.realm,w);
  if(from!==t.site&&!planRoute(from,t.site,id=>w.realm!.cities[id].controller===t.realm))return '拨粮库至驻军的道路中断';
  if(from!==t.site&&(w.realm!.population?.transfers.filter(c=>c.status==='traveling').length??0)>=30)return '先等在途粮队抵达，再启办';
  return '';
 }
 /** Allocated grain has already left its payer's store. Dispatch never debits it twice. */
 export function dispatchServiceGrain(w:World,t:Assignment){
- if(t.kind!=='supply'||t.delivery)return;ensurePopulation(w);const s=w.realm!,p=s.population!,from=t.funding?.find(f=>f.grain>0)?.grainSite??capital(t.realm),sent=t.funds.grain;
+ if(t.kind!=='supply'||t.delivery)return;ensurePopulation(w);const s=w.realm!,p=s.population!,from=t.funding?.find(f=>f.grain>0)?.grainSite??capital(t.realm,w),sent=t.funds.grain;
  t.delivery={transfer:null,sent,arrived:0,delivered:0,lost:0,status:'traveling'};t.spent={coins:t.spent?.coins??0,grain:sent};
  if(from===t.site){receiveServiceGrain(w,t,sent,false);return;}
  const route=planRoute(from,t.site,id=>s.cities[id].controller===t.realm);if(!route)throw new Error('军粮发运道路中断');

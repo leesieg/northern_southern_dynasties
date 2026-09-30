@@ -1,3 +1,4 @@
+import {allegianceRealm} from './officeEligibility';
 import {isMonthStart} from './calendar';
 import {expandedPersonById} from '../data/expandedPeople';
 import {expressGenome} from './genetics';
@@ -67,7 +68,7 @@ export const managementDiscount=(w:World,id=w.characterId)=>Math.min(20,Math.max
 export function buildingModifiers(w:World){const b=lifestyleBonuses(w);if(!w.social)return {costRate:Math.max(45,100-b.buildCost-managementDiscount(w)),timeRate:100-b.buildTime};const t=traitsFor(w);return {costRate:Math.max(45,100-(t.includes('frugal')?10:0)-w.social.legacies.stewardship*5-b.buildCost-managementDiscount(w)),timeRate:100-(t.includes('diligent')?20:0)-(w.social.advisor?10:0)+(w.social.stress>=80?20:0)-b.buildTime};}
 export function acceptance(w:World,target:string){
   if(!w.social||!w.characterId||!Object.hasOwn(characterById,target)||target===w.characterId)return [];
-  return [{label:'基础',value:10},{label:'当前好感',value:relationOpinion(w,w.characterId,target)},{label:'外交',value:attributes(w).diplomacy*2},{label:'政权关系',value:characterById[target].polity===characterById[w.characterId].polity?15:-40},{label:'生活重心与技能',value:lifestyleBonuses(w).acceptance}];
+  return [{label:'基础',value:10},{label:'当前好感',value:relationOpinion(w,w.characterId,target)},{label:'外交',value:attributes(w).diplomacy*2},{label:'政权关系',value:allegianceRealm(w,target)===allegianceRealm(w,w.characterId)?15:-40},{label:'生活重心与技能',value:lifestyleBonuses(w).acceptance}];
 }
 export function interactionQuote(w:World,target:string,action:Interaction){
   const score=acceptance(w,target).reduce((n,v)=>n+v.value,0),chance=clamp(score+(action==='befriend'?lifestyleBonuses(w).scheme:0),5,95);
@@ -89,7 +90,7 @@ export function interactionQuote(w:World,target:string,action:Interaction){
   else if(action==='befriend'&&['friend','confidant'].includes(friendship(w,w.characterId,target)??''))reason='已经成为朋友，可在关系页结为至交';
   else if(action==='befriend'&&['rival','nemesis'].includes(friendship(w,w.characterId,target)??''))reason='请先调解仇怨';
   else if((action==='aid'||action==='advisor')&&score<60)reason='接受度不足 60';
-  else if(action==='advisor'&&characterById[target].polity!==characterById[w.characterId].polity)reason='只能延请同政权人物';
+  else if(action==='advisor'&&allegianceRealm(w,target)!==allegianceRealm(w,w.characterId))reason='只能延请同政权人物';
   else if(action==='advisor'&&w.social.advisor===target)reason='此人已是协理';
   else if(action==='pressure'&&w.social.renown<10)reason='需 10 家业名望';
   else if(action==='pressure'&&w.social.hooks[pair(w.characterId,target)]>=3)reason='最多保留 3 份人情';
@@ -101,7 +102,7 @@ export function interactionQuote(w:World,target:string,action:Interaction){
 }
 export function heirs(w:World){if(!w.social||!w.characterId)return [];const seen=new Set(w.social.lineage.map(p=>p.id));return houseMembers(w.social.founder).filter(c=>isAlive(w,c.id)&&ageAt(w,c.id)!>=16&&!seen.has(c.id)&&kin(w.characterId!,c.id)&&!characterRelations.some(r=>r.kind==='父子'&&r.from===c.id&&r.to===w.characterId));}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
-function opinion(w:World,target:string,delta:number){const s=w.social!,key=pair(w.characterId!,target);s.opinions[key]=clamp((s.opinions[key]??(characterById[w.characterId!].polity===characterById[target].polity?10:-25))+delta,-100,100);}
+function opinion(w:World,target:string,delta:number){const s=w.social!,key=pair(w.characterId!,target);s.opinions[key]=clamp((s.opinions[key]??(allegianceRealm(w,w.characterId!)===allegianceRealm(w,target)?10:-25))+delta,-100,100);}
 export function applySocial(w:World,command:SocialCommand){
   const s=w.social;if(!s||!w.characterId)throw new Error('此系统用于历史人物开局。');
   if(w.campaign?.status!=='active')throw new Error('本局已结束。');

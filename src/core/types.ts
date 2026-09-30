@@ -16,7 +16,7 @@ import type { RealmState,RealmCommand } from './realm';
 import type { Social, SocialCommand } from './social';
 import type { Campaign } from './campaign';
 import type { BuildCommand, Holdings } from './construction';
-export type Polity = 'liang' | 'east' | 'west' | 'frontier';
+export type Polity = 'liang' | 'east' | 'west' | 'frontier' | `realm-${number}`;
 export interface Site {
   id: string; name: string; lon: number; lat: number; polity: Polity;
   terrain: '平原' | '山地' | '河谷' | '绿洲' | '丘陵';
@@ -30,6 +30,8 @@ export interface Person {
 }
 export interface Chronicle { day: number; text: string; person: string }
 export interface World {
+ allegiancePacts?:import('./allegiancePacts').AllegiancePacts;
+ politics?:import('./powerPolitics').PowerPolitics;
  custody?:import('./custodyState').CustodyState;
  militaryNominations?:import('./militaryNominations').MilitaryNominations;
   defections?:import('./defections').Defections;
@@ -49,7 +51,7 @@ export interface World {
 }
 export interface RoutePlan { route: string[]; durations: number[]; days: number; food: number; distance: number }
 export type ArmyBatchCommand = {type:'armyBatch';action:'merge';armies:number[];target:number}|{type:'armyBatch';action:'disband';armies:number[]}|{type:'armyBatch';action:'march';armies:number[];site:string};
-export type GameCommand = import('./realmStrategy').PeaceOfferCommand | import('./custodyState').CustodyCommand | ArmyDeploymentCommand | import('./militaryDefection').MilitaryDefectionCommand | import('./militaryNominations').MilitaryNominationCommand | import('./siegePhases').SiegeDecisionCommand | import('./separatePeace').SeparatePeaceCommand | import('./defections').DefectionCommand | import('./militaryCareer').MilitaryCareerCommand | import('./recruitmentPlans').RecruitmentPlanCommand | ArmyBatchCommand | import('./resignation').ResignationCommand | import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
+export type GameCommand = import('./politySeparation').PolityCommand | import('./allegiancePacts').PactCommand | import('./powerPolitics').PowerCommand | import('./realmStrategy').PeaceOfferCommand | import('./custodyState').CustodyCommand | ArmyDeploymentCommand | import('./militaryDefection').MilitaryDefectionCommand | import('./militaryNominations').MilitaryNominationCommand | import('./siegePhases').SiegeDecisionCommand | import('./separatePeace').SeparatePeaceCommand | import('./defections').DefectionCommand | import('./militaryCareer').MilitaryCareerCommand | import('./recruitmentPlans').RecruitmentPlanCommand | ArmyBatchCommand | import('./resignation').ResignationCommand | import('./coordinatedService').CoordinateCommand | import('./commerce').CommerceCommand | import('./householdPlans').HouseholdCommand | import('./militaryAftermath').MilitaryAction | import('./civilWars').CivilCommand | import('./enterprises').EnterpriseCommand | import('./militaryCampaigns').MilitaryCampaignCommand | import('./armyOrganization').ArmyCommand | import('./personalEconomyAdapter').PersonalEconomyCommand | import('./appointmentCycle').AppointmentCommand | import('./population').PopulationCommand
   | { type: 'travel'; destination: string }
   | { type: 'provision' }
   | { type: 'commission' }

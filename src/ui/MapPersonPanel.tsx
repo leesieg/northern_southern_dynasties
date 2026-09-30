@@ -1,3 +1,4 @@
+import {PactRequestPanel} from './PactRequestPanel';
 import {CustodyPerson} from './CustodyPanel';
 import {CommandButton} from './CommandButton';
 import {allegianceRealm} from '../core/officeEligibility';
@@ -48,7 +49,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onEconom
  {w.custody?.records[id]&&<CustodyPerson key={'custody-'+id} world={w} person={id} pending={pending} send={send} onPerson={onPerson}/>}
  <PersonAbilities world={w} person={id}/>
  <PersonDomains world={w} person={id} onCity={onCity}/>{w.realm&&<button className="person-court-entry" onClick={()=>onCourtPerson(id)}><ArtIcon name="influence" size={22}/>朝廷任职 · {name}<span aria-hidden="true">›</span></button>}
- <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'focus',label:'重心',icon:'diligent'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='relations'||key==='focus'&&self||key==='interaction'&&!self&&!!extra&&!!w.social&&!retired&&!deceased)}/>
+ <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'focus',label:'重心',icon:'diligent'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='relations'||key==='focus'&&self||key==='interaction'&&!retired&&!deceased&&(self&&!!w.realm||!self&&!!extra&&!!w.social))}/>
 
  {tab==='overview'&&<>
  <LifeDetails world={w} id={lifeId} pending={pending} send={send}/>
@@ -64,6 +65,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onEconom
 
  {tab==='focus'&&self&&<LifestylePanel world={w} pending={pending} send={send}/>}
  {tab==='relations'&&<PersonConnections key={id} world={w} person={id} onPerson={onPerson}/>}
+ {tab==='interaction'&&self&&w.realm&&!deceased&&<PactRequestPanel world={w} pending={pending} send={send}/>}
  {tab==='interaction'&&!self&&w.social&&extra&&!retired&&!deceased&&<>{!w.custody?.records[id]&&<CustodyPerson key={'arrest-'+id} world={w} person={id} pending={pending} send={send} onPerson={onPerson}/>}<RelationshipPanel key={id} world={w} pending={pending} send={send} targetId={id}/></>}
 
  </div>;

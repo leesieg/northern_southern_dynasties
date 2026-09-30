@@ -1,9 +1,10 @@
+import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
 import {nextMonthStart} from './calendar';
 import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {historicalCharacters} from '../data/characters';
 import { describe,it,expect } from 'vitest';
 import {act,advance} from './world';
-import { courtOf,courtReason,movementSummary,movementPower,courtBonus,advanceCourts,foundingPause,controlledShare,courtSalary } from './court';
+import { courtOf,courtReason,movementSummary,movementPower,courtBonus,advanceCourts,controlledShare,courtSalary } from './court';
 import { governmentOf,regimeName,governmentReason,governmentTaskPause } from './government';
 import { officeHierarchy,superiorOffice } from './offices';
 import {validCourt} from './courtSave';
@@ -51,33 +52,14 @@ describe('天朝朝廷、利益集团与王朝循环',()=>{
  it('财政枯竭与天命受疑推动危局，影响真实收益并暂停改革；整饬可恢复',()=>{
   const w=start();resources(w);act(w,{type:'government',action:'adopt',government:'feudal'});const c=courtOf(w)!,g=governmentOf(w)!;c.tension=70;g.legitimacy=20;w.realm!.treasuries.liang.coins=0;w.realm!.treasuries.liang.grain=0;for(const city of Object.values(w.realm!.cities))if(city.owner==='liang'){city.grain=0;city.order=10;}w.day=31;advanceCourts(w);expect(c.phase).toBe('chaos');expect(courtBonus(w,'liang').tax).toBe(-25);expect(governmentTaskPause(w,'liang')).toContain('危局');const tension=c.tension;advanceCourts(w);expect(c.tension).toBe(tension);resources(w);for(const city of Object.values(w.realm!.cities))if(city.owner==='liang'){city.grain=10000;city.order=70;}g.legitimacy=90;g.support=90;act(w,{type:'court',action:'audit'});for(let i=0;i<15;i++){w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);}expect(c.phase).toBe('stable');expect(courtBonus(w,'liang').tax).toBe(0);
  });
- it('月中建朝保留最近月结事实，新阶段不使旧月结快照失效',()=>{
-  const w=prepareUnification(),g=governmentOf(w)!,c=courtOf(w)!;c.tension=85;w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);
-  expect(c.phase).toBe('chaos');const settled=structuredClone(c.settlement);g.support=90;g.legitimacy=95;
-  act(w,{type:'court',action:'found',mode:'unify',name:'华'});
-  // Test only the final effective workday, without advancing the whole world for 120 days.
-  w.day+=121;c.founding!.progress=119;advanceCourts(w);
-  expect(c.phase).toBe('stable');expect(c.settlement).toEqual(settled);expect(validCourt(w,'liang')).toBe(true);expect(validGovernments(w)).toBe(true);
- });
- it('拥立120日后产生独立国号与前朝记录、撤任，存档可继续推进',()=>{
-  const w=claimant(),g=governmentOf(w)!,estate=structuredClone(w.holdings.estate);const controls=Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,[c.owner,c.controller]]));
-  act(w,{type:'court',action:'found',mode:'usurp',name:'燕'});pass(w,45);const clone=parseWorld(serializeWorld(w));pass(w,75);pass(clone,75);expect(w).toEqual(clone);expect(regimeName(w,'liang')).toBe('燕');expect(g.ruler).toBe('xiao-yi');expect(g.executives).toEqual(['xiao-yi']);expect(w.characterId).toBe('xiao-yi');expect(w.holdings.estate).toEqual(estate);expect(w.holdings.governedCities).toEqual([]);
-  expect(w.realm!.governments!.regimes.find(v=>v.id===g.regimeId)).toMatchObject({kind:'sandbox',name:'燕',predecessor:'liang-0',from:120});expect(w.realm!.governments!.regimes[0].until).toBe(120);expect(Object.values(courtOf(w)!.ministries).every(v=>v===null)).toBe(true);
-  expect(Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,[c.owner,c.controller]]))).toEqual(controls);expect(officeHierarchy(w).some(n=>n.id.startsWith('office:546:')&&n.realm==='liang')).toBe(false);expect(parseWorld(serializeWorld(w))).toEqual(w);
- });
- it('拥立途中失去集团支持或都城暂停；撤回不返款，不能并行改革',()=>{
-  const w=claimant();act(w,{type:'court',action:'found',mode:'usurp',name:'燕'});pass(w,5);courtOf(w)!.members['xiao-gang']='dynastic';governmentOf(w)!.merit['xiao-gang']=100;courtOf(w)!.ministries.finance='xiao-gang';courtOf(w)!.boosts={};expect(foundingPause(w,'liang')).toContain('集团');pass(w,10);expect(courtOf(w)!.founding!.progress).toBe(5);
-  expect(governmentReason(w,{type:'government',action:'succession',stage:'chen-regency'})).toContain('已有');const coins=w.realm!.treasuries.liang.coins;act(w,{type:'court',action:'cancel'});expect(w.realm!.treasuries.liang.coins).toBe(coins);expect(courtOf(w)!.founding).toBeNull();
- });
- it('75%实控且高天命的统一路线可以建朝并采用天朝制，未改动其他政权实体',()=>{
-  const w=prepareUnification();expect(controlledShare(w,'liang')).toBe(100);act(w,{type:'court',action:'found',mode:'unify',name:'华'});pass(w,120);expect(governmentOf(w)!.type).toBe('celestial');expect(regimeName(w,'liang')).toBe('华');expect(w.realm!.governments!.realms.east.ruler).toBe('yuan-shanjian');expect(parseWorld(serializeWorld(w))).toEqual(w);
- });
- it('历史更替同步撤销中央官职与集团眷顾，不伪装成玩家国号',()=>{
-  const w=start();resources(w);act(w,{type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'});act(w,{type:'court',action:'favor',group:'dynastic'});w.day=Math.round((Date.UTC(555,0,1)-Date.UTC(546,0,1))/86400000);governmentOf(w)!.support=90;act(w,{type:'government',action:'succession',stage:'chen-regency'});pass(w,90);expect(courtOf(w)!.ministries.finance).toBeNull();expect(courtOf(w)!.favored).toBeNull();expect(courtOf(w)!.tenure).toBe('xiao-fangzhi|chen-baxian');expect(parseWorld(serializeWorld(w))).toEqual(w);
- });
+ it('月中议案交接保留最近月结事实，新阶段不伪造已结快照',()=>{const w=prepareUnification(),g=governmentOf(w)!,c=courtOf(w)!;c.tension=85;w.day=nextMonthStart(w.day,w.scriptId);advanceCourts(w);const settled=structuredClone(c.settlement);g.support=90;g.legitimacy=95;act(w,{type:'court',action:'found',mode:'unify',name:'华'});w.day++;applyPowerArrangement(w,'liang',w.politics!.proposals.liang!);expect(c.settlement).toEqual(settled);expect(validCourt(w,'liang')).toBe(true);expect(validGovernments(w)).toBe(true);});
+ it('建朝议案产生新国统并保留接受者公职、真实军队及家业',()=>{const w=claimant(),g=governmentOf(w)!,estate=structuredClone(w.holdings.estate),cities=structuredClone(w.realm!.cities),bank=structuredClone(w.realm!.treasuries);act(w,{type:'court',action:'found',mode:'usurp',name:'燕'});expect(courtOf(w)!.founding).toBeNull();expect(w.politics!.proposals.liang!.stage).toBe('support');expect(parseWorld(serializeWorld(w)).politics).toEqual(w.politics);applyPowerArrangement(w,'liang',w.politics!.proposals.liang!);expect(regimeName(w,'liang')).toBe('燕');expect(g.ruler).toBe('xiao-yi');expect(g.executives).toEqual(['xiao-yi']);expect(w.holdings.estate).toEqual(estate);expect(w.realm!.treasuries).toEqual(bank);expect(w.realm!.cities).toEqual(cities);expect(w.realm!.governments!.regimes.find(v=>v.id===g.regimeId)).toMatchObject({kind:'political',name:'燕',predecessor:'liang-0'});expect(parseWorld(serializeWorld(w))).toEqual(w);});
+ it('政治议案须交涉和实际支持，撤回保留已付成本并阻止并行改革',()=>{const w=claimant(),before=w.realm!.influence;act(w,{type:'court',action:'found',mode:'usurp',name:'燕'});expect(powerReason(w,{type:'power',action:'present'})).toContain('30');expect(governmentReason(w,{type:'government',action:'adopt',government:'feudal'})).not.toBe('');actPower(w,{type:'power',action:'cancel'});expect(w.realm!.influence).toBe(before-40);expect(w.politics!.proposals.liang).toBeUndefined();expect(parseWorld(serializeWorld(w))).toEqual(w);});
+ it('建朝与政体改制分别办理，不凭国号自动改制或生成他国资产',()=>{const w=prepareUnification(),type=governmentOf(w)!.type,other=structuredClone(w.realm!.governments!.realms.east);expect(controlledShare(w,'liang')).toBe(100);act(w,{type:'court',action:'found',mode:'unify',name:'华'});applyPowerArrangement(w,'liang',w.politics!.proposals.liang!);expect(governmentOf(w)!.type).toBe(type);expect(regimeName(w,'liang')).toBe('华');expect(w.realm!.governments!.realms.east).toEqual(other);expect(parseWorld(serializeWorld(w))).toEqual(w);});
+ it('政治交接保留接受者中央官职并撤回旧集团眷顾',()=>{const w=start();resources(w);act(w,{type:'court',action:'appoint',ministry:'finance',candidate:'xiao-gang'});act(w,{type:'court',action:'favor',group:'dynastic'});applyPowerArrangement(w,'liang',{goal:'ruler',sponsor:'xiao-yan',beneficiary:'xiao-gang',executive:'chen-baxian',name:''});expect(courtOf(w)!.ministries.finance).toBe('xiao-gang');expect(courtOf(w)!.favored).toBeNull();expect(courtOf(w)!.tenure).toBe('xiao-gang|chen-baxian');expect(parseWorld(serializeWorld(w))).toEqual(w);});
  it('恶意字段、跨国任官、重复占职、损坏局势和伪造国号拒绝且不变更世界',()=>{
   const mutations:((w:World)=>void)[]=[w=>{courtOf(w)!.ministries.finance='gao-huan';},w=>{courtOf(w)!.ministries.finance='xiao-gang';courtOf(w)!.ministries.personnel='xiao-gang';},w=>{courtOf(w)!.members.ghost='reform';},w=>{courtOf(w)!.phase='bad' as never;},w=>{courtOf(w)!.tension=NaN;},w=>{courtOf(w)!.tenure='stale';},w=>{courtOf(w)!.cooldowns.bad=100;},w=>{courtOf(w)!.petition={group:'unaligned',sponsor:'xiao-yan',due:2};}];for(const mutate of mutations){const w=start();mutate(w);expect(()=>serializeWorld(w)).toThrow('存档');}
-  const w=claimant();for(const name of ['<script>','A',' ', '梁', '一二三四五六七']){const before=structuredClone(w);expect(()=>act(w,{type:'court',action:'found',name,mode:'usurp'})).toThrow();expect(w).toEqual(before);}
+  const w=claimant();for(const name of ['<script>','A',' ', '一二三四五六七']){const before=structuredClone(w);expect(()=>act(w,{type:'court',action:'found',name,mode:'usurp'})).toThrow();expect(w).toEqual(before);}
   for(const cmd of [{type:'court',action:'appoint',ministry:'__proto__',candidate:'xiao-gang'},{type:'court',action:'join',group:'__proto__'},{type:'court',action:'convince',target:'__proto__'}]){const before=structuredClone(w);expect(()=>act(w,cmd as never)).toThrow();expect(w).toEqual(before);}
  });
 });

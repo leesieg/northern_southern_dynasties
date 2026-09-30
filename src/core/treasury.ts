@@ -1,3 +1,4 @@
+import {worldRealms} from './polityRuntime';
 import {economyHost} from './personalEconomyAdapter';
 import {calendarDate} from './calendar';
 import {civilWar,civilCanAdmin} from './civilWars';
@@ -9,7 +10,7 @@ import {courtSalary,payCourtSalary} from './court';
 import {ancestorsOf,territoryNodes} from '../data/territorialHierarchy';
 import {siteById} from '../data/scenario';
 import {allegianceRealm} from './officeEligibility';
-import {cityYield,armyMonthlyPay,realms,type RealmId} from './realm';
+import {cityYield,armyMonthlyPay,type RealmId} from './realm';
 import {governmentOf,governingAuthority,governingExecutives} from './government';
 import {creditPersonalCoins,relationOpinion} from './relationships';
 import {isAlive} from './lifeState';
@@ -27,7 +28,7 @@ export function accountName(key:string){if(key==='tax')return '地方税收';if(
 export function localBalance(w:World,site:string){return w.realm?.fiscal?.balances[fiscalPath(w,site)[0]]??0;}
 export function publicBalance(w:World,key:string){return key.startsWith('central:')?w.realm!.treasuries[key.slice(8) as RealmId].coins:w.realm!.fiscal?.balances[key]??0;}
 function setBalance(w:World,key:string,n:number){if(key.startsWith('central:'))w.realm!.treasuries[key.slice(8) as RealmId].coins=n;else ensureFiscal(w)!.balances[key]=n;}
-export function fiscalRecord(w:World,r:RealmId,from:string,to:string,coins:number,reason:string){if(!coins)return;const s=ensureFiscal(w)!;for(const realm of realms){if(from===centralAccount(realm))s.net[realm]-=coins;if(to===centralAccount(realm))s.net[realm]+=coins;}s.entries.push({id:s.nextId++,day:w.day,realm:r,from,to,coins,reason});s.entries=s.entries.slice(-1800);}
+export function fiscalRecord(w:World,r:RealmId,from:string,to:string,coins:number,reason:string){if(!coins)return;const s=ensureFiscal(w)!;for(const realm of worldRealms(w)){if(from===centralAccount(realm))s.net[realm]-=coins;if(to===centralAccount(realm))s.net[realm]+=coins;}s.entries.push({id:s.nextId++,day:w.day,realm:r,from,to,coins,reason});s.entries=s.entries.slice(-1800);}
 function transfer(w:World,r:RealmId,from:string,to:string,amount:number,reason:string){if(!Number.isSafeInteger(amount)||amount<0||publicBalance(w,from)<amount)throw new Error('公库余额不足');if(publicBalance(w,to)+amount>1_000_000)throw new Error('目标公库容量不足');setBalance(w,from,publicBalance(w,from)-amount);setBalance(w,to,publicBalance(w,to)+amount);fiscalRecord(w,r,from,to,amount,reason);}
 export function grantRoom(w:World,site:string,r=w.realm!.cities[site].controller as RealmId){return Math.min(...fiscalPath(w,site,r).slice(0,-1).map(key=>1_000_000-publicBalance(w,key)));}
 export function routeGrant(w:World,site:string,amount:number,reason:string,r=w.realm!.cities[site].controller as RealmId){const path=fiscalPath(w,site,r).reverse();if(!Number.isSafeInteger(amount)||amount<0||publicBalance(w,path[0])<amount)throw new Error('公库余额不足');if(path.slice(1).some(key=>publicBalance(w,key)+amount>1_000_000))throw new Error('拨款路径公库容量不足');for(let i=0;i<path.length-1;i++)transfer(w,r,path[i],path[i+1],amount,reason);}
@@ -39,7 +40,7 @@ export function territoryAccount(w:World,r:RealmId,t:string){t=canonicalTerritor
 export function territoryFiscalPath(w:World,r:RealmId,t:string){const site=localSeatSite(w,t,r);if(!site)return [];const path=fiscalPath(w,site,r),key=territoryAccount(w,r,t);return path.slice(path.indexOf(key));}
 export function grantSource(w:World,r:RealmId,t:string,actor:string){if(governingExecutives(w,r).includes(actor))return centralAccount(r);const n=localAncestors(t).reverse().find(n=>localHolder(w,n.id,r)===actor&&localActive(w,n.id,r));return n?territoryAccount(w,r,n.id):centralAccount(r);}
 export function transferTerritoryGrant(w:World,r:RealmId,t:string,source:string,amount:number,reason:string){const path=territoryFiscalPath(w,r,t).reverse(),start=path.indexOf(source);if(start<0||!Number.isSafeInteger(amount)||amount<0||publicBalance(w,source)<amount)throw new Error('上级公库不足');const route=path.slice(start);if(route.length<2||route.slice(1).some(k=>publicBalance(w,k)+amount>1_000_000))throw new Error('拨款路径容量不足');for(let i=0;i<route.length-1;i++)transfer(w,r,route[i],route[i+1],amount,reason);}
-export function fiscalReason(w:World,c:FiscalCommand,actor=w.characterId!){if(!w.realm||!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前不能办理公款';const r=allegianceRealm(w,actor) as RealmId;if(!realms.includes(r))return '无所属政权';
+export function fiscalReason(w:World,c:FiscalCommand,actor=w.characterId!){if(!w.realm||!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前不能办理公款';const r=allegianceRealm(w,actor) as RealmId;if(!worldRealms(w).includes(r))return '无所属政权';
  if('site'in c&&!civilCanAdmin(w,actor,c.site))return '该地由内战对方控制';
  if(c.action==='relief'){const city=w.realm.cities[c.site];return !city||!canCommission(w,actor,r,c.site,'relief')?'须实际统辖本国控制的城市':city.order>=100?'本城秩序已满':localBalance(w,c.site)<20?'本城公库不足 20 钱':'';}
  if(c.action==='request'||c.action==='allocate'){const t=canonicalTerritory(c.territory??countyTerritory(c.site));if(!territoryNodes[t]||!localSites(w,t,r).includes(c.site)||!localActive(w,t,r))return '仅限本国控制的本国辖区';if(!Number.isSafeInteger(c.amount)||c.amount<20||c.amount>400)return '拨款须为 20 至 400 钱';if(territoryFiscalPath(w,r,t).slice(0,-1).some(k=>publicBalance(w,k)+c.amount>1_000_000))return '拨款路径公库容量不足';
@@ -60,9 +61,9 @@ export function advanceFiscal(w:World){const s=ensureFiscal(w);if(!s)return;if(c
 export function centralTax(w:World,site:string,coins=cityYield(w,site).coins){const r=w.realm!.cities[site].controller;if(r!=='frontier'&&civilWar(w,r)?.civil?.cities.includes(site))return 0;let n=coins;n-=Math.floor(n*.35);for(const key of fiscalPath(w,site).slice(1,-1))if(key)n-=Math.floor(n*.1);return n;}
 export function collectFiscal(w:World,r:RealmId,yields?:ReadonlyMap<string,{coins:number}>){ensureFiscal(w);for(const [site,c] of Object.entries(w.realm!.cities)){if(c.controller!==r)continue;const amount=Math.min((yields?.get(site)??cityYield(w,site)).coins,1_000_000-localBalance(w,site)),path=fiscalPath(w,site,r);setBalance(w,path[0],publicBalance(w,path[0])+amount);fiscalRecord(w,r,'tax',path[0],amount,'征收县域税赋');if(civilWar(w,r)?.civil?.cities.includes(site))continue;let flow=amount-Math.floor(amount*.35);for(let i=0;i<path.length-1;i++){const sent=Math.min(flow,1_000_000-publicBalance(w,path[i+1]));transfer(w,r,path[i],path[i+1],sent,'逐级上缴税赋');flow=sent-Math.floor(sent*.1);}}}
 export function distributeFiscal(_w:World,_r:RealmId){/* 留用在征收时完成，不再重复回拨同一笔预算。 */}
-export function fiscalSnapshot(w:World){return {net:{...(w.realm?.fiscal?.net??{liang:0,east:0,west:0})},balances:Object.fromEntries(realms.map(r=>[centralAccount(r),w.realm?.treasuries[r].coins??0]))};}
+export function fiscalSnapshot(w:World){return {net:{...(w.realm?.fiscal?.net??{liang:0,east:0,west:0})},balances:Object.fromEntries(worldRealms(w).map(r=>[centralAccount(r),w.realm?.treasuries[r].coins??0]))};}
 /** Legacy central actions are reconciled to the same ledger, without double-booking transfers. */
-export function reconcileFiscal(w:World,before:ReturnType<typeof fiscalSnapshot>,reason:string){if(!w.realm)return;const s=ensureFiscal(w)!;for(const r of realms){const key=centralAccount(r),booked=s.net[r]-before.net[r],delta=w.realm.treasuries[r].coins-before.balances[key]-booked;if(delta)fiscalRecord(w,r,delta>0?'external':key,delta>0?key:'expense',Math.abs(delta),reason);}}
+export function reconcileFiscal(w:World,before:ReturnType<typeof fiscalSnapshot>,reason:string){if(!w.realm)return;const s=ensureFiscal(w)!;for(const r of worldRealms(w)){const key=centralAccount(r),booked=(s.net[r]??0)-(before.net[r]??0),delta=w.realm.treasuries[r].coins-(before.balances[key]??0)-booked;if(delta)fiscalRecord(w,r,delta>0?'external':key,delta>0?key:'expense',Math.abs(delta),reason);}}
 
 /** Official payroll starts in its own office treasury; the center covers actual gaps. */
 export function localSalaryExpense(w:World,r:RealmId){return Object.keys(w.realm?.local?.seats??{}).filter(key=>key.startsWith(r+'|')).reduce((sum,key)=>{const t=key.split('|')[1],level=territoryNodes[t]?.level;return sum+(localHolder(w,t,r)&&localActive(w,t,r)&&!civilWar(w,r)?.civil?.cities.includes(localSeatSite(w,t,r)!)?level==='province'?12:level==='prefecture'?8:0:0);},0);}

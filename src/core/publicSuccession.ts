@@ -1,6 +1,6 @@
+import {allegianceRealm} from './officeEligibility';
 import {relationshipPeople,relationshipPersonById} from '../data/relationships';
 import {parentLinks} from '../data/families';
-import {characterById} from '../data/characters';
 import {ageAt,isAlive} from './lifeState';
 import type {World} from './types';
 import type {RealmId} from './realm';
@@ -8,7 +8,7 @@ export type PublicOffice='ruler'|'executive';
 export interface PublicHeirs {ruler:string|null;executive:string|null;dynasty:string|null}
 export type NominateCommand={type:'government';action:'nominate';office:PublicOffice;candidate:string|null;name?:string};
 export function publicFamily(id:string):string|undefined {return relationshipPersonById[id]?.family;}
-export function successionCandidates(w:World,r:RealmId){return relationshipPeople.filter(p=>p.realm===r&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=16).map(p=>p.id);}
+export function successionCandidates(w:World,r:RealmId){return relationshipPeople.filter(p=>allegianceRealm(w,p.id)===r&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=16).map(p=>p.id);}
 /** Recorded children precede collateral kin; stable age ordering is a game succession rule. */
 export function publicSuccessor(w:World,r:RealmId,office:PublicOffice,former?:string):string|null {
  const g=w.realm!.governments!.realms[r],holder=former??(office==='ruler'?g.ruler:g.executives[0]),eligible=successionCandidates(w,r).filter(id=>id!==holder);
@@ -20,7 +20,7 @@ export function publicSuccessor(w:World,r:RealmId,office:PublicOffice,former?:st
 }
 export function nominationReason(w:World,c:NominateCommand,authority:string|undefined):string {
  if(!w.realm?.governments||!w.characterId||w.campaign?.status!=='active')return '此局无法议定继承';
- const r=characterById[w.characterId].polity,g=w.realm.governments.realms[r];
+ const r=allegianceRealm(w,w.characterId)!,g=w.realm.governments.realms[r];
  if(!['ruler','executive'].includes(c.office))return '未知继承职位';
  if(c.office==='ruler'?w.characterId!==g.ruler&&w.characterId!==authority:w.characterId!==authority)return '仅君主或掌政者可议定相应继承';
  if(g.task||g.court?.founding)return '请先完成或撤回现有议程';

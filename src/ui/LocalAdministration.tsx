@@ -1,3 +1,4 @@
+import {worldRealms} from '../core/polityRuntime';
 import {ActionDialog} from './ActionDialog';
 import {appointmentEvaluation} from '../core/appointmentRules';
 import {monthStart} from '../core/calendar';
@@ -40,7 +41,7 @@ export function LocalRequests({world:w,send,pending,onPerson,territory,pendingOn
 }
 export function LocalTerritoryPanel({world:w,territory,send,pending,onPerson,onSelect,onEstate,tab:requestedTab,onTab}:Props&{territory:string;onSelect:(t:string)=>void;onEstate:()=>void;tab:CityTab;onTab:(t:CityTab)=>void}){
  const tab:CityTab=['governance','service'].includes(requestedTab)?'coordination':requestedTab==='population'?'finance':requestedTab;
- const [draft,setDraft]=useState<Extract<FiscalCommand,{action:'request'|'allocate'}>|null>(null);const amount=100;const native=localSites(w,territory,playerRealm(w)).length?playerRealm(w):(['liang','east','west'] as const).find(r=>localSites(w,territory,r).length);if(!w.realm||!native)return null;
+ const [draft,setDraft]=useState<Extract<FiscalCommand,{action:'request'|'allocate'}>|null>(null);const amount=100;const native=localSites(w,territory,playerRealm(w)).length?playerRealm(w):worldRealms(w).find(r=>localSites(w,territory,r).length);if(!w.realm||!native)return null;
  const r=native,site=localSeatSite(w,territory,r)!,ids=localSites(w,territory,r,true),rows=ids.map(id=>w.realm!.cities[id]),superior=localSuperior(w,territory,r),state=w.realm.local?.seats[localKey(r,territory)],child=childrenOf(territory).filter(n=>localSites(w,n.id,r).length),own=r===playerRealm(w),holder=localHolder(w,territory,r),account=territoryAccount(w,r,territory),entries=w.realm.fiscal?.entries.filter(e=>e.day>=monthStart(w.day,w.scriptId)&&(e.from===account||e.to===account))??[],net=entries.reduce((n,e)=>n+(e.to===account?e.coins:-e.coins),0),population=rows.reduce((n,c)=>n+c.population,0);
  const resource=(icon:ArtName,label:string,value:number|null,help:string,change='')=><HoverHint label={label} content={help}><div className="city-summary-resource"><ArtIcon name={icon} size={28}/><span><small>{label}</small><strong>{value?.toLocaleString()??'—'}</strong></span>{change&&<em>{change}</em>}</div></HoverHint>;
  const action=(cmd:Extract<FiscalCommand,{action:'request'|'allocate'}>,label:string)=><button disabled={pending} onClick={()=>setDraft(cmd)}><ArtIcon name="coins" size={22}/>{label}…</button>;

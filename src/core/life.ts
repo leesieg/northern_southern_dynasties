@@ -1,3 +1,5 @@
+import {worldRealms} from './polityRuntime';
+import {allegianceRealm} from './officeEligibility';
 import {isMonthStart} from './calendar';
 import {birthRecords} from '../data/lifespans';
 import {characterById} from '../data/characters';
@@ -8,7 +10,7 @@ import {expressGenome} from './genetics';
 import {syncCourt} from './court';
 import {syncRelationships} from './relationships';
 import {syncDiplomacy} from './diplomacy';
-import {handoverOffice,syncGovernance,realms} from './realm';
+import {handoverOffice,syncGovernance} from './realm';
 import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,illnessCourse,monthlyIllnessRisk,illnessKind,type LifeCommand} from './lifeState';
 import type {World} from './types';
 
@@ -32,7 +34,7 @@ export function actLife(w:World,c:LifeCommand){ensureLife(w);if(c.action!=='care
 /** One-way transition. All live appointments are reconciled before control can pass. */
 export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'){
  const s=ensureLife(w),p=s.people[id];if(!p||p.death)return;
- const wasPlayer=id===(w.characterId??'fictional'),next=wasPlayer?heirs(w).find(c=>c.id===w.social?.heir)??heirs(w)[0]:undefined;
+ const deceasedRealm=allegianceRealm(w,id),wasPlayer=id===(w.characterId??'fictional'),next=wasPlayer?heirs(w).find(c=>c.id===w.social?.heir)??heirs(w)[0]:undefined;
  if(w.custody){delete w.custody.records[id];for(const q of w.custody.warrants)if(q.person===id&&q.status==='pending')q.status='cancelled';}if(id===w.characterId&&w.mobility)w.mobility.captivity=null;
  p.health=0;p.death={day:w.day,cause};p.careUntil=0;
  log(w,`${personName(id)}${{illness:'病逝',age:'寿终',battle:'战死',execution:'被处决'}[cause]}，享年 ${ageAt(w,id)} 岁。`);
@@ -41,14 +43,14 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
  if(rs){
   for(const m of rs.marriages)if(m.until===null&&(m.a===id||m.b===id)){m.until=w.day;rs.maritalBasis[m.a===id?m.b:m.a]='widowed';}
   for(const [f,o] of Object.entries(rs.oaths))if(f===id||o.lord===id)delete rs.oaths[f];
-  for(const r of realms){const c=rs.regencies[r];if(c&&(c.controller===id||c.ruler===id))delete rs.regencies[r];}
+  for(const r of worldRealms(w)){const c=rs.regencies[r];if(c&&(c.controller===id||c.ruler===id))delete rs.regencies[r];}
   if(rs.scheme&&(rs.scheme.actor===id||rs.scheme.target===id))rs.scheme=null;
  }
  const worldPerson=w.people.find(a=>a.id===id);if(worldPerson){worldPerson.journey=null;worldPerson.itinerary=[];worldPerson.itineraryIndex=0;}
  if(w.realm){
-  for(const city of Object.values(w.realm.cities))if(city.governor===id)city.governor=wasPlayer&&next&&w.realm.governments?.realms[characterById[id].polity].type==='feudal'?next.id:null;
+  for(const city of Object.values(w.realm.cities))if(city.governor===id)city.governor=wasPlayer&&next&&deceasedRealm&&w.realm.governments?.realms[deceasedRealm].type==='feudal'?next.id:null;
   w.realm.offices=w.realm.offices.filter(o=>o.candidate!==id);
-  for(const r of realms){const g=w.realm.governments?.realms[r];if(!g||w.realm.annexed?.[r])continue;
+  for(const r of worldRealms(w)){const g=w.realm.governments?.realms[r];if(!g||w.realm.annexed?.[r])continue;
    if(g.heirs?.ruler===id){g.heirs.ruler=null;g.heirs.dynasty=null;}if(g.heirs?.executive===id)g.heirs.executive=null;
    if(g.task?.sponsor===id)g.task=null;
    if(g.court){for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])if(g.court.ministries[m]===id)g.court.ministries[m]=null;if(g.court.founding?.sponsor===id)g.court.founding=null;if(g.court.petition?.sponsor===id)g.court.petition=null;}
@@ -79,7 +81,7 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
   if(next&&w.social){w.social.heir=next.id;applySocial(w,{type:'handover'});if(!w.mobility)w.people[0].location=next.home;log(w,'家业由'+next.name+'承继，继续这一族的故事。');}
   else if(w.campaign){w.campaign.status='lost';w.campaign.finishedDay=w.day;log(w,'没有在世且合格的家业继任者，本局结束。');}
  }
- if(w.realm){syncRelationships(w);for(const r of realms)syncCourt(w,r);if(wasPlayer)handoverOffice(w);syncGovernance(w);syncDiplomacy(w);}
+ if(w.realm){syncRelationships(w);for(const r of worldRealms(w))syncCourt(w,r);if(wasPlayer)handoverOffice(w);syncGovernance(w);syncDiplomacy(w);}
 }
 export function advanceLife(w:World){
  const s=ensureLife(w);if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;

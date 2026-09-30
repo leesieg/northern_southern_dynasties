@@ -1,3 +1,4 @@
+import {isRealmId} from './polityRuntime';
 import {activityKinds,type MobilityState} from './mobilityState';
 import {siteById,roads} from '../data/scenario';
 import {relationshipPersonById} from '../data/relationships';
@@ -5,7 +6,7 @@ const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Ar
 const num=(v:unknown,max=400000):v is number=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;
 const person=(v:unknown):v is string=>typeof v==='string'&&Object.hasOwn(relationshipPersonById,v);
 const site=(v:unknown):v is string=>typeof v==='string'&&Object.hasOwn(siteById,v);
-const realm=(v:unknown)=>['liang','east','west'].includes(String(v));
+const realm=(v:unknown)=>isRealmId(v);
 export function validMobility(v:unknown,day:number):v is MobilityState{
  if(!obj(v)||v.version!==1||!num(v.since,day)||!num(v.lastDay,day)||!num(v.nextId)||!num(v.reported)||!obj(v.residences)||!obj(v.appointments)||!obj(v.cooldowns)||!obj(v.commanders)||!Array.isArray(v.activities)||v.activities.length>36)return false;
  for(const [id,p] of Object.entries(v.residences)){
