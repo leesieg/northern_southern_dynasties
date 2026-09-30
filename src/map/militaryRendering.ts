@@ -9,10 +9,10 @@ export function updateMilitaryCamera(camera:Camera,projection:ArrayLike<number>,
 }
 
 export function addMilitaryLighting(scene:Scene){
- const sky=new HemisphereLight('#fff4df','#b9baa1',1.65);sky.position.set(0,0,1); // Mercator Z is up, not Three's default Y.
- const key=new DirectionalLight('#fff1d6',2.8);key.position.set(-.7,-1,1.8);
- const fill=new DirectionalLight('#e0e9ee',1.45);fill.position.set(.8,1,.8);
- scene.add(new AmbientLight('#eee4cc',.9),sky,key,fill);
+ const sky=new HemisphereLight('#fff4df','#b9baa1',1.45);sky.position.set(0,0,1); // Mercator Z is up, not Three's default Y.
+ const key=new DirectionalLight('#fff1d6',2.2);key.position.set(-.7,-1,1.8);
+ const fill=new DirectionalLight('#e0e9ee',1.1);fill.position.set(.8,1,.8);
+ scene.add(new AmbientLight('#eee4cc',.65),sky,key,fill);
 }
 
 export function militarySurfaceMaterial(color:string,map?:Texture,metalness=0){

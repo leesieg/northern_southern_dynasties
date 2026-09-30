@@ -13,7 +13,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function geo(key:string,create:()=>BufferGeometry){let g=geometries.get(key);if(!g){g=create();geometries.set(key,g);}return g;}
  const ball=()=>geo('ball',()=>new SphereGeometry(.5,14,10)),box=()=>geo('box',()=>new BoxGeometry(1,1,1)),cap=()=>geo('capsule',()=>new CapsuleGeometry(.5,1,4,12)),cylinder=()=>geo('cylinder',()=>new CylinderGeometry(.5,.5,1,16)),ring=()=>geo('ring',()=>new TorusGeometry(.5,.035,6,24));
  function mat(key:string,color:string,panel?:number,metalness=0){let m=materials.get(key);if(m)return m;let map:Texture|undefined;if(panel!==undefined){map=atlas.clone();map.colorSpace=SRGBColorSpace;map.offset.set((panel%3)/3+.001,panel<3?.501:.001);map.repeat.set(1/3-.002,.5-.002);map.needsUpdate=true;textures.push(map);}m=militarySurfaceMaterial(color,map,metalness);materials.set(key,m);return m;}
- const iron=mat('iron','#ecebe1',1,.20),bronze=mat('bronze','#fff0c6',2,.32),wood=mat('wood','#efd9ac',4),leather=mat('leather','#e5c3a0',3),linen=mat('linen','#fff5da',5),skin=mat('skin','#c3a783'),dark=mat('dark','#28291f'),hair=mat('hair','#302c24'),hooves=mat('hooves','#39352b'),eyeWhite=mat('eye-white','#c6b9a0'),iris=mat('iris','#3c3225'),lip=mat('lip','#9b7561');
+ const iron=mat('iron','#c3c5ba',1,.24),bronze=mat('bronze','#d8bd82',2,.30),wood=mat('wood','#b39a70',4),leather=mat('leather','#aa8060',3),linen=mat('linen','#fff5da',5),skin=mat('skin','#c3a783'),dark=mat('dark','#28291f'),hair=mat('hair','#302c24'),lacquer=mat('lacquer','#713f30',undefined,.08),tassel=mat('tassel','#8c4737'),hooves=mat('hooves','#39352b'),eyeWhite=mat('eye-white','#c6b9a0'),iris=mat('iris','#3c3225'),lip=mat('lip','#9b7561');
  function mesh(parent:Group,g:BufferGeometry,m:Material,x:number,y:number,z:number,sx=1,sy=1,sz=1){const o=new Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.frustumCulled=false;parent.add(o);return o;}
  function ellipsoid(parent:Group,m:Material,x:number,y:number,z:number,sx:number,sy:number,sz:number){return mesh(parent,ball(),m,x,y,z,sx,sy,sz);}
  function capsule(parent:Group,m:Material,x:number,y:number,z:number,sx:number,sy:number,sz:number){return mesh(parent,cap(),m,x,y,z,sx,sy/2,sz);}
@@ -24,6 +24,8 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
   const plate=geo('lame',()=>new BoxGeometry(.046,.071,.016)),count=72,o=new InstancedMesh(plate,iron,count),matrix=new Matrix4(),color=new Color();let i=0;
   for(const side of [1,-1])for(let row=0;row<4;row++)for(let col=0;col<9;col++){const theta=(col-4)*.25;matrix.makeTranslation(Math.sin(theta)*.19,.98+row*.08,side*Math.cos(theta)*.135);matrix.multiply(new Matrix4().makeRotationY(side*theta));o.setMatrixAt(i,matrix);o.setColorAt(i++,color.setRGB(.83+row*.035,.82+row*.033,.76+row*.035));}
   o.frustumCulled=false;parent.add(o);mesh(parent,cylinder(),leather,0,.96,0,.43,.044,.28);mesh(parent,box(),bronze,0,.966,.148,.066,.05,.018);
+  const skirt=new InstancedMesh(plate,iron,24);let k=0;
+  for(const side of [-1,1])for(let row=0;row<2;row++)for(let col=0;col<6;col++){const theta=(col-2.5)*.32;matrix.makeTranslation(Math.sin(theta)*.22,.78+row*.075,side*Math.cos(theta)*.16);matrix.multiply(new Matrix4().makeRotationY(side*theta));skirt.setMatrixAt(k++,matrix);}skirt.frustumCulled=false;parent.add(skirt);
   for(const x of [-.23,.23])ellipsoid(parent,iron,x,1.4,0,.20,.105,.25);
  }
  function helmet(parent:Group){
@@ -40,9 +42,14 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
    const leg=new Group();leg.position.set(side*.105,.80,0);root.add(leg);capsule(leg,cloth,0,-.20,0,.14,.405,.14);const shin=new Group();shin.position.y=-.39;leg.add(shin);capsule(shin,leather,0,-.17,.008,.109,.35,.12);ellipsoid(shin,iron,0,0,.04,.12,.12,.10);ellipsoid(shin,leather,0,-.335,.043,.13,.115,.23);legs.push(leg);
    const arm=new Group();arm.position.set(side*.252,1.37,0);root.add(arm);capsule(arm,cloth,0,-.145,0,.13,.31,.13);ellipsoid(arm,iron,0,-.275,.02,.14,.13,.13);capsule(arm,leather,0,-.415,.022,.11,.28,.105);ellipsoid(arm,skin,0,-.575,.037,.094,.105,.08);arm.rotation.z=side*.12;arms.push(arm);
   }
-  if(shield){const left=arms[0];left.rotation.x=-.35;const disk=mesh(left,cylinder(),wood,-.01,-.41,.12,.40,.05,.40);disk.rotation.x=Math.PI/2;mesh(left,ring(),bronze,-.01,-.41,.155,.40,.40,.40);ellipsoid(left,iron,-.01,-.41,.17,.095,.095,.047);for(let n=0;n<8;n++){const t=n*Math.PI/4;ellipsoid(left,bronze,Math.cos(t)*.16-.01,-.41+Math.sin(t)*.16,.16,.017,.017,.01);}}
+  if(shield){const left=arms[0];left.rotation.x=-.35;
+   const shieldShape=geo('lacquer-shield',()=>{const s=new Shape();s.moveTo(-.14,-.25);s.lineTo(.14,-.25);s.lineTo(.19,-.16);s.lineTo(.17,.20);s.lineTo(0,.29);s.lineTo(-.17,.20);s.lineTo(-.19,-.16);s.closePath();return new ExtrudeGeometry(s,{depth:.034,bevelEnabled:true,bevelThickness:.008,bevelSize:.012,bevelSegments:1,steps:1});});
+   mesh(left,shieldShape,wood,-.01,-.41,.12);mesh(left,shieldShape,lacquer,-.01,-.41,.153,.88,.9,.35);
+   beam(left,bronze,[-.01,-.62,.174],[-.01,-.20,.174],.016);ellipsoid(left,bronze,-.01,-.40,.19,.095,.095,.042);
+   for(const x of [-.13,.11])for(const y of [-.57,-.29])ellipsoid(left,bronze,x,y,.174,.018,.018,.012);
+  }
   beam(root,wood,[.34,.035,.025],[.34,2.02,.025],.018);
-  const blade=geo('blade',()=>{const s=new Shape();s.moveTo(0,-.10);s.lineTo(.035,.01);s.lineTo(0,.17);s.lineTo(-.035,.01);s.closePath();return new ExtrudeGeometry(s,{depth:.012,bevelEnabled:true,bevelThickness:.004,bevelSize:.004,bevelSegments:1,steps:1});});mesh(root,blade,iron,.34,2.045,.02);return {root,legs,arms,cloak};
+  const blade=geo('blade',()=>{const s=new Shape();s.moveTo(0,-.10);s.lineTo(.035,.01);s.lineTo(0,.17);s.lineTo(-.035,.01);s.closePath();return new ExtrudeGeometry(s,{depth:.012,bevelEnabled:true,bevelThickness:.004,bevelSize:.004,bevelSegments:1,steps:1});});mesh(root,blade,iron,.34,2.045,.02);const fringe=mesh(root,geo('spear-tassel',()=>new CylinderGeometry(.018,.06,.15,8)),tassel,.34,1.94,.025);fringe.rotation.z=-.12;return {root,legs,arms,cloak};
  }
  function horse(parent:Group,cloth:Material){
   const root=new Group(),horseLegs:Group[]=[],coat=mat('horse','#72604c'),mane=mat('mane','#3a332a');parent.add(root);
@@ -73,7 +80,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  return {
   create(a:Army,kind:ArmyModelKind,name:string):MilitaryModel{
    const root=new Group(),body=new Group(),detail=new Group(),actors:Actor[]=[],horseLegs:Group[]=[];root.matrixAutoUpdate=false;root.add(body);body.add(detail);shadow(body,kind);
-   const cloth=mat('cloth-'+a.realm,a.realm==='liang'?'#e3ead2':a.realm==='east'?'#efdbc4':'#f4e4ba',0),main=soldier(body,cloth,0,kind==='siege'?-.50:0,kind==='horse'?.87:1,kind!=='horse');actors.push(main);let lever:Group|undefined;
+   const cloth=mat('cloth-'+a.realm,a.realm==='liang'?'#729080':a.realm==='east'?'#9b6872':'#b19a68',0),main=soldier(body,cloth,0,kind==='siege'?-.50:0,kind==='horse'?.87:1,kind!=='horse');actors.push(main);mesh(main.root,geo('helmet-plume',()=>new LatheGeometry([new Vector2(.025,0),new Vector2(.038,.05),new Vector2(.02,.13),new Vector2(0,.16)],8)),tassel,0,1.84,-.01);let lever:Group|undefined;
    if(kind==='horse'){const h=horse(body,cloth);horseLegs.push(...h.horseLegs);main.root.position.set(0,.58,-.09);main.legs.forEach((leg,i)=>{leg.rotation.x=-.7;leg.rotation.z=(i?1:-1)*.36;});main.arms.forEach(arm=>arm.rotation.x=-.7);}
    else if(kind==='siege'){lever=trebuchet(body);main.root.position.x=.57;actors.push(soldier(detail,cloth,-.56,-.46,.84,false));}
    else{actors.push(soldier(detail,cloth,-.38,-.34,.86),soldier(detail,cloth,.38,-.38,.84));}
