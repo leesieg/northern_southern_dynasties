@@ -65,13 +65,21 @@ export function warWillToContinue(w:World,war:War,realm:RealmId){
  const arrears=own.reduce((sum,a)=>sum+(a.arrears??0),0);
  const otherFronts=Math.max(0,w.realm!.wars?.filter(v=>v!==war&&side(v,realm)).length??0);
  const score=warScoreFor(w,war,realm);
+ // Current operations provide a bounded opportunity to finish, never a permanent war lock.
+ const recentWin=w.militaryAftermath?.battles.some(b=>b.war===war.id&&b.ended!==undefined&&w.day-b.ended<=30&&b.winner===ownSide);
+ const siege=w.realm!.sieges?.some(v=>v.war===war.id&&v.side===ownSide&&(v.blockade??0)>=100&&v.progress>0&&w.day-(v.started??war.started)<=120&&own.some(a=>a.location===v.site&&!a.journey&&a.supply>0&&a.troops>=100));
+ const advance=own.some(a=>a.journey?.route.at(-1)===war.target&&w.day-a.journey.started<=60&&a.supply>=armyDailyFood(w,a)*5&&a.morale>=40&&!a.withdrawalUntil);
  const parts:WarWillPart[]=[
+  {label:'有力维持战争目标',value:ownStrength>=600&&treasury.coins>=200&&arrears===0&&lowSupply===0?10:0},
+  {label:'近期战役胜利',value:recentWin?8:0},
+  {label:'有效围城推进',value:siege?12:0},
+  {label:'目标方向行军',value:advance?4:0},
   {label:'当前军事形势',value:clamp(Math.round(score/4),-25,25)},
   {label:'尚可投入军力',value:clamp(Math.round((ownStrength-enemyStrength)/250),-15,15)},
   {label:'公库续战能力',value:clamp(Math.floor((treasury.coins-200)/100),-12,10)},
   {label:'欠饷压力',value:-Math.min(15,Math.ceil(arrears/100)*3)},
   {label:'前线缺粮',value:-Math.min(15,lowSupply*5)},
-  {label:'战争延续',value:-Math.min(20,Math.floor((w.day-war.started)/30)*2)},
+  {label:'战争延续',value:-Math.min(30,Math.floor((w.day-war.started)/30)*2)},
   {label:'其他战线',value:-Math.min(15,otherFronts*5)},
  ];
  return {parts,total:parts.reduce((sum,part)=>sum+part.value,0)};
