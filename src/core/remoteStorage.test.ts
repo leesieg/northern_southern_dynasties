@@ -13,12 +13,12 @@ it('binds deployed saves to the current homepage account and rejects a changed s
   if(url==='/agent-api/account')return Response.json({user:{id:'account-a'}});
   if(changed)return Response.json({error:'account_changed'},{status:409});
   if(options?.method==='POST')return Response.json({savedAt:123});
-  if(url.endsWith('/latest'))return Response.json({data});
-  return Response.json({saves:[]});
+  if(url.endsWith('/manual'))return Response.json({data});
+  return Response.json({saves:[{id:'manual',savedAt:123,day:0}]});
  }));
  const storage=await import('./storage');
  await storage.prepareStorage();
- expect(await storage.listSaves()).toEqual([]);
+ expect(await storage.listSaves()).toEqual([{id:'manual',savedAt:123,day:0}]);
  expect(await storage.saveWorld(newWorld())).toBe(123);
  expect(await storage.loadWorld()).toEqual(newWorld());
  expect(requests.filter(r=>r.url.startsWith('/agent-api/fynbc/')).every(r=>(r.options?.headers as Record<string,string>)['X-Fynbc-Account']==='account-a')).toBe(true);

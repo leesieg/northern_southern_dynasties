@@ -6,7 +6,7 @@ import {LocalTerritoryPanel} from './LocalAdministration';
 import {RealmNavigation,RealmBadge} from './RealmBadge';
 import {familyName as estateFamilyName} from '../data/characters';
 import {OngoingFlags} from './OngoingFlags';
-import {ConfirmAction} from './ConfirmAction';
+import {SaveBrowser} from './SaveBrowser';
 import type {OngoingItem} from '../core/ongoing';
 import {assignmentTemplates,assignmentPhases} from '../data/assignments';
 import {PauseDialog} from './PauseDialog';
@@ -36,9 +36,8 @@ import {MapCameraControls,MapDisplayControls} from './MapCommandControls';
 import {PlayerHud} from './PlayerHud';
 import { ArtIcon } from './ArtIcon';
 import { RealmPanel,type RealmTab } from './RealmPanel';
-import { scriptLabel } from '../data/scripts';
 import { CharacterDirectory } from './CharacterDirectory';
-import { GameEntry,RunOutcome,CampaignTracker,saveLabel } from './GameEntry';
+import { GameEntry,RunOutcome,CampaignTracker } from './GameEntry';
 import { HierarchyExplorer } from './HierarchyExplorer';
 import { territoryNodes,descendantSites,nodeForSite,controlEvents,type TerritoryLevel } from '../data/territorialHierarchy';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -76,7 +75,6 @@ export function App(){
   const [armyFocus,setArmyFocus]=useState<{army:number;seq:number;tab?:'campaign'}>({army:0,seq:0});
   const [selected,setSelected]=useState('jiankang'),[mode,setMode]=useState<MapMode>('political'),[showTravelers,setShowTravelers]=useState(true),[tilted,setTilted]=useState(true);
   const [modal,setModal]=useState<'military'|'wealth'|'diplomacy'|'saves'|'directory'|'about'|'estate'|'staff'|'retinue'|'menu'|'realm'|'map-person'|null>(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all');
-  const [deleteSlot,setDeleteSlot]=useState<string|null>(null);
   const [searchTab,setSearchTab]=useState<'people'|'places'>('people');
   const [cameraAction,setCameraAction]=useState<{type:'home'|'player'|'selected'|'in'|'out';seq:number}>({type:'home',seq:0});
   const [journalOpen,setJournalOpen]=useState(false),[journalScope,setJournalScope]=useState<'all'|'player'>('all');
@@ -95,7 +93,6 @@ export function App(){
   const restorePanelFocus=()=>requestAnimationFrame(()=>{if(panelOpener.current?.isConnected)panelOpener.current.focus({preventScroll:true});});
   const [cityTab,setCityTab]=useState<CityTab>('governance');
   const [mapPeople,setMapPeople]=useState<string[]>([]);
-  const upload=useRef<HTMLInputElement>(null);
   const placePanel=useRef<HTMLElement>(null),placeScroll=useRef<Record<string,number>>({});
   useLayoutEffect(()=>{if(placePanel.current)placePanel.current.scrollTop=placeScroll.current[territory+'|'+cityTab]??0;},[territory,cityTab,drawer,modal]);
   useEffect(()=>{if(game.page==='play'&&game.world&&(!game.world.campaign||game.world.campaign.status==='active'))return;const reserveSpace=(e:KeyboardEvent)=>{if(e.code!=='Space'||e.isComposing||e.target instanceof Element&&e.target.closest('input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]),textarea,[contenteditable="true"]'))return;e.preventDefault();e.stopImmediatePropagation();};window.addEventListener('keydown',reserveSpace,true);window.addEventListener('keyup',reserveSpace,true);return()=>{window.removeEventListener('keydown',reserveSpace,true);window.removeEventListener('keyup',reserveSpace,true);};},[game.page,!!game.world,game.world?.campaign?.status]);
@@ -104,7 +101,7 @@ export function App(){
   const site=siteById[selected];
   const focus=(type:typeof cameraAction.type)=>setCameraAction(a=>({type,seq:a.seq+1}));
   const showDrawer=(kind:typeof drawer)=>{capturePanelOpener();setModal(null);setPanelTrail([]);setMapOptions(false);if(kind==='character'){setMapPeople([game.world?.characterId??'player']);setPersonTab('overview');setModal('map-person');setDrawer(null);game.send({type:'speed',speed:0});}else setDrawer(kind);};
-  const closePanel=()=>{setModal(null);setDeleteSlot(null);setPanelTrail([]);restorePanelFocus();};
+  const closePanel=()=>{setModal(null);setPanelTrail([]);restorePanelFocus();};
   const backPanel=()=>{const previous=panelTrail.at(-1);if(!previous)return;setModal(previous.modal);setDrawer(previous.drawer);setMapPeople(previous.mapPeople);setPersonTab(previous.personTab);setDiplomacyTarget(previous.diplomacyTarget);setStaffRealm(previous.staffRealm);setStaffTab(previous.staffTab);setStaffRegion(previous.staffRegion);setStaffPerson(previous.staffPerson);setTreasuryTab(previous.treasuryTab);setSelected(previous.selected);setTerritory(previous.territory);setLevel(previous.level);setCityTab(previous.cityTab);setRealmTab(previous.realmTab);setFinanceFocus(previous.financeFocus);setPanelTrail(items=>items.slice(0,-1));};
   const chooseTerritory=(id:string,nested=false)=>{if(armyMove){const sites=descendantSites(id);const site=sites.length===1?sites[0]:undefined;if(site)setArmyMove({...armyMove,site});return;}let node=territoryNodes[id];if(!node)return;if(node.level==='county'){id='city:'+descendantSites(id)[0];node=territoryNodes[id];}if(nested||drawer==='place'&&!modal){if(nested||id!==territory)setPanelTrail(items=>[...items,{modal,drawer,mapPeople,personTab,diplomacyTarget,staffRealm,staffTab,staffRegion,staffPerson,treasuryTab,selected,territory,level,cityTab,realmTab,financeFocus}]);if(nested){setModal(null);setDrawer('place');setMapOptions(false);}}else{showDrawer('place');setCityTab(game.world?.realm?'governance':'history');}setTerritory(id);setLevel(node.level);const city=descendantSites(id)[0];if(city)setSelected(city);setMode('domains');setCameraAction(a=>({type:'selected',seq:a.seq+1}));};
   useEffect(()=>{const available=new Set(game.world?.realm?.armies.filter(a=>playerCommandsArmy(game.world!,a)).map(a=>a.id)??[]);setSelectedArmies(ids=>{const next=ids.filter(id=>available.has(id));return next.length===ids.length?ids:next;});if(armyMove&&!armyMove.armies.every(id=>available.has(id)))setArmyMove(null);},[armyMove,game.world]);
@@ -197,8 +194,8 @@ export function App(){
       {modal==='wealth'&&<PersonalEconomyPanel world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})} onEstate={()=>openModal('estate',true)}/>}
 
       {modal==='diplomacy'&&<DiplomacyPanel key={diplomacyTarget+'|'+diplomacyInitialTab} world={game.world} selected={diplomacyTarget} initialTab={diplomacyInitialTab} onSelect={id=>openDiplomacy(id)} onCourt={id=>id===playerRealm(game.world!)?openCourt():openForeignCourt(id)} onPerson={id=>openPerson(id)} pending={game.pending} send={command=>game.send({type:'command',command})}/>}
-      {modal==='menu'&&<div className="game-menu-actions"><button className="primary" onClick={closePanel}>返回游戏</button><button onClick={()=>openModal('saves',true)}>保存／读取／导出</button><button disabled={game.pending} onClick={()=>game.send({type:'menu'})}>保存并返回主菜单</button><button onClick={()=>openModal('about',true)}>玩法与说明</button><p>关闭菜单后保持暂停，可使用顶部时间控制继续。本地保存失败时会留在当前游戏，可导出文件备份。</p></div>}
-      {modal==='saves'&&<><p className="modal-description">{accountSaves?'存档保存在当前登录账号下。导出文件可用于备份或迁移；读取与导入前会保留当前进度。':'存档保存在此浏览器中。导出文件可用于备份或迁移；读取与导入前会保留当前进度。'}</p><div className="save-actions"><button className="primary" disabled={!person} onClick={()=>game.send({type:'save'})}>保存当前行程</button><button disabled={!person} onClick={()=>game.send({type:'export'})}>导出文件</button><button disabled={!person} onClick={()=>upload.current?.click()}>导入文件</button><input ref={upload} type="file" accept=".json" hidden onChange={async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;if(file.size>2_000_000){game.notify('存档超过 2 MB，无法导入。',true);return;}try{game.send({type:'import',text:await file.text()});}catch{game.notify('读取文件失败。',true);}}}/></div><div className="save-list">{!game.slots.length?<p className="empty-state">暂无存档。现在保存，为这段旅途留下一页行记。</p>:game.slots.map(slot=><div className="save-row" key={slot.id}><div><strong>{saveLabel(slot.id)}{slot.characterName?' · '+slot.characterName:''}</strong><span>{slot.mode==='sandbox'?'历史沙盒':'原有玩法'} · {scriptLabel(slot.scriptId)} · {dateLabel(slot.day,slot.scriptId)} · {new Date(slot.savedAt).toLocaleString('zh-CN')}</span></div><div className="save-row-actions"><button disabled={game.pending} onClick={()=>game.send({type:'load',slot:slot.id})}>恢复</button><button disabled={game.pending} className="danger" onClick={()=>setDeleteSlot(slot.id)}>删除</button></div></div>)}</div><p className="small-note">自动保存：出发、补给、每十个游戏日及抵达时。保留三份轮换自动行记和一份手动行记。</p></>}
+      {modal==='menu'&&<div className="game-menu-actions"><button className="primary" onClick={closePanel}>返回游戏</button><button onClick={()=>openModal('saves',true)}>保存／读取／导出</button><button disabled={game.pending} onClick={()=>game.send({type:'menu'})}>保存并返回主菜单</button><button onClick={()=>openModal('about',true)}>玩法与说明</button><p>关闭菜单后保持暂停，可使用顶部时间控制继续。保存失败时会留在当前游戏，可导出文件备份。</p></div>}
+      {modal==='saves'&&<SaveBrowser slots={game.slots} pending={game.pending} inGame send={game.send} notify={game.notify}/>}
       {modal==='directory'&&<><DetailTabs label="查找对象" value={searchTab} onChange={setSearchTab} items={[{id:'people',label:'人物',icon:'person'},{id:'places',label:'城邑',icon:'city'}]}/>{searchTab==='people'?<CharacterDirectory world={game.world} onPerson={id=>openPerson(id)}/>:<><input className="search" aria-label="搜索地点" placeholder="查找城邑，如建康、长安、敦煌…" value={query} onChange={e=>setQuery(e.target.value)}/><div className="directory-filters realm-flags"><button className={'realm-filter-all '+(filter==='all'?'active':'')} aria-pressed={filter==='all'} onClick={()=>setFilter('all')}>全部</button>{(Object.keys(polities) as Polity[]).map(id=><span className="realm-filter-choice" key={id}><RealmBadge realm={id}/><button aria-label={"筛选"+regimeName(game.world??undefined,id)} aria-pressed={filter===id} onClick={()=>setFilter(id)}>{filter===id?"✓":"筛选"}</button></span>)}</div><div className="directory-list">{sites.filter(s=>(s.name+administrationPath(s.id)).includes(query)&&(filter==='all'||(game.world?.realm?.cities[s.id]?.controller??s.polity)===filter)).map(s=><article className="place-directory-entry" key={s.id}><button onClick={()=>{chooseCity(s.id,true);setModal(null);focus('selected');}}><span><i style={{background:polities[s.polity].color}}/><strong>{s.name}</strong><small>{s.rank==='county'?'县治':s.capital?'都城':'主要城市'}</small></span><Icon name="arrow" size={15}/></button><RealmBadge realm={game.world?.realm?.cities[s.id]?.controller??s.polity}/></article>)}{!sites.some(s=>(s.name+administrationPath(s.id)).includes(query)&&(filter==='all'||(game.world?.realm?.cities[s.id]?.controller??s.polity)===filter))&&<p className="empty-state">未找到匹配地点。</p>}</div></>}</>}
       {modal==='about'&&<div className="about-content"><h3>此身与天下</h3><p>在城市或辖区详情中查找驻留人物，点击查看家族、官职与关系；在途人物可直接在地图上点选。在人物页选择互动、经营世业，或前往朝廷处理政务。时间暂停时可以从容安排事务，再推进日期等待结果。</p><h3>行旅与营建</h3><p>点击城邑进行营建或规划行程，启程前备足行粮。地图上的家族庄园标记可直接进入营建。</p><h3>舆图</h3><p>自然地理采用现代高程与水系。行政区划按剧本收录范围显示；城域示意不等同于精确历史县界。完整疆域以已收录的边界及沿革为准。</p><h3>保存旅途</h3><p>切换到后台自动暂停。{accountSaves?'存档保存在当前登录账号下，注销账号会删除存档。你也可以导出文件留作备份。':'存档保存在当前浏览器，定期导出可防止清理浏览器数据后丢失进度。'}</p><a href={import.meta.env.BASE_URL+'THIRD_PARTY_NOTICES.md'} target="_blank" rel="noreferrer">数据来源与许可 ↗</a></div>}
       {modal==='map-person'&&<MapPersonPanel key={mapPeople.join('|')} world={game.world} ids={mapPeople} tab={personTab} onTab={setPersonTab} pending={game.pending} send={command=>game.send({type:'command',command})} onSelect={id=>{setMapPeople(items=>[id,...items.filter(p=>p!==id)]);setPersonTab('overview');}} onPerson={id=>openPerson(id)} onDiplomacy={r=>openDiplomacy(r)} onEconomy={()=>openModal('wealth',true)} onCourtPerson={id=>openCourt('person',id)} onStaff={id=>openRetinue(id,true)} onEstate={()=>openModal('estate',true)} onLocate={()=>focus('player')} onCity={id=>chooseCity(id,true)}/>}
@@ -212,7 +209,7 @@ export function App(){
 
 
     {pauseDialog}
-    {modal==='saves'&&deleteSlot&&<ConfirmAction title={'删除「'+saveLabel(deleteSlot)+'」？'} detail='此操作无法撤销，当前游玩进度不会被删除。' confirmLabel='确认删除' danger pending={game.pending} onCancel={()=>setDeleteSlot(null)} onConfirm={()=>{if(game.pending)return;game.send({type:'delete-save',slot:deleteSlot});setDeleteSlot(null);}}/>}
+
     {game.notice&&<div className={`toast ${game.notice.error?'is-error':''}`} role={game.notice.error?'alert':'status'}><span>{game.notice.text}</span><button aria-label="关闭提示" onClick={game.dismiss}><Icon name="close" size={16}/></button></div>}
 
   </main></AudienceDeferContext.Provider></RealmNavigation.Provider>;

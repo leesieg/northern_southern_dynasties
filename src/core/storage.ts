@@ -39,11 +39,15 @@ async function readRecords(): Promise<SaveRecord[]> {
     const tx = db.transaction('saves','readonly');
     const request = tx.objectStore('saves').getAll();
     tx.oncomplete = () => { db.close(); resolve(request.result as SaveRecord[]); };
-    tx.onerror = () => { db.close(); reject(new Error('读取本地存档失败。')); };
+    tx.onerror = tx.onabort = () => { db.close(); reject(new Error('读取本地存档失败。')); };
   });
 }
+export function latestSaveInfo(slots:SaveInfo[]):SaveInfo|undefined{
+  const ordered=[...slots].sort((a,b)=>b.savedAt-a.savedAt);
+  return ordered.find(s=>s.id!=='previous-run')??ordered[0];
+}
 export async function listSaves(): Promise<SaveInfo[]> {
-  if (REMOTE) return (await remote()).saves??[];
+  if (REMOTE) return [...((await remote()).saves??[])].sort((a,b)=>b.savedAt-a.savedAt);
   return (await readRecords()).sort((a,b)=>b.savedAt-a.savedAt).map(({id,savedAt,day,characterName,scriptId,mode})=>({id,savedAt,day,characterName,mode,scriptId:scriptId??DEFAULT_SCRIPT}));
 }
 export async function saveWorld(world: World, auto = false, backup?:'previous-run'): Promise<number> {
@@ -71,11 +75,12 @@ export async function saveWorld(world: World, auto = false, backup?:'previous-ru
 }
 export async function loadWorld(slot?: string): Promise<World | null> {
   if (REMOTE) {
-    const result=await remote(slot?'/'+encodeURIComponent(slot):'/latest');
+    const id=slot??latestSaveInfo(await listSaves())?.id;if(!id)return null;
+    const result=await remote('/'+encodeURIComponent(id));
     return result.data?parseWorld(result.data):null;
   }
   const records = (await readRecords()).sort((a,b)=>b.savedAt-a.savedAt);
-  const record = slot ? records.find(r=>r.id === slot) : records[0];
+  const record = records.find(r=>r.id===(slot??latestSaveInfo(records)?.id));
   return record ? parseWorld(record.data) : null;
 }
 

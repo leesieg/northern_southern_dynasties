@@ -2,7 +2,7 @@ import {commandReceived,recordCommand} from '../core/requestReceipts';
 import {appointmentPauses} from '../core/appointmentCycle';
 import {pauseSnapshot,pauseEvents,economyPauses,militaryPauses,type PauseEvent} from '../core/pauseEvents';
 import { act, advance, newWorld, newCampaignWorld } from '../core/world';
-import { deleteSave, loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
+import { deleteSave, latestSaveInfo, loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
 import { parseWorld, serializeWorld } from '../core/save';
 import type { Reply, Request, SaveInfo } from '../core/types';
 
@@ -29,17 +29,17 @@ self.onmessage = (event: MessageEvent<Request>) => {
     const previousPause=pauseSnapshot(world);
     try {
       if (request.type === 'init') {
-        try { await prepareStorage();slots = await listSaves(); world = await loadWorld() ?? newWorld(); lastSaved = slots[0]?.savedAt ?? null;hasCurrentWorld=true;initialized=true; }
-        catch (error) { notice(error instanceof Error ? error.message : '读取存档失败。',true); }
+        try { await prepareStorage();slots = await listSaves();initialized=true;const loaded=await loadWorld();world=loaded??newWorld();lastSaved=loaded?latestSaveInfo(slots)?.savedAt??null:null;hasCurrentWorld=!!loaded; }
+        catch (error) { notice((error instanceof Error ? error.message : '读取存档失败。')+(initialized?' 请在行记中选择其他存档或导入备份。':''),true); }
       } else if (!initialized) return;
       else if(request.type==='new'){
         speed=0;
         const next=newCampaignWorld(request.characterId,request.scriptId,request.mode);
         if(slots.length&&!hasCurrentWorld)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
-        if(slots.length)await saveWorld(world,false,'previous-run');
+        if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
         lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;slots=await listSaves();reply({type:'screen',page:'play'});
       }else if(request.type==='resume'){
-        const loaded=await loadWorld();if(!loaded)throw new Error('还没有存档，请开始新游戏。');world=loaded;hasCurrentWorld=true;speed=0;reply({type:'screen',page:'play'});
+        speed=0;const loaded=await loadWorld();if(!loaded)throw new Error('还没有存档，请开始新游戏。');world=loaded;hasCurrentWorld=true;slots=await listSaves();lastSaved=latestSaveInfo(slots)?.savedAt??null;speed=0;reply({type:'screen',page:'play'});
       }else if(request.type==='menu'){speed=0;await save();reply({type:'screen',page:'menu'});}
       else if(request.type==='background'){if(speed)paused([{id:`${world.day}:background`,kind:'background',title:'暂歇片刻',body:'你离开了游戏页面，时间已暂停。回来后可继续安排事务。'}]);}
       else if (request.type === 'speed') speed = [0,1,3,7].includes(request.speed) ? request.speed : 0;
@@ -51,19 +51,19 @@ self.onmessage = (event: MessageEvent<Request>) => {
         if(request.command.type==='travel'||request.command.type==='mobility'&&request.command.action==='plan'&&world.people[0].journey)speed=1;
       }
       else if (request.type === 'save') { await save(); notice('当前行程已保存。'); }
-      else if(request.type==='delete-save'){speed=0;await deleteSave(request.slot);slots=await listSaves();lastSaved=slots[0]?.savedAt??null;notice('存档已删除；当前游玩进度未改变，后续保存将生成新存档。');}
+      else if(request.type==='delete-save'){speed=0;await deleteSave(request.slot);slots=await listSaves();if(!slots.some(s=>s.savedAt===lastSaved))lastSaved=null;notice('存档已删除；当前游玩进度未改变，后续保存将生成新存档。');}
       else if (request.type === 'load') {
-        const loaded = await loadWorld(request.slot);
+        speed=0;const loaded = await loadWorld(request.slot);
         if (!loaded) throw new Error('没有找到这个存档。');
-        if(hasCurrentWorld)await save(true);
-        lastSaved=await saveWorld(loaded);world = loaded;hasCurrentWorld=true;speed = 0;slots=await listSaves(); notice('已恢复存档，原进度保留在自动存档中。');reply({type:'screen',page:'play'});
+        if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
+        lastSaved=await saveWorld(loaded);world = loaded;hasCurrentWorld=true;speed = 0;slots=await listSaves(); notice('已恢复存档，原进度保留在切换前备份中。');reply({type:'screen',page:'play'});
       } else if (request.type === 'export') reply({type:'export',text:serializeWorld(world)});
       else if (request.type === 'import') {
-        const imported = parseWorld(request.text);
-        if(hasCurrentWorld)await save(true);
-        lastSaved=await saveWorld(imported);world = imported;hasCurrentWorld=true;speed = 0;slots=await listSaves(); notice('导入成功，原进度保留在自动存档中。');reply({type:'screen',page:'play'});
+        speed=0;const imported = parseWorld(request.text);
+        if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
+        lastSaved=await saveWorld(imported);world = imported;hasCurrentWorld=true;speed = 0;slots=await listSaves(); notice('导入成功，原进度保留在切换前备份中。');reply({type:'screen',page:'play'});
       }
-    } catch (error) { notice(error instanceof Error ? error.message : '操作失败。',true); }
+    } catch (error) { let message=error instanceof Error ? error.message : '操作失败。';if(['new','load','import'].includes(request.type)){try{slots=await listSaves();}catch{message+=' 存档列表未能刷新，请重试。';}}notice(message,true); }
     finally { if(['init','load','import','resume'].includes(request.type))paused([...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='speed'&&request.speed>0)paused([...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish(); }
   });
 };

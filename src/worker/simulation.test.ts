@@ -218,3 +218,24 @@ describe('生命状态的 Worker 持久化',()=>{
 it('同一操作编号在保存恢复后不重复扣款，保存失败后可以用原编号重试',async()=>{await request({type:'init'});const start=await request({type:'new',characterId:'xiao-yan',mode:'sandbox'}),key={session:'receipt-test-session',sequence:1},command={type:'relationship',action:'gift',target:'xiao-gang'} as const;
  const fail=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});expect((await request({type:'command',key,command})).world).toEqual(start.world);fail.mockRestore();const first=await request({type:'command',key,command});expect(first.world.people[0].coins).toBe(start.world.people[0].coins-30);expect((await request({type:'command',key,command})).world).toEqual(first.world);await request({type:'load',slot:'auto'});expect((await request({type:'command',key,command})).world).toEqual(first.world);
 });
+
+it('save recovery keeps switch backups outside the automatic rotation',async()=>{
+ await request({type:'init'});await request({type:'new'});await request({type:'step'});
+ await request({type:'load',slot:'manual'});
+ for(let i=0;i<4;i++)await request({type:'step'});
+ const {loadWorld}=await import('../core/storage');expect((await loadWorld('previous-run'))?.day).toBe(1);
+});
+it('save recovery can load an older slot after the newest stored data is corrupt',async()=>{
+ const {saveWorld}=await import('../core/storage'),{newWorld}=await import('../core/world');
+ await saveWorld(newWorld(),true);await saveWorld(newWorld());
+ await new Promise<void>((resolve,reject)=>{const open=indexedDB.open('fynbc-world-v1',1);open.onsuccess=()=>{const db=open.result,tx=db.transaction('saves','readwrite'),store=tx.objectStore('saves'),get=store.get('manual');get.onsuccess=()=>store.put({...get.result,data:'broken'});tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>{db.close();reject(tx.error);};};});
+ const initial=await request({type:'init'});expect(initial.slots).toHaveLength(2);expect(replies.some(r=>r.type==='notice'&&r.error)).toBe(true);
+ replies=[];const restored=await request({type:'load',slot:'auto-1'});expect(restored.world.day).toBe(0);expect(replies.some(r=>r.type==='screen'&&r.page==='play')).toBe(true);expect(restored.slots.some(s=>s.id==='previous-run')).toBe(false);
+});
+it('save recovery leaves the running world intact when switching fails to persist',async()=>{
+ await request({type:'init'});await request({type:'new'});const before=await request({type:'step'});
+ const put=IDBObjectStore.prototype.put;let writes=0;
+ const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementation(function(this:IDBObjectStore,...args:Parameters<typeof put>){if(++writes===2)throw new DOMException('full','QuotaExceededError');return put.apply(this,args);});
+ const failed=await request({type:'load',slot:'manual'});fault.mockRestore();expect(failed.world).toEqual(before.world);expect(failed.speed).toBe(0);
+ const {loadWorld}=await import('../core/storage');expect((await loadWorld('previous-run'))?.day).toBe(before.world.day);expect((await loadWorld())?.day).toBe(before.world.day);
+});

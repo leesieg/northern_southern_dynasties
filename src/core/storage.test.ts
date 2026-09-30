@@ -23,3 +23,10 @@ describe('transactional local saves',()=>{
     expect((await loadWorld('manual'))?.day).toBe(0);
   });
 });
+
+describe('recovery slot selection',()=>{
+ it('continues the latest playable save even when a switch backup is newer',async()=>{
+  const w=newWorld();advance(w,4);await saveWorld(w);advance(w,3);await saveWorld(w,false,'previous-run');
+  expect((await loadWorld())?.day).toBe(4);expect((await loadWorld('previous-run'))?.day).toBe(7);
+ });
+});
