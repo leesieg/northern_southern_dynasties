@@ -16,7 +16,6 @@ import type { Request,SaveInfo,World } from '../core/types';
 import './gameEntry.css';
 import './entryRefinement.css';
 import './campaignSelection.css';
-import './campaignReference.css';
 import {SaveBrowser} from './SaveBrowser';
 import {latestSaveInfo} from '../core/storage';
 const accountSaves=import.meta.env.BASE_URL.startsWith('/games/fengyun-nanbeichao/');

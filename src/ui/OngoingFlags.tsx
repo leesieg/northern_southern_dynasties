@@ -22,7 +22,7 @@ function ongoingClock(item:OngoingItem){return item.days===null?item.clock==='es
 export function OngoingItemsDialog({title,icon,items,onClose,onOpen}:{title:string;icon:ArtName;items:OngoingItem[];onClose:()=>void;onOpen:(item:OngoingItem)=>void}){
  const ref=useRef<HTMLDialogElement>(null);
  useEffect(()=>{const dialog=ref.current,previous=document.activeElement instanceof HTMLElement?document.activeElement:null;if(!dialog)return;dialog.showModal();return()=>{if(dialog.open)dialog.close();if(previous?.isConnected)previous.focus();};},[]);
- return createPortal(<dialog ref={ref} className="ongoing-group-dialog" aria-label={title} onCancel={event=>{event.preventDefault();onClose();}} onKeyDown={event=>event.stopPropagation()}>
+ return createPortal(<dialog ref={ref} className="ongoing-group-dialog paper-dialog" aria-label={title} onCancel={event=>{event.preventDefault();onClose();}} onKeyDown={event=>event.stopPropagation()}>
   <header><ArtIcon name={icon} size={30}/><div><h2>{title}</h2><small>{items.length} 项进行中</small></div><button autoFocus aria-label="关闭事务列表" onClick={onClose}>×</button></header>
   <div className="ongoing-group-list">{items.map(item=><article key={item.id}><div className="ongoing-group-item-main"><strong>{item.title}</strong><small>{item.status}</small></div><span className="ongoing-group-clock">{ongoingClock(item)}</span>{item.progress!==null&&<progress max={1} value={item.progress} aria-label={item.title+'进度'}/>}<div className="ongoing-group-actions"><button aria-label={'前往'+item.title+'详情'} onClick={()=>{onClose();onOpen(item);}}>查看详情</button></div></article>)}</div>
  </dialog>,document.body);

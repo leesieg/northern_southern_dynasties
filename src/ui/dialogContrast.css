@@ -1,0 +1,23 @@
+/* Explicit ink ownership: paper surfaces, dark inset panels and controls never inherit the opposite ink. */
+dialog.paper-dialog{--dialog-ink:#30382d;--dialog-muted:#525c49;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(p,small,span,strong,b,label,legend,dt,dd,h3,h4){color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(.action-summary,.person-selection-description,.person-selection-tools,.single-choice-card,.construction-plan-card,.muster-service-card,.military-preview-rows article,.military-recruit-site,.person-option,.lifestyle-focus-choice fieldset){--dialog-ink:#30382d;--dialog-muted:#525c49;color:var(--dialog-ink);background:#eeebe0}
+dialog.paper-dialog.paper-dialog :is(.single-choice-card,.construction-plan-card,.muster-service-card,.person-option):is(.is-selected,[aria-pressed=true]){background:#d7d1b8;--dialog-ink:#263523;border-color:#93783d}
+dialog.paper-dialog.paper-dialog :is(.military-record,.war-objective,.war-assessment,.war-settlement-facts,.army-supply-status,.muster-order,.single-choice-submit,.service-commission-recommended,.lifestyle-node-detail,.position-seat,.realm-flag,.diplomacy-tooltip,.ongoing-group-list article),dialog.paper-dialog .service-commission>section{--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(button,select,input:not([type=radio]):not([type=checkbox]),textarea){--dialog-ink:#f1ead7;--dialog-muted:#d0c7ac;color:var(--dialog-ink);background-color:#29382e}
+dialog.paper-dialog.paper-dialog :is(input,textarea)::placeholder{color:#c4c8b6;opacity:1}
+dialog.paper-dialog.paper-dialog button.person-option{--dialog-ink:#30382d;background:#eeebe0}
+dialog.paper-dialog.paper-dialog button.person-option[aria-pressed=true]{background:#d7d1b8}
+dialog.paper-dialog.paper-dialog :is(.service-warning,.military-warning,.single-choice-reason,.person-option-reason){--dialog-ink:#893c2b;color:var(--dialog-ink);background:#f0dfd1;padding:4px 7px}
+dialog.paper-dialog.paper-dialog :is(.position-seat,.military-record,.lifestyle-node-detail) :is(.service-warning,.military-warning){--dialog-ink:#ffccad;background:#523b2e}
+dialog.paper-dialog.paper-dialog >header :is(h2,h3),dialog.paper-dialog.paper-dialog >h2,dialog.paper-dialog.pause-dialog header h2{--dialog-ink:#f4ecd9;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog >footer{--dialog-ink:#30382d;color:var(--dialog-ink);background:#d5d1c3}
+dialog.paper-dialog.paper-dialog button:disabled{opacity:.7;filter:saturate(.45)}
+dialog.paper-dialog.paper-dialog button.danger{--dialog-ink:#fff0dd;background:#683e30}
+dialog.paper-dialog.paper-dialog .art-resource-value>b{color:var(--dialog-ink);text-shadow:none}
+/* Scene UI retains dark inset panels; tree buttons float on the painting. */
+dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-arbor .lifestyle-arbor-scene .lifestyle-tree-node{--dialog-ink:#303c32;background:transparent;color:var(--dialog-ink);border:0}
+dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-tree-node[aria-pressed=true] strong{--dialog-ink:#f3ebd8;background:#2d372f}
+dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail{--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9}
+dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-branches button[aria-pressed=true]{--dialog-ink:#283925;background:#d7d1b8;border-color:#947b48}
+dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail footer span{color:#d9cfb3}

@@ -1,4 +1,3 @@
-import './armyFormation.css';
 import {useState,type ReactNode} from 'react';
 import type {Army} from '../core/realm';
 import type {World} from '../core/types';
