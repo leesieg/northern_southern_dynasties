@@ -1,3 +1,4 @@
+import {SingleChoiceCards} from './SingleChoiceCards';
 import {ActionDialog} from './ActionDialog';
 import {economyCommandReason,type PersonalEconomyCommand} from '../core/personalEconomyAdapter';
 import {nextMonthStart} from '../core/calendar';
@@ -15,6 +16,7 @@ import {EconomyAction} from './EconomyAction';
 import './personalEconomy.css';
 type Props={world:World;pending:boolean;send:(c:GameCommand)=>void};
 export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEstate?:()=>void}){
+ const [livingOpen,setLivingOpen]=useState(false);
  const [section,setSection]=useState<'overview'|'household'|'business'|'accounts'>('overview'),[transfer,setTransfer]=useState<{kind:'donate'|'embezzle';account:string}|null>(null);
  if(world.mode!=='sandbox'||!world.characterId||!world.realm)return null;
  const p=economyPresentation(world),b=p.view.budget;
@@ -33,11 +35,11 @@ export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEsta
  {world.chronicle.filter(e=>e.person==='player'&&e.text.startsWith('家产收入结算')).slice(-1).map(e=><p className="private-receipt" key={e.day}>第 {e.day} 日 · {e.text}</p>)}
  <small>官俸按实际任职与公库余款发放；事业须承接并完成合同，收入归个人。</small>
  </>}
- {section==='household'&&<><div className="economy-grid">{(Object.keys(livingStandards) as LivingStandard[]).map(standard=><EconomyAction key={standard} {...props} label={`${livingStandards[standard].name} · ${livingStandards[standard].monthly} 钱/月`} icon="estate" active={(b?.standard??'modest')===standard} summary={`每期缓解压力 ${livingStandards[standard].relief}；欠费降为朴素度日并增压。`} hint={`每期支出 ${livingStandards[standard].monthly} 钱，缓解压力 ${livingStandards[standard].relief}；不足支付时降为朴素度日并增加压力。`} command={{type:'economy',action:'living',standard}}/>)}</div>{b&&b.lastBill>0&&<small>最近一期：应付 {b.lastBill} ／ 实付 {b.lastPaid} 钱</small>}<article><h4><ArtIcon name="diligent" size={24}/>延师研习</h4><p>每三期管理 +1，最多 +3；当前 {b?.courses??0}/9 期。</p><EconomyAction {...props} label="研习 · 30 钱／30 日" icon="diligent" consequence="先付私财 30 钱，驻留学习 30 日完成一期；每三期管理 +1，最多 +3。公务或出行顺延，久延未成则费用不退。" command={{type:'economy',action:'programme',kind:'study'}}/>{p.view.programmes.filter(a=>a.status==='active').map(a=><small key={a.id}>{a.kind==='study'?'研习':'宴请'}余 {Math.max(0,a.due-world.day)} 日；公务、出行期间顺延</small>)}</article><ol className="economy-records">{p.view.entries.slice(-12).reverse().map(e=><li key={e.id}><small>第 {e.day} 日</small> {e.reason} <b>{e.delta>0?'+':''}{e.delta||''}{e.delta?' 钱':''}</b></li>)}</ol></>}
+ {section==='household'&&<><article className="living-summary"><ArtIcon name="estate" size={36}/><div><h4>{livingStandards[b?.standard??'modest'].name}</h4><p>每月 {living} 钱 · 缓解压力 {livingStandards[b?.standard??'modest'].relief}</p></div><button onClick={()=>setLivingOpen(true)}>调整持家</button></article>{b&&b.lastBill>0&&<small>最近一期：应付 {b.lastBill} ／ 实付 {b.lastPaid} 钱</small>}<article><h4><ArtIcon name="diligent" size={24}/>延师研习</h4><p>每三期管理 +1，最多 +3；当前 {b?.courses??0}/9 期。</p><EconomyAction {...props} label="研习 · 30 钱／30 日" icon="diligent" consequence="先付私财 30 钱，驻留学习 30 日完成一期；每三期管理 +1，最多 +3。公务或出行顺延，久延未成则费用不退。" command={{type:'economy',action:'programme',kind:'study'}}/>{p.view.programmes.filter(a=>a.status==='active').map(a=><small key={a.id}>{a.kind==='study'?'研习':'宴请'}余 {Math.max(0,a.due-world.day)} 日；公务、出行期间顺延</small>)}</article><ol className="economy-records">{p.view.entries.slice(-12).reverse().map(e=><li key={e.id}><small>第 {e.day} 日</small> {e.reason} <b>{e.delta>0?'+':''}{e.delta||''}{e.delta?' 钱':''}</b></li>)}</ol></>}
  {section==='business'&&<EnterprisePanel {...props}/>}
  {section==='accounts'&&<>{obligations.length>0&&<section className="economy-section"><h4><ArtIcon name="coins" size={24}/>债权与负担</h4>{obligations.map(d=><p key={d.id}>{d.to==='person:'+world.characterId?'待收':'待付'} {d.remaining} 钱 · {d.reason} · 下期余 {Math.max(0,d.next-world.day)} 日</p>)}</section>}<article><h4><ArtIcon name="generous" size={24}/>捐输</h4><button onClick={()=>setTransfer({kind:'donate',account:p.donations[0]?.id??''})}><ArtIcon name="generous" size={24}/>选择公库与钱数</button><p>私财等额转入所选公库，不增加功绩。</p></article>{p.managed.map(a=><article key={a.id}><h4>{a.name}</h4><Resource name="coins" value={a.balance} label="可用公款"/><button className="danger" onClick={()=>setTransfer({kind:'embezzle',account:a.id})}><ArtIcon name="wary" size={24}/>侵吞公款…</button></article>)}{p.view.ownMisconduct.length>0&&<article><h4>未清责任</h4>{p.view.ownMisconduct.map(m=><p key={m.id}>第 {m.day} 日 · 侵吞 {m.amount} ／退赔 {m.recovered} 钱</p>)}</article>}</>}
 
- </div>{transfer&&<EconomyTransferDialog key={transfer.kind+transfer.account} world={world} pending={pending} send={send} kind={transfer.kind} initialAccount={transfer.account} onClose={()=>setTransfer(null)}/>}</section>;
+ </div>{livingOpen&&<LivingStandardDialog {...props} onClose={()=>setLivingOpen(false)}/>} {transfer&&<EconomyTransferDialog key={transfer.kind+transfer.account} world={world} pending={pending} send={send} kind={transfer.kind} initialAccount={transfer.account} onClose={()=>setTransfer(null)}/>}</section>;
 }
 export function PrivateBanquet({target,...props}:Props&{target:string}){return props.world.economy?<EconomyAction {...props} label="私人宴请 · 40 钱／3 日" icon="gregarious" consequence="先付私财 40 钱；与对方同城相聚三日后，好感 +6（慷慨者 +10），本人压力 −5（节俭者 +5）。异地或公务顺延，久延未成费用不退。" command={{type:'economy',action:'programme',kind:'banquet',target}}/>:null;}
 
@@ -52,5 +54,17 @@ function EconomyTransferDialog({world,pending,send,kind,initialAccount,onClose}:
   <div className="economy-parameters"><label>公库<select value={account} onChange={e=>setAccount(e.target.value)}>{!selected&&<option value={account}>请选择可用公库</option>}{accounts.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label><label>钱数<input type="number" min={10} max={200} step={5} value={Number.isFinite(amount)?amount:''} onChange={e=>setAmount(e.target.valueAsNumber)}/></label></div>
   <p>{donation?'来源：个人现钱 '+world.people[0].coins+' 钱':'来源：'+(selected?.name??'未选择公库')} → {donation?selected?.name??'未选择公库':'个人现钱'}</p>
   {reason&&<p role="status">{reason}</p>}
+ </ActionDialog>;
+}
+
+function LivingStandardDialog({world,pending,send,onClose}:Props&{onClose:()=>void}){
+ const current=economyPresentation(world).view.budget?.standard??'modest';
+ const [standard,setStandard]=useState<LivingStandard>(current);
+ const command:PersonalEconomyCommand={type:'economy',action:'living',standard};
+ const reason=economyCommandReason(world,command),chosen=livingStandards[standard];
+ return <ActionDialog title="调整持家" onClose={onClose} actions={<button className="primary" disabled={pending||!!reason||standard===current} onClick={()=>{if(pending||standard===current||economyCommandReason(world,command))return;send(command);onClose();}}>确认 · {chosen.name}</button>}>
+  <p>支出来源：个人现钱 {world.people[0].coins} 钱。当前采用{livingStandards[current].name}；确认后按新标准结算后续账期。</p>
+  <SingleChoiceCards label="持家方案" value={standard} onChange={setStandard} disabled={pending} options={(Object.keys(livingStandards) as LivingStandard[]).map(id=>({id,title:livingStandards[id].name,description:`每月 ${livingStandards[id].monthly} 钱 · 缓解压力 ${livingStandards[id].relief}`,detail:'欠费时降为朴素度日并增加压力。'}))}/>
+  <p role="status">{reason||`已选${chosen.name}：每月从私财支付 ${chosen.monthly} 钱。`}</p>
  </ActionDialog>;
 }

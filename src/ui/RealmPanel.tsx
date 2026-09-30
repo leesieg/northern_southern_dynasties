@@ -1,3 +1,4 @@
+import {CommandButton} from './CommandButton';
 import {DetailTabs} from './DetailTabs';
 import type {RealmCommand} from '../core/realm';
 import {RealmIdentitySummary,RealmOverview} from './RealmOverview';
@@ -13,7 +14,7 @@ export type RealmTab='overview'|'duties'|'council';
 export function RealmPanel({world:w,pending,send,onCity,onTerritory,onPerson,onCourt,tab,onTab,serviceFocus}:{serviceFocus?:{id?:number;site?:string;seq:number;view?:'duties'};world:World;pending:boolean;send:(c:GameCommand)=>void;onCity:(id:string)=>void;onTerritory:(id:string)=>void;onPerson:(id:string)=>void;onCourt:(tab?:'central'|'person'|'local'|'situation')=>void;tab:RealmTab;onTab:(tab:RealmTab)=>void}){
  const s=w.realm;if(!s)return <p>政务用于新建的历史沙盒。旧教学局保留原规则。</p>;
  const r=playerRealm(w),grainFirst=r==='west'&&serviceFocus?.view==='duties';
- const action=(c:RealmCommand,label:string)=>{const reason=realmReason(w,c);return <div className="realm-action"><button disabled={pending||!!reason} onClick={()=>send(c)}>{label}</button>{reason&&<small>{reason}</small>}</div>;};
+ const action=(c:RealmCommand,label:string)=>{const reason=realmReason(w,c);return <div className="realm-action"><CommandButton label={label} icon="influence" pending={pending} reason={reason} hint={label} onClick={()=>{if(!pending&&!realmReason(w,c))send(c);}}/>{reason&&<small>{reason}</small>}</div>;};
  const grainDuty=r==='west'?<DutiesPanel world={w} pending={pending} send={send} onPerson={onPerson}/>:null;
  return <div className="realm-panel"><RealmIdentitySummary world={w} onPerson={onPerson} onCity={onCity} onCourt={onCourt}/>
   {s.event&&<section className="realm-event" role="status"><small>待决事务 · {siteById[s.event.site].name} · 时间已暂停</small><h3>{eventDefinitions[s.event.kind].title}</h3><p>{eventDefinitions[s.event.kind].body}</p><p>{eventDefinitions[s.event.kind].effect}</p><div className="realm-actions">{action({type:'realm',action:'event',choice:'fund'},'拨付处理 · '+eventDefinitions[s.event.kind].cost)}{action({type:'realm',action:'event',choice:'decline'},'暂缓处理')}</div></section>}

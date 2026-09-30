@@ -58,3 +58,37 @@
 .focused-shell .army-unit{grid-template-columns:32px minmax(0,1fr) 32px;border-radius:2px;background:linear-gradient(110deg,#24372b,#14261d);border-color:#a68b5a88}
 .focused-shell .army-unit-actions button{display:flex;align-items:center;justify-content:center;min-width:32px;width:32px;min-height:32px;height:32px;padding:4px;border-radius:50%;border:1px solid #a48a5666;background:radial-gradient(circle at 35% 20%,#354932,#14271d)}
 .focused-shell .army-dock .military-metrics{gap:6px}.focused-shell .army-dock .art-resource{padding:0;gap:3px}
+
+/* Character ledger and chronicle share a compact, framed 88px header. */
+.focused-shell{--campaign-header:88px}
+.focused-shell .sovereign-strip{width:440px;height:var(--campaign-header);box-sizing:border-box;padding:8px 12px 8px 8px;gap:12px;border-radius:0;border-bottom:3px double #a98e59}
+.player-hud-identity{display:flex;align-items:center;gap:7px;flex:0 0 132px;min-width:0;padding:0;border:0;background:none;color:#ebd5a7;text-align:left}
+.player-hud-identity .painted-portrait.compact{flex:0 0 54px;width:54px;height:54px;aspect-ratio:1;margin:0;overflow:hidden;border:1px solid #c2a16a;box-shadow:0 0 0 3px #101e18,0 0 0 4px #8e784644}
+.player-hud-identity>span{display:grid;gap:5px;min-width:0}.player-hud-identity strong{font:16px var(--serif)}.player-hud-identity small{font:10px var(--sans);color:#bbb9a0}
+.focused-shell .sovereign-strip .realm-resources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:1;gap:5px 9px;min-width:0}
+.focused-shell .sovereign-strip .art-resource{border:0;padding:0;gap:3px}.focused-shell .sovereign-strip .art-resource-value>b{font-size:14px}.focused-shell .sovereign-strip .art-icon{width:23px!important;height:23px!important}.sovereign-strip .art-resource-value{display:flex;flex-wrap:wrap;align-items:baseline;gap:1px 3px}.sovereign-strip .art-resource-value>small:not(.art-unit){flex-basis:100%;font-size:9px}.focused-shell .sovereign-strip .art-unit{display:inline;font-size:9px}
+.focused-shell .chronicle-control{height:var(--campaign-header);box-sizing:border-box;width:378px;padding:8px 10px;gap:9px;border-radius:0;border-bottom:3px double #a98e59}
+.focused-shell .chronicle-date{min-width:0;flex:1;gap:8px}.chronicle-date>div{flex-wrap:wrap;gap:3px 8px}.chronicle-date>strong{font-size:16px}.chronicle-date [role=status]{line-height:1.4}
+.focused-shell .chronicle-control .clock-play{width:52px;height:60px;flex:0 0 52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:50% 50% 3px 3px;border:1px solid #bc9d61;box-shadow:inset 0 0 0 3px #10231c,0 2px 5px #0005;padding:7px}
+.clock-play small{font:11px var(--serif)}.focused-shell .chronicle-control .clock-play.is-running{background:radial-gradient(circle at 35% 20%,#78673e,#263b29)}
+.focused-shell .speed-dial{grid-template-columns:repeat(3,28px);gap:4px}.focused-shell .chronicle-control .tally-speed{height:30px;padding:0;font:13px Georgia,serif}.focused-shell .chronicle-control .clock-step{height:26px;min-height:26px;border:1px solid #9f8a5566;font:11px var(--serif);background:#26392a;padding:3px}
+.focused-shell .clock-utilities{gap:5px}.focused-shell .clock-utilities button{width:28px;height:28px}
+.focused-shell .ongoing-flags{left:450px;right:388px}
+.focused-shell :is(.place-panel,.utility-drawer-host,.character-panel){margin-top:var(--campaign-header);height:calc(100% - var(--campaign-header))}
+.focused-shell .army-dock{top:calc(var(--campaign-header) + 10px);max-height:calc(100dvh - var(--campaign-header) - 110px)}
+/* Narrow bronze spine, corner joints and inset seals replace the heavy rounded tube. */
+.focused-shell .command-rail{margin-top:var(--campaign-header);max-height:calc(100% - var(--campaign-header));border-radius:0 0 2px 0;border-right:3px double #aa8d57;border-bottom:3px double #aa8d57;padding:9px 5px;gap:5px;background:linear-gradient(90deg,#101d18f5,#1d3026f5);box-shadow:inset -5px 0 #0b181c80,3px 2px 10px #08170e55}
+.command-rail .rail-emblem::before{display:none}.focused-shell .command-rail .rail-emblem{border-radius:4px 14px 4px 14px;border-width:1px;box-shadow:inset 0 0 0 3px #13251d,inset 0 0 0 4px #b3975b44,0 2px 4px #0005}
+.focused-shell .command-rail button{position:relative;font-size:11px;letter-spacing:2px}.focused-shell .command-rail button[aria-expanded=true]::before{content:'';position:absolute;left:-5px;top:9px;bottom:12px;width:2px;background:#e3c285}.command-rail button[aria-expanded=true] .rail-emblem::after{right:-5px;width:5px;height:5px}
+/* Bottom-right controls intentionally have no hover or native tooltips. */
+.focused-shell .map-command-dock .zoom-tools .art-map-button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;width:44px;height:48px;padding:3px}.art-map-button small{font:9px var(--sans);color:#e0d1ad}.focused-shell .map-command-dock .zoom-tools{align-items:center}
+.map-option{display:grid;gap:4px}.focused-shell .map-options .map-option>button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:36px;padding:7px 10px}.map-option>small{font:10px/1.5 var(--sans);color:#bbbda7;padding-inline:4px}.focused-shell .map-command-dock>.map-options{max-height:calc(100dvh - 245px);overflow-y:auto}
+/* Detail pages retain individual content while sharing military-page spacing and hierarchy. */
+.focused-shell :is(.left-utility-drawer,.place-panel) :is(.person-health,.person-travel,.relationship-summary,.social-panel>article,.government-panel>article,.realm-budget,.realm-war,.office-card,.family-standing,.service-profile,.building-row,.economy-page>article,.diplomacy-fact){border-radius:2px;border:1px solid #aa925747;background:linear-gradient(110deg,#25372b,#1c2e25);padding:11px 12px;box-shadow:inset 2px 0 #b79a5320}
+.focused-shell :is(.left-utility-drawer,.place-panel) :is(.detail-tabs,.city-icon-tabs){border-bottom:1px solid #ac915b55;gap:4px}
+.focused-shell :is(.left-utility-drawer,.place-panel) :is(.detail-tabs,.city-icon-tabs)>button{min-height:46px;font-size:12px}
+.focused-shell :is(.economy-page,.local-budget-row,.local-office-options) button:not(.realm-badge-link){min-height:36px;border-radius:2px;border:1px solid #a68c595c;background:linear-gradient(#30422f,#1b3024);color:#e6d6b4;padding:6px 10px}
+.living-summary{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:center}.living-summary h4,.living-summary p{margin:0}.living-summary p{font-size:12px;margin-top:5px;color:#c5c7ae}
+@media(max-width:1100px){.focused-shell .ongoing-flags{top:var(--campaign-header);left:calc(var(--rail-width) + 8px);right:340px}}
+@media(max-width:850px){.focused-shell{--campaign-header:112px}.focused-shell .sovereign-strip{width:49%;gap:8px;padding:6px}.player-hud-identity{flex-basis:65px;flex-direction:column;gap:3px;align-items:flex-start}.player-hud-identity .painted-portrait.compact{width:42px;height:42px;flex-basis:42px}.player-hud-identity strong{font-size:13px}.player-hud-identity small{font-size:9px}.focused-shell .sovereign-strip .realm-resources{gap:8px 4px}.focused-shell .sovereign-strip .art-icon{width:18px!important;height:18px!important}.focused-shell .chronicle-control{width:50%;gap:6px;padding:6px}.chronicle-date>strong{white-space:normal}.focused-shell .chronicle-control .clock-play{width:42px;flex-basis:42px}.focused-shell .speed-dial{grid-template-columns:repeat(3,25px)}}
+.focused-shell .chronicle-control .tally-speed{min-height:30px}.focused-shell .clock-utilities button{min-height:28px;padding:4px}
