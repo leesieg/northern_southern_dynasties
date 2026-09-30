@@ -16,6 +16,7 @@ export default function CityViewport({holding,day,name,capital,selected,onSelect
     let renderer:THREE.WebGLRenderer;
     try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'low-power'});}catch{setFailure('无法启用城市 3D 视图。请检查浏览器图形加速，营建列表仍可使用。');return;}
     setFailure('');
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
     renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     renderer.setClearColor(0x1c2a26,1);element.appendChild(renderer.domElement);
@@ -26,9 +27,9 @@ export default function CityViewport({holding,day,name,capital,selected,onSelect
     controls.target.set(0,.5,0);
     const reset=()=>{camera.position.set(24,26,30);controls.target.set(0,.5,0);controls.update();};
     reset();
-    scene.add(new THREE.HemisphereLight(0xf3e7cc,0x465b50,2.6));
-    const sun=new THREE.DirectionalLight(0xffe3ab,3.1);sun.position.set(-12,23,10);sun.castShadow=true;
-    sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-15,right:15,top:15,bottom:-15,near:1,far:65});sun.shadow.bias=-.001;scene.add(sun);
+    scene.add(new THREE.HemisphereLight(0xf4f2e9,0x7c8275,2.0));
+    const sun=new THREE.DirectionalLight(0xffedcf,2.7);sun.position.set(-12,23,10);sun.castShadow=true;
+    sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-15,right:15,top:15,bottom:-15,near:1,far:65});sun.shadow.bias=-.0003;sun.shadow.normalBias=.025;scene.add(sun);
     let model:THREE.Group|null=null,disposed=false,lost=false;
     const render=()=>{if(!disposed&&!lost)renderer.render(scene,camera);};
     controls.addEventListener('change',render);
