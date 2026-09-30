@@ -174,9 +174,8 @@ export function WorldMap(props:Props){
       if(lastTerritory!==p.territory||lastLevel!==p.territoryLevel){
         const selectedId=territoryNodes[p.territory].level==='city'?'':p.territory;
         for(const layer of ['hierarchy-selected','hierarchy-selected-edge'])map.setFilter(layer,['==',['get','id'],selectedId]);
-        map.setFilter('hierarchy-lines',['==',['get','level'],p.territoryLevel]);
+        for(const layer of ['hierarchy-seam','hierarchy-lines'])map.setFilter(layer,['==',['get','level'],p.territoryLevel]);
         for(const layer of ['territory-selected','territory-selected-shadow','territory-selected-edge','selected-ring'])map.setLayoutProperty(layer,'visibility',p.territoryLevel==='city'?'visible':'none');
-        map.setLayoutProperty('territory-border','visibility',['county','city'].includes(p.territoryLevel)?'visible':'none');
         lastTerritory=p.territory;lastLevel=p.territoryLevel;
       }
       if(lastEvent!==p.historyEvent){
@@ -248,14 +247,16 @@ export function WorldMap(props:Props){
       for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
       map.setPaintProperty('territory-fill','fill-opacity',p.mode==='diplomacy'?.55:0);
-      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:['interpolate',['linear'],['zoom'],3,.22,5,.16,8,.035]);
+      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:p.mode==='domains'?['interpolate',['linear'],['zoom'],3,.12,5,.06,8,.015]:['interpolate',['linear'],['zoom'],3,.22,5,.16,8,.035]);
+      // Domains already draw the chosen hierarchy: do not stack the city catchment grid over it.
+      map.setLayoutProperty('territory-border','visibility',p.mode!=='domains'&&['county','city'].includes(p.territoryLevel)?'visible':'none');
       if(lastMode!==p.mode){
         map.setLayoutProperty('prefecture-boundary','visibility','none');
-        map.setLayoutProperty('hierarchy-lines','visibility',p.mode==='domains'?'visible':'none');
+        for(const layer of ['hierarchy-seam','hierarchy-lines'])map.setLayoutProperty(layer,'visibility',p.mode==='domains'?'visible':'none');
         for(const id of POLITICAL_LAYERS)map.setLayoutProperty(id,'visibility',(p.mode==='political'||p.mode==='domains'||p.mode==='diplomacy')?'visible':'none');
         for(const id of ROAD_LAYERS)map.setLayoutProperty(id,'visibility',p.mode==='roads'?'visible':'none');
-        map.setPaintProperty('territory-tone','fill-opacity',p.mode==='domains'?.3:['interpolate',['linear'],['zoom'],4,0,6,.12,9,.04]);
-        map.setPaintProperty('territory-border','line-opacity',p.mode==='domains'?.7:['interpolate',['linear'],['zoom'],4,0,5,.45,8,.65]);
+        map.setPaintProperty('territory-tone','fill-opacity',p.mode==='domains'?0:['interpolate',['linear'],['zoom'],4,0,6,.12,9,.04]);
+        map.setPaintProperty('territory-border','line-opacity',p.mode==='domains'?0:['interpolate',['linear'],['zoom'],4,0,5,.45,8,.65]);
         lastMode=p.mode;
       }
       if(lastTilt!==p.tilted){
