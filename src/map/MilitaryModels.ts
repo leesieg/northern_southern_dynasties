@@ -1,6 +1,7 @@
 import {Group,Mesh,InstancedMesh,BoxGeometry,SphereGeometry,CapsuleGeometry,CylinderGeometry,TorusGeometry,LatheGeometry,PlaneGeometry,BufferGeometry,Float32BufferAttribute,Shape,ExtrudeGeometry,MeshStandardMaterial,MeshBasicMaterial,TextureLoader,CanvasTexture,SRGBColorSpace,DoubleSide,Matrix4,Vector2,Vector3,Color,type Material,type Texture} from 'three';
 import type {Army} from '../core/realm';
 import {armyHeraldry} from './ArmyHeraldry';
+import {militarySurfaceMaterial} from './militaryRendering';
 export type ArmyModelKind='foot'|'horse'|'siege';
 interface Actor {root:Group;legs:Group[];arms:Group[];cloak:Group}
 export interface MilitaryModel {root:Group;body:Group;detail:Group;camp:Group;banner:Group;actors:Actor[];horseLegs:Group[];lever?:Group;kind:ArmyModelKind;realm:Army['realm'];bannerName:string}
@@ -10,8 +11,8 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  const atlas=loader.load(import.meta.env.BASE_URL+'art/military/material-atlas.png',()=>{textures.forEach(t=>t.needsUpdate=true);repaint();},undefined,()=>warn('军队材质未载入，暂用基础材质。'));atlas.colorSpace=SRGBColorSpace;textures.push(atlas);
  function geo(key:string,create:()=>BufferGeometry){let g=geometries.get(key);if(!g){g=create();geometries.set(key,g);}return g;}
  const ball=()=>geo('ball',()=>new SphereGeometry(.5,14,10)),box=()=>geo('box',()=>new BoxGeometry(1,1,1)),cap=()=>geo('capsule',()=>new CapsuleGeometry(.5,1,4,12)),cylinder=()=>geo('cylinder',()=>new CylinderGeometry(.5,.5,1,16)),ring=()=>geo('ring',()=>new TorusGeometry(.5,.035,6,24));
- function mat(key:string,color:string,panel?:number,metalness=0){let m=materials.get(key);if(m)return m;let map:Texture|undefined;if(panel!==undefined){map=atlas.clone();map.colorSpace=SRGBColorSpace;map.offset.set((panel%3)/3+.001,panel<3?.501:.001);map.repeat.set(1/3-.002,.5-.002);map.needsUpdate=true;textures.push(map);}m=new MeshStandardMaterial({color,map,bumpMap:map,bumpScale:panel===1?.002:panel===2?.0008:.001,roughness:metalness?.62:.92,metalness,side:DoubleSide});materials.set(key,m);return m;}
- const iron=mat('iron','#aaa99d',1,.64),bronze=mat('bronze','#d2bc8c',2,.68),wood=mat('wood','#baaa8b',4),leather=mat('leather','#b09b84',3),linen=mat('linen','#dfd4b8',5),skin=mat('skin','#c3a783'),dark=mat('dark','#28291f'),hair=mat('hair','#302c24'),hooves=mat('hooves','#39352b');
+ function mat(key:string,color:string,panel?:number,metalness=0){let m=materials.get(key);if(m)return m;let map:Texture|undefined;if(panel!==undefined){map=atlas.clone();map.colorSpace=SRGBColorSpace;map.offset.set((panel%3)/3+.001,panel<3?.501:.001);map.repeat.set(1/3-.002,.5-.002);map.needsUpdate=true;textures.push(map);}m=militarySurfaceMaterial(color,map,metalness);materials.set(key,m);return m;}
+ const iron=mat('iron','#ecebe1',1,.20),bronze=mat('bronze','#fff0c6',2,.32),wood=mat('wood','#efd9ac',4),leather=mat('leather','#e5c3a0',3),linen=mat('linen','#fff5da',5),skin=mat('skin','#c3a783'),dark=mat('dark','#28291f'),hair=mat('hair','#302c24'),hooves=mat('hooves','#39352b');
  function mesh(parent:Group,g:BufferGeometry,m:Material,x:number,y:number,z:number,sx=1,sy=1,sz=1){const o=new Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.frustumCulled=false;parent.add(o);return o;}
  function ellipsoid(parent:Group,m:Material,x:number,y:number,z:number,sx:number,sy:number,sz:number){return mesh(parent,ball(),m,x,y,z,sx,sy,sz);}
  function capsule(parent:Group,m:Material,x:number,y:number,z:number,sx:number,sy:number,sz:number){return mesh(parent,cap(),m,x,y,z,sx,sy/2,sz);}
@@ -73,7 +74,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  return {
   create(a:Army,kind:ArmyModelKind,name:string):MilitaryModel{
    const root=new Group(),body=new Group(),detail=new Group(),actors:Actor[]=[],horseLegs:Group[]=[];root.matrixAutoUpdate=false;root.add(body);body.add(detail);shadow(body,kind);
-   const cloth=mat('cloth-'+a.realm,a.realm==='liang'?'#b2bda3':a.realm==='east'?'#b7a69a':'#cab397',0),main=soldier(body,cloth,0,kind==='siege'?-.50:0,kind==='horse'?.87:1,kind!=='horse');actors.push(main);let lever:Group|undefined;
+   const cloth=mat('cloth-'+a.realm,a.realm==='liang'?'#e3ead2':a.realm==='east'?'#efdbc4':'#f4e4ba',0),main=soldier(body,cloth,0,kind==='siege'?-.50:0,kind==='horse'?.87:1,kind!=='horse');actors.push(main);let lever:Group|undefined;
    if(kind==='horse'){const h=horse(body,cloth);horseLegs.push(...h.horseLegs);main.root.position.set(0,.58,-.09);main.legs.forEach((leg,i)=>{leg.rotation.x=-.7;leg.rotation.z=(i?1:-1)*.36;});main.arms.forEach(arm=>arm.rotation.x=-.7);}
    else if(kind==='siege'){lever=trebuchet(body);main.root.position.x=.57;actors.push(soldier(detail,cloth,-.56,-.46,.84,false));}
    else{actors.push(soldier(detail,cloth,-.38,-.34,.86),soldier(detail,cloth,.38,-.38,.84));}

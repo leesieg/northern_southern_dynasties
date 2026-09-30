@@ -27,7 +27,7 @@ import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
 import { territoryHit } from './territories';
 import { mapResourceUrl } from './mapResources';
-import {armyShowsModel,armyMapPosition,armyMapPeers,armyModelOffset} from './armyMapPresentation';
+import {armyShowsModel,armyMapPosition,armyMarkerFootprint,layoutArmyMarkers,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
 
 setWorkerUrl(mapWorkerUrl);
 setWorkerCount(2);
@@ -78,6 +78,7 @@ export function WorldMap(props:Props){
     const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     let estateMarker:Marker|undefined,estateButton:HTMLButtonElement|undefined;
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
+    let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
     const places:{marker:Marker;button:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
@@ -109,12 +110,25 @@ export function WorldMap(props:Props){
         if(data.kind==='realm'){const id=data.text==='梁'?'liang':data.text==='东 魏'?'east':'west';marker.getElement().textContent=regimeName(current.current.world,id);}
       }
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
+      const viewport=container.getBoundingClientRect(),obstacles:ScreenRect[]=[];
+      // Runtime layout, not UI acceptance: DOM markers render above the entire WebGL canvas.
+      for(const marker of [...places.map(p=>p.marker),...labels.map(l=>l.marker),...[...people.values()].map(p=>p.marker),...(estateMarker?[estateMarker]:[]),...[...activityMarkers.values()].map(p=>p.marker)]){
+        const element=marker.getElement();if(element.hidden)continue;
+        const rect=element.getBoundingClientRect();if(!rect.width||!rect.height)continue;
+        if(rect.right>viewport.left&&rect.left<viewport.right&&rect.bottom>viewport.top&&rect.top<viewport.bottom)obstacles.push({left:rect.left-viewport.left-6,top:rect.top-viewport.top-6,right:rect.right-viewport.left+6,bottom:rect.bottom-viewport.top+6});
+      }
+      armyPlacements=layoutArmyMarkers(armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat])};}),obstacles,{width:w,height:h},models);
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
-        const peer=armyMapPeers(armies,a),offset=armyModelOffset(peer);
-        item.button.dataset.presentation=models?'model':'card';
-        item.marker.setOffset(models?[offset.x,offset.y+20]:[(peer%3)*164,70+Math.floor(peer/3)*62]);
+        const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=!placement;if(!placement)continue;
+        const {offset,model}=placement,size=armyMarkerFootprint(model);
+        item.button.dataset.presentation=model?'model':'card';
+        item.button.style.setProperty('--army-target-width',size.width+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
+        item.button.style.setProperty('--army-link-length',Math.hypot(offset.x,offset.y)>12?Math.hypot(offset.x,offset.y)+'px':'0px');item.button.style.setProperty('--army-link-angle',Math.atan2(-offset.y,-offset.x)+'rad');
+        if(model){const pos=armyMapPosition(a),point=map.project([pos.lon,pos.lat]);item.marker.setLngLat(map.unproject([point.x+offset.x,point.y+offset.y])).setOffset([0,size.bottom]);}
+        else{const pos=armyMapPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);}
       }
+      if(models)map.triggerRepaint();
     }
     function focusSite(id:string){
       const site=siteById[id];
@@ -231,7 +245,7 @@ export function WorldMap(props:Props){
       map.on('style.load',()=>{
         if(!map||disposed)return;
         styleReady=true;
-        void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();}));}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
+        void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();},id=>armyPlacements.get(String(id))));}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
           const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;button.setAttribute('aria-label',`选择${s.name}`);
