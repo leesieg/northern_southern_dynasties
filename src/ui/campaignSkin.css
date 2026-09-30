@@ -1,0 +1,71 @@
+/* Original ink silhouettes and engraved bronze, composed around the existing controls. */
+.focused-shell{--ink-tray:url('/art/interface/ink-brush-tray.svg');--bronze-seal:url('/art/interface/bronze-ink-medallion.svg')}
+.focused-shell :is(.sovereign-strip,.chronicle-control){border:0;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none;border-radius:0;padding-bottom:14px}
+.focused-shell .sovereign-strip{padding-left:12px;padding-right:20px}
+.focused-shell .player-hud-identity .painted-portrait.compact{border-radius:2px;border:2px solid #bba375;box-shadow:0 0 0 2px #111711,0 0 0 3px #605b40,0 3px 8px #0008}
+.focused-shell .player-hud-identity strong{color:#eadebc;text-shadow:0 1px 2px #000}
+.focused-shell .sovereign-strip .art-icon{filter:sepia(.38) saturate(.75) drop-shadow(0 1px 1px #000)}
+.focused-shell .command-rail{border:0;box-shadow:none;background:none;overflow-x:hidden;padding:6px 4px 12px;gap:1px;border-radius:0}
+.focused-shell .command-rail button{min-height:68px;gap:0;padding:0 0 5px;letter-spacing:2px;color:#f1e6c4;text-shadow:0 1px 3px #000,0 0 5px #142117}
+.focused-shell .command-rail .rail-emblem{width:54px;height:54px;flex:0 0 54px;border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none}
+.focused-shell .command-rail button[aria-expanded=true] .rail-emblem{border:0;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;filter:brightness(1.35) drop-shadow(0 0 3px #e7c57a55)}
+.focused-shell .command-rail button[aria-expanded=true]::before{display:none}
+.focused-shell .command-rail button[aria-expanded=true] .rail-emblem::after{right:0;width:4px;height:4px;border:0;background:#eed59a}
+.focused-shell .command-rail .art-icon{width:32px!important;height:32px!important;filter:sepia(.42) saturate(.65) drop-shadow(0 2px 1px #000)}
+.focused-shell .command-rail button:hover .rail-emblem{filter:brightness(1.24)}
+.focused-shell .chronicle-control{padding-inline:15px}
+.focused-shell .chronicle-control .clock-play{height:64px;width:64px;flex-basis:64px;padding:12px;gap:2px;border:0;border-radius:50%;box-shadow:none;background:var(--bronze-seal) center/100% no-repeat}
+.focused-shell .chronicle-control .clock-play.is-running{background:var(--bronze-seal) center/100% no-repeat;filter:brightness(1.2)}
+.focused-shell .chronicle-control .tally-speed{border:0;border-bottom:1px solid #a39060;border-radius:0;background:#10161166;box-shadow:none;color:#c5bd9e}
+.focused-shell .chronicle-control .tally-speed[aria-pressed=true]{background:linear-gradient(transparent,#c3a26338);border-bottom:2px solid #e2c68a;color:#fff0c7}
+.focused-shell .clock-utilities{border:0;padding-left:0}
+.focused-shell .clock-utilities button{width:30px;height:30px;border:0;background:var(--bronze-seal) center/100% no-repeat;padding:7px}
+.focused-shell .map-command-dock :is(.zoom-tools,.map-modes){border:0!important;border-radius:0!important;padding:8px 10px!important;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none;gap:0}
+.focused-shell .map-command-dock .map-modes button{border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;width:58px;height:58px;min-width:58px;padding:11px 5px;font-size:9px;gap:0}
+.focused-shell .map-command-dock .map-modes button[aria-pressed=true]{border:0;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;color:#ffefbf;filter:brightness(1.35)}
+.focused-shell .map-command-dock .map-modes button[aria-pressed=true] span{border-bottom:1px solid #e6c68a}
+.focused-shell .map-command-dock .zoom-tools :is(.view-control,.art-map-button){border:0!important;background:var(--bronze-seal) center/100% no-repeat!important;box-shadow:none;border-radius:50%!important;width:46px;height:46px}
+.focused-shell .map-command-dock .zoom-tools .view-control svg circle{stroke:none;fill:none}
+.focused-shell .map-command-dock .zoom-tools .art-map-button{gap:0;padding:8px!important;height:50px;width:50px}
+.focused-shell .map-command-dock :is(.map-options-toggle,.court-map-button){border:0;box-shadow:none;background:var(--bronze-seal) center/100% no-repeat;border-radius:50%;width:64px;height:64px;min-width:64px;padding:12px 8px;gap:0;flex-direction:column}
+.focused-shell .court-map-caption{text-align:center;gap:0}.focused-shell .court-map-caption strong{font-size:11px}.focused-shell .court-map-caption small{font-size:8px;white-space:nowrap}.focused-shell .court-map-button>.art-icon{width:23px!important;height:23px!important}.focused-shell .court-map-alert{right:0;top:2px}
+.focused-shell .map-command-dock .map-options-toggle{align-self:center;font-size:10px}
+.focused-shell .map-command-dock .art-icon{filter:sepia(.4) saturate(.7) drop-shadow(0 1px 1px #000)}
+/* Parchment muster slips: faction binding, commander portrait, ink readings. */
+.focused-shell .army-dock{gap:5px;padding:0 4px 6px}
+.army-roster-heading{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 10px;color:#e8dfc4;background:var(--ink-tray) center/100% 100% no-repeat;font:15px var(--serif);text-shadow:0 1px 2px #000}.army-roster-heading small{font:11px var(--sans);color:#c7bea0}
+.focused-shell .army-unit{position:relative;grid-template-columns:24px minmax(0,1fr) 28px;gap:5px;padding:7px 8px 7px 5px;border:1px solid #6b6147;border-left:4px solid var(--army-binding,#938053);border-radius:0;background:repeating-linear-gradient(4deg,#8d794a08 0 1px,transparent 1px 4px),linear-gradient(100deg,#c6b891,#ebe2c8 36%,#ddd2b1);box-shadow:inset 0 0 0 2px #fff5d230,0 2px 5px #10171070;color:#302f24}
+.focused-shell .army-unit[data-selected=true]{border-color:#e4c57f;border-left-color:var(--army-binding,#938053);background:linear-gradient(100deg,#c8ad72,#f0dfb4 45%,#ddc58f);box-shadow:inset 0 0 0 1px #fff0ba,0 0 0 1px #55452b}
+.focused-shell .army-unit-info header>strong{font-size:15px;color:#2d3125}.focused-shell .army-unit-info header>button{color:#4b4b37;text-shadow:none;padding:0;min-height:28px}
+.focused-shell .army-unit-info>small{color:#57513b;font-size:10px;line-height:1.5}.focused-shell .army-unit .art-resource-value>b{color:#292e22;font-size:13px;text-shadow:none}.focused-shell .army-unit .art-icon{filter:sepia(.5) saturate(.65)}
+.focused-shell .army-unit .position-seat{width:42px}.focused-shell .army-unit .position-seat .position-image{width:42px;aspect-ratio:2/3;border-radius:0;border-color:#827251}
+.focused-shell .army-unit-check{width:24px;min-height:44px}.focused-shell .army-unit-check-mark{width:18px;height:18px;border-radius:50%;clip-path:none;background:#ac9d79;border-color:#756443;box-shadow:inset 0 0 0 2px #ded1b1}
+.focused-shell .army-unit-check input:checked+.army-unit-check-mark{background:#384731;color:#f2df9d}
+.focused-shell .army-unit-actions button{width:28px;height:28px;min-height:28px;min-width:28px;border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;padding:6px;box-shadow:none}
+.army-readiness{display:flex;align-items:center;gap:5px;margin:3px 0;font:9px var(--sans);color:#4c4b37}.army-readiness>span{flex:none}.army-readiness-meter{display:block;flex:1;height:4px;background:#84765550;border:1px solid #766b4955}.army-readiness-meter>i{display:block;height:100%;background:#59633b}
+.focused-shell .army-unit-order{border-color:#87704766;color:#3d402d}.focused-shell .army-unit-order>span{color:#3d402d}
+@media(max-height:760px){.focused-shell .command-rail button{min-height:59px}.focused-shell .command-rail .rail-emblem{width:47px;height:47px;flex-basis:47px}}
+@media(max-width:850px){.focused-shell .chronicle-control{padding-inline:9px}.focused-shell .chronicle-control .clock-play{width:48px;height:54px;flex-basis:48px;padding:10px}.focused-shell .map-command-dock .map-modes button{width:49px;height:49px;min-width:49px;padding:7px 4px}.focused-shell .map-command-dock :is(.court-map-button,.map-options-toggle){width:57px;height:57px;min-width:57px}}
+/* Same parchment city plaque at every zoom; scale changes density and terrain only. */
+.focused-shell .atlas-map .atlas-place-label{color:#403a2b;text-shadow:0 1px #f6e9c8;background:#e2d1aaeb;border-color:#968361;border-bottom-color:var(--city-realm,#8c7954);box-shadow:0 1px 3px #4a412324}
+.focused-shell .atlas-map .atlas-place-label:is(:hover,.is-selected){background:#344337;color:#f9e6b9;border-color:#eed18c;text-shadow:none}
+.focused-shell .atlas-map .atlas-city-realm,.focused-shell .atlas-map .atlas-city-realm img{width:28px;height:34px;flex-basis:28px}
+.focused-shell .atlas-map .atlas-place>.atlas-estate-marker{width:32px;height:32px;flex-basis:32px;border:1px solid #87724c;border-radius:50%;background:radial-gradient(circle at 40% 28%,#f1e7ca,#cebb90);box-shadow:inset 0 0 0 2px #e4d7b4,inset 0 0 0 3px #a38c5c;filter:drop-shadow(0 2px 1px #17251b66)}
+.focused-shell .atlas-map .atlas-place>.atlas-estate-marker::before{width:24px;height:24px;filter:sepia(.7) saturate(.6) contrast(1.15)}
+.focused-shell .atlas-map .atlas-place>.atlas-estate-marker:hover{background:#f4e3b7;outline:1px solid #dfbd77}
+.focused-shell .atlas-map .atlas-activity-marker{width:38px;height:42px;min-height:0;padding:0;border:0;border-radius:50%;background:var(--bronze-seal) center top/38px 38px no-repeat;box-shadow:none;filter:drop-shadow(0 2px 2px #17231966);overflow:visible}
+.focused-shell .atlas-map .atlas-activity-marker::before{inset:7px;width:24px;height:24px;filter:sepia(.4) saturate(.8) drop-shadow(0 1px 1px #000)}
+.focused-shell .atlas-map .atlas-activity-marker::after{content:'';position:absolute;bottom:0;left:16px;width:6px;height:6px;transform:rotate(45deg);background:#343c2b;border-right:1px solid #c5ac73;border-bottom:1px solid #c5ac73;z-index:-1}
+.atlas-activity-count{position:absolute;right:-4px;top:-3px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 2px;background:#e6d8b4;border:1px solid #82704b;border-radius:50%;color:#323d2b;font:11px/16px var(--serif);box-shadow:0 1px 2px #0005}
+.focused-shell .atlas-map .atlas-activity-marker[data-kind=military]::after{background:#743e2b}
+.focused-shell .atlas-map .atlas-traveler{pointer-events:auto;gap:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;cursor:pointer;filter:drop-shadow(0 2px 2px #1b291b77)}
+.focused-shell .atlas-map .atlas-traveler .traveler-pennant{position:relative;display:block;width:36px;height:40px;padding:0;border:0;border-radius:0;clip-path:none;transform:none;font-size:0;line-height:0;background:var(--bronze-seal) center top/36px 36px no-repeat;box-shadow:none;filter:none}
+.focused-shell .atlas-map .atlas-traveler .traveler-pennant::before{content:'';display:block;position:absolute;inset:7px 6px 9px;width:24px;height:24px;background:url('/art/interface/strategy-icons.png') 0% 100%/400% 400%;filter:sepia(.7) saturate(.5)}
+.focused-shell .atlas-map .atlas-traveler .traveler-pennant::after{content:'';display:block;position:absolute;left:15px;bottom:2px;width:6px;height:6px;background:#2d3528;border-right:1px solid #c4aa70;border-bottom:1px solid #c4aa70;transform:rotate(45deg)}
+.focused-shell .atlas-map .atlas-traveler>span{min-height:20px;line-height:18px;padding:1px 6px;border:1px solid #97815b;border-radius:0;background:#e3d3aeea;color:#3e392a;text-shadow:0 1px #f2e5c7;font:11px/18px var(--serif);box-shadow:0 1px 3px #26332544}
+.focused-shell .atlas-map .atlas-traveler.player .traveler-pennant{width:42px;height:45px;background-size:42px 42px}.focused-shell .atlas-map .atlas-traveler.player .traveler-pennant::before{inset:9px;width:25px;height:25px}.focused-shell .atlas-map .atlas-traveler.player .traveler-pennant::after{left:18px}
+.focused-shell .atlas-map .atlas-traveler.player>span{border-bottom:2px solid #986747;background:#eee0bc;color:#322e21}
+.focused-shell .atlas-map :is(.atlas-traveler,.atlas-activity-marker):hover{filter:brightness(1.12) drop-shadow(0 2px 3px #17231966)}
+.focused-shell .atlas-map .atlas-traveler:focus-visible{outline:2px solid #f8d992;outline-offset:3px}
+.focused-shell .chronicle-date>strong{white-space:normal;line-height:1.35;font-size:15px}
+.army-readiness>.army-readiness-meter{flex:1}.focused-shell .army-unit-order>small{color:#823f30}

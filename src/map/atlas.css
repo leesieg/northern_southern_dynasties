@@ -176,25 +176,25 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-map .atlas-place-label.county{font-size:11px}
 .atlas-map .atlas-place-label:is(:hover,.is-selected){color:#fff0c2;background:#41513b;border-color:#eed18c;box-shadow:0 0 0 1px #594828,0 3px 8px #12201966}
 .atlas-map .atlas-place-label:focus-visible,.atlas-map .atlas-geographic-label:focus-visible{outline:2px solid #fff0bd;outline-offset:3px}
-.atlas-map[data-scale=strategic] .atlas-place-label{color:#403a2b;text-shadow:0 1px #f6e9c8;background:#e2d1aaeb;border-color:#968361;box-shadow:0 1px 3px #4a412324}
-.atlas-map[data-scale=strategic] .atlas-place-label:is(:hover,.is-selected){background:#344337;color:#f9e6b9;text-shadow:none}
+.atlas-map .atlas-place-label{color:#403a2b;text-shadow:0 1px #f6e9c8;background:#e2d1aaeb;border-color:#968361;box-shadow:0 1px 3px #4a412324}
+.atlas-map .atlas-place-label:is(:hover,.is-selected){background:#344337;color:#f9e6b9;text-shadow:none}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.realm{color:#51432d;text-shadow:0 1px 2px #f3dfb4;opacity:.86}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#7b6c50}
 .atlas-map .atlas-traveler>span{border:1px solid #aa935f;border-radius:1px;background:#22382eed;color:#eee0bb;min-height:22px;line-height:20px;padding:1px 7px}
 .atlas-map .atlas-estate-marker{width:36px;height:39px;border-radius:3px;border-width:1px;background:#263b2f;box-shadow:0 2px 5px #10251c66}
-.atlas-map[data-scale=strategic] .atlas-estate-marker{background:#dcc79c;color:#403b2b}
+.atlas-map .atlas-estate-marker{background:#dcc79c;color:#403b2b}
 .atlas-map .atlas-activity-marker{box-shadow:0 2px 6px #10251c66;border-color:#d5bc80}
 .atlas-map .atlas-army-card-body{border-radius:1px}
 .atlas-map [hidden]{display:none!important}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-presentation=card]{min-height:46px}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-presentation=card] .atlas-army-flag{width:34px;flex-basis:34px;height:44px}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-presentation=card] .atlas-army-card-body{height:36px;padding:3px 6px;background:#ded0ac;color:#3d3d2c;border-color:#85734f}
-.atlas-map[data-scale=strategic] .atlas-army-label{color:#655a41;letter-spacing:0}
-.atlas-map[data-scale=strategic] .atlas-army-strength{font-size:16px;text-shadow:none}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-exact=false] .atlas-army-strength{font-size:11px}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-exact=true] .atlas-army-strength::after{color:#655a41}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-selected=true] .atlas-army-card-body{background:#344638;color:#ffebbb;border-color:#ffe2a0}
-.atlas-map[data-scale=strategic] .atlas-army-marker[data-selected=true] :is(.atlas-army-label,.atlas-army-strength::after){color:#e2d2ac}
+.atlas-map .atlas-army-marker[data-presentation=card]{min-height:46px}
+.atlas-map .atlas-army-marker[data-presentation=card] .atlas-army-flag{width:34px;flex-basis:34px;height:44px}
+.atlas-map .atlas-army-marker[data-presentation=card] .atlas-army-card-body{height:36px;padding:3px 6px;background:#ded0ac;color:#3d3d2c;border-color:#85734f}
+.atlas-map .atlas-army-label{color:#655a41;letter-spacing:0}
+.atlas-map .atlas-army-strength{font-size:16px;text-shadow:none}
+.atlas-map .atlas-army-marker[data-exact=false] .atlas-army-strength{font-size:11px}
+.atlas-map .atlas-army-marker[data-exact=true] .atlas-army-strength::after{color:#655a41}
+.atlas-map .atlas-army-marker[data-selected=true] .atlas-army-card-body{background:#344638;color:#ffebbb;border-color:#ffe2a0}
+.atlas-map .atlas-army-marker[data-selected=true] :is(.atlas-army-label,.atlas-army-strength::after){color:#e2d2ac}
 
 /* One settlement plaque: country, city and its estate move as a single annotation. */
 .atlas-map .atlas-place{display:flex;align-items:center;gap:0;pointer-events:none;min-height:34px;isolation:isolate}
@@ -210,5 +210,5 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-map .atlas-place>.atlas-estate-marker{position:relative;flex:0 0 30px;width:30px;height:30px;min-height:0;margin-left:3px;padding:0;border:1px solid #ad945f;border-radius:2px;pointer-events:auto;box-shadow:0 1px 3px #14251d66;filter:none}
 .atlas-map .atlas-place>.atlas-estate-marker::before{width:24px;height:24px;margin:0}
 .atlas-map .atlas-place>.atlas-estate-marker::after{display:none}
-.atlas-map[data-scale=strategic] .atlas-city-realm,.atlas-map[data-scale=strategic] .atlas-city-realm img{width:28px;height:34px;flex-basis:28px}
-.atlas-map[data-scale=strategic] .atlas-place-label{border-bottom-color:var(--city-realm,#8c7954)}
+.atlas-map .atlas-city-realm,.atlas-map .atlas-city-realm img{width:28px;height:34px;flex-basis:28px}
+.atlas-map .atlas-place-label{border-bottom-color:var(--city-realm,#8c7954)}
