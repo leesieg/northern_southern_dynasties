@@ -1,9 +1,10 @@
+import {actPower,powerSupport} from './powerPolitics';
 import {nextMonthStart} from './calendar';
 import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {personResidence} from './residence';
 import { describe,it,expect } from 'vitest';
 import {act,advance} from './world';
-import { relationshipQuote,activeMarriage,spouseOf,friendship,relationOpinion,relationHooks,closeKin,setFriendship,advanceRelationships,syncRelationships,allegianceBonus } from './relationships';
+import { relationshipQuote,activeMarriage,spouseOf,friendship,relationOpinion,relationHooks,closeKin,setFriendship,advanceRelationships,syncRelationships,allegianceBonus,changeRelationOpinion } from './relationships';
 import { governmentOf,governmentExecutive,governingExecutives,governingAuthority,governmentReason,politicalTitle } from './government';
 import { realmReason } from './realm';
 import { courtOf } from './court';
@@ -66,11 +67,11 @@ describe('婚姻、友敌、效忠与傀儡控制',()=>{
   const w=start('yuan-shanjian');ready(w);expect(governmentExecutive(w)).toBe(false);for(let i=0;i<3;i++){relation(w,'emancipate','gao-huan');if(i<2)pass(w,30);}expect(governmentExecutive(w)).toBe(true);expect(w.relationships!.regencies.east!.origin).toBe('restored');expect(w.realm!.mandate).toBe(true);expect(realmReason(w,{type:'realm',action:'appoint',site:'ye',candidate:'gao-yang'})).toBe('');save(w);
  });
  it('控制失败真实扣除成本，产生仇怨；低控制度自然终结',()=>{
-  const w=start('gao-yang');ready(w);governmentOf(w)!.merit['gao-yang']=60;w.social!.hooks[pair('gao-yang','yuan-shanjian')]=2;relation(w,'control','yuan-shanjian');w.relationships!.scheme!.chance=5;pass(w,30);expect(governmentExecutive(w)).toBe(false);expect(friendship(w,'gao-yang','yuan-shanjian')).toBe('rival');w.relationships!.regencies.east!.grip=1;pass(w,30);expect(governingExecutives(w,'east')).toEqual(['yuan-shanjian']);save(w);
+  const w=start('gao-yang');ready(w);governmentOf(w)!.merit['gao-yang']=60;w.social!.hooks[pair('gao-yang','yuan-shanjian')]=2;relation(w,'control','yuan-shanjian');w.relationships!.scheme!.chance=5;pass(w,30);expect(governmentExecutive(w)).toBe(false);expect(friendship(w,'gao-yang','yuan-shanjian')).toBe('rival');w.relationships!.regencies.east!.grip=1;governmentOf(w)!.support=0;governmentOf(w)!.legitimacy=100;for(const id of Object.values(governmentOf(w)!.court!.ministries))if(id)w.relationships!.oaths[id]={lord:'yuan-shanjian',since:w.day,loyalty:100};w.realm!.armies=w.realm!.armies.filter(a=>a.realm!=='east');pass(w,30);expect(governingExecutives(w,'east')).toEqual(['yuan-shanjian']);save(w);
  });
  it('家业交接保留旧人物婚姻与关系，不转移计谋；历史更替清理过期控制',()=>{
   const w=start('xiao-yan');ready(w);w.people[0].location=personResidence(w,'guest-liang').site;relation(w,'befriend','guest-liang');act(w,{type:'heir',target:'xiao-gang'});act(w,{type:'handover'});expect(w.relationships!.scheme).toBeNull();expect(spouseOf(w,w.characterId!)).toBe('wang-lingbin');save(w);
-  const east=start('gao-huan');ready(east);east.day=Math.round((Date.UTC(549,0,1)-Date.UTC(546,0,1))/86400000);governmentOf(east)!.support=90;act(east,{type:'government',action:'succession',stage:'east-regency'});pass(east,90);expect(east.relationships!.regencies.east!.controller).toBe('gao-yang');expect(governmentExecutive(east)).toBe(false);save(east);
+  const east=start('gao-huan');ready(east);east.day=Math.round((Date.UTC(549,0,1)-Date.UTC(546,0,1))/86400000);governmentOf(east)!.support=90;act(east,{type:'government',action:'succession',stage:'east-regency'});for(const row of powerSupport(east,'east',east.politics!.proposals.east!)){if(row.id!=='gao-yang')changeRelationOpinion(east,'gao-yang',row.id,200);if(row.id!=='yuan-shanjian')changeRelationOpinion(east,'yuan-shanjian',row.id,200);}east.day+=30;actPower(east,{type:'power',action:'present'});actPower(east,{type:'power',action:'answer',accept:true},'yuan-shanjian');expect(east.relationships!.regencies.east!.controller).toBe('gao-yang');expect(governmentExecutive(east)).toBe(false);save(east);
  });
  it('所有拒绝均不扣资源；无在途计谋时取消无效；资料分支不能绕过待决事件',()=>{
   const w=start('yuan-qin');ready(w);for(const cmd of [{type:'relationship',action:'marry',target:'guest-west'},{type:'relationship',action:'control',target:'yuan-baoju'},{type:'relationship',action:'gift',target:'__proto__'},{type:'relationship',action:'cancel'}]){const before=structuredClone(w);expect(()=>act(w,cmd as never)).toThrow();expect(w).toEqual(before);}

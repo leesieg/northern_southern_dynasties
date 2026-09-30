@@ -8,7 +8,7 @@ import type {RealmId} from './realm';
 import type {World} from './types';
 import {policyDefinition,type PolicyDimension} from '../data/governancePolicies';
 export type PolicyDomain='appointment'|'reform'|'tax'|'military'|'welfare'|'migration'|'commerce';
-export interface PoliticalContext {source:string;site?:string;actor?:string;authorizer?:string;plan?:AssignmentPlan;stage?:'commitment'|'execution'|'completion';scale?:number;burden?:number;benefit?:number;policyRevision?:number;dimension?:PolicyDimension;rule?:string}
+export interface PoliticalContext {localService?:boolean;source:string;site?:string;actor?:string;authorizer?:string;plan?:AssignmentPlan;stage?:'commitment'|'execution'|'completion';scale?:number;burden?:number;benefit?:number;policyRevision?:number;dimension?:PolicyDimension;rule?:string}
 export interface PoliticalImpact {source:string;day:number;domain:PolicyDomain;site:string|null;actor:string|null;authorizer:string|null;stage:'commitment'|'execution'|'completion';policyRevision:number|null;scale:number;plan:AssignmentPlan|null;dimension:PolicyDimension|null;rule:string|null;support:number;tension:number;parts:{id:MovementId;value:number}[]}
 export interface PoliticalWindow {until:number;used:number;support:number;opposition:number}
 export const policyDomains:PolicyDomain[]=['appointment','reform','tax','military','welfare','migration','commerce'];
@@ -18,12 +18,14 @@ const rulePositions:Record<string,Partial<Record<MovementId,number>>>={lineage:{
 export function politicalAction(w:World,r:RealmId,domain:PolicyDomain,context?:PoliticalContext){
  if(!courtOf(w,r)||!courtEnabled(w,r))return {parts:[],support:0,rawSupport:0,effort:0,scale:0};
  const scale=Math.max(.25,Math.min(2,context?.scale??1)),burden=context?.burden??(context?.plan==='urgent'?1:context?.plan==='thorough'?-.5:0),benefit=context?.benefit??0;
+ const population=context?.localService&&context.site?Object.values(w.realm!.cities).filter(c=>c.owner===r).reduce((n,c)=>n+c.population,0):0;
+ const reach=context?.localService&&context.site?Math.min(1,(w.realm!.cities[context.site]?.population??0)/Math.max(1,population)):1;
  const parts=movementIds.filter(id=>id!=='unaligned').map(id=>{
   const m=movementMood(w,r,id),local=context?.site?m.members.filter(person=>w.realm!.cities[context.site!]?.governor===person||Object.entries(w.realm!.local?.seats??{}).some(([key,s])=>key.startsWith(r+'|')&&s.holder===person&&localActive(w,key.split('|')[1],r)&&localSites(w,key.split('|')[1],r).includes(context.site!))).length:0;
   const exposure=context?.site?.length?Math.min(1,m.share/100+local*.15):1;
   const interest=context?.dimension&&context.rule&&policyDefinition(context.dimension,context.rule)?rulePositions[context.rule]:positions[domain];
-  const stance=(interest[id]??0)+(id==='conservative'?-burden*.8:id==='reform'?-burden*.6:0)+(id==='dynastic'||id==='reform'?benefit*.5:0);
-  const raw=m.share*stance*scale*(.5+exposure/2)*(m.satisfaction<30?.5:1);return {id,label:movements[id].name,share:m.share,stance,value:Math.round(raw)||0,raw};
+  const stance=(context?.localService&&context.stage&&context.stage!=='commitment'?0:interest[id]??0)+(id==='conservative'?-burden*.8:id==='reform'?-burden*.6:0)+(id==='dynastic'||id==='reform'?benefit*.5:0);
+  const raw=m.share*stance*scale*reach*(.5+exposure/2)*(m.satisfaction<30?.5:1);return {id,label:movements[id].name,share:m.share,stance,value:Math.round(raw)||0,raw};
  });
  const support=parts.reduce((n,p)=>n+p.value,0);
  return {parts,support,rawSupport:parts.reduce((n,p)=>n+p.raw,0),effort:Math.max(-2,Math.min(2,Math.round(support/30))),scale};

@@ -83,6 +83,15 @@ export function relationshipScore(w:World,target:string){
 function log(w:World,actor:string,target:string|null,text:string){const s=w.relationships!;s.history.push({day:w.day,actor,target,text});s.history=s.history.slice(-100);w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 export function setFriendship(w:World,a:string,b:string,kind:Friendship){if(!w.relationships)return;w.relationships.bonds[bondKey(a,b)]={a,b,kind,since:w.day};}
 export function oathCycle(w:World,follower:string,lord:string){const seen=new Set([follower]);let next:string|undefined=lord;while(next){if(seen.has(next))return true;seen.add(next);next=w.relationships?.oaths[next]?.lord;}return false;}
+/** Derived monthly control change; no new stored resource or calendar-driven restoration. */
+export function regencyBalance(w:World,r:RealmId){
+ const c=validRegency(w,r),g=governmentOf(w,r);if(!c||!g||c.origin==='restored')return {delta:0,parts:[] as {label:string;value:number}[]};
+ const allegiance=(id:string)=>id===c.controller?1:id===c.ruler?-1:w.relationships?.oaths[id]?.lord===c.controller?1:w.relationships?.oaths[id]?.lord===c.ruler?-1:Math.sign(relationOpinion(w,id,c.controller)-relationOpinion(w,id,c.ruler));
+ const officials=[...new Set([...Object.values(g.court?.ministries??{}),...Object.values(w.realm!.cities).filter(v=>v.owner===r).map(v=>v.governor)].filter((id):id is string=>!!id&&isAlive(w,id)))];
+ const armies=w.realm!.armies.filter(a=>a.realm===r);let backing=0,total=0;for(const a of armies)for(const u of a.regiments??[]){total+=u.troops;backing+=u.troops*((u.commanderLoyalty??0)>(u.institution??0)&&u.loyalTo?allegiance(u.loyalTo):g.executives.includes(c.controller)?1:-1);}
+ const parts=[{label:'执政席位',value:g.executives.includes(c.controller)?2:-2},{label:'朝廷支持',value:g.support>=60?1:g.support<40?-2:-1},{label:'官员倾向',value:Math.sign(officials.reduce((n,id)=>n+allegiance(id),0))},{label:'实际兵权',value:total?Math.round(2*backing/total):0},{label:'君主合法性',value:g.legitimacy>=70?-1:0}];
+ return {parts,delta:Math.max(-4,Math.min(2,parts.reduce((n,p)=>n+p.value,0)))};
+}
 export function authorityScore(w:World,id:string){const p=relationshipPersonById[id];if(!p||!w.realm)return 0;const r=allegianceRealm(w,id)??p.realm,g=governmentOf(w,r)!;return (governingExecutives(w,r).includes(id)?60:0)+(g.ruler===id?30:0)+(Object.values(g.court?.ministries??{}).includes(id)?20:0)+localPoliticalBasis(w,id,p.realm)+Math.floor((g.merit[id]??0)/5);}
 export function validRegency(w:World,r:RealmId){const p=w.relationships?.regencies?.[r];return p&&p.basis===powerBasis(w,r)&&p.regimeId===governmentOf(w,r)?.regimeId?p:undefined;}
 export function allegianceBonus(w:World,r:RealmId){const chiefs=governingExecutives(w,r);return Math.min(9,Object.entries(w.relationships?.oaths??{}).filter(([id,o])=>allegianceRealm(w,id)===r&&o.loyalty>=70&&chiefs.includes(o.lord)).length*3);}
@@ -168,7 +177,7 @@ export function advanceRelationships(w:World){const s=w.relationships;if(!s)retu
  const personal=Object.values(s.bonds).filter(b=>isAlive(w,b.a)&&isAlive(w,b.b)&&(b.a===w.characterId||b.b===w.characterId)),friends=personal.filter(b=>b.kind==='friend'||b.kind==='confidant').length,rivals=personal.filter(b=>b.kind==='rival'||b.kind==='nemesis').length;
  w.social!.stress=cap(w.social!.stress-Math.min(6,friends*2)+(spouseOf(w,w.characterId!)?-2:0)+Math.min(9,rivals*3));
  for(const [id,o] of Object.entries(s.oaths)){const kind=friendship(w,id,o.lord);o.loyalty=cap(o.loyalty+(kind==='rival'||kind==='nemesis'?-15:relationshipBonus(w,id,o.lord)>10?3:relationOpinion(w,o.lord,id)>=40?2:-1));if(o.loyalty===0){delete s.oaths[id];log(w,id,o.lord,'效忠者离心，誓约自动解除。');}}
- for(const r of worldRealms(w)){const c=validRegency(w,r);if(c&&c.origin!=='restored'){c.grip=cap(c.grip-(governmentOf(w,r)!.support>=60?1:4));if(c.grip===0)restoreRule(w,r);}}
+ for(const r of worldRealms(w)){const c=validRegency(w,r);if(c&&c.origin!=='restored'){c.grip=cap(c.grip+regencyBalance(w,r).delta);if(c.grip===0&&c.origin!=='custody')restoreRule(w,r);}}
 }
 
 /** Personal receipts use the same wallet whether the holder is playable or an NPC. */
