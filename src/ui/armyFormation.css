@@ -1,0 +1,40 @@
+/* Commander and two-row unit strip. Shared sizing prevents the map and military panels diverging. */
+.regiment-cards{--unit-width:58px;--unit-height:94px;display:grid;grid-template-rows:repeat(2,var(--unit-height));grid-auto-flow:column;grid-auto-columns:var(--unit-width);align-content:start;align-items:stretch;justify-content:start;gap:3px;overflow-x:auto;overflow-y:hidden;min-width:0;max-width:100%;padding:2px 2px 5px;scrollbar-width:thin;scrollbar-color:#8d7c55 #242a2399;box-sizing:border-box}
+.regiment-cards .regiment-card{display:grid;grid-template-rows:minmax(0,1fr) 18px;position:relative;min-width:0;width:var(--unit-width);height:var(--unit-height);min-height:0;padding:0;border:1px solid #888879;border-radius:0;background:#e8e5da;color:#222b24;box-shadow:inset 0 0 0 1px #f9f6e6;overflow:hidden}
+.regiment-card-name{display:none;font:9px/14px var(--serif);white-space:nowrap;text-align:center;overflow:hidden;color:#333b30;background:#eeeadd}
+.troop-illustration{display:block;width:100%;height:100%;min-height:0;object-fit:contain;overflow:hidden}
+.regiment-card-count{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:1px 3px;background:#345a3f;color:#fff9e8;font:bold 12px/16px var(--serif);white-space:nowrap}
+.regiment-card-count small{font:8px/16px var(--serif);color:inherit}
+.regiment-card[data-kind=archer] .regiment-card-count{background:#3d5874}.regiment-card[data-kind=heavyHorse] .regiment-card-count{background:#80443b}.regiment-card[data-kind=siege] .regiment-card-count{background:#6b6044}
+.regiment-cards .regiment-card:hover,.regiment-cards .regiment-card[aria-pressed=true]{border-color:#e4c476;box-shadow:inset 0 0 0 2px #b59a60;filter:brightness(1.07)}
+.regiment-cards .regiment-card:focus-visible{outline:2px solid #f0cb78;outline-offset:-3px}
+.regiment-preview{display:grid;grid-template-columns:130px minmax(0,1fr);gap:24px;align-items:center}.regiment-preview>.troop-illustration{width:130px;height:160px;background:#e8e5da}.regiment-preview dl{display:grid;grid-template-columns:auto 1fr;gap:10px 18px;margin:0;color:#343c30}.regiment-preview dd{margin:0}
+.focused-shell .army-dock{width:366px;max-width:calc(100vw - 24px);gap:10px;padding:2px 5px 8px;background:transparent}
+.focused-shell .army-unit{display:grid;grid-template-columns:24px minmax(0,1fr);grid-template-rows:auto auto;gap:3px 5px;align-items:start;padding:7px;border:1px solid #88816c;border-left:3px solid var(--army-binding);background:linear-gradient(110deg,#1d2623f5,#101815f2);box-shadow:inset 0 0 0 1px #d3c69830,0 3px 9px #0004;border-radius:0;color:#e9e1cb}
+.focused-shell .army-unit[data-selected=true]{background:linear-gradient(110deg,#323a2df5,#19251df5);border-color:#d1b46a;box-shadow:inset 0 0 0 1px #d1b46a77,0 3px 9px #0004}
+.focused-shell .army-unit-main{display:grid;grid-template-columns:88px minmax(0,1fr);grid-template-areas:'summary summary' 'commander units';gap:6px;min-width:0;align-items:start}
+.focused-shell .army-unit-main>.army-unit-info{grid-area:summary;display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:3px 8px}
+.focused-shell .army-unit-main>.position-seat{grid-area:commander;position:relative;display:flex;flex-direction:column;width:88px;min-width:0;gap:0;align-self:start;background:#171f1a;border:1px solid #938160;box-sizing:border-box}
+.focused-shell .army-unit .position-seat .position-image{display:block;width:86px;height:129px;aspect-ratio:2/3;border:0;padding:0;overflow:hidden}
+.focused-shell .army-unit .position-image .painted-portrait{width:100%;height:100%;aspect-ratio:2/3;margin:0;border:0}
+.focused-shell .army-unit .position-seat .position-name{display:block;padding:5px 2px;font:12px/16px var(--serif);color:#e6d7b4;text-align:center;max-width:100%;box-sizing:border-box}
+.focused-shell .army-unit .position-title{position:static;display:flex;align-items:center;justify-content:center;min-height:26px;width:100%;font-size:10px!important;gap:3px;border:0!important;border-top:1px solid #8b7c5655!important;border-radius:0;background:#26382d!important}
+.focused-shell .army-unit-main>.regiment-cards{grid-area:units;align-self:start;margin:0;--unit-width:58px;--unit-height:94px;flex-wrap:nowrap}
+.focused-shell .army-unit-info header{grid-column:1/-1;min-width:0;gap:10px}
+.focused-shell .army-unit-info header>strong{color:#ecdfbd;font-size:15px}.focused-shell .army-unit-info header>button{color:#d2c5a4;min-height:28px}
+.focused-shell .army-unit-info .military-metrics{grid-column:1/-1;margin:0;padding:2px 0;gap:12px;min-width:0;flex-wrap:wrap}
+.focused-shell .army-unit-info .art-resource-value>b{color:#f0e7d0;font-size:12px}
+.focused-shell .army-unit-info>small{grid-column:1;grid-row:auto;color:#b8bfaa;font:10px/15px var(--serif)}
+.focused-shell .army-unit-info .army-readiness{grid-column:2;grid-row:3;color:#caba8f;min-width:0}
+.focused-shell .army-unit .art-icon{filter:saturate(.65)}
+.focused-shell .army-unit-actions{grid-column:2;display:flex;flex-direction:row;justify-content:flex-end;gap:8px;border-top:1px solid #b09a6440;padding-top:5px;margin-top:3px}
+.focused-shell .army-unit-actions>.hover-hint{display:block}.focused-shell .army-unit-actions button{width:30px;height:30px;min-height:30px}
+.focused-shell .army-unit-order{grid-column:1/-1;color:#e7dac0}.focused-shell .army-unit-order>span{color:#e7dac0}.focused-shell .army-unit-order>small{color:#e8ad93}
+.focused-shell .military-army-record{display:grid;grid-template-columns:82px minmax(0,1fr);gap:8px 10px;align-items:start;background:linear-gradient(110deg,#1d2623,#111c17);border:1px solid #8f8261;padding:10px}
+.focused-shell .military-army-record>.military-record-main{grid-column:1/-1;grid-row:1;min-width:0}
+.focused-shell .military-army-record>.military-commander-portrait{grid-column:1;grid-row:2;float:none;display:block;align-self:start;width:82px;padding:0;margin:0;border:1px solid #938160;background:#ded9c8}
+.military-commander-portrait>.painted-portrait{width:80px;height:120px;aspect-ratio:2/3;margin:0;border:0}
+.focused-shell .military-army-record>.regiment-cards{grid-column:2;grid-row:2;display:grid;flex-wrap:nowrap;align-items:stretch;gap:3px}
+.focused-shell .military-army-record>:is(span,.hover-hint,p,div:not(.regiment-cards)){grid-column:1/-1}
+.focused-shell .military-army-record:not(:has(.military-commander-portrait))>.regiment-cards{grid-column:1/-1}
+@media(max-width:480px){.focused-shell .army-dock{width:330px}.regiment-preview{grid-template-columns:80px 1fr;gap:12px}.regiment-preview>.troop-illustration{width:80px;height:120px}}

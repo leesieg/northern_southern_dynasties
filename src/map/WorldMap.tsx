@@ -1,5 +1,4 @@
 import {updateMarkerPortrait} from './markerPortrait';
-import {allegianceRealm} from '../core/officeEligibility';
 import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
 import {atlasPresentation} from './atlasPresentation';
 import {armyHeraldry} from './ArmyHeraldry';
@@ -205,7 +204,7 @@ export function WorldMap(props:Props){
         for(const person of travelers){
           const entry=people.get(person.id),pos=position(person);
           entry?.marker.setLngLat([pos.lon,pos.lat]);
-          if(entry){const personId=person.id==='player'?(p.world.characterId??'player'):person.id,face=entry.marker.getElement().querySelector<HTMLElement>('.traveler-face'),realm=allegianceRealm(p.world,personId);if(face)updateMarkerPortrait(face,personId,p.world);if(realm)entry.marker.getElement().style.setProperty('--traveler-flag',`url("${armyHeraldry(realm,regimeName(p.world,realm))}")`);entry.marker.getElement().setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+(person.journey?' · 在途':'');const pennant=entry.marker.getElement().querySelector('.traveler-pennant');if(pennant&&person.id==='player')pennant.textContent=familyName(p.world.holdings.estate.family).slice(0,1);}
+          if(entry){const personId=person.id==='player'?(p.world.characterId??'player'):person.id,face=entry.marker.getElement().querySelector<HTMLElement>('.traveler-face');if(face)updateMarkerPortrait(face,personId,p.world);entry.marker.getElement().setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+(person.journey?' · 在途':'');}
         }
         for(const item of places){
           const site=siteById[item.id],state=p.world.realm?.cities[item.id],controller=state?.controller??site.polity,owner=state?.owner??site.polity;
@@ -308,8 +307,7 @@ export function WorldMap(props:Props){
         for(const person of mapTravelers(current.current.world)){
           const element=document.createElement('button');element.type='button';element.hidden=true;element.className=`atlas-traveler${person.id==='player'?' player':''}`;
           element.onclick=event=>{event.stopPropagation();setMenu(null);current.current.onInspectPeople([person.id==='player'?(current.current.world.characterId??'player'):person.id]);};element.ondblclick=event=>event.stopPropagation();element.setAttribute('aria-label','查看'+person.name+'详情');
-          const pennant=document.createElement('i');pennant.className='traveler-pennant';pennant.setAttribute('aria-hidden','true');pennant.textContent=person.id==='player'?familyName(current.current.world.holdings.estate.family).slice(0,1):'';
-          const face=document.createElement('div');face.className='traveler-face';face.setAttribute('aria-hidden','true');const label=document.createElement('span');label.textContent=person.name;element.append(pennant,face,label);
+          const face=document.createElement('div');face.className='traveler-face';face.setAttribute('aria-hidden','true');const label=document.createElement('span');label.textContent=person.name;element.append(face,label);
           const pos=position(person);
           const marker=new Marker({element,anchor:'bottom',offset:[0,-2],opacityWhenCovered:.5}).setLngLat([pos.lon,pos.lat]).addTo(map);
           people.set(person.id,{marker,label});allMarkers.push(marker);

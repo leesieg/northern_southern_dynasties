@@ -64,20 +64,6 @@ dialog.action-confirm-dialog>h2,dialog.pause-dialog:not(.pause-dialog--audience)
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) :is(button,input,select):focus-visible{outline:2px solid #a37b26;outline-offset:3px}
 :is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal,dialog.pause-dialog--audience){border-radius:0;border-color:#bba36a;box-shadow:0 0 0 1px #252b25,inset 0 0 0 2px #bba36a,0 18px 60px #0008}
 :is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal)>header h2{background:var(--campaign-brush) center/100% 100% no-repeat;color:#f4edda;text-shadow:none}
-/* Actual regiment cards, shared by map roster and military details. */
-.regiment-cards{display:flex;align-items:stretch;gap:4px;overflow-x:auto;min-width:0;padding:4px 2px 7px;scrollbar-width:thin;scrollbar-color:#9d895a transparent}
-.regiment-cards .regiment-card{position:relative;display:flex;flex-direction:column;align-items:center;flex:0 0 60px;width:60px;min-height:98px;padding:0;border:1px solid #8d876f;border-radius:0;background:linear-gradient(110deg,#faf8ed,#d4d2c5);color:#272f27;box-shadow:inset 0 0 0 2px #f0eadb,0 2px 3px #0003;overflow:hidden}
-.regiment-card-name{font:10px/19px var(--serif);white-space:nowrap}
-.troop-illustration{display:block;width:55px;height:70px;flex:none}
-.regiment-card-count{display:flex;align-items:center;justify-content:space-between;gap:3px;width:100%;padding:3px 4px;box-sizing:border-box;background:#385341;color:#fff6df;font:bold 13px/14px var(--serif);margin-top:auto}
-.regiment-card-count small{font:9px/14px var(--serif);color:inherit}
-.regiment-card[data-kind=archer] .regiment-card-count{background:#465b71}.regiment-card[data-kind=heavyHorse] .regiment-card-count{background:#88483e}.regiment-card[data-kind=siege] .regiment-card-count{background:#6a5840}
-.regiment-cards .regiment-card:is(:hover,[aria-pressed=true]){border-color:#e3c67c;box-shadow:inset 0 0 0 2px #b4934a,0 0 5px #d7b76855;filter:brightness(1.08)}
-.regiment-cards .regiment-card:focus-visible{outline:2px solid #e5bd62;outline-offset:1px}
-.focused-shell .army-unit>.regiment-cards{grid-column:2/-1;margin-top:-2px}
-.focused-shell .army-unit:has(.regiment-cards) .army-unit-main{align-items:start}
-.regiment-preview{display:flex;align-items:center;gap:30px}.regiment-preview>.troop-illustration{width:110px;height:148px}.regiment-preview dl{display:grid;grid-template-columns:auto 1fr;gap:12px 20px;margin:0}.regiment-preview dd{margin:0}
-.military-army-record{position:relative}.military-army-record>.military-commander-portrait{float:left;width:66px;padding:0;margin:0 10px 7px 0;border:1px solid #b39a65;background:#dcd5c0}.military-commander-portrait>.painted-portrait{width:64px;aspect-ratio:2/3;margin:0}.military-army-record>.regiment-cards{clear:both}
 /* Near-map labels use the same pale nameplates as the distant paper map. */
 .focused-shell .atlas-map .atlas-place{gap:0;background:#e6e2d5;box-shadow:0 0 0 1px #373d31,0 2px 4px #18241966;min-height:32px}
 .focused-shell .atlas-map .atlas-place-label{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:34px;margin:0;padding:2px 9px;background:#e6e2d5;color:#30392d;border:0;border-bottom:2px solid var(--city-realm);box-shadow:none;text-shadow:none;font:13px/16px var(--serif);letter-spacing:.05em}
@@ -103,15 +89,24 @@ dialog.action-detail-dialog .single-choice-reason,dialog.person-selection-dialog
 :is(dialog.action-detail-dialog,dialog.person-selection-dialog) .service-warning{color:#894435}
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header>button{border-radius:50%}
 .regiment-preview :is(dt,dd){color:#333b30}
-.focused-shell .military-army-record{display:grid;grid-template-columns:66px minmax(0,1fr);gap:8px 12px}
-.focused-shell .military-army-record>.military-commander-portrait{grid-column:1;grid-row:1/3;align-self:start;float:none;margin:0;min-height:0}
-.focused-shell .military-army-record>.military-record-main{grid-column:2}
-.focused-shell .military-army-record>.regiment-cards{grid-column:2;flex-wrap:nowrap;align-items:stretch}
-.focused-shell .military-army-record>:is(span,.hover-hint,p,div:not(.regiment-cards)){grid-column:1/-1}
-.focused-shell .military-army-record:not(:has(.military-commander-portrait))>:is(.military-record-main,.regiment-cards){grid-column:1/-1}
-.focused-shell .army-unit-main:has(.regiment-cards){display:grid;grid-template-columns:42px minmax(0,1fr);gap:4px 7px}
-.focused-shell .army-unit-main:has(.regiment-cards)>.position-seat{grid-row:1/3;align-self:start}
-.focused-shell .army-unit-main>.regiment-cards{grid-column:2;flex-wrap:nowrap}
-.focused-shell .army-unit-main .regiment-card{width:50px;flex-basis:50px;min-height:88px}
-.focused-shell .army-unit-main .troop-illustration{width:46px;height:56px}
 .focused-shell .atlas-map[data-scale=strategic] .atlas-governor,.focused-shell .atlas-map[data-scale=strategic] .atlas-place-label small{display:none}
+/* Selection regions reserve space for notices; only the roster and biography scroll. */
+.game-entry.is-selecting .entry-content>*,.game-entry.is-choosing-script .entry-content>*{flex-shrink:0}
+.game-entry.is-selecting .entry-content>.entry-new-game{flex:1 1 0;min-height:0;overflow:hidden}
+.game-entry.is-selecting .character-picker{min-height:0;overflow:hidden}
+.game-entry.is-selecting .character-picker>:is(.roster-heading,.roster-filters,.roster-context){flex-shrink:0}
+.game-entry.is-selecting .roster-columns{min-height:0;overflow:hidden;grid-template-rows:minmax(0,1fr)}
+.game-entry.is-selecting .roster-profile{min-width:0;min-height:0;overflow:auto;box-shadow:none;margin:0}
+.game-entry.is-selecting .roster-hero{overflow:hidden;min-width:0;min-height:0;justify-content:center}
+.game-entry.is-selecting .roster-hero>.painted-portrait{flex:0 1 auto;width:auto;height:calc(100% - 55px);max-width:100%;max-height:calc(100% - 55px);aspect-ratio:2/3;margin:0 auto 10px}
+.game-entry.is-selecting .roster-identity{position:static;display:flex;min-width:0}.game-entry.is-selecting .roster-identity>div:last-child{width:100%;overflow-wrap:anywhere}
+.game-entry .entry-message-slot{flex:none;max-height:64px;overflow:auto;margin-top:8px;border:1px solid #a9956655;background:#172a22}
+.game-entry .entry-message-slot>.entry-notice{margin:0;padding:8px 12px;border:0;font-size:11px;line-height:1.6}
+.game-entry .entry-message-slot.is-error{border-color:#ab7157;color:#efc5a5}
+.game-entry.is-selecting .entry-message-slot{background:#dfded2;color:#424b3c}.game-entry.is-selecting .entry-message-slot.is-error{background:#ecdfd5;color:#7c3c2b}
+.game-entry.is-selecting .entry-launch{flex:none;min-height:50px;box-sizing:border-box}.game-entry.is-selecting .entry-launch .entry-note{max-height:50px;overflow:auto;min-width:0}
+/* A single portrait inside the former bronze map-medallion frame. */
+.focused-shell .atlas-map .atlas-traveler .traveler-face{position:relative;display:block;box-sizing:border-box;width:42px;height:45px;margin:0;padding:7px 7px 10px;border:0;border-radius:0;background:var(--bronze-seal) center top/42px 42px no-repeat;box-shadow:none;overflow:visible}
+.focused-shell .atlas-map .traveler-face canvas{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #bca36c;box-sizing:border-box}
+.focused-shell .atlas-map .traveler-face::after{content:'';position:absolute;left:18px;bottom:2px;width:6px;height:6px;background:#2d3528;border-right:1px solid #c4aa70;border-bottom:1px solid #c4aa70;transform:rotate(45deg)}
+@media(max-width:760px){.game-entry.is-selecting .roster-columns{overflow:auto;grid-template-rows:auto}.game-entry.is-selecting .roster-columns--map .roster-list{max-height:300px}.game-entry.is-selecting .roster-columns--map .roster-profile{grid-row:2;grid-column:1/-1}.game-entry.is-selecting .entry-message-slot{max-height:52px}}
