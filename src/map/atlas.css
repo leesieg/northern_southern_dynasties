@@ -140,3 +140,24 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 
 .atlas-army-marker[data-rebel=true]{background:#582f30;border-style:double!important;border-color:#d1a76b!important}
 .atlas-army-marker[data-selected=true]{outline:3px solid #f3d384;outline-offset:2px;box-shadow:0 0 0 5px #172b22bb,0 3px 12px #0009}
+
+/* Strategic zoom: readable banner cards. Tactical zoom: targets over the larger models. */
+.atlas-army-marker{display:flex;align-items:center;gap:7px;width:152px;min-height:54px;box-sizing:border-box;padding:6px 8px;border:1px solid #c6ab72;border-radius:4px;background:#203329f5;color:#eee0b9;font-family:var(--sans);text-align:left;box-shadow:0 3px 9px #0007;cursor:pointer}
+.atlas-army-marker[hidden]{display:none}
+.atlas-army-flag{display:flex;align-items:center;justify-content:center;flex:0 0 32px;align-self:stretch;min-height:40px;padding-bottom:7px;box-sizing:border-box;background:var(--army-cloth,#294c40);border-top:3px solid #d7b979;clip-path:polygon(0 0,100% 0,100% 100%,50% 85%,0 100%);color:#f1dfb1;font:13px var(--serif);text-shadow:0 1px 2px #071914}
+.atlas-army-card-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.atlas-army-label{font-size:10px;font-weight:normal;color:#c6c9ac;white-space:nowrap}
+.atlas-army-strength{font-size:16px;line-height:1.2;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.atlas-army-marker[data-exact=false] .atlas-army-strength{font-size:12px}
+.atlas-army-marker:hover{border-color:#f1d595;background:#304535}
+.atlas-army-marker:focus-visible{outline:3px solid #f3d384;outline-offset:3px}
+.atlas-army-marker[data-rebel=true]{--army-cloth:#743e36!important;background:#582f30;border-color:#d1a76b!important}
+.atlas-army-marker[data-presentation=model]{justify-content:center;align-items:flex-end;width:100px;height:128px;padding:0;border:0!important;background:transparent;box-shadow:none}
+.atlas-army-marker[data-presentation=model] .atlas-army-flag,.atlas-army-marker[data-presentation=model] .atlas-army-label{display:none}
+.atlas-army-marker[data-presentation=model] .atlas-army-card-body{max-width:132px;padding:4px 7px;border:1px solid #c6ab72;border-radius:3px;background:#203329ee;box-shadow:0 2px 6px #0006}
+.atlas-army-marker[data-presentation=model] .atlas-army-strength{font-size:13px}
+.atlas-army-marker[data-presentation=model][data-selected=true]{outline:0;box-shadow:none}
+.atlas-army-marker[data-presentation=model]:is(:hover,[data-selected=true]) .atlas-army-card-body{border-color:#f3d384;background:#374d39;box-shadow:0 0 0 2px #d1b46d55,0 3px 8px #0006}
+.atlas-army-marker[data-presentation=model][data-selected=true]::before{content:'';position:absolute;left:15px;right:15px;bottom:27px;height:17px;border:2px solid #f3d384;border-radius:50%;background:#d1b46d20;pointer-events:none}
+
+.atlas-army-marker[data-presentation=model]:focus-visible{outline:3px solid #f3d384;outline-offset:3px}
