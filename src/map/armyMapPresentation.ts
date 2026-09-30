@@ -33,21 +33,36 @@ export function anchoredArmyModels(armies:{key:string;point:ScreenPoint;position
 }
 
 /** Move DOM labels around fixed units, rather than moving a unit to another place on the map. */
-export function dockMapMarker(rect:ScreenRect,armies:ScreenRect[],placed:ScreenRect[]){
- if(!armies.some(b=>screenOverlap(rect,b)>0))return {offset:{x:0,y:0},bounds:rect};
- const gap=8,blockers=[...armies,...placed],candidates:ScreenPoint[]=[{x:0,y:0}];
- if(armies.length)blockers.push({left:Math.min(...armies.map(r=>r.left)),right:Math.max(...armies.map(r=>r.right)),top:Math.min(...armies.map(r=>r.top)),bottom:Math.max(...armies.map(r=>r.bottom))});
- for(const b of blockers){const x=[0,b.left-gap-rect.right,b.right+gap-rect.left],y=[0,b.top-gap-rect.bottom,b.bottom+gap-rect.top];for(const dx of x)for(const dy of y)candidates.push({x:dx,y:dy});}
+export function dockMapMarker(rect:ScreenRect,armies:ScreenRect[],placed:ScreenRect[],viewport?:{width:number;height:number}){
+ const gap=8,blockers=[...armies,...placed],width=rect.right-rect.left,height=rect.bottom-rect.top;
+ const within=(r:ScreenRect)=>!viewport||(r.left>=gap&&r.top>=gap&&r.right<=viewport.width-gap&&r.bottom<=viewport.height-gap);
+ if(within(rect)&&!blockers.some(b=>screenOverlap(rect,b)>0))return {offset:{x:0,y:0},bounds:rect};
+ const candidates:ScreenPoint[]=[];
+ const add=(x:number,y:number)=>{
+  if(viewport&&width<=viewport.width-2*gap&&height<=viewport.height-2*gap){
+   x=Math.max(gap-rect.left,Math.min(x,viewport.width-gap-rect.right));
+   y=Math.max(gap-rect.top,Math.min(y,viewport.height-gap-rect.bottom));
+  }
+  candidates.push({x,y});
+ };
+ add(0,0);
+ // Individual obstacles, not a giant rectangle spanning unrelated armies.
+ for(const b of blockers){
+  const xs=[0,b.left-gap-rect.right,b.right+gap-rect.left],ys=[0,b.top-gap-rect.bottom,b.bottom+gap-rect.top];
+  for(const x of xs)for(const y of ys)add(x,y);
+ }
  candidates.sort((a,b)=>a.x*a.x+a.y*a.y-(b.x*b.x+b.y*b.y));
  let best=candidates[0],bestOverlap=Infinity;
  for(const offset of candidates){
   const at={left:rect.left+offset.x,right:rect.right+offset.x,top:rect.top+offset.y,bottom:rect.bottom+offset.y};
-  if(armies.some(b=>screenOverlap(at,b)>0))continue;
-  const overlap=placed.reduce((sum,b)=>sum+screenOverlap(at,b),0);if(!overlap)return {offset,bounds:at};
+  if(!within(at)||armies.some(b=>screenOverlap(at,b)>0))continue;
+  const overlap=placed.reduce((sum,b)=>sum+screenOverlap(at,b),0);
+  if(!overlap)return {offset,bounds:at};
   if(overlap<bestOverlap){bestOverlap=overlap;best=offset;}
  }
  return {offset:best,bounds:{left:rect.left+best.x,right:rect.right+best.x,top:rect.top+best.y,bottom:rect.bottom+best.y}};
 }
+
 export function layoutArmyCards(armies:{key:string;point:ScreenPoint}[],obstacles:ScreenRect[],viewport:{width:number;height:number},strategic=false){
  const placements=new Map<string,ArmyMarkerPlacement>(),occupied:ScreenRect[]=[],gap=8;
  const padded=(r:ScreenRect)=>({left:r.left-gap,top:r.top-gap,right:r.right+gap,bottom:r.bottom+gap});

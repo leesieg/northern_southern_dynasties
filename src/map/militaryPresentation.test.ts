@@ -35,7 +35,7 @@ describe('anchored models and map annotations (no UI)',()=>{
  it('keeps annotation docking stable when the whole map pans',()=>{
   const rect={left:575,right:625,top:300,bottom:350},bounds=anchoredArmyModels(entries,[],viewport).get('1')!.bounds,dock=dockMapMarker(rect,[bounds],[]),translate=(r:ScreenRect)=>({left:r.left+40,right:r.right+40,top:r.top-30,bottom:r.bottom-30});expect(dockMapMarker(translate(rect),[translate(bounds)],[]).offset).toEqual(dock.offset);
  });
- it('leaves unrelated annotations at their established positions',()=>{const rect={left:20,right:70,top:20,bottom:45},bounds=anchoredArmyModels(entries,[],viewport).get('1')!.bounds;expect(dockMapMarker(rect,[bounds],[rect]).offset).toEqual({x:0,y:0});});
+ it('leaves unrelated annotations at their established positions',()=>{const rect={left:20,right:70,top:20,bottom:45},bounds=anchoredArmyModels(entries,[],viewport).get('1')!.bounds;expect(dockMapMarker(rect,[bounds],[]).offset).toEqual({x:0,y:0});});
 });
 
 describe('army card collision placement (no UI)',()=>{
@@ -130,5 +130,23 @@ describe('paper atlas army cards (no UI)',()=>{
   const bounds=[...placements.values()].map(p=>p.bounds);
   for(let i=0;i<bounds.length;i++)for(let j=i+1;j<bounds.length;j++)expect(screenOverlap(bounds[i],bounds[j])).toBe(0);
   expect(armyMarkerFootprint(true,true)).toEqual(armyMarkerFootprint(true,false));
+ });
+});
+
+describe('settlement groups around fixed army models (no UI)',()=>{
+ it('separates adjacent annotations even without a model',()=>{
+  const rect={left:250,right:380,top:220,bottom:260},dock=dockMapMarker(rect,[],[rect],{width:800,height:600});
+  expect(screenOverlap(rect,dock.bounds)).toBe(0);
+ });
+ it('keeps a city and attached estate inside the viewport at an edge',()=>{
+  const rect={left:5,right:180,top:200,bottom:246},model={left:0,right:190,top:160,bottom:430};
+  const dock=dockMapMarker(rect,[model],[],{width:800,height:600});
+  expect(screenOverlap(dock.bounds,model)).toBe(0);expect(dock.bounds.left).toBeGreaterThanOrEqual(8);expect(dock.bounds.right).toBeLessThanOrEqual(792);
+ });
+ it('places army cards against the final settlement position',()=>{
+  const point={x:400,y:300},model=anchoredArmyModels([{key:'1',point,position:{lon:118.78,lat:32.04}}],[],{width:900,height:650}).get('1')!;
+  const dock=dockMapMarker({left:325,right:475,top:260,bottom:300},[model.bounds],[],{width:900,height:650});
+  const card=layoutArmyCards([{key:'2',point}],[model.bounds,dock.bounds],{width:900,height:650}).get('2')!;
+  expect(screenOverlap(card.bounds,dock.bounds)).toBe(0);expect(screenOverlap(card.bounds,model.bounds)).toBe(0);expect(model.offset).toEqual({x:0,y:0});
  });
 });
