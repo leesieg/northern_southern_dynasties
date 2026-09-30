@@ -50,14 +50,16 @@ export function ArmyDock({world:w,pending,send,onPerson,onLocate,selectedArmies,
  const marchReason=marchCommand?armyBatchReason(w,marchCommand):'';
  if(!armies.length)return null;
  const action=(label:string,icon:'world'|'person',reason:string,onClick:()=>void)=><HoverHint label={label} content={reason||label}><button aria-label={label} disabled={pending||!!reason} onClick={onClick}><ArtIcon name={icon} size={20}/></button></HoverHint>;
- return <aside className="army-dock" aria-label="军队单位">{inspected?<>
+ return <aside className={"army-dock"+(inspected?" is-inspecting":"")} aria-label="军队单位">{inspected?<>
   <header className="army-dock-heading"><button onClick={()=>setDetail(null)} aria-label="返回军队列表">←</button><strong>第 {inspected.id} 军</strong></header>
   <p className="army-inspected-summary">{siteById[inspected.location].name} · {inspected.troops} 人 · 士气 {inspected.morale} · 随军粮 {inspected.supply} · 已训练 {readyTroops(inspected,w.day)} 人{w.mobility?.pendingCommanders?.[inspected.id!]?' · '+politicalName(w.mobility.pendingCommanders[inspected.id!].person)+'待赴任':''}</p>
-  {detailTab!=='organization'&&<RegimentCards army={inspected} world={w}/>}<DetailTabs label="军队详情" value={detailTab} onChange={setDetailTab} items={[{id:'supply',label:'军情',icon:'grain'},{id:'orders',label:'军令',icon:'army'},{id:'organization',label:'编制',icon:'person'},{id:'campaign',label:'战役',icon:'world'}]}/>
+  <DetailTabs label="军队详情" value={detailTab} onChange={setDetailTab} items={[{id:'supply',label:'军情',icon:'grain'},{id:'orders',label:'军令',icon:'army'},{id:'organization',label:'编制',icon:'person'},{id:'campaign',label:'战役',icon:'world'}]}/>
+  <div className="army-inspected-body">{detailTab!=='organization'&&<RegimentCards army={inspected} world={w}/>}
   {detailTab==='campaign'&&<MilitaryCampaignPanel key={inspected.id} world={w} armyId={inspected.id} site={inspected.location} pending={pending} send={send} onPerson={onPerson}/>}
   {detailTab==='supply'&&<ArmySupplyStatus key={inspected.id} world={w} army={inspected} pending={pending} send={send}/>}
   {detailTab==='orders'&&<><div className="muster-chips">{armyCommander(w,inspected)===w.characterId&&(['balanced','attack','guard'] as const).map(stance=><button key={stance} disabled={pending} aria-pressed={(w.mobility?.stance??'balanced')===stance} onClick={()=>send({type:'mobility',action:'stance',stance})}>{({balanced:'稳步',attack:'进击',guard:'固守'})[stance]}</button>)}</div><MilitaryAftermathPanel world={w} army={inspected.id!} site={move?.site??inspected.location} pending={pending} send={send}/></>}
   {detailTab==='organization'&&<ArmyOrganizationPanel key={inspected.id} armyId={inspected.id} view="organize" world={w} site={inspected.location} pending={pending} send={send}/>}
+  </div>
  </>:<>
   <header className="army-roster-heading"><span>现役部曲</span><small>{armies.length} 军</small></header>
   {chosen.length>1&&<section className="army-batch-bar" aria-label="批量军令"><header><strong>已选 {chosen.length} 军</strong><button onClick={()=>{onClearSelection();onMove(null);}}>清除</button></header><div className="army-batch-actions"><button onClick={()=>{setMergeTarget(ids[0]);setBatchConfirm('merge');onMove(null);}}>合军</button><button onClick={()=>{setBatchConfirm('disband');onMove(null);}}>遣散</button><button onClick={()=>{setBatchConfirm(null);onMove({armies:ids});}}>移动</button></div>
