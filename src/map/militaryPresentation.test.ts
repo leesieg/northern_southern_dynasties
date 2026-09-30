@@ -120,3 +120,15 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
   }finally{assets.dispose();}
  });
 });
+
+describe('paper atlas army cards (no UI)',()=>{
+ it('uses the compact hit bounds without changing geographic or model anchors',()=>{
+  const entries=Array.from({length:8},(_,i)=>({key:String(i),point:{x:350,y:240}}));
+  const placements=layoutArmyCards(entries,[],{width:800,height:500},true),size=armyMarkerFootprint(false,true);
+  expect(placements.size).toBe(entries.length);
+  for(const p of placements.values()){expect(p.bounds.right-p.bounds.left).toBe(size.width);expect(p.bounds.bottom-p.bounds.top).toBe(size.height);}
+  const bounds=[...placements.values()].map(p=>p.bounds);
+  for(let i=0;i<bounds.length;i++)for(let j=i+1;j<bounds.length;j++)expect(screenOverlap(bounds[i],bounds[j])).toBe(0);
+  expect(armyMarkerFootprint(true,true)).toEqual(armyMarkerFootprint(true,false));
+ });
+});

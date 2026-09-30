@@ -1,3 +1,4 @@
+import {atlasPresentation} from './atlasPresentation';
 import {armyHeraldry} from './ArmyHeraldry';
 import {armyVisualState} from '../core/armyPresentation';
 import {militaryArmyView} from '../core/militaryView';
@@ -72,6 +73,8 @@ export function WorldMap(props:Props){
     const container=host.current;
     let map:AtlasMap|undefined,observer:ResizeObserver|undefined,disposed=false,styleReady=false,frame=0,slowLoad:ReturnType<typeof setTimeout>|undefined;
     let lastTerritory='',lastLevel='',lastEvent:string|null|undefined;
+    let terrainEnabled:boolean|undefined;
+    let travelingIds=new Set<string>();
     let lastMode='',lastTilt:boolean|undefined,lastWorld:World|undefined,lastSelected='',lastRoute='';
     let hoveredId:string|null=null;
     const allMarkers:Marker[]=[];
@@ -88,20 +91,24 @@ export function WorldMap(props:Props){
 
     function home(){
       if(!map)return;
-      map.fitBounds([[73,19],[135,53]],{padding:{top:125,bottom:105,left:28,right:28},pitch:current.current.tilted?24:0,bearing:0,duration:0,maxZoom:4.5});
+      map.fitBounds([[73,19],[135,53]],{padding:{top:125,bottom:105,left:28,right:28},pitch:0,bearing:0,duration:0,maxZoom:4.5});
     }
     function updateLabels(){
       if(!map||disposed)return;
       const zoom=map.getZoom(),w=container.clientWidth,h=container.clientHeight;
-      const occupied:{x:number;y:number}[]=[];
+      const presentation=atlasPresentation(zoom,current.current.tilted);
+      container.parentElement?.style.setProperty('--atlas-paper-strength',String(presentation.paper));
+      container.parentElement?.setAttribute('data-scale',presentation.strategic?'strategic':'landscape');
+      const occupied:{x:number;y:number;width:number}[]=[];
       const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.capital)-Number(a.capital));
       for(const item of list){
         const s=siteById[item.id],p=map.project([s.lon,s.lat]);
         const selected=item.id===current.current.selected;
-        const visible=p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<58&&Math.abs(v.y-p.y)<31);
+        const width=Math.max(56,item.button.offsetWidth,(item.button.textContent?.length??0)*(item.capital?20:14)+24);
+        const visible=p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
         item.marker.getElement().hidden=!visible;
         item.button.classList.toggle('is-selected',selected);
-        if(visible)occupied.push({x:p.x,y:p.y});
+        if(visible)occupied.push({x:p.x,y:p.y,width});
       }
       for(const {marker,data} of labels){
         const point=map.project([data.lon,data.lat]);
@@ -109,6 +116,7 @@ export function WorldMap(props:Props){
         marker.getElement().hidden=hidden;if(data.kind==='realm'){const r:RealmId=data.text.includes('东')?'east':data.text.includes('西')?'west':'liang';marker.getElement().textContent=regimeName(current.current.world,r);}
         if(data.kind==='realm'){const id=data.text==='梁'?'liang':data.text==='东 魏'?'east':'west';marker.getElement().textContent=regimeName(current.current.world,id);}
       }
+      for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(presentation.strategic&&id!=='player'&&id!==current.current.world.characterId);}
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
       const viewport=container.getBoundingClientRect(),obstacles:ScreenRect[]=[],mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
       const annotations:{marker:Marker;offset:[number,number]}[]=[...(estateMarker?[{marker:estateMarker,offset:[0,-55] as [number,number]}]:[]),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...places.map(p=>({marker:p.marker,offset:[0,-7] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
@@ -120,12 +128,12 @@ export function WorldMap(props:Props){
       }
       const anchors=armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
       const fixed=models?anchoredArmyModels(anchors.filter(a=>a.available),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
-      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!fixed.has(a.key)),[...obstacles,...modelBounds],view)]);
+      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!fixed.has(a.key)),[...obstacles,...modelBounds],view,presentation.strategic)]);
       const placed:ScreenRect[]=[],armyBounds=[...armyPlacements.values()].map(p=>p.bounds);for(const item of mapMarkers){const dock=models?dockMapMarker(item.bounds,armyBounds,placed):{offset:{x:0,y:0},bounds:item.bounds},offset:[number,number]=[item.offset[0]+dock.offset.x,item.offset[1]+dock.offset.y],previous=item.marker.getOffset();if(previous.x!==offset[0]||previous.y!==offset[1])item.marker.setOffset(offset);placed.push(dock.bounds);}
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
         const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=!placement;if(!placement)continue;
-        const {offset,model}=placement,size=armyMarkerFootprint(model);
+        const {offset,model}=placement,size=armyMarkerFootprint(model,presentation.strategic);
         item.button.dataset.presentation=model?'model':'card';
         item.button.style.setProperty('--army-target-width',size.width+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
         item.button.style.setProperty('--army-badge-bottom',armyModelBadgeBottom(map.getPitch())+'px');
@@ -133,6 +141,12 @@ export function WorldMap(props:Props){
         const pos=armyMapPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);
       }
       if(models)map.triggerRepaint();
+    }
+    function syncPerspective(){
+      if(!map||!styleReady||disposed)return;
+      const view=atlasPresentation(map.getZoom(),current.current.tilted);
+      if(terrainEnabled!==view.terrain){map.setTerrain(view.terrain?{source:'dem-terrain',exaggeration:1.15}:null);terrainEnabled=view.terrain;}
+      if(Math.abs(map.getPitch()-view.pitch)>.5)map.easeTo({pitch:view.pitch,duration:reduced?0:250});
     }
     function focusSite(id:string){
       const site=siteById[id];
@@ -176,12 +190,13 @@ export function WorldMap(props:Props){
           estateButton.setAttribute('aria-label','查看'+familyName(estate.family)+'氏庄园，位于'+estateSite.name);
           estateButton.title=estateSite.name+' · '+familyName(estate.family)+'氏庄园';
         }
-        for(const person of mapTravelers(p.world)){
+        const travelers=mapTravelers(p.world);travelingIds=new Set(travelers.filter(person=>person.journey).map(person=>person.id));
+        for(const person of travelers){
           const entry=people.get(person.id),pos=position(person);
           entry?.marker.setLngLat([pos.lon,pos.lat]);
           if(entry){entry.marker.getElement().setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+(person.journey?' · 在途':'');const pennant=entry.marker.getElement().querySelector('.traveler-pennant');if(pennant&&person.id==='player')pennant.textContent=familyName(p.world.holdings.estate.family).slice(0,1);}
         }
-        for(const item of places){const state=p.world.realm?.cities[item.id];if(state){item.button.style.borderColor=polities[state.controller].color;const internal=state.controller!=='frontier'?civilWar(p.world,state.controller):undefined,rebel=internal?.civil?.cities.includes(item.id);item.button.textContent=siteById[item.id].name+(state.controller!==state.owner?' · 占':rebel?' · 举兵':'');item.button.dataset.rebel=String(!!rebel);item.button.title='法理：'+regimeName(p.world,state.owner)+' / 控制：'+regimeName(p.world,state.controller);}}
+        for(const item of places){const state=p.world.realm?.cities[item.id];if(state){item.button.style.setProperty('--city-realm',polities[state.controller].color);const internal=state.controller!=='frontier'?civilWar(p.world,state.controller):undefined,rebel=internal?.civil?.cities.includes(item.id);item.button.textContent=siteById[item.id].name+(state.controller!==state.owner?' · 占':rebel?' · 举兵':'');item.button.dataset.rebel=String(!!rebel);item.button.title='法理：'+regimeName(p.world,state.owner)+' / 控制：'+regimeName(p.world,state.controller);}}
         const currentArmies=p.world.realm?.armies??[];
         for(const [key,item] of armyMarkers)if(!currentArmies.some((a,i)=>String(a.id??a.realm+':'+i)===key)){item.marker.remove();armyMarkers.delete(key);}
         for(const [i,a] of currentArmies.entries()){
@@ -214,8 +229,7 @@ export function WorldMap(props:Props){
       for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
       map.setPaintProperty('territory-fill','fill-opacity',p.mode==='diplomacy'?.55:0);
-      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:['interpolate',['linear'],['zoom'],3,.48,5,.28,8,.08]);
-      for(const [id,entry] of people)entry.marker.getElement().hidden=!p.showTravelers||!mapTravelers(p.world).find(person=>person.id===id)?.journey;
+      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:['interpolate',['linear'],['zoom'],3,.22,5,.18,8,.07]);
       if(lastMode!==p.mode){
         map.setLayoutProperty('prefecture-boundary','visibility','none');
         map.setLayoutProperty('hierarchy-lines','visibility',p.mode==='domains'?'visible':'none');
@@ -226,8 +240,7 @@ export function WorldMap(props:Props){
         lastMode=p.mode;
       }
       if(lastTilt!==p.tilted){
-        map.setTerrain(p.tilted?{source:'dem-terrain',exaggeration:1.15}:null);
-        if(lastTilt!==undefined)map.easeTo({pitch:p.tilted?38:0,duration:reduced?0:450});
+        syncPerspective();
         lastTilt=p.tilted;
       }
       scheduleLabels();
@@ -252,7 +265,7 @@ export function WorldMap(props:Props){
         void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();},id=>armyPlacements.get(String(id))));}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
-          const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;button.setAttribute('aria-label',`选择${s.name}`);
+          const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;button.style.setProperty('--city-realm',polities[s.polity].color);button.setAttribute('aria-label',`选择${s.name}`);
           button.onclick=event=>{event.stopPropagation();current.current.onSelect(s.id);};
           button.ondblclick=event=>{event.stopPropagation();current.current.onSelect(s.id);focusSite(s.id);};
           button.oncontextmenu=event=>{event.preventDefault();event.stopPropagation();const rect=container.getBoundingClientRect();openMenu(s.id,event.clientX-rect.left,event.clientY-rect.top);};
@@ -314,6 +327,7 @@ export function WorldMap(props:Props){
         else setError(`地图初始化异常：${event.error.message}`);
       });
       map.on('webglcontextlost',()=>setError('图形上下文中断。重新载入地图可恢复，游戏进度仍保留。'));
+      map.on('zoomend',syncPerspective);
       map.on('move',scheduleLabels);map.on('sourcedata',scheduleLabels);
       map.once('idle',()=>{if(slowLoad)clearTimeout(slowLoad);});
       slowLoad=setTimeout(()=>{if(!disposed&&map&&!map.areTilesLoaded())setWarning('高清地形仍在加载；可以继续操作，或稍后重试。');},20000);
@@ -363,7 +377,7 @@ export function WorldMap(props:Props){
       <button ref={menuButton} onClick={()=>{props.onSelect(menu.id);setMenu(null);}}>查看城域详情 <span>→</span></button>
       <button onClick={()=>{api.current?.camera('selected');setMenu(null);}}><ArtIcon name="city" size={28}/>拉近至城邑 <span>↗</span></button>
       <button disabled={!!player.journey||player.location===menu.id} onClick={()=>{props.onPreviewRoute(menu.id);setMenu(null);}}>预览前往路线 <span>→</span></button>
-      <small>{player.journey?'行旅途中，抵达后可规划新路线':'预览后，在右侧面板确认启程'}</small>
+      <small>{player.journey?'行旅途中，抵达后可规划新路线':'预览后，在左侧出行页确认启程'}</small>
     </div>}
     {!ready&&!error&&<div className="map-status">正在铺展山河<span>载入真实高程与矢量水系</span></div>}
     {warning&&!error&&<div className="atlas-network-notice" role="status"><span>{warning}</span><button onClick={()=>setRetry(n=>n+1)}>重试</button></div>}

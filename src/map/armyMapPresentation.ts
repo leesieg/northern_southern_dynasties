@@ -14,7 +14,7 @@ export interface ScreenPoint {x:number;y:number}
 export interface ScreenRect {left:number;top:number;right:number;bottom:number}
 export interface ArmyMarkerPlacement {offset:ScreenPoint;model:boolean;bounds:ScreenRect}
 // Both DOM hit targets and GPU models consume these screen placements. No world position is changed.
-export const armyMarkerFootprint=(model:boolean)=>model?{width:192,height:348,bottom:132}:{width:154,height:58,bottom:66};
+export const armyMarkerFootprint=(model:boolean,strategic=false)=>model?{width:192,height:348,bottom:132}:strategic?{width:126,height:46,bottom:50}:{width:154,height:58,bottom:66};
 export const armyModelBadgeBottom=(pitch:number)=>Math.ceil(96*Math.cos(pitch*Math.PI/180))+36;
 export const screenOverlap=(a:ScreenRect,b:ScreenRect)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 /** One representative at each actual location; choosing another co-located army never moves the model. */
@@ -48,12 +48,12 @@ export function dockMapMarker(rect:ScreenRect,armies:ScreenRect[],placed:ScreenR
  }
  return {offset:best,bounds:{left:rect.left+best.x,right:rect.right+best.x,top:rect.top+best.y,bottom:rect.bottom+best.y}};
 }
-export function layoutArmyCards(armies:{key:string;point:ScreenPoint}[],obstacles:ScreenRect[],viewport:{width:number;height:number}){
+export function layoutArmyCards(armies:{key:string;point:ScreenPoint}[],obstacles:ScreenRect[],viewport:{width:number;height:number},strategic=false){
  const placements=new Map<string,ArmyMarkerPlacement>(),occupied:ScreenRect[]=[],gap=8;
  const padded=(r:ScreenRect)=>({left:r.left-gap,top:r.top-gap,right:r.right+gap,bottom:r.bottom+gap});
  const fixed=obstacles.map(padded);
  function find(point:ScreenPoint,allowCrowding=false){
-  const size=armyMarkerFootprint(false),above=size.height-size.bottom;
+  const size=armyMarkerFootprint(false,strategic),above=size.height-size.bottom;
   const minX=size.width/2+gap,maxX=viewport.width-size.width/2-gap,minY=above+gap,maxY=viewport.height-size.bottom-gap;
   if(maxX<minX||maxY<minY)return;
   const blocked=[...fixed,...occupied.map(padded)],candidates:ScreenPoint[]=[];

@@ -29,3 +29,25 @@
 .focused-shell .map-stage .journal{left:calc(var(--map-hud-left) + 20px);width:min(460px,calc(100% - var(--map-hud-left) - 40px))}
 .focused-shell .map-stage .campaign-tracker{left:calc(var(--map-hud-left) + 22px)}
 @media(max-width:1100px){.focused-shell .game-body:is(.place-open,.character-open,.utility-open){--map-hud-left:var(--rail-width)}}
+
+/* One command dock: destinations, camera, map modes, then display preferences. */
+.focused-shell .map-command-dock{gap:7px;bottom:26px;right:14px}
+.focused-shell .map-navigation-row{gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:100%}
+.focused-shell .map-command-dock :is(.zoom-tools,.map-modes){border:1px solid #b49a626e;border-radius:2px!important;background:linear-gradient(110deg,#24382df7,#142820f7);box-shadow:inset 0 0 0 2px #ac955b16,0 3px 10px #0b1b1655}
+.focused-shell .map-command-dock .hover-hint{display:inline-flex;min-width:0}
+.focused-shell .map-command-dock .zoom-tools button:nth-child(3){margin-left:0}
+.focused-shell .map-command-dock .zoom-tools>.hover-hint:nth-child(3){border-left:1px solid #b49a6255;padding-left:6px;margin-left:2px}
+.focused-shell .map-command-dock .map-modes button{min-width:46px;min-height:48px;border-radius:1px;color:#d1c9ad}
+.focused-shell .map-command-dock .map-modes button[aria-pressed=true]{color:#fff0bf;background:#ba9c5829;box-shadow:inset 0 -2px #dbc083}
+.focused-shell .map-command-dock :is(.court-map-button,.situation-map-button,.map-options-toggle){display:flex;align-items:center;justify-content:center;gap:5px;min-height:48px;padding:6px 10px;border:1px solid #b49a626e;border-radius:2px;background:linear-gradient(110deg,#2f4133,#182d24);color:#ead8af;font:12px var(--serif)}
+.focused-shell .map-command-dock :is(.court-map-button,.map-options-toggle){flex-direction:column;min-width:48px;width:auto}
+.focused-shell .map-command-dock :is(.court-map-button,.situation-map-button)[aria-expanded=true]{border-color:#e8c981;box-shadow:inset 0 -2px #dbc083;background:#42523a}
+.focused-shell .map-command-dock button:focus-visible{outline:2px solid #f2d897;outline-offset:3px}
+.focused-shell .map-command-dock>.map-options{display:grid;gap:6px;padding:12px;width:248px;max-width:calc(100vw - 40px);border:1px solid #bba26c;border-radius:2px;background:#1d3027;bottom:calc(100% + 10px)}
+.focused-shell .map-options>header{display:flex;justify-content:space-between;align-items:center;color:#ebd6a6;font:15px var(--serif);padding-bottom:6px;border-bottom:1px solid #bba26c44}
+.focused-shell .map-options>header button{width:30px;min-height:30px;padding:0;font-size:20px}
+.focused-shell .map-command-dock .map-options>.hover-hint{display:block}
+.focused-shell .map-options>.hover-hint>button{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:38px;padding:7px 10px;font-size:12px}
+.focused-shell .map-options button b{font-size:11px;font-weight:400;color:#c0b597}
+.focused-shell .map-options button[aria-pressed=true] b{color:#ffe5aa}
+@media(max-width:900px){.focused-shell .map-command-dock{right:8px;max-width:calc(100% - 16px)}.focused-shell .map-command-dock .map-modes button{min-width:42px;padding-inline:4px}.focused-shell .map-navigation-row{gap:4px}}

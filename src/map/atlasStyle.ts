@@ -1,3 +1,4 @@
+import {PAPER_ZOOM, LANDSCAPE_ZOOM} from './atlasPresentation';
 import hierarchyGeometry from '../data/hierarchy-geometry.json';
 import type { StyleSpecification } from 'maplibre-gl';
 import { emptyCollection, roadFeatures, siteFeatures } from './geography';
@@ -34,11 +35,11 @@ export function atlasStyle():StyleSpecification {
       settlements:{type:'geojson',data:settlements()},
     },
     layers:[
-      {id:'background',type:'background',paint:{'background-color':'#7f9e9c'}},
-      {id:'land-fallback',type:'fill',source:'land',paint:{'fill-color':'#cdcbb0'}},
-      {id:'elevation-colors',type:'color-relief',source:'dem-visual',paint:{'color-relief-opacity':1,'color-relief-color':['interpolate',['linear'],['elevation'],-5000,'#6e9194',-1,'#94afaa',0,'#c3c8aa',100,'#c3c8aa',350,'#b2bea0',750,'#a4b192',1300,'#b2b495',2100,'#c1b693',3000,'#bbae92',4000,'#c9bd9f',5000,'#d7cfb9',6000,'#e2dfd0',7500,'#f1eee5']}},
+      {id:'background',type:'background',paint:{'background-color':['interpolate',['linear'],['zoom'],PAPER_ZOOM,'#b9b19a',LANDSCAPE_ZOOM,'#789491']}},
+      {id:'land-fallback',type:'fill',source:'land',paint:{'fill-color':['interpolate',['linear'],['zoom'],PAPER_ZOOM,'#e0d1ad',LANDSCAPE_ZOOM,'#bac29e']}},
+      {id:'elevation-colors',type:'color-relief',source:'dem-visual',paint:{'color-relief-opacity':['interpolate',['linear'],['zoom'],PAPER_ZOOM,.08,LANDSCAPE_ZOOM,1],'color-relief-color':['interpolate',['linear'],['elevation'],-5000,'#6e9194',-1,'#94afaa',0,'#c3c8aa',100,'#c3c8aa',350,'#b2bea0',750,'#a4b192',1300,'#b2b495',2100,'#c1b693',3000,'#bbae92',4000,'#c9bd9f',5000,'#d7cfb9',6000,'#e2dfd0',7500,'#f1eee5']}},
       {id:'woodland',type:'fill',source:'natural','source-layer':'landcover',minzoom:5,filter:['==',['get','class'],'wood'],paint:{'fill-color':'#6e856c','fill-opacity':['interpolate',['linear'],['zoom'],5,.06,8,.16,12,.2]}},
-      {id:'realm-tint',type:'fill',source:'realms',paint:{'fill-color':['get','color'],'fill-opacity':['interpolate',['linear'],['zoom'],3,.48,5,.28,8,.08]}},
+      {id:'realm-tint',type:'fill',source:'realms',paint:{'fill-color':['get','color'],'fill-opacity':['interpolate',['linear'],['zoom'],3,.22,5,.18,8,.07]}},
       {id:'territory-fill',type:'fill',source:'territories',paint:{'fill-color':['get','color'],'fill-opacity':0}},
       {id:'territory-tone',type:'fill',source:'territories',paint:{'fill-color':['match',['get','tone'],0,'#fff0c6',1,'#314832','#d4c492'],'fill-opacity':['interpolate',['linear'],['zoom'],4,0,6,.12,9,.04]}},
       {id:'territory-border',type:'line',source:'territories',paint:{'line-color':'#534d39','line-width':['interpolate',['linear'],['zoom'],4,.3,6,.8,9,1.2],'line-opacity':['interpolate',['linear'],['zoom'],4,0,5,.45,8,.65]}},
@@ -50,14 +51,14 @@ export function atlasStyle():StyleSpecification {
       {id:'hierarchy-lines',type:'line',source:'hierarchy',filter:['==',['get','level'],'realm'],paint:{'line-color':'#605238','line-width':1.8,'line-opacity':.7}},
       {id:'hierarchy-selected',type:'fill',source:'hierarchy',filter:['==',['get','id'],''],paint:{'fill-color':'#f0d287','fill-opacity':.18}},
       {id:'hierarchy-selected-edge',type:'line',source:'hierarchy',filter:['==',['get','id'],''],paint:{'line-color':'#ffe2a0','line-width':3,'line-opacity':.95}},
-      {id:'mountain-shadow',type:'hillshade',source:'dem-visual',paint:{'hillshade-exaggeration':.48,'hillshade-illumination-direction':315,'hillshade-illumination-anchor':'map','hillshade-shadow-color':'#393c30','hillshade-highlight-color':'#f2eedc','hillshade-accent-color':'#777158'}},
+      {id:'mountain-shadow',type:'hillshade',source:'dem-visual',paint:{'hillshade-exaggeration':['interpolate',['linear'],['zoom'],PAPER_ZOOM,.16,LANDSCAPE_ZOOM,.55],'hillshade-illumination-direction':315,'hillshade-illumination-anchor':'map','hillshade-shadow-color':'#393c30','hillshade-highlight-color':'#f2eedc','hillshade-accent-color':'#777158'}},
       {id:'fallback-rivers',type:'line',source:'local-rivers',maxzoom:6,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#517f86','line-width':['interpolate',['linear'],['zoom'],3,.6,6,1.2],'line-opacity':.55}},
       {id:'frontier-shadow',type:'line',source:'frontiers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#403f35','line-width':['interpolate',['linear'],['zoom'],3,2,7,4],'line-opacity':.22,'line-blur':1}},
       {id:'frontier-ink',type:'line',source:'frontiers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#756348','line-width':['interpolate',['linear'],['zoom'],3,.9,7,1.5],'line-opacity':.75}},
       {id:'frontier-thread',type:'line',source:'frontiers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ece0b8','line-width':.6,'line-opacity':.8,'line-dasharray':[3,3]}},
-      {id:'ocean',type:'fill',source:'natural','source-layer':'water',filter:['==',['get','class'],'ocean'],paint:{'fill-color':'#82a5a4','fill-opacity':1}},
-      {id:'water-coast',type:'line',source:'natural','source-layer':'water',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#c6d2bc','line-width':['interpolate',['linear'],['zoom'],3,1,8,2.2],'line-opacity':.8}},
-      {id:'inland-water',type:'fill',source:'natural','source-layer':'water',filter:['!=',['get','class'],'ocean'],paint:{'fill-color':'#789f9e','fill-opacity':1}},
+      {id:'ocean',type:'fill',source:'natural','source-layer':'water',filter:['==',['get','class'],'ocean'],paint:{'fill-color':['interpolate',['linear'],['zoom'],PAPER_ZOOM,'#b9b19a',LANDSCAPE_ZOOM,'#789c99'],'fill-opacity':1}},
+      {id:'water-coast',type:'line',source:'natural','source-layer':'water',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['interpolate',['linear'],['zoom'],PAPER_ZOOM,'#796f54',LANDSCAPE_ZOOM,'#c6d2bc'],'line-width':['interpolate',['linear'],['zoom'],3,1,8,2.2],'line-opacity':.8}},
+      {id:'inland-water',type:'fill',source:'natural','source-layer':'water',filter:['!=',['get','class'],'ocean'],paint:{'fill-color':['interpolate',['linear'],['zoom'],PAPER_ZOOM,'#a4afa0',LANDSCAPE_ZOOM,'#739996'],'fill-opacity':1}},
       {id:'rivers-major',type:'line',source:'natural','source-layer':'waterway',filter:['==',['get','class'],'river'],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#507d82','line-opacity':.9,'line-width':['interpolate',['linear'],['zoom'],3,.5,5,.9,8,1.7,11,2.6]}},
       {id:'rivers-minor',type:'line',source:'natural','source-layer':'waterway',minzoom:8,filter:['==',['get','class'],'stream'],layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#668e8b','line-opacity':.65,'line-width':['interpolate',['linear'],['zoom'],8,.4,12,1.1]}},
       {id:'road-casing',type:'line',source:'roads',layout:{visibility:'none','line-cap':'round','line-join':'round'},paint:{'line-color':'#eee0b8','line-opacity':.5,'line-width':3}},

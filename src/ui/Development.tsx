@@ -35,7 +35,7 @@ const CityViewport=lazy(()=>import('../city/CityViewport'));
 
 export type CityTab='model'|'build'|'governance'|'military'|'coordination'|'service'|'finance'|'population'|'offices'|'people'|'travel'|'history';
 export function LocationDevelopment({world,selected,onSelect,onPerson,onRetinue,onService,send,pending=false,tab:requestedTab,onTab,localTasks,overview,travel,people,peopleCount,onDiplomacy,onTerritory}:{onDiplomacy:(r:RealmId)=>void;onTerritory:(id:string)=>void;onPerson?:(id:string)=>void;onRetinue?:()=>void;onService?:()=>void;pending?:boolean;tab:CityTab;onTab:(tab:CityTab)=>void;people:ReactNode;localTasks:ReactNode;peopleCount:number;overview:ReactNode;travel:ReactNode;world:World;selected:string;onSelect:(id:string)=>void;send:(command:GameCommand)=>void}){
-  const tab:CityTab=requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab;
+  const tab:CityTab=!world.realm&&['governance','service','military','finance','population','coordination','offices'].includes(requestedTab)?'history':requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab;
   const [cityBuilding,setCityBuilding]=useState<CityBuilding|null>(null);
   useEffect(()=>setCityBuilding(null),[selected]);
 
