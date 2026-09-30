@@ -26,8 +26,8 @@ describe('army organization and conservation',()=>{
  it('reports real starvation losses and stops losing soldiers when food is restored',()=>{
   const w=setup();act(w,{type:'army',action:'raise',site:'jiankang',kind:'shield',service:'levy'});const a=w.realm!.armies[0];
   for(const city of Object.values(w.realm!.cities))city.grain=0;w.realm!.treasuries.liang.grain=0;a.supply=0;w.day=1;
-  advanceRealm(w);expect(a.troops).toBe(196);expect(w.chronicle.some(e=>e.text.includes(`第 ${a.id} 军断粮`)&&e.text.includes('减员 4 人'))).toBe(true);
-  a.supply=100;w.day=2;advanceRealm(w);expect(a.troops).toBe(196);expect(parseWorld(serializeWorld(w))).toEqual(w);
+  advanceRealm(w);expect(a.troops).toBe(200);w.day=2;advanceRealm(w);expect(a.troops).toBe(200);w.day=3;advanceRealm(w);expect(a.troops).toBe(199);expect(w.chronicle.some(e=>e.text.includes(`第 ${a.id} 军断粮`)&&e.text.includes('减员 1 人'))).toBe(true);
+  a.supply=100;w.day=4;advanceRealm(w);expect(a.troops).toBe(199);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('merges and splits without losing soldiers, supply, arrears or regiment IDs',()=>{
   const w=setup(),s=w.realm!;for(const kind of ['shield','spear'] as const)act(w,{type:'army',action:'raise',site:'jiankang',kind,service:'levy'});

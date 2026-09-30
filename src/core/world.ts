@@ -1,3 +1,4 @@
+import {executeArmyDeployment} from './armyDeployment';
 import {calendarDate} from './calendar';
 import {actResignation,isAdventurer} from './resignation';
 import {actCoordinated,recordCoordinated} from './coordinatedService';
@@ -119,7 +120,16 @@ function record(world: World, person: Person, text: string) {
   world.chronicle.push({ day: world.day, person: person.id, text });
   world.chronicle = world.chronicle.slice(-100);
 }
+import {actSiegeDecision} from './siegePhases';
+import {actSeparatePeace} from './separatePeace';
+import {actMilitaryDefection} from './militaryDefection';
+import {actMilitaryNomination} from './militaryNominations';
+import {actDefection} from './defections';
+import {actMilitaryCareer} from './militaryCareer';
+import {executeRecruitmentPlan} from './recruitmentPlans';
 export function act(world: World, command: GameCommand): void {
+ if(command.type==='armyDeployment'){executeArmyDeployment(world,command,act);return;}
+ if(command.type==='recruitmentPlan'){executeRecruitmentPlan(world,command,act);return;}
  if(command.type==='armyBatch'){
   const ids=command.armies;
   if(ids.length<2||ids.length>16||ids.some(id=>!Number.isSafeInteger(id)||id<1)||new Set(ids).size!==ids.length)throw new Error('请选择 2 至 16 支不同的军队');
@@ -133,7 +143,7 @@ export function act(world: World, command: GameCommand): void {
  const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
 }
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
-function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand>): void {
+function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
   const person = world.people[0];
   ensureLife(world);
   if(!isAlive(world,world.characterId??'fictional'))throw new Error('人物已经去世。');
@@ -148,6 +158,12 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand>
   if(command.type==='coordinate'){actCoordinated(world,command);return;}
   if(command.type==='commerce'){actCommerce(world,command);return;}
   if(command.type==='household'){actHousehold(world,command);return;}
+  if(command.type==='siegeDecision'){actSiegeDecision(world,command);return;}
+  if(command.type==='separatePeace'){actSeparatePeace(world,command);return;}
+  if(command.type==='militaryDefection'){actMilitaryDefection(world,command);return;}
+  if(command.type==='militaryNomination'){actMilitaryNomination(world,command);return;}
+  if(command.type==='defection'){actDefection(world,command);return;}
+  if(command.type==='militaryCareer'){actMilitaryCareer(world,command);return;}
   if(command.type==='militaryAction'){actMilitaryAction(world,command);return;}
   if(command.type==='civilWar'){actCivilWar(world,command);return;}
   if(command.type==='enterprise'){actEnterprise(world,command);return;}

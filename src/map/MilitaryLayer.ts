@@ -1,0 +1,33 @@
+import {Camera,Scene,Group,Mesh,BoxGeometry,CylinderGeometry,SphereGeometry,MeshStandardMaterial,AmbientLight,DirectionalLight,WebGLRenderer,Matrix4,Vector3} from 'three';
+import {MercatorCoordinate,type Map,type CustomLayerInterface} from 'maplibre-gl';
+import {armyVisualState} from '../core/armyPresentation';
+import type {World} from '../core/types';
+import type {Army} from '../core/realm';
+import {siteById} from '../data/scenario';
+// One shared MapLibre canvas/context; original representative models, never one model per soldier.
+// API: https://maplibre.org/maplibre-gl-js/docs/examples/add-a-3d-model-using-threejs/
+export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;armyMotion:boolean},onFailure:(reason:string)=>void):CustomLayerInterface{
+ const camera=new Camera(),scene=new Scene(),origin=MercatorCoordinate.fromLngLat([110,32]),anchor=new Matrix4().makeTranslation(origin.x,origin.y,0),models=new globalThis.Map<number,{root:Group;body:Group;legs:Group[];arms:Group[];flag:Mesh;detail:Group;camp:Group;kind:string}>(),geometries=[new BoxGeometry(1,1,1),new CylinderGeometry(1,1,1,8),new SphereGeometry(1,8,6)],materials=new globalThis.Map<string,MeshStandardMaterial>();let displayedWorld:World|undefined;const visualStates=new globalThis.Map<number,ReturnType<typeof armyVisualState>>();let renderer:WebGLRenderer|undefined,map:Map|undefined,failed=false;
+ function material(color:string){let m=materials.get(color);if(!m){m=new MeshStandardMaterial({color,roughness:1});materials.set(color,m);}return m;}
+ function box(group:Group,color:string,x:number,y:number,z:number,sx:number,sy:number,sz:number,geometry=0){const mesh=new Mesh(geometries[geometry],material(color));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.frustumCulled=false;group.add(mesh);return mesh;}
+ function model(a:Army,kind:string){const root=new Group(),body=new Group(),detail=new Group(),camp=new Group(),legs:Group[]=[],arms:Group[]=[],color=a.realm==='liang'?'#254b3a':a.realm==='east'?'#725339':'#46596b';root.matrixAutoUpdate=false;root.add(body);body.add(detail);body.add(camp);box(camp,'#8d7851',-.9,.25,-.5,.7,.5,.65);box(camp,'#584b34',-.9,.1,-.5,.4,.3,.3);
+  for(const side of [-1,1]){const leg=new Group();leg.position.set(side*.18,.65,0);box(leg,'#35342e',0,-.3,0,.17,.65,.22);body.add(leg);legs.push(leg);const arm=new Group();arm.position.set(side*.36,1.3,0);box(arm,color,0,-.22,0,.17,.55,.2);detail.add(arm);arms.push(arm);}
+  box(body,color,0,1,0,.62,.75,.4);box(body,'#d2b995',0,1.62,0,.22,.22,.22,2);box(body,'#69635a',0,1.83,0,.27,.12,.27,1);box(detail,'#bca66f',.5,1.32,0,.035,1.85,.035);const flag=box(body,color,.65,2.05,0,.65,.4,.025);box(body,'#bca66f',.33,1.65,0,.035,1.5,.035);
+  if(kind==='horse'){box(body,'#6d5138',0,.55,.4,.6,.6,1.2);box(body,'#6d5138',0,.9,.85,.34,.55,.3);for(const x of [-.22,.22])for(const z of [-.05,.78])box(body,'#49392c',x,.15,z,.12,.5,.12);body.position.y=.4;}
+  if(kind==='siege'){box(detail,'#806540',0,.4,.8,.8,.5,1.2);box(detail,'#9b8253',0,1.1,.8,.12,1.1,.12).rotation.x=.5;for(const x of [-.45,.45])box(detail,'#423a2b',x,.2,.8,.28,.2,.28,1);}
+  scene.add(root);return {root,body,legs,arms,flag,detail,camp,kind};
+ }
+ function failure(e:unknown){failed=true;onFailure('军队 3D 图层无法显示，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));}
+ return {id:'military-models',type:'custom',renderingMode:'3d',onAdd(m,gl){map=m;try{renderer=new WebGLRenderer({canvas:m.getCanvas(),context:gl,antialias:true});renderer.autoClear=false;scene.add(new AmbientLight('#fff2d0',2));const sun=new DirectionalLight('#ffffff',3);sun.position.set(0,-70,100);scene.add(sun);}catch(e){failure(e);}},
+ render(_gl,args){if(failed||!map||!renderer)return;const state=getState(),armies=state.world.realm?.armies??[],zoom=map.getZoom(),visible=state.militaryModels&&zoom>=5.3;try{
+  if(displayedWorld!==state.world){displayedWorld=state.world;visualStates.clear();for(const a of armies)visualStates.set(a.id!,armyVisualState(state.world,a));}const ids=new Set(armies.map(a=>a.id!));for(const [id,m] of models)if(!ids.has(id)){scene.remove(m.root);models.delete(id);}let animating=false;
+  for(const a of armies){if(!a.id)continue;const units=a.regiments??[],kind=units.some(u=>u.kind==='heavyHorse'||u.kind==='lightHorse')?'horse':units.some(u=>u.kind==='siege')?'siege':'foot';let m=models.get(a.id);if(!m||m.kind!==kind){if(m)scene.remove(m.root);m=model(a,kind);models.set(a.id,m);}
+   let lon=siteById[a.location].lon,lat=siteById[a.location].lat,heading=0;if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]],t=j.elapsed/j.durations[j.leg];lon=from.lon+(to.lon-from.lon)*t;lat=from.lat+(to.lat-from.lat)*t;heading=Math.atan2(to.lon-from.lon,to.lat-from.lat);}
+   m.root.visible=visible&&map.getBounds().contains([lon,lat]);if(!m.root.visible)continue;const elevation=map.queryTerrainElevation({lng:lon,lat})??0,coord=MercatorCoordinate.fromLngLat([lon,lat],elevation),metresPerPixel=40075016.686*Math.cos(lat*Math.PI/180)/(512*2**zoom),scale=coord.meterInMercatorCoordinateUnits()*metresPerPixel*16,peer=armies.slice(0,armies.indexOf(a)).filter(b=>!b.journey&&!a.journey&&b.location===a.location).length;
+   m.root.matrix.makeTranslation(coord.x-origin.x+peer*scale*1.1,coord.y-origin.y,coord.z).scale(new Vector3(scale,-scale,scale)).multiply(new Matrix4().makeRotationX(Math.PI/2));m.body.rotation.y=heading;m.detail.visible=zoom>=6.5;
+   const visual=visualStates.get(a.id)??'garrison',active=state.armyMotion&&zoom>=6.5&&['marching','retreat','training','battle','siege'].includes(visual),t=active?performance.now()/170+a.id:0,swing=active?Math.sin(t)*.65:0;
+   m.camp.visible=zoom>=6.5&&(visual==='garrison'||visual==='siege');m.flag.material=material(visual==='retreat'?'#b26450':visual==='battle'?'#c8a358':a.realm==='liang'?'#254b3a':a.realm==='east'?'#725339':'#46596b');m.body.rotation.x=visual==='retreat'?.18:0;m.legs.forEach((leg,i)=>leg.rotation.x=['marching','retreat'].includes(visual)?swing*(i?1:-1):0);m.arms.forEach((arm,i)=>arm.rotation.x=visual==='battle'||visual==='training'||visual==='siege'?(visual==='battle'?.8:0)+swing*(i?1:-1):0);m.flag.rotation.y=active?Math.sin(t*.4)*.1:0;animating||=active;
+  }
+  camera.projectionMatrix.fromArray(args.defaultProjectionData.mainMatrix).multiply(anchor);renderer.resetState();renderer.render(scene,camera);renderer.resetState();if(animating)map.triggerRepaint();
+ }catch(e){failure(e);}},onRemove(){models.clear();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer?.dispose();renderer=undefined;map=undefined;}};
+}

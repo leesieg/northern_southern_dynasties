@@ -1,18 +1,21 @@
+import {mobilizedTransportLabor} from './armyLogistics';
 import {isMonthStart} from './calendar';
 import {civilianFood} from './population';
 import type {World} from './types';
 import {activeWars,warRealmSide} from './wars';
-import {realms,playerRealm,armyDailyFood,canMarchThrough} from './realm';
+import {realms,capital,playerRealm,armyDailyFood,canMarchThrough} from './realm';
 import {armyControls} from './civilWars';
 import {armyCampaign} from './militaryCampaigns';
 import {ensureArmyOrganization,readyTroops} from './armyOrganization';
 import {governmentMusterReason,spendGovernmentMuster} from './government';
 import {planRoute} from './world';
+import {authorityGrant} from './authority';
+import {governingExecutives} from './government';
 /** All non-player armies choose once per day using their own readiness and known objectives. */
-export function advanceMilitaryAI(w:World){const s=w.realm;if(!s)return;for(const r of realms){if(r===playerRealm(w)||s.annexed?.[r])continue;const wars=activeWars(w).filter(v=>!v.civil&&!!warRealmSide(v,r));if(!wars.length)continue;const treasury=s.treasuries[r];
+export function advanceMilitaryAI(w:World){const s=w.realm;if(!s)return;for(const r of realms){if(s.annexed?.[r])continue;const playerExecutive=r===playerRealm(w)&&governingExecutives(w,r).includes(w.characterId!);const wars=activeWars(w).filter(v=>!v.civil&&!!warRealmSide(v,r));if(!wars.length)continue;const treasury=s.treasuries[r];
  const own=s.armies.filter(a=>a.realm===r),opponents=new Set(realms.filter(other=>wars.some(v=>warRealmSide(v,other)&&warRealmSide(v,other)!==warRealmSide(v,r)))),enemy=s.armies.filter(a=>opponents.has(a.realm)),underpowered=own.reduce((n,a)=>n+readyTroops(a,w.day),0)<enemy.reduce((n,a)=>n+readyTroops(a,w.day),0)*.8;
- if((!own.length&&wars.some(v=>w.day-v.started>=5)||underpowered&&isMonthStart(w.day,w.scriptId))&&own.length<16&&treasury.coins>=120&&treasury.grain>=120&&s.armies.length<48&&!governmentMusterReason(w,r)){const site=Object.keys(s.cities).filter(id=>s.cities[id].controller===r&&s.cities[id].owner===r&&s.cities[id].population>=700).sort((a,b)=>s.cities[b].population-s.cities[a].population)[0];if(site){treasury.coins-=120;treasury.grain-=120;s.cities[site].population-=600;spendGovernmentMuster(w,r);s.armies.push({realm:r,location:site,troops:600,morale:70,supply:120,journey:null,siege:0,trainingStarted:w.day,trainingUntil:w.day+30});ensureArmyOrganization(w);}}
- for(const a of s.armies.filter(a=>a.realm===r)){if(a.journey||a.withdrawalUntil||armyCampaign(w,a)||readyTroops(a,w.day)<100)continue;
+ if(!playerExecutive&&(!own.length&&wars.some(v=>w.day-v.started>=5)||underpowered&&isMonthStart(w.day,w.scriptId))&&own.length<16&&treasury.coins>=120&&governingExecutives(w,r).length>0&&s.armies.length<48&&!governmentMusterReason(w,r)){const site=Object.keys(s.cities).filter(id=>s.cities[id].controller===r&&s.cities[id].owner===r&&s.cities[id].population-mobilizedTransportLabor(w,id)>=700&&(id===capital(r)?treasury.grain:s.cities[id].grain)>=120).sort((a,b)=>s.cities[b].population-s.cities[a].population)[0];if(site){treasury.coins-=120;if(site===capital(r))treasury.grain-=120;else s.cities[site].grain-=120;s.cities[site].population-=600;spendGovernmentMuster(w,r);s.armies.push({realm:r,location:site,troops:600,morale:70,supply:120,journey:null,siege:0,trainingStarted:w.day,trainingUntil:w.day+30});ensureArmyOrganization(w);}}
+ for(const a of s.armies.filter(a=>a.realm===r)){if(r===playerRealm(w)&&authorityGrant(w,w.characterId!,'command',{realm:r,site:a.location,army:a}).allowed&&a.automation!=='delegated'||a.journey||a.withdrawalUntil||armyCampaign(w,a)||readyTroops(a,w.day)<100)continue;
  const retreat=a.supply<armyDailyFood(w,a)*2||a.morale<25||(a.arrears??0)>100,threats=Object.keys(s.cities).filter(id=>s.cities[id].owner===r&&s.cities[id].controller!==r||s.sieges?.some(v=>v.site===id&&s.cities[id].owner===r&&wars.some(war=>war.id===v.war&&((v.side==='attack'&&war.attacker!==r)||(v.side==='defend'&&war.defender!==r))))) ,targets=retreat?Object.keys(s.cities).filter(id=>armyControls(w,a,id)&&s.cities[id].grain>civilianFood(w,id)*2+30):[...threats,...wars.slice().sort((x,y)=>Number(s.cities[y.target].owner===r)-Number(s.cities[x.target].owner===r)).map(v=>v.target)];
  if(targets.includes(a.location)&&(!retreat||s.cities[a.location].grain>civilianFood(w,a.location)*2+30))continue;
  const routes=targets.map(target=>planRoute(a.location,target,id=>retreat?armyControls(w,a,id):canMarchThrough(w,r,id,target))).filter(p=>!!p).sort((a,b)=>a.days-b.days);let route=routes[0];if(!route)continue;

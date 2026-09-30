@@ -23,7 +23,7 @@ export interface RelationshipState {
  bonds:Record<string,{a:string;b:string;kind:Friendship;since:number}>;marriages:Marriage[];
  maritalBasis:Record<string,'unknown'|'recorded'|'simulation'|'widowed'|'free'>;
  opinions:Record<string,number>;hooks:Record<string,number>;reserves:Record<string,number>;
- oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
+ allegiances?:Record<string,{realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
  cooldowns:Record<string,number>;scheme:{kind:'befriend'|'control';actor:string;target:string;started:number;due:number;chance:number;basis:string|null}|null;
  history:{day:number;actor:string;target:string|null;text:string}[];
 }
@@ -76,14 +76,14 @@ export function closeKin(a:string,b:string){if(a===b)return true;const links=[..
 export function relationshipScore(w:World,target:string){
  const a=w.characterId!,p=relationshipPersonById[target];if(!p||target===a)return [];
  if(Object.hasOwn(characterById,target))return acceptance(w,target);
- return [{label:'基础',value:10},{label:'当前好感',value:relationOpinion(w,a,target)},{label:'外交',value:attributes(w).diplomacy*2},{label:'政权关系',value:p.realm===currentRealm(w)?15:-40}];
+ return [{label:'基础',value:10},{label:'当前好感',value:relationOpinion(w,a,target)},{label:'外交',value:attributes(w).diplomacy*2},{label:'政权关系',value:allegianceRealm(w,target)===currentRealm(w)?15:-40}];
 }
 function log(w:World,actor:string,target:string|null,text:string){const s=w.relationships!;s.history.push({day:w.day,actor,target,text});s.history=s.history.slice(-100);w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 export function setFriendship(w:World,a:string,b:string,kind:Friendship){if(!w.relationships)return;w.relationships.bonds[bondKey(a,b)]={a,b,kind,since:w.day};}
 export function oathCycle(w:World,follower:string,lord:string){const seen=new Set([follower]);let next:string|undefined=lord;while(next){if(seen.has(next))return true;seen.add(next);next=w.relationships?.oaths[next]?.lord;}return false;}
-export function authorityScore(w:World,id:string){const p=relationshipPersonById[id];if(!p||!w.realm)return 0;const g=governmentOf(w,p.realm)!;return (governingExecutives(w,p.realm).includes(id)?60:0)+(g.ruler===id?30:0)+(Object.values(g.court?.ministries??{}).includes(id)?20:0)+localPoliticalBasis(w,id,p.realm)+Math.floor((g.merit[id]??0)/5);}
+export function authorityScore(w:World,id:string){const p=relationshipPersonById[id];if(!p||!w.realm)return 0;const r=allegianceRealm(w,id)??p.realm,g=governmentOf(w,r)!;return (governingExecutives(w,r).includes(id)?60:0)+(g.ruler===id?30:0)+(Object.values(g.court?.ministries??{}).includes(id)?20:0)+localPoliticalBasis(w,id,p.realm)+Math.floor((g.merit[id]??0)/5);}
 export function validRegency(w:World,r:RealmId){const p=w.relationships?.regencies?.[r];return p&&p.basis===powerBasis(w,r)&&p.regimeId===governmentOf(w,r)?.regimeId?p:undefined;}
-export function allegianceBonus(w:World,r:RealmId){const chiefs=governingExecutives(w,r);return Math.min(9,Object.entries(w.relationships?.oaths??{}).filter(([id,o])=>relationshipPersonById[id]?.realm===r&&o.loyalty>=70&&chiefs.includes(o.lord)).length*3);}
+export function allegianceBonus(w:World,r:RealmId){const chiefs=governingExecutives(w,r);return Math.min(9,Object.entries(w.relationships?.oaths??{}).filter(([id,o])=>allegianceRealm(w,id)===r&&o.loyalty>=70&&chiefs.includes(o.lord)).length*3);}
 export function relationshipQuote(w:World,command:RelationshipCommand){
  const s=w.relationships,a=w.characterId!,target='target'in command?command.target:null,action=command.action;
  const score=target&&s?relationshipScore(w,target).reduce((n,v)=>n+v.value,0)+(action==='marry'?marriageClanBonus(w,a,target):0):0;
@@ -99,7 +99,7 @@ export function relationshipQuote(w:World,command:RelationshipCommand){
  const p=relationshipPersonById[target],kind=friendship(w,a,target),key=pair(a,target)+'|'+action;
  if((s.cooldowns[key]??0)>w.day)return '冷却剩余 '+(s.cooldowns[key]-w.day)+' 日';if(w.people[0].coins<cost)return `需个人钱 ${cost}`;if(power&&(!w.realm||w.realm.influence<power))return `需沙盒影响力 ${power}`;
  if(legacy)return legacy.reason;
- if(['pledge','recruit'].includes(action)&&relationshipPersonById[a].realm!==relationshipPersonById[target].realm)return '须同一政权人物';
+ if(['pledge','recruit'].includes(action)&&allegianceRealm(w,a)!==allegianceRealm(w,target))return '须同一政权人物';
  if(w.mobility&&['befriend','confidant','reconcile','marry','pledge','recruit','control','tighten'].includes(action)&&!together(w,a,target))return '须同城会面，可先约定行程';
  if(action==='gift')return s.reserves[target]+30>1_000_000?'对方私财已达容量':'';
  if(action==='pressure')return w.social.renown<10?'需家业名望 10':relationHooks(w,a,target)>=3?'最多保留 3 份人情':'';
@@ -111,7 +111,7 @@ export function relationshipQuote(w:World,command:RelationshipCommand){
  if(action==='divorce')return spouseOf(w,a)!==target?'此人不是当前配偶':w.social.renown<20?'解除婚姻需家业名望 20':'';
  if(action==='aid')return !['friend','confidant'].includes(kind??'')&&spouseOf(w,a)!==target?'仅配偶或朋友可请求支援':score<40?'亲友支援接受度需达到 40':s.reserves[target]<50?'对方私人储备不足 50':w.people[0].coins+50>1_000_000?'个人钱包容量不足':'';
  if(!w.realm)return '政治关系仅历史沙盒可用';const r=currentRealm(w),g=governmentOf(w,r)!,control=validRegency(w,r);
- if(p.realm!==r)return '效忠与朝廷控制限同一政权，不自动转移领土';
+ if(allegianceRealm(w,target)!==r)return '效忠与朝廷控制限同一政权，不自动转移领土';
  if(action==='pledge')return w.retinue?.members[a]?'已入幕府，须先离幕再宣誓':s.oaths[a]?'已有个人誓约，须先解除':g.ruler===a?'君主不能宣誓成为个人属员':authorityScore(w,target)<=authorityScore(w,a)?'对方须有更高的军政权力':oathCycle(w,a,target)?'效忠关系会形成循环':kind==='rival'||kind==='nemesis'?'不能向仇敌宣誓':score<40?'效忠接受度需达到 40':'';
  if(action==='recruit')return w.retinue?.members[target]?'对方已有幕府归属，须先离幕再招纳效忠':(ageAt(w,target)??0)<16?'只能招纳成年效忠者':s.oaths[target]?'对方已有誓约':g.ruler===target?'不能以普通效忠取代君主地位':authorityScore(w,a)<=authorityScore(w,target)?'需高于对方的军政权力':oathCycle(w,target,a)?'效忠关系会形成循环':score<65?'招纳接受度需达到 65':'';
  if(action==='release')return s.oaths[target]?.lord!==a?'对方不是你的效忠者':'';

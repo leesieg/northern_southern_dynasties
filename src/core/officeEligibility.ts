@@ -8,7 +8,7 @@ import {governmentOf,governingExecutives} from './government';
 import {presentAt} from './residence';
 import type {RealmId} from './realm';
 import type {World} from './types';
-export function allegianceRealm(w:World,id:string,seen=new Set<string>()):RealmId|undefined {if(seen.has(id))return relationshipPersonById[id]?.realm;seen.add(id);const lord=w.relationships?.oaths[id]?.lord??w.retinue?.members[id]?.host;const original=lord?allegianceRealm(w,lord,seen):relationshipPersonById[id]?.realm;return original?survivingRealm(w,original):undefined;}
+export function allegianceRealm(w:World,id:string,seen=new Set<string>()):RealmId|undefined {if(seen.has(id))return w.relationships?.allegiances?.[id]?.realm??relationshipPersonById[id]?.realm;seen.add(id);const lord=w.relationships?.oaths[id]?.lord??w.retinue?.members[id]?.host;const original=lord?allegianceRealm(w,lord,seen):w.relationships?.allegiances?.[id]?.realm??relationshipPersonById[id]?.realm;return original?survivingRealm(w,original):undefined;}
 export const officeName=(id:string)=>relationshipPersonById[id]?.name??characterById[id]?.name??id;
 export const officeCandidates=(w:World,r:RealmId)=>relationshipPeople.filter(p=>allegianceRealm(w,p.id)===r);
 export function publicOfficeReason(w:World,id:string){

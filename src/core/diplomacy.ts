@@ -1,3 +1,4 @@
+import {includeParticipantValues} from './warScoring';
 import {isMonthStart,monthStart} from './calendar';
 import {isAdventurer} from './resignation';
 import {needsEnvoy,defaultEnvoy,envoyReason,envoyEstimate,startEnvoyJourney,advanceEnvoyJourney,missionJourney,stopEnvoy} from './envoyTravel';
@@ -88,7 +89,7 @@ function conclude(w:World,m:Envoy,accept:boolean){const s=w.diplomacy!,p=diploma
  if(m.action==='recognize'){p.recognized=true;for(const r of [m.from,m.to])governmentOf(w,r)!.legitimacy=clamp(governmentOf(w,r)!.legitimacy+5,0);}
  if(m.action==='submit')s.subjects[m.from]=m.to;
  if(m.action==='aid'){for(const key of ['coins','grain'] as const){w.realm!.treasuries[m.to][key]-=120;w.realm!.treasuries[m.from][key]=Math.min(1_000_000,w.realm!.treasuries[m.from][key]+120);}}
- if(m.action==='join'){const war=activeWars(w).find(v=>v.id===m.war)!;war.allies??={};war.allies[m.to]=warRealmSide(war,m.from)!;}
+ if(m.action==='join'){const war=activeWars(w).find(v=>v.id===m.war)!;war.allies??={};war.allies[m.to]=warRealmSide(war,m.from)!;includeParticipantValues(w,war);}
  }else {changeOpinion(p,-5,'refusal');if(m.action==='aid'&&!blocked){s.credit[m.to]=clamp(s.credit[m.to]-15,0);changeOpinion(p,-20,'aidRefusal');}}
  history(w,m.from,m.to,regimeName(w,m.to)+(accept?'接受':'拒绝')+regimeName(w,m.from)+'的「'+diplomacyActions[m.action]+'」'+(blocked?'：'+blocked:'')+'。');if(m.envoy&&isAlive(w,m.envoy)&&allegianceRealm(w,m.envoy)===m.from&&startEnvoyJourney(w,m,m.home!)){m.status='returning';m.returnStarted=w.day;const j=missionJourney(w,m.envoy);m.due=w.day+(j?.durations.reduce((n,d)=>n+d,0)??0);m.expires=m.due+30;}else{stopEnvoy(w,m);s.missions=s.missions.filter(v=>v.id!==m.id);}
 }

@@ -1,3 +1,4 @@
+import {nextMonthStart} from './calendar';
 import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
 import {personResidence} from './residence';
 import { describe,it,expect } from 'vitest';
@@ -51,7 +52,7 @@ describe('婚姻、友敌、效忠与傀儡控制',()=>{
   const w=start('xiao-gang');ready(w);const owner=w.realm!.cities.jiankang.owner;relation(w,'pledge','xiao-yan');expect(w.relationships!.oaths['xiao-gang'].loyalty).toBe(70);expect(allegianceBonus(w,'liang')).toBe(3);relation(w,'renounce','xiao-yan');expect(w.relationships!.oaths['xiao-gang']).toBeUndefined();expect(friendship(w,'xiao-gang','xiao-yan')).toBe('rival');expect(w.realm!.cities.jiankang.owner).toBe(owner);expect(()=>relation(w,'pledge','xiao-yan')).toThrow('冷却');save(w);
  });
  it('招纳与解除效忠、忠诚崩溃解约，循环和跨国誓约被拒绝',()=>{
-  const w=start();ready(w);w.social!.opinions[pair('xiao-yan','xiao-gang')]=90;relation(w,'recruit','xiao-gang');relation(w,'release','xiao-gang');expect(w.relationships!.oaths['xiao-gang']).toBeUndefined();relation(w,'recruit','xiao-gang');setFriendship(w,'xiao-yan','xiao-gang','nemesis');w.relationships!.oaths['xiao-gang'].loyalty=10;pass(w,30);expect(w.relationships!.oaths['xiao-gang']).toBeUndefined();expect(relationshipQuote(w,{type:'relationship',action:'recruit',target:'gao-yang'}).reason).toContain('同一政权');save(w);
+  const w=start();ready(w);w.social!.opinions[pair('xiao-yan','xiao-gang')]=90;relation(w,'recruit','xiao-gang');relation(w,'release','xiao-gang');expect(w.relationships!.oaths['xiao-gang']).toBeUndefined();relation(w,'recruit','xiao-gang');setFriendship(w,'xiao-yan','xiao-gang','nemesis');w.relationships!.oaths['xiao-gang'].loyalty=10;pass(w,nextMonthStart(w.day,w.scriptId)-w.day);expect(w.relationships!.oaths['xiao-gang']).toBeUndefined();expect(relationshipQuote(w,{type:'relationship',action:'recruit',target:'gao-yang'}).reason).toContain('同一政权');save(w);
   w.relationships!.oaths['xiao-gang']={lord:'xiao-yi',since:w.day,loyalty:70};w.relationships!.oaths['xiao-yi']={lord:'xiao-gang',since:w.day,loyalty:70};expect(()=>serializeWorld(w)).toThrow('存档');
  });
  it('挟制计划成功切换实际权限与科层，但保留君主、政权、城市归属',()=>{

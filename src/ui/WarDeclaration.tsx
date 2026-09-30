@@ -15,10 +15,11 @@ import {ConfirmAction} from './ConfirmAction';
 import {ArtIcon,Resource} from './ArtIcon';
 import './warDeclaration.css';
 const goals={territory:{label:'割地',effect:'要求割让所选目标地'},reparations:{label:'赔款',effect:'要求赔款 300 钱，按期偿付'},tributary:{label:'宗属',effect:'迫使对方称臣'},annexation:{label:'吞并',effect:'胜利议和后接管对方政权'}};
+type DeclarationGoal=Exclude<NonNullable<War['goal']>,'defection'>;
 export function WarDeclaration({world:w,target,initialSite,pending,send,onClose,onPerson}:{world:World;target:RealmId;initialSite?:string;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void;onPerson?:(id:string)=>void}){
  const navigation=useContext(RealmNavigation);
  const openRealm=navigation?((id:RealmId)=>{onClose();navigation.open(id);}):undefined;
- const ref=useRef<HTMLDialogElement>(null),[goal,setGoal]=useState<NonNullable<War['goal']>>('territory'),[chosen,setChosen]=useState(initialSite??''),[confirm,setConfirm]=useState<string|null>(null);
+ const ref=useRef<HTMLDialogElement>(null),[goal,setGoal]=useState<DeclarationGoal>('territory'),[chosen,setChosen]=useState(initialSite??''),[confirm,setConfirm]=useState<string|null>(null);
  useEffect(()=>{const d=ref.current!,prev=document.activeElement as HTMLElement|null;d.showModal();return()=>{d.close();prev?.focus();};},[]);
  const r=playerRealm(w),sites=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===target),site=sites.includes(chosen)?chosen:sites.find(id=>!realmReason(w,{type:'realm',action:'war',site:id,goal}))??sites[0]??'',command={type:'realm',action:'war',site,goal} as const,reason=realmReason(w,command),armies=w.realm!.armies.filter(a=>a.realm===r);
  const targetCity=w.realm!.cities[site],routes=site?armies.map(a=>planRoute(a.journey?.route.at(-1)??a.location,site,id=>{const control=w.realm!.cities[id].controller;return id===site||control===target&&fortificationLevel(w,id)<1||canEnter(w,r,control,undefined,true);})).filter(v=>v!==null):[],closest=routes.length?Math.min(...routes.map(v=>v.days)):null;

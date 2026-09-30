@@ -37,8 +37,8 @@ describe('沙盒政治经济军事',()=>{
   const w=sandbox();advance(w,100);expect(w.day).toBe(90);expect(w.realm!.event).not.toBeNull();const before=structuredClone(w);expect(()=>act(w,{type:'provision'})).toThrow('待决');expect(w).toEqual(before);advance(w,10);expect(w.day).toBe(90);
   w.realm!.treasuries.liang.grain=0;expect(()=>act(w,{type:'realm',action:'event',choice:'fund'})).toThrow('不足');act(w,{type:'realm',action:'event',choice:'decline'});advance(w);expect(w.day).toBe(91);validate(w);
  });
- it('断粮造成减员，遣散归还剩粮但不退款',()=>{
-  const w=sandbox();act(w,{type:'realm',action:'muster'});const a=w.realm!.armies[0];w.realm!.treasuries.liang.grain=0;a.supply=0;advance(w);expect(a.troops).toBe(588);expect(a.morale).toBe(96);const coins=w.realm!.treasuries.liang.coins;act(w,{type:'realm',action:'disband'});expect(w.realm!.armies).toHaveLength(0);expect(w.realm!.treasuries.liang.coins).toBe(coins);validate(w);
+ it('断粮先伤士气，持续缺粮才减员，遣散不退款',()=>{
+  const w=sandbox();act(w,{type:'realm',action:'muster'});const a=w.realm!.armies[0];w.realm!.treasuries.liang.grain=0;a.supply=0;advance(w);expect(a.troops).toBe(600);expect(a.morale).toBe(98);advance(w);expect(a.troops).toBe(600);advance(w);expect(a.troops).toBe(597);expect(a.starvationDays).toBe(3);const coins=w.realm!.treasuries.liang.coins;act(w,{type:'realm',action:'disband'});expect(w.realm!.armies).toHaveLength(0);expect(w.realm!.treasuries.liang.coins).toBe(coins);validate(w);
  });
  it('军队通过道路逐日移动，保存中途行程可精确恢复',()=>{
   const w=sandbox();act(w,{type:'realm',action:'muster'});act(w,{type:'realm',action:'march',site:'jingkou'});const days=planRoute('jiankang','jingkou')!.days;advance(w,1);expect(w.realm!.armies[0].journey).not.toBeNull();const loaded=parseWorld(serializeWorld(w));advance(w,days-1);advance(loaded,days-1);expect(loaded).toEqual(w);expect(w.realm!.armies[0].location).toBe('jingkou');validate(w);

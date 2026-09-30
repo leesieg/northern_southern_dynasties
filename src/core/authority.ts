@@ -21,7 +21,7 @@ export function authorityGrant(w:World,actor:string,capability:Capability,scope:
  case 'appoint':allowed=!!t&&localCanAppoint(w,actor,t,scope.realm);break;
  case 'delegate':case 'levy':allowed=central||!!held;break;
  case 'spendPublic':allowed=!!account&&account===scope.account;break;
- case 'command':allowed=!!scope.army&&actorCommandsSide(w,actor,scope.army)&&(central||campaign?.commander===actor||!!scope.army&&armyCommander(w,scope.army)===actor||w.characterId===actor&&w.realm.mandate||!!scope.army.payer?.startsWith(scope.realm+'|')&&localHolder(w,scope.army.payer.split('|')[1],scope.realm)===actor&&localActive(w,scope.army.payer.split('|')[1],scope.realm));break;
+ case 'command':allowed=!!scope.army&&actorCommandsSide(w,actor,scope.army)&&(central||campaign?.commander===actor||armyCommander(w,scope.army)===actor||scope.army.owner===actor||!!scope.army.payer?.startsWith(scope.realm+'|')&&localHolder(w,scope.army.payer.split('|')[1],scope.realm)===actor&&localActive(w,scope.army.payer.split('|')[1],scope.realm));break;
  case 'declareWar':case 'negotiatePeace':allowed=central;break;
  case 'inspect':allowed=central||governmentOf(w,scope.realm)?.court?.ministries.censorate===actor||!!held&&held!==t;break;
  }
