@@ -1,0 +1,60 @@
+/* Campaign controls: ink trays, bronze medallions, paper figures and explicit orders.
+   Navigation, resource readouts and executable actions retain different affordances. */
+:root{--control-ink:#17271f;--control-well:#101e19;--control-bronze:#9c8352;--control-gold:#dbc18a;--control-paper:#e6d6b4;--control-muted:#b8b49e;--control-danger:#a7604c}
+.art-icon{align-self:center;justify-self:center;box-sizing:border-box;max-width:none;max-height:none}
+
+/* Shared action grammar, including dialogs rendered outside the game shell. */
+:is(.focused-shell :is([class*="-actions"],[class*="-controls"],[class*="-chips"],[class*="-command-row"],.realm-action,.military-record,.city-policy-grid),.action-detail-dialog,.action-confirm-dialog) button:not(:where(.realm-badge-link,.position-image,.position-title,.portrait-frame,.view-control,.art-map-button,.military-record-main)){
+ min-height:36px;padding:7px 11px;border:1px solid var(--control-bronze);border-radius:2px;background:linear-gradient(#2b3a2e,#19291f);color:var(--control-paper);box-shadow:inset 0 0 0 1px #d8bc6d12,0 1px 2px #09150d66;font-size:12px;line-height:1.4;text-shadow:0 1px #071910;
+}
+.campaign-action{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:7px 11px;border:1px solid var(--control-bronze);border-radius:2px;background:linear-gradient(#2b3a2e,#19291f);color:var(--control-paper);font:13px var(--serif);box-shadow:inset 0 0 0 1px #d8bc6d12,0 1px 2px #09150d66}
+.campaign-action-label{min-width:0;line-height:1.35}
+:is(.focused-shell,.action-detail-dialog,.action-confirm-dialog) button:focus-visible{outline:2px solid #f5dca0;outline-offset:3px}
+:is(.focused-shell,.action-detail-dialog,.action-confirm-dialog) button.primary{background:linear-gradient(#d7bd81,#a78b50);border-color:#e1c88c;color:#1a271e;box-shadow:inset 0 0 0 1px #f7e4b444,0 2px 5px #07140e55;text-shadow:none;font-weight:600}
+:is(.focused-shell,.action-detail-dialog,.action-confirm-dialog) button.danger{background:linear-gradient(#57392d,#36251e);border-color:#ae7559;color:#f1c7aa;text-shadow:none}
+:is(.focused-shell,.action-detail-dialog,.action-confirm-dialog) button:is([aria-pressed=true],[aria-expanded=true]):not(:where(.realm-badge-link,.position-image,.portrait-frame,.atlas-place-label)){border-color:#e0c689;color:#ffe9b5}
+:is(.focused-shell,.action-detail-dialog,.action-confirm-dialog) button:hover:not(:disabled):not(:where(.realm-badge-link,.position-image,.portrait-frame,.atlas-city-realm)){border-color:#edd39a}
+:is(.focused-shell,.action-detail-dialog,.action-confirm-dialog) button:disabled{cursor:not-allowed}
+:is(.action-detail-dialog,.action-confirm-dialog)>footer{border-top:1px solid #a58c5955;background:linear-gradient(#23342a,#18271f);gap:8px}
+:is(.action-detail-dialog,.action-confirm-dialog)>footer button{min-height:40px;min-width:86px}
+:is(.action-detail-dialog,.action-confirm-dialog) :is(select,input[type=number]){min-height:36px;max-width:100%;padding:6px 8px;border:1px solid #a58c5977;border-radius:2px;background:#12231b;color:var(--control-paper)}
+
+/* Command rails and compact map medallions. */
+.focused-shell :is(.sovereign-strip,.chronicle-control){background:linear-gradient(100deg,#101c17f7,#223329f5);border-color:#ad915c88;box-shadow:inset 0 -2px #cfb27426,0 3px 9px #06120f66}
+.focused-shell .command-rail{background:linear-gradient(90deg,#101c18f5,#203128f5);border-right-color:#9e8655}
+.focused-shell .command-rail .rail-emblem{background:radial-gradient(circle at 35% 24%,#435542,#192c22 70%);border-color:#a68c59;box-shadow:inset 0 0 0 2px #101f18,inset 0 0 0 3px #b69a5444,0 2px 5px #0007}
+.focused-shell .command-rail button[aria-expanded=true] .rail-emblem{border-color:#ebce8e;box-shadow:inset 0 0 0 2px #101f18,inset 0 0 0 3px #d7b46788,0 0 9px #dfc48033}
+.focused-shell .map-command-dock :is(.zoom-tools,.map-modes){border:0;background:#13241ced;border-radius:26px!important;padding:5px 7px!important;box-shadow:inset 0 0 0 1px #ab91594d,0 3px 10px #07160d66}
+.focused-shell .map-command-dock .map-modes button{width:52px;min-width:52px;height:52px;padding:4px;border:1px solid #a48b5666;border-radius:50%;background:radial-gradient(circle at 40% 20%,#354734,#172a20);color:#d3c5a4;gap:2px;font-size:10px;box-shadow:inset 0 0 0 2px #0f201b}
+.focused-shell .map-command-dock .map-modes button[aria-pressed=true]{color:#ffe9b5;border-color:#e7c985;background:radial-gradient(circle at 40% 20%,#665d3b,#283c28);box-shadow:inset 0 0 0 2px #10231b,0 0 0 1px #e0bc6755}
+.focused-shell .map-command-dock .zoom-tools :is(.view-control,.art-map-button){border-radius:50%!important;border:1px solid #a58b57!important;background:radial-gradient(circle at 40% 20%,#3d503b,#15291e)!important;box-shadow:inset 0 0 0 2px #10251c}
+.focused-shell .map-command-dock .map-options-toggle{width:52px;height:52px;padding:4px;border-radius:50%;font:10px var(--sans);background:radial-gradient(circle at 40% 20%,#3d503b,#15291e)}
+.focused-shell .map-command-dock .court-map-button{position:relative;display:flex;flex-direction:row;gap:7px;min-height:48px;padding:6px 14px 6px 8px;border-radius:26px;background:linear-gradient(100deg,#182a21,#35432e);border:1px solid #baa06b}
+.court-map-caption{display:grid;gap:2px;text-align:left}.court-map-caption strong{font:15px var(--serif);color:#efd4a0}.court-map-caption small{font:10px var(--sans);color:#c8bd9d}
+.court-map-alert{position:absolute;right:-3px;top:-4px;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1px solid #d2af6d;background:#754335;color:#ffe4a4;font:12px var(--serif)}
+.focused-shell .court-rail-button{border-radius:50%;border-color:#ad925d;background:radial-gradient(circle at 35% 20%,#40533e,#172b21)}
+.focused-shell .chronicle-control :is(.clock-play,.clock-utilities button){border-radius:50%;border-color:#a68c59;background:radial-gradient(circle at 35% 20%,#40513b,#192b20)}
+.focused-shell .chronicle-control .tally-speed{border-radius:2px;background:#14261d}
+.focused-shell .chronicle-control .tally-speed[aria-pressed=true]{background:#77663c;color:#ffe9af;border-color:#dfc285}
+
+/* Resource strips are readings, not execution buttons; only real links get hover action. */
+.art-resource{gap:5px;min-width:0;padding:3px 0;cursor:default;color:var(--control-paper)}
+.art-resource-value{line-height:1.15;min-width:0}.art-resource-value>b{font-family:var(--serif);font-variant-numeric:tabular-nums;color:#eddbad;text-shadow:0 1px #0b1c14}
+.art-resource-value>small:not(.art-unit){color:#c1bda4;font-size:10px;letter-spacing:0}
+.focused-shell :is(.military-metrics,.realm-resources,.city-summary-resources,.private-budget){gap:8px;border-color:#ad925944}
+.focused-shell .sovereign-strip .realm-resources{gap:10px}.sovereign-strip .art-resource+.art-resource{padding-left:10px;border-left:1px solid #b1975c40}
+.focused-shell .city-summary-resource{padding:5px 4px;gap:5px;border-bottom:1px solid #b1975c24;background:transparent;min-height:42px}
+.focused-shell .city-summary-resource strong{font-family:var(--serif);font-variant-numeric:tabular-nums;color:#ead3a0}
+.focused-shell .city-summary-resource small{color:#bfbca4}.focused-shell .city-summary-resource em{font-style:normal;color:#c8b783}
+.focused-shell :is(.military-metrics,.realm-resources) .hover-hint:focus-visible{outline:1px solid #e4c786;outline-offset:3px}
+
+/* Common selected choices and dense action rows. */
+.focused-shell :is(.detail-tabs,.city-icon-tabs)>button{border-radius:2px;background:linear-gradient(#24382b,#182b22);border-color:#a68b574d;color:#c7c7ad}
+.focused-shell :is(.detail-tabs,.city-icon-tabs)>button[aria-pressed=true]{background:linear-gradient(#4d5135,#283b29);color:#ffe3a6;border-color:#d2b578;box-shadow:inset 0 -2px #c8a762}
+.single-choice-card.is-selected{border-color:#ddbd7d;background:#394631;box-shadow:inset 3px 0 #d0b26e}
+@media(prefers-reduced-motion:reduce){.focused-shell button,.action-detail-dialog button,.action-confirm-dialog button{transition:none}}
+@media(max-width:900px){.focused-shell .map-command-dock .map-modes button{width:46px;min-width:46px;height:46px}.focused-shell .map-command-dock .map-options-toggle{width:46px;height:46px}.focused-shell .sovereign-strip .realm-resources{gap:6px}}
+/* Dense army dock controls have their own fixed hit slots, never text-button padding. */
+.focused-shell .army-unit{grid-template-columns:32px minmax(0,1fr) 32px;border-radius:2px;background:linear-gradient(110deg,#24372b,#14261d);border-color:#a68b5a88}
+.focused-shell .army-unit-actions button{display:flex;align-items:center;justify-content:center;min-width:32px;width:32px;min-height:32px;height:32px;padding:4px;border-radius:50%;border:1px solid #a48a5666;background:radial-gradient(circle at 35% 20%,#354932,#14271d)}
+.focused-shell .army-dock .military-metrics{gap:6px}.focused-shell .army-dock .art-resource{padding:0;gap:3px}
