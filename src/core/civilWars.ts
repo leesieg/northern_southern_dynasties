@@ -19,6 +19,7 @@ import {relationOpinion} from './relationships';
 import {allegianceRealm} from './officeEligibility';
 import {localBalance,fiscalPath,ensureFiscal,fiscalRecord} from './treasury';
 import {validDynastyName} from './courtSave';
+import {dynastyNameOptions} from './dynastyNaming';
 import {worldRealms} from './polityRuntime';
 import {relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
@@ -77,7 +78,7 @@ export function advanceCivilPolitics(w:World){if(!w.realm)return;
  if(w.day%90)return;
  for(const r of worldRealms(w)){const g=governmentOf(w,r);if(!g||w.realm.annexed?.[r]||g.support>=25||g.legitimacy>=35||civilWar(w,r))continue;
  const chief=governingAuthority(w,r),candidates=[...new Set(Object.values(w.realm.cities).filter(c=>c.owner===r).map(c=>c.governor))].filter((id):id is string=>!!id&&id!==w.characterId&&!!relationshipPersonById[id]&&isAlive(w,id)&&relationOpinion(w,id,chief)<=-30);
- for(const id of candidates){const command:CivilCommand={type:'civilWar',action:'rise',name:'新'+(r==='liang'?'梁':'魏')};if(!civilReason(w,command,id)){actCivilWar(w,command,id);break;}}
+ for(const id of candidates){const name=dynastyNameOptions(w,r,id)[0]?.name;if(!name)continue;const command:CivilCommand={type:'civilWar',action:'rise',name};if(!civilReason(w,command,id)){actCivilWar(w,command,id);break;}}
  }
 }
 

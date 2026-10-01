@@ -20,6 +20,7 @@ import {validDeeds} from './deeds';
 import {familyById} from '../data/families';
 import {migrateCountyAccounts} from './treasury';
 import {ensureLocalAdministration} from './localAdministration';
+import {repairLegacyWestDynastyName} from './dynastyNaming';
 import {validLocalAdministration} from './localAdministrationSave';
 import {upgradeContent} from './contentMigration';
 import {ensurePopulation} from './population';
@@ -191,5 +192,6 @@ export function parseWorld(source: string): World {
   if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
   ensureMobility(world);ensureCustody(world);migrateArmyFood(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
+  if(repairLegacyWestDynastyName(world))validateWorld(world);
   return world;
 }
