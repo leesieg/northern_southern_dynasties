@@ -1,6 +1,6 @@
 import {administration} from '../data/administration';
 import {characterById} from '../data/characters';
-import {dynastyNames,successionDefinitions} from '../data/governments';
+import {canonicalDynastyName,dynastyNames,successionDefinitions} from '../data/governments';
 import {relationshipPersonById} from '../data/relationships';
 import {siteById} from '../data/scenario';
 import {validDynastyName} from './courtSave';
@@ -12,7 +12,7 @@ import type {World} from './types';
 export interface DynastyNameOption {name:string;reason:string}
 // Display qualifiers distinguish historical regimes, but do not make a reused
 // underlying name into a new dynasty (e.g. 魏 / 东魏 / 西魏).
-const nameIdentity=(name:string)=>name.replace(/^[东西]魏$/u,'魏').replace(/^北([齐周])$/u,'$1');
+const nameIdentity=(name:string)=>canonicalDynastyName(name).replace(/^[东西]魏$/u,'魏');
 
 /** Read-only suggestions: recorded family precedent, recorded title, then held territory. */
 export function dynastyNameOptions(w:World,r:RealmId,founder:string):DynastyNameOption[]{
@@ -44,7 +44,26 @@ export function dynastyNameOptions(w:World,r:RealmId,founder:string):DynastyName
   add(a?.prefecture.replace(/(?:郡|尹)$/u,''),'实际控制的'+place+'所属郡名参照；沙盒择号。');
   add(siteById[id]?.name,'实际控制的'+place+'地名参照；沙盒择号。');
  }
- return options;
+ const single=options.filter(v=>[...v.name].length===1);
+ return single.length?single:options;
+}
+
+/** Normalize only known country-name aliases, preserving prose and other custom names. */
+export function normalizeLegacyDynastyNames(w:World):boolean{
+ let changed=false;
+ const normalize=(entry:{name?:string})=>{
+  if(!entry.name)return;
+  const name=canonicalDynastyName(entry.name);
+  if(name!==entry.name){entry.name=name;changed=true;}
+ };
+ for(const v of w.realm?.governments?.regimes??[])normalize(v);
+ for(const g of Object.values(w.realm?.governments?.realms??{}))if(g.arrangement)normalize(g.arrangement);
+ for(const p of Object.values(w.politics?.proposals??{}))if(p)normalize(p);
+ for(const war of [...w.realm?.wars??[],...(w.realm?.war?[w.realm.war]:[])])if(war.civil){
+  normalize(war.civil);if(war.civil.arrangement)normalize(war.civil.arrangement);
+  if(war.civil.partitionOffer)normalize(war.civil.partitionOffer);
+ }
+ return changed;
 }
 
 /** User-authorized correction of the confirmed legacy 西魏 -> 新西魏 case. */

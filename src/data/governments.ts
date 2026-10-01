@@ -39,4 +39,6 @@ export const successionDefinitions={
 } as const;
 export type SuccessionId=keyof typeof successionDefinitions;
 export const successionIds=Object.keys(successionDefinitions) as SuccessionId[];
-export const dynastyNames:Record<string,string>={liang:'梁',east:'东魏',west:'西魏',qi:'北齐',zhou:'北周',chen:'陈'};
+export const dynastyNames:Record<string,string>={liang:'梁',east:'东魏',west:'西魏',qi:'齐',zhou:'周',chen:'陈'};
+// Country names omit later historiographical qualifiers; opening Wei realms keep theirs.
+export const canonicalDynastyName=(name:string)=>name==='北齐'?dynastyNames.qi:name==='北周'?dynastyNames.zhou:name;
