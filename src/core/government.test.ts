@@ -1,3 +1,5 @@
+import {awardDeed} from './deeds';
+import {syncRelationships} from './relationships';
 import {applyPowerArrangement,actPower} from './powerPolitics';
 import {governingAuthority} from './government';
 import {awardInfluence} from './personalInfluence';
@@ -16,7 +18,7 @@ function pass(w:World,days:number){for(let i=0;i<days;i++){if(w.realm!.event)act
 function atYear(w:World,year:number){w.day=Math.round((Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000);if(w.economy)w.economy.lastDay=w.day;}
 function capitalReady(w:World){w.realm!.influence=300;w.realm!.treasuries[playerRealm(w)].coins=10000;governmentOf(w)!.support=80;governmentOf(w)!.legitimacy=90;}
 function finish(w:World){const required=governmentOf(w)!.task!.required;pass(w,required);expect(governmentOf(w)!.task).toBeNull();expect(parseWorld(serializeWorld(w))).toEqual(w);}
-function history(w:World,stage:SuccessionId){const r=playerRealm(w),g=governmentOf(w)!,d=successionDefinitions[stage],sponsor=governingAuthority(w,r);awardInfluence(w,sponsor,100);actPower(w,{type:'power',action:'propose',goal:d.nextDynasty?'dynasty':d.ruler!==g.ruler?'ruler':'executive',beneficiary:d.ruler,executive:d.executives[0],name:d.nextDynasty?dynastyNames[d.nextDynasty]:undefined,sourceStage:stage},sponsor);applyPowerArrangement(w,r,w.politics!.proposals[r]!);expect(parseWorld(serializeWorld(w))).toEqual(w);}
+function history(w:World,stage:SuccessionId){const r=playerRealm(w),g=governmentOf(w)!,d=successionDefinitions[stage],sponsor=governingAuthority(w,r);awardInfluence(w,sponsor,100);if(d.nextDynasty){for(let i=0;i<3;i++)awardDeed(w,r,sponsor!,'battle:'+i,15,'战胜');syncRelationships(w);const regency=w.relationships!.regencies[r];if(regency){regency.since=w.day-360;regency.grip=80;}}actPower(w,{type:'power',action:'propose',goal:d.nextDynasty?'dynasty':d.ruler!==g.ruler?'ruler':'executive',beneficiary:d.ruler,executive:d.executives[0],name:d.nextDynasty?dynastyNames[d.nextDynasty]:undefined,sourceStage:stage},sponsor);applyPowerArrangement(w,r,w.politics!.proposals[r]!);expect(parseWorld(serializeWorld(w))).toEqual(w);}
 describe('政体、改革与政权实体沿革',()=>{
  it('546 开局已有东西魏前期制度，不可重复改革或提前受禅',()=>{
   const west=start('yuwen-tai');expect(governmentOf(west)!.laws).toEqual(['west-register','west-six']);expect(()=>act(west,{type:'government',action:'law',law:'west-six'})).toThrow('已施行');expect(()=>act(west,{type:'government',action:'law',law:'west-militia'})).toThrow('550');

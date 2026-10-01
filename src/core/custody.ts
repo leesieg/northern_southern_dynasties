@@ -1,3 +1,4 @@
+import {captiveImportance,ransomWillingness} from './warCaptives';
 import {worldRealms} from './polityRuntime';
 import {retainPersonalFollowers,detachRetainer} from './allegianceTransition';
 import {awardInfluence} from './personalInfluence';
@@ -24,7 +25,7 @@ import {isMonthStart,monthStart} from './calendar';
 import {civilWar,civilReason,actCivilWar,warArmySide,warCitySide} from './civilWars';
 import {authorityGrant} from './authority';
 import {interruptCommanderCampaigns} from './militaryCampaigns';
-import {realmAtWar} from './wars';
+import {bilateralWar} from './wars';
 
 export function ensureCustody(w:World){
  if(!w.realm)return;
@@ -41,7 +42,7 @@ export function detainPerson(w:World,id:string,captor:RealmId,site:string,cause:
  const s=ensureCustody(w);if(!s||detained(w,id)||!isAlive(w,id)||!relationshipPersonById[id]||!siteById[site]||!worldRealms(w).includes(captor))return false;
  const origin=allegianceRealm(w,id);if(!origin)return false;
  s.records[id]={person:id,captor,site,cause,source,origin,captorPerson:army?armyCommander(w,army)??null:governingAuthority(w,captor)??null,army:army?.id??null,since:w.day,treatment:'guarded',talked:null,terms:'',escapeAfter:w.day+30,ransom:Math.min(400,80+Math.floor((governmentOf(w,origin)?.merit[id]??0)/2)),offer:null};
- const civil=civilWar(w,captor);if(army&&civil){s.records[id].war=civil.id;s.records[id].side=warArmySide(w,civil,army)??undefined;}
+ const foreign=bilateralWar(w,captor,origin);if(foreign?.id!==undefined){s.records[id].war=foreign.id;s.records[id].side=foreign.attacker===captor?'attack':foreign.defender===captor?'defend':foreign.allies?.[captor];}const civil=civilWar(w,captor);if(army&&civil){s.records[id].war=civil.id;s.records[id].side=warArmySide(w,civil,army)??undefined;}
  movePerson(w,id,site);interruptCommanderCampaigns(w,id);
  if(w.diplomacy){for(const m of w.diplomacy.missions.filter(m=>m.envoy===id)){w.diplomacy.history.push({day:w.day,from:m.from,to:m.to,text:'使者被拘押，使命中止；已支付的出使成本不退。'});}w.diplomacy.history=w.diplomacy.history.slice(-80);w.diplomacy.missions=w.diplomacy.missions.filter(m=>m.envoy!==id);if(w.diplomacy.returning?.actor===id)w.diplomacy.returning=null;}
  if(w.mobility){for(const [key,leader] of Object.entries(w.mobility.armyCommanders??{}))if(leader===id)delete w.mobility.armyCommanders![Number(key)];for(const r of worldRealms(w))if(w.mobility.commanders[r]===id)delete w.mobility.commanders[r];for(const [key,v] of Object.entries(w.mobility.pendingCommanders??{}))if(v.person===id)delete w.mobility.pendingCommanders![Number(key)];}
@@ -65,7 +66,7 @@ export function evacuatePerson(w:World,id:string,route:NonNullable<ReturnType<ty
 export function captureCityPeople(w:World,site:string,captor:RealmId,source:string,peaceful=false){
  const s=w.realm!,origin=s.cities[site].controller;if(origin===captor||origin==='frontier')return;
  const army=s.armies.find(a=>a.realm===captor&&a.location===site&&!a.journey)??null;
- const important=new Set([s.cities[site].governor,...worldRealms(w).flatMap(r=>{const g=governmentOf(w,r);return g?[g.ruler,...g.executives,...Object.values(g.court?.ministries??{})]:[];}),...s.armies.map(a=>armyCommander(w,a))].filter((v):v is string=>!!v));
+ const kin=relationshipPeople.filter(p=>allegianceRealm(w,p.id)===origin&&captiveImportance(w,{person:p.id,origin}).value>=15).map(p=>p.id);const important=new Set([...kin,s.cities[site].governor,...worldRealms(w).flatMap(r=>{const g=governmentOf(w,r);return g?[g.ruler,...g.executives,...Object.values(g.court?.ministries??{})]:[];}),...s.armies.map(a=>armyCommander(w,a))].filter((v):v is string=>!!v));
  for(const id of important){if(allegianceRealm(w,id)!==origin||detained(w,id)||!presentAt(w,id,site))continue;
   const escape=Object.keys(s.cities).filter(to=>to!==site&&s.cities[to].controller===origin).map(to=>planRoute(site,to,node=>s.cities[node].controller===origin)).find(p=>!!p);
   if(peaceful){if(escape)evacuatePerson(w,id,escape);record(w,id,captor,source,escape?'开城议降，正在沿安全道路撤离，效忠不变':'开城议降，获准留居为自由人物，当前无返国道路');continue;}
@@ -82,9 +83,9 @@ export function recruitQuote(w:World,p:Detention,actor:string,offer:'stipend'|'o
  const score=factors.reduce((n,v)=>n+v.value,0),terms=[offer,p.treatment,lord,Math.round(score/5)].join('|');return {factors,score,terms,willing:score>=30};
 }
 function ransomConsentReason(w:World,p:Detention,payer:string|undefined,actor:string){
- const chief=custodyChief(w,p),oldChief=governingAuthority(w,p.origin);if(chief&&chief!==w.characterId&&(relationOpinion(w,chief,p.person)<-60||p.treatment==='guarded'&&realmAtWar(w,p.origin)&&governmentOf(w,p.origin)?.ruler===p.person))return '俘获方暂不接受赎还，须议和或改善礼遇';
+ const chief=custodyChief(w,p),oldChief=governingAuthority(w,p.origin);if(chief&&chief!==w.characterId&&(relationOpinion(w,chief,p.person)<-60||p.treatment==='guarded'&&bilateralWar(w,p.origin,p.captor)&&captiveImportance(w,p).value>=25))return '俘获方暂不接受赎还，须议和或改善礼遇';
  if(payer==='central:'+p.captor)return '同一公库不能向自己支付赎金，请用私财或司法处置';
- if(payer==='central:'+p.origin&&actor!==oldChief){if(oldChief===w.characterId)return '旧国公款筹赎须玩家执政者亲自决定';if(!oldChief||relationOpinion(w,oldChief,p.person)<-30||w.realm!.treasuries[p.origin].coins<p.ransom+80)return '旧主暂不批准公款筹赎：交情或余款不足';}
+ if(payer==='central:'+p.origin&&actor!==oldChief){if(oldChief===w.characterId)return '旧国公款筹赎须玩家执政者亲自决定';if(!oldChief||ransomWillingness(w,p).total<25||w.realm!.treasuries[p.origin].coins<p.ransom+80)return '旧主暂不批准公款筹赎：交情或余款不足';}
  return '';
 }
 export function custodyEscapeRoute(w:World,p:Detention){return Object.keys(w.realm!.cities).filter(id=>id!==p.site&&w.realm!.cities[id].controller===p.origin).map(id=>planRoute(p.site,id,node=>node===p.site||w.realm!.cities[node].controller===p.origin)).filter(v=>!!v).sort((a,b)=>a.days-b.days)[0];}
@@ -157,7 +158,7 @@ export function advanceCustody(w:World){const s=ensureCustody(w);if(!s||s.lastDa
   else if(!held){release(w,p,'看管地点失守且无看管军队，获释');continue;}
   if(p.person===w.characterId&&(p.origin!==p.captor||p.side)&&!p.offer&&w.realm!.treasuries[p.captor].coins>=80&&!holdsGovernment(w,p))p.offer='stipend';
  }
- if(isMonthStart(w.day,w.scriptId)&&s.lastMonth<w.day){s.lastMonth=w.day;for(const p of Object.values(s.records)){const cost=p.treatment==='honored'?6:p.treatment==='house'?3:2,t=w.realm!.treasuries[p.captor],paid=Math.min(t.coins,cost);t.coins-=paid;fiscalRecord(w,p.captor,'central:'+p.captor,'expense',paid,'人物看管与供养');if(paid<cost){p.escapeAfter=Math.min(p.escapeAfter,w.day);record(w,p.person,p.captor,p.source,'看管经费缺付，脱困机会增加');}if(p.treatment==='honored'){const chief=custodyChief(w,p);if(chief)changeRelationOpinion(w,p.person,chief,3);}const chief=custodyChief(w,p);if(chief&&chief!==w.characterId&&(p.person!==w.characterId||p.cause==='arrest')&&w.day-p.since>=30){const cmd:CustodyCommand=p.cause==='arrest'?{type:'custody',action:arrestEvidence(w,p.person)&&!custodyReason(w,{type:'custody',action:'fine',person:p.person},chief)?'fine':'acquit',person:p.person}:{type:'custody',action:'recruit',person:p.person,offer:'stipend'};if(!custodyReason(w,cmd,chief).trim())executeCustody(w,cmd,chief);}}
+ if(isMonthStart(w.day,w.scriptId)&&s.lastMonth<w.day){s.lastMonth=w.day;for(const p of Object.values(s.records)){const cost=p.treatment==='honored'?6:p.treatment==='house'?3:2,t=w.realm!.treasuries[p.captor],paid=Math.min(t.coins,cost);t.coins-=paid;fiscalRecord(w,p.captor,'central:'+p.captor,'expense',paid,'人物看管与供养');if(paid<cost){p.escapeAfter=Math.min(p.escapeAfter,w.day);record(w,p.person,p.captor,p.source,'看管经费缺付，脱困机会增加');}if(p.treatment==='honored'){const chief=custodyChief(w,p);if(chief)changeRelationOpinion(w,p.person,chief,3);}const chief=custodyChief(w,p);if(p.cause!=='arrest'&&p.person!==w.characterId&&chief!==w.characterId&&governingAuthority(w,p.origin)!==w.characterId&&w.day-p.since>=30){const rescue:CustodyCommand={type:'custody',action:'request-lord',person:p.person};if(!custodyReason(w,rescue,p.person)){executeCustody(w,rescue,p.person);continue;}}if(chief&&chief!==w.characterId&&(p.person!==w.characterId||p.cause==='arrest')&&w.day-p.since>=30){const cmd:CustodyCommand=p.cause==='arrest'?{type:'custody',action:arrestEvidence(w,p.person)&&!custodyReason(w,{type:'custody',action:'fine',person:p.person},chief)?'fine':'acquit',person:p.person}:{type:'custody',action:'recruit',person:p.person,offer:'stipend'};if(!custodyReason(w,cmd,chief).trim())executeCustody(w,cmd,chief);}}
   for(const q of s.promises.filter(q=>q.status==='pending')){const g=governmentOf(w,q.realm),employed=Object.values(g?.court?.ministries??{}).includes(q.person)||Object.values(w.realm!.cities).some(c=>c.governor===q.person)||Object.values(w.realm!.local?.seats??{}).some(s=>s.holder===q.person);if(employed)q.status='honored';else if(w.day>=q.due||!isAlive(w,q.person)||allegianceRealm(w,q.person)!==q.realm){q.status='broken';changeRelationOpinion(w,q.person,q.lord,-35);if(w.relationships?.oaths[q.person]){const oath=w.relationships.oaths[q.person];oath.loyalty-=30;if(oath.loyalty<=0)delete w.relationships.oaths[q.person];}record(w,q.person,q.realm,'promise:'+q.due,'授职承诺未兑现，关系 −35、誓约忠诚 −30');}}
  }
  for(const q of s.guarantees.filter(v=>v.status==='held')){if(detained(w,q.person)||civilWar(w,q.realm)?.civil?.supporters.includes(q.person)){const room=1_000_000-w.realm!.treasuries[q.realm].coins;if(room<q.coins)continue;w.realm!.treasuries[q.realm].coins+=q.coins;q.status='forfeited';fiscalRecord(w,q.realm,'custody:'+q.person,'central:'+q.realm,q.coins,'担保期间再犯，押金没收');}else if(w.day>=q.due||!isAlive(w,q.person)){const wallet=accountWallet(w,'person:'+q.payer);if(!wallet||wallet.read()+q.coins>1_000_000)continue;wallet.write(wallet.read()+q.coins);q.status='refunded';fiscalRecord(w,q.realm,'custody:'+q.person,'person:'+q.payer,q.coins,'守约担保押金返还');}}

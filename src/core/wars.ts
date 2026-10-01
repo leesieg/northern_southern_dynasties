@@ -1,3 +1,4 @@
+import {captiveCapitulation} from './warCaptives';
 import {isMonthStart,nextMonthStart} from './calendar';
 import {incurObligation,advanceObligations} from './obligations';
 import {civilPeaceReason} from './civilWars';
@@ -26,21 +27,23 @@ export function peaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms,claims
  const beneficiarySide=warRealmSide(war,beneficiary),days=w.day-war.started;
  const legacyScore=war.civil?war.score:warScoreFor(w,war,actor),enemyWill=warWillToContinue(w,war,enemy);
  let reason=invalidClaims?'无效附加割地':invalidExtra?'无效附加赔款':!['white','demand','yield'].includes(terms)?'无效议和条款':!([war.attacker,war.defender] as RealmId[]).includes(actor)?'不是本场战争参与方':'';
- const targetLand=!war.civil&&terms!=='white'&&beneficiary===war.attacker&&['territory','defection'].includes(war.goal??'territory')?[war.target]:[];
+ const capitulation=!war.civil&&terms!=='white'&&captiveCapitulation(w,beneficiary,loser);
+ const targetLand=!capitulation&&!war.civil&&terms!=='white'&&beneficiary===war.attacker&&['territory','defection'].includes(war.goal??'territory')?[war.target]:[];
  const lands=[...targetLand,...claims],takesLand=lands.length>0,landBeneficiary=landRecipient??beneficiary;if(!reason&&landRecipient!==undefined&&(warRealmSide(war,landRecipient)!==beneficiarySide||war.civil||terms!=='demand'||landRecipient!==beneficiary&&!takesLand))reason='割地受益者须为胜方实际参战国，且仅用于提出割地要求';
  if(!reason&&extraCoins&&(terms!=='demand'||war.civil))reason='赔款须由提出要求的一方列入组合和约';
  if(!reason&&claims.length){if(war.civil||terms!=='demand'||claims.length>3||new Set(claims).size!==claims.length||claims.some(id=>targetLand.includes(id)||!w.realm!.cities[id]||w.realm!.cities[id].owner!==loser||warRealmSide(war,w.realm!.cities[id].controller as RealmId)!==beneficiarySide))reason='附加割地须为至多三处受益方阵营已占领的敌方县域';else {const allowed=new Set(Object.entries(w.realm!.cities).filter(([id,c])=>warRealmSide(war,c.controller as RealmId)===beneficiarySide&&(c.owner===landBeneficiary||lands.includes(id))).map(([id])=>id)),reached=new Set(Object.entries(w.realm!.cities).filter(([,c])=>c.owner===landBeneficiary&&c.controller===landBeneficiary).map(([id])=>id)),queue=[...reached];for(const id of queue)for(const edge of roads)if(!edge.legacyOnly&&(edge.from===id||edge.to===id)){const next=edge.from===id?edge.to:edge.from;if(allowed.has(next)&&!reached.has(next)){reached.add(next);queue.push(next);}}if(lands.some(id=>!reached.has(id)))reason='割让县域须沿受益方控制道路形成连续廊道';}}
  if(!reason&&targetLand.length&&(w.realm!.cities[war.target].owner!==loser||warRealmSide(war,w.realm!.cities[war.target].controller as RealmId)!==beneficiarySide))reason='目标地未由受益方阵营实际控制，不能要求割让';
  if(!reason&&terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker){let next:RealmId|undefined=beneficiary;const seen=new Set<RealmId>();while(next){if(next===loser||seen.has(next)){reason='宗属关系会形成循环，须先重议外交关系';break;}seen.add(next);next=w.diplomacy?.subjects[next];}}
- const annexes=terms!=='white'&&war.goal==='annexation'&&beneficiary===war.attacker;
+ const annexes=capitulation||terms!=='white'&&war.goal==='annexation'&&beneficiary===war.attacker;
+ if(!reason&&annexes&&(claims.length>0||extraCoins>0||landRecipient!==undefined&&landRecipient!==beneficiary))reason='吞并接管全部领土与余额，不能另加割地赔款或指定其他受益国';
  if(!reason&&annexes)reason=annexationReason(w,beneficiary,loser);
- const territorialCost=lands.reduce((sum,id)=>sum+peaceCostForCity(w,war,id),0),clauseCost=annexes?100:territorialCost+extraCoins/10+(terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker?50:0)+(terms!=='white'&&war.goal==='reparations'?Math.ceil((war.demand??300)/10):0);
+ const territorialCost=lands.reduce((sum,id)=>sum+peaceCostForCity(w,war,id),0),clauseCost=annexes?(capitulation?80:100):territorialCost+extraCoins/10+(terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker?50:0)+(terms!=='white'&&war.goal==='reparations'?Math.ceil((war.demand??300)/10):0);
  const acceptance=legacyScore-clauseCost-enemyWill.total;
  const parts=[{label:'战争优势',value:legacyScore},{label:'对方续战意愿',value:-enemyWill.total},{label:'条款代价',value:-clauseCost}];
  if(!reason&&!war.civil&&terms==='demand'&&acceptance<0)reason='对方尚不接受这些条件';
  if(!reason&&!war.civil&&terms==='white'&&(days<30||Math.abs(legacyScore)>20&&enemyWill.total>0))reason='对方仍希望继续交战';
  if(war.civil&&!reason)reason=civilPeaceReason(w,war,terms);
- return {annexes,reason,parts,score:legacyScore,cost:clauseCost,acceptance,enemyWill,beneficiary,landBeneficiary,loser,takesLand,lands,coins:extraCoins+(terms!=='white'&&war.goal==='reparations'?war.demand??300:0),tributary:terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker};
+ return {annexes,reason,parts,score:legacyScore,cost:clauseCost,acceptance,enemyWill,beneficiary,landBeneficiary,loser,takesLand,lands,coins:annexes?0:extraCoins+(terms!=='white'&&war.goal==='reparations'?war.demand??300:0),tributary:!annexes&&terms!=='white'&&war.goal==='tributary'&&beneficiary===war.attacker};
 }
 export function advanceReparations(w:World){
  const s=w.realm;if(!s)return;

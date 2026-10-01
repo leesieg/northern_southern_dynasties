@@ -1,10 +1,11 @@
+import {warCaptives} from './warCaptives';
 import {armyDailyFood} from './realm';
 import {siteById} from '../data/scenario';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import type {War} from './wars';
 
-export interface WarScorePart {key:'occupation'|'battles'|'objective';label:string;value:number}
+export interface WarScorePart {key:'occupation'|'battles'|'objective'|'captives';label:string;value:number}
 export interface WarWillPart {label:string;value:number}
 
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
@@ -41,6 +42,7 @@ export function warScoreBreakdown(w:World,war:War){
  const parts:WarScorePart[]=[
   {key:'occupation',label:'领土占领',value:occupation},
   {key:'battles',label:'野战成果',value:battles},
+  {key:'captives',label:'关键人物被俘',value:clamp(warCaptives(w,war).reduce((n,p)=>n+p.score,0),-60,60)},
   {key:'objective',label:attackHolds?'战争目标持续控制':'守方阻止战争目标',value:objective},
  ];
  const attackAlive=w.realm!.armies.some(a=>side(war,a.realm)==='attack'&&a.troops>=100);
