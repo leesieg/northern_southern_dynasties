@@ -14,8 +14,11 @@ import {courtOf,foundingPause} from './court';
 import {playerRealm,siegeRequirement} from './realm';
 import {diplomacyActions} from './diplomacy';
 import {cityBuildings,estateBuildings} from './construction';
-export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue';
-export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'};
+import {lifestyleProgress,lifestylePoints,lifestylePerson} from './lifestyle';
+import {lifestyleBranches,lifestyleFocuses,type LifestyleBranch} from '../data/lifestyles';
+import {isAlive} from './lifeState';
+export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue'|'focus'|'skills';
+export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'};
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;
 const name=(id:string)=>relationshipPersonById[id]?.name??id;
@@ -24,6 +27,13 @@ function journeyProgress(j:Journey){const total=j.durations.reduce((n,d)=>n+d,0)
 export function ongoingItems(w:World):OngoingItem[]{
  const items:OngoingItem[]=[],actor=w.characterId??'player',r=w.realm?playerRealm(w):null,chief=r?governingExecutives(w,r).includes(actor):false;
  const add=(item:OngoingItem)=>items.push(item);
+ if(w.campaign?.status==='active'&&isAlive(w,lifestylePerson(w))){
+  const p=lifestyleProgress(w),person=lifestylePerson(w);
+  if(!p?.focus)add({id:'focus:'+person,kind:'focus',title:'选择重心',started:0,progress:null,days:null,clock:'waiting',status:'尚未选择生活重心；初次选择获得该路线 1 点技能点',target:{page:'lifestyle'}});
+  if(p){const available=(Object.keys(lifestyleBranches) as LifestyleBranch[]).map(branch=>({branch,points:lifestylePoints(p,branch)})).filter(b=>b.points>0),total=available.reduce((n,b)=>n+b.points,0);
+   if(total){const branch=available.find(b=>b.branch===(p.focus?lifestyleFocuses[p.focus].branch:null))?.branch??available[0].branch;add({id:'skills:'+person,kind:'skills',title:'技能点 · 共 '+total+' 点可用',started:0,progress:null,days:null,clock:'waiting',status:available.map(b=>lifestyleBranches[b.branch].name+' '+b.points+' 点').join(' · ')+'；点击选择技艺',target:{page:'lifestyle',branch}});}
+  }
+ }
  for(const q of w.militaryCampaigns?.items??[])if(q.status==='active'&&(q.commander===actor||q.issuer===actor))add({id:'campaign:'+q.id,kind:'military',title:siteById[q.target].name+'战役',started:q.started,progress:q.goal==='defend'?ratio(q.held,30):null,days:Math.max(0,q.deadline-w.day),clock:'deadline',status:q.reason||'执行委任',target:{page:'city',site:q.target,tab:'military'}});
  for(const siege of w.realm?.sieges??[]){const war=w.realm!.wars?.find(v=>v.id===siege.war);if(!war||r!==war.attacker&&r!==war.defender)continue;const army=w.realm!.armies.find(a=>a.location===siege.site&&!a.journey&&a.realm===r),required=army?siegeRequirement(w,army):siteById[siege.site].capital?40:20;add({id:'siege:'+siege.war+':'+siege.site,kind:'military',title:siteById[siege.site].name+'围城',started:war.started,progress:ratio(siege.progress,required),days:null,clock:'estimate',status:`进度 ${siege.progress}/${required}${siege.last<w.day?' · 围军已撤，工事消退':army?.supply===0?' · 缺粮停滞':''}`,target:{page:'city',site:siege.site,tab:'military'}});}
  for(const t of w.commerce?.contracts??[])if(t.status==='moving'&&w.enterprises?.items.find(e=>e.id===t.enterprise)?.owner===actor)add({id:'trade:'+t.id,kind:'service',title:siteById[t.to].name+'商旅交货',started:t.journey.started,progress:journeyProgress(t.journey).progress,days:Math.max(0,t.deadline-w.day),clock:'deadline',status:'在途 '+t.remaining+' · 实收 '+t.arrived,target:{page:'person',person:actor,tab:'economy'}});

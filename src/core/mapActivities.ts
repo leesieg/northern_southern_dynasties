@@ -4,14 +4,14 @@ import type {World} from './types';
 export function mapActivities(w:World){
  const groups=new Map<string,OngoingItem[]>();
  for(const item of ongoingItems(w)){
-  // Battles and sieges have dedicated map markers and detail dialogs.
-  if(item.id.startsWith('siege:'))continue;
+  // Sieges and the estate already have dedicated map entrances; their flags remain above.
+  if(item.id.startsWith('siege:')||item.target.page==='estate')continue;
   let site:string|undefined;
   if(item.kind==='activity')site=w.mobility?.activities.find(a=>'activity:'+a.id===item.id)?.site;
   else if(item.id.startsWith('trade:'))site=w.commerce?.contracts.find(t=>'trade:'+t.id===item.id)?.location;
   else if(item.id.startsWith('enterprise:'))site=w.enterprises?.items.find(e=>'enterprise:'+e.id===item.id)?.site;
   else if(item.kind==='service')site=item.target.page==='duties'?'tianshui':w.service?.tasks.find(t=>'service:'+t.id===item.id)?.site;
-  else if(item.kind==='construction')site=item.target.page==='estate'?w.holdings.estate.location:item.target.page==='city'?item.target.site:undefined;
+  else if(item.kind==='construction')site=item.target.page==='city'?item.target.site:undefined;
   if(site){const list=groups.get(site)??[];list.push(item);groups.set(site,list);}
  }
  return [...groups].map(([site,items])=>({site,items}));

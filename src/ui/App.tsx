@@ -9,6 +9,9 @@ import {LocalTerritoryPanel} from './LocalAdministration';
 import {RealmNavigation,RealmBadge} from './RealmBadge';
 import {familyName as estateFamilyName} from '../data/characters';
 import {OngoingFlags} from './OngoingFlags';
+import {LifestyleDialog} from './LifestylePanel';
+import {lifestylePerson} from '../core/lifestyle';
+import type {LifestyleBranch} from '../data/lifestyles';
 import {SaveBrowser} from './SaveBrowser';
 import type {OngoingItem} from '../core/ongoing';
 import {assignmentTemplates,assignmentPhases} from '../data/assignments';
@@ -82,6 +85,7 @@ export function App(){
   const [selected,setSelected]=useState('jiankang'),[mode,setMode]=useState<MapMode>('political'),[showTravelers,setShowTravelers]=useState(true),[tilted,setTilted]=useState(true);
   const [modal,setModal]=useState<'military'|'wealth'|'diplomacy'|'saves'|'directory'|'about'|'estate'|'staff'|'retinue'|'menu'|'realm'|'map-person'|null>(null),[query,setQuery]=useState(''),[filter,setFilter]=useState('all');
   const [warDetail,setWarDetail]=useState<number|null>(null),[engagement,setEngagement]=useState<EngagementRef|null>(null);
+  const [lifestyleOpen,setLifestyleOpen]=useState<{branch?:LifestyleBranch}|null>(null);
   const [searchTab,setSearchTab]=useState<'people'|'places'>('people');
   const [cameraAction,setCameraAction]=useState<{type:'home'|'player'|'selected'|'in'|'out';seq:number}>({type:'home',seq:0});
   const [journalOpen,setJournalOpen]=useState(false),[journalScope,setJournalScope]=useState<'all'|'player'>('all');
@@ -123,14 +127,14 @@ export function App(){
   const openRetinue=(host=game.world?.characterId??'',nested=true)=>{setRetinueHost(host);openModal('retinue',nested);};
   const openPerson=(id:string,nested=true)=>{openModal('map-person',nested);setMapPeople([id]);setPersonTab('overview');};
   const openDiplomacy=(r:RealmId,nested=true,initialTab:'relations'|'clans'='relations')=>{openModal('diplomacy',nested);setDiplomacyTarget(r);setDiplomacyInitialTab(initialTab);};
-  const timeLocked=game.pauses.length>0||modal==='estate'||modal==='staff'||modal==='retinue'||modal==='menu'||modal==='saves';
+  const timeLocked=game.pauses.length>0||!!lifestyleOpen||modal==='estate'||modal==='staff'||modal==='retinue'||modal==='menu'||modal==='saves';
   const disabledReason=!person?'世界载入中':person.journey?'正在途中':selected===person.location?'此刻所在之地':!plan?(game.world?travelDiplomacyReason(game.world,selected):'')||'暂无可用路线':person.food<plan.food?'行粮不足，请先整备':'';
   const courtTrend=game.world?.realm&&courtOf(game.world)?courtMonthPreview(game.world,playerRealm(game.world)):null;
   const allEvents=game.world?.chronicle.filter(e=>journalScope==='all'||e.person==='player').slice().reverse()??[];
 
   useEffect(()=>{const escape=(event:KeyboardEvent)=>{if(event.key!=='Escape'||event.defaultPrevented||game.pauses.length||document.querySelector('dialog[open]'))return;if(mapOptions){setMapOptions(false);document.getElementById('atlas-display-toggle')?.focus();}else if(modal){if(panelTrail.length)backPanel();else closePanel();}else if(drawer){if(panelTrail.length)backPanel();else {setDrawer(null);restorePanelFocus();}}else setJournalOpen(false);};window.addEventListener('keydown',escape);return ()=>window.removeEventListener('keydown',escape);},[modal,mapOptions,drawer,panelTrail,game.pauses.length]);
 
-  useEffect(()=>{setWarDetail(null);setEngagement(null);placeScroll.current={};setArmyMove(null);setSelectedArmies([]);setServiceFocus({seq:0});setStaffTab('central');setStaffRegion('');setModal(null);setDrawer(null);setPanelTrail([]);setJournalOpen(false);setMapOptions(false);if(game.world){const home=game.world.people[0].location;setSelected(home);setTerritory('city:'+home);setLevel('city');setHistoryEvent(null);setCameraAction(a=>({type:'player',seq:a.seq+1}));}},[game.entry]);
+  useEffect(()=>{setLifestyleOpen(null);setWarDetail(null);setEngagement(null);placeScroll.current={};setArmyMove(null);setSelectedArmies([]);setServiceFocus({seq:0});setStaffTab('central');setStaffRegion('');setModal(null);setDrawer(null);setPanelTrail([]);setJournalOpen(false);setMapOptions(false);if(game.world){const home=game.world.people[0].location;setSelected(home);setTerritory('city:'+home);setLevel('city');setHistoryEvent(null);setCameraAction(a=>({type:'player',seq:a.seq+1}));}},[game.entry]);
 
   if(game.blocked)return <main className="blocking"><div className="brand-seal">风云</div><h1>山河暂歇</h1><p>{game.blocked}</p><button className="primary" onClick={()=>location.reload()}>重新载入</button></main>;
   const navigatePause=(event:PauseEvent)=>{
@@ -155,7 +159,8 @@ export function App(){
     if(item.id.startsWith('army:')){setArmyMove(null);setModal(null);setArmyFocus(v=>({army:Number(item.id.slice(5)),seq:v.seq+1}));return;}
     if(item.id.startsWith('campaign:')){const q=game.world?.militaryCampaigns?.items.find(q=>q.id===Number(item.id.slice(9)));if(q){setArmyMove(null);setModal(null);setArmyFocus(v=>({army:q.army,seq:v.seq+1,tab:'campaign'}));return;}}
     const target=item.target;
-    if(target.page==='city'){chooseCity(target.site);setCityTab(target.tab);focus('selected');}
+    if(target.page==='lifestyle'){game.send({type:'speed',speed:0});setMapOptions(false);setLifestyleOpen({branch:target.branch});}
+    else if(target.page==='city'){chooseCity(target.site);setCityTab(target.tab);focus('selected');}
     else if(target.page==='person'){if(target.tab==='economy'&&target.person===game.world!.characterId)openModal('wealth');else{openPerson(target.person,false);setPersonTab(target.person===game.world!.characterId?'overview':'interaction');}}
     else if(target.page==='territory')chooseTerritory(target.territory);
     else if(target.page==='retinue')openRetinue(undefined,false);
@@ -173,7 +178,7 @@ export function App(){
   const deferAudience=modal?closePanel:drawer?()=>{setDrawer(null);setPanelTrail([]);}:null;
   return <RealmNavigation.Provider value={{world:game.world,open:r=>{if(game.pauses.length){game.dismissPause();game.dismiss();}if(modal==='diplomacy'&&diplomacyTarget===r)return;openDiplomacy(r);}}}><AudienceDeferContext.Provider value={deferAudience}><main className="game-shell focused-shell">
     <header className="topbar">
-      <PlayerHud world={game.world} onPerson={()=>openPerson(game.world!.characterId??'player',false)}/><OngoingFlags key={game.entry} world={game.world} onOpen={openOngoing} onBrowse={()=>game.send({type:'speed',speed:0})}/><TimeControl date={dateLabel(game.world.day,game.world.scriptId)} day={game.world.day} speed={game.speed} locked={!person||timeLocked} lockReason={game.pauses.length?'待处理事件':modal==='estate'?'庄园营建中':modal==='staff'?'安排职官中':modal==='retinue'?'安排幕僚中':modal==='saves'?'管理存档中':'菜单已暂停'} onSpeed={speed=>game.send({type:'speed',speed})} onStep={()=>game.send({type:'step'})} onSave={()=>openModal('saves')} onMenu={()=>openModal('menu')}/>
+      <PlayerHud world={game.world} onPerson={()=>openPerson(game.world!.characterId??'player',false)}/><OngoingFlags key={game.entry} world={game.world} onOpen={openOngoing} onBrowse={()=>game.send({type:'speed',speed:0})}/><TimeControl date={dateLabel(game.world.day,game.world.scriptId)} day={game.world.day} speed={game.speed} locked={!person||timeLocked} lockReason={game.pauses.length?'待处理事件':lifestyleOpen?'选择生活重心中':modal==='estate'?'庄园营建中':modal==='staff'?'安排职官中':modal==='retinue'?'安排幕僚中':modal==='saves'?'管理存档中':'菜单已暂停'} onSpeed={speed=>game.send({type:'speed',speed})} onStep={()=>game.send({type:'step'})} onSave={()=>openModal('saves')} onMenu={()=>openModal('menu')}/>
 
       <ArmyDock focus={armyFocus} key={game.entry} world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})} onPerson={id=>openPerson(id)} onLocate={id=>{setSelected(id);setCameraAction(a=>({type:'selected',seq:a.seq+1}));}} selectedArmies={selectedArmies} onSelectArmy={selectArmy} onClearSelection={()=>setSelectedArmies([])} move={armyMove} onMove={value=>{setArmyMove(value);if(value){setLevel('city');setDrawer(null);setModal(null);}}}/>
     </header>
@@ -218,6 +223,7 @@ export function App(){
     </div>
 
 
+    {lifestyleOpen&&<LifestyleDialog key={game.entry+':'+lifestylePerson(game.world)} world={game.world} initialBranch={lifestyleOpen.branch} pending={game.pending} send={command=>game.send({type:'command',command})} onClose={()=>{setLifestyleOpen(null);requestAnimationFrame(()=>{if(document.activeElement===document.body)document.querySelector<HTMLButtonElement>('.player-hud-identity')?.focus();});}}/>}
     {pauseDialog}
 
     {game.notice&&<div className={`toast ${game.notice.error?'is-error':''}`} role={game.notice.error?'alert':'status'}><span>{game.notice.text}</span><button aria-label="关闭提示" onClick={game.dismiss}><Icon name="close" size={16}/></button></div>}
