@@ -52,14 +52,22 @@ export function culturalCostume(recipe:PaintedRecipe,context:PortraitContext):Pa
  const keepHair=young||sex==='female',points:Point[]=[
   [left[0]-(keepHair?.16:.005),keepHair?0:left[1]-.012],[right[0]+.025,keepHair?0:right[1]-.012],
   [right[0]+.025,back[1]-.025],[front[0]+.07,front[1]-.065],
-  [front[0],front[1]+.008],[back[0]-.006,back[1]+.008],[back[0]-(keepHair?.16:.012),back[1]-.03],
+  [front[0],front[1]-.018],[back[0]-.006,back[1]-.008],[back[0]-(keepHair?.16:.012),back[1]-.03],
  ];
  const minX=Math.min(...points.map(p=>p[0])),maxX=Math.max(...points.map(p=>p[0])),minY=Math.min(...points.map(p=>p[1])),maxY=Math.max(...points.map(p=>p[1]));
- const face:PaintedPart={...head,id:head.id+':costume-v3',crop:{x:original.crop.x+minX*original.crop.width,y:original.crop.y+minY*original.crop.height,width:(maxX-minX)*original.crop.width,height:(maxY-minY)*original.crop.height},place:{x:minX,y:minY,width:maxX-minX,height:maxY-minY},mask:{kind:'polygon',points:points.map(([x,y])=>[(x-minX)/(maxX-minX),(y-minY)/(maxY-minY)]),softness:.006},removePaper:true};
- const part=(slot:'body'|'headwear',start:number,end:number):PaintedPart=>({...original,id:`costume-v2:${sex}:${culture}:${office}:${slot}`,slot,source,crop:{x:cell.x,y:cell.y+start,width:cell.width,height:end-start},place:{x:0,y:start/cell.height,width:1,height:(end-start)/cell.height}});
- const body=placed(part('body',garment.bodyTop,cell.height),dressTransform),newHead=placed(face,headTransform),newFeatures=features.map(p=>placed(p,headTransform));
+ const face:PaintedPart={...head,id:head.id+':costume-v4',crop:{x:original.crop.x+minX*original.crop.width,y:original.crop.y+minY*original.crop.height,width:(maxX-minX)*original.crop.width,height:(maxY-minY)*original.crop.height},place:{x:minX,y:minY,width:maxX-minX,height:maxY-minY},mask:{kind:'polygon',points:points.map(([x,y])=>[(x-minX)/(maxX-minX),(y-minY)/(maxY-minY)]),softness:.006},removePaper:true};
+ const part=(slot:'body'|'headwear',start:number,end:number):PaintedPart=>({...original,id:`costume-v4:${sex}:${culture}:${office}:${slot}`,slot,source,crop:{x:cell.x,y:cell.y+start,width:cell.width,height:end-start},place:{x:0,y:start/cell.height,width:1,height:(end-start)/cell.height}});
+ const seam=garment.seam??[[0,garment.bodyTop],[cell.width,garment.bodyTop]];
+ const topY=Math.min(...seam.map(p=>p[1])),bottomY=Math.max(...seam.map(p=>p[1]));
+ // Both masks use the SAME authored boundary. No cap fragment remains on the robe.
+ const garmentPart=(slot:'body'|'headwear'):PaintedPart=>{
+  const isBody=slot==='body',start=isBody?topY:0,end=isBody?cell.height:bottomY;
+  const outline:Point[]=isBody?[...seam,[cell.width,cell.height],[0,cell.height]]:[[0,0],[cell.width,0],...seam.slice().reverse()];
+  return {...part(slot,start,end),mask:{kind:'polygon',points:outline.map(([x,y])=>[x/cell.width,(y-start)/(end-start)]),softness:0}};
+ };
+ const body=placed(garmentPart('body'),dressTransform),newHead=placed(face,headTransform),newFeatures=features.map(p=>placed(p,headTransform));
  const hat=capFit(garment);
- const headwear=hat?placed(part('headwear',0,garment.bodyTop),{...hat,y:hat.y+offset}):null;
+ const headwear=hat?placed(garmentPart('headwear'),{...hat,y:hat.y+offset}):null;
  const thumbnail=recipe.thumbnail?box(recipe.thumbnail,headTransform):box({x:310/1024,y:180/1536,width:360/1024,height:360/1536},headTransform);
  return {...recipe,thumbnail,parts:[body,newHead,...newFeatures,...headwear?[headwear]:[]]};
 }

@@ -44,7 +44,8 @@ describe('文化服饰共用真实面部与素材',()=>{
    const young=(c.life?.age??18)<16,kind=young?'child':c.identity.sex,row=cultureId==='han'?0:1,col=office==='commander'?2:office==='governor'?1:0,atlas=costumeRegistration[kind][young?row:row*3+col],width=young?724:418,height=young?1086:627;
    const project=(part:typeof body,x:number,y:number)=>[part.place.x+(x-part.crop.x)*part.place.width/part.crop.width,part.place.y+(y-part.crop.y)*part.place.height/part.crop.height];
    const skin=project(head,original.crop.x+(reg.neck[0]+reg.neck[2])/2,(reg.neck[1]+reg.neck[3])/2),collar=project(body,(young?row:col)*width+(atlas.neck[0]+atlas.neck[2])/2,(young?0:row)*height+(atlas.neck[1]+atlas.neck[3])/2);
-   expect(skin[0]).toBeCloseTo(collar[0],10);expect(skin[1]).toBeCloseTo(collar[1],10);expect(head.crop.y+head.crop.height).toBeGreaterThanOrEqual(reg.neck[3]);
+   expect(skin[0]).toBeCloseTo(collar[0],10);expect(skin[1]).toBeCloseTo(collar[1],10);expect(head.crop.y+head.crop.height).toBeGreaterThan(reg.neck[3]-32);
+   expect(head.crop.y+head.crop.height).toBeLessThan(reg.neck[3]);
    // Shallow female collars must not magnify the robe; old diagonal fitting reached ~1.5x.
    const bodyScale=body.place.width/body.crop.width*width;
    expect(bodyScale).toBeGreaterThanOrEqual(.84-1e-9);expect(bodyScale).toBeLessThanOrEqual(1.06+1e-9);
@@ -57,6 +58,23 @@ describe('文化服饰共用真实面部与素材',()=>{
    }
    const features=r.parts.filter(p=>!['body','head','headwear'].includes(p.slot)),scale=features[0].place.width/raw.parts[2].place.width;for(let i=0;i<features.length;i++){expect(features[i].place.width/raw.parts[i+2].place.width).toBeCloseTo(scale,10);expect(features[i].place.height/raw.parts[i+2].place.height).toBeCloseTo(scale,10);expect(features[i].crop).toEqual(raw.parts[i+2].crop);}
    expect(()=>validatePaintedRecipe(r)).not.toThrow();
+  }
+ });
+
+ it('帽带与护耳完整归冠帽层，衣身不重复携带碎片，衣领不进入帽层',()=>{
+  const c=portraitContext('su-chuo');
+  function contains(part:ReturnType<typeof approvedPaintedRecipe>['parts'][number],x:number,y:number){
+   const px=(x-part.crop.x)/part.crop.width,py=(y-part.crop.y)/part.crop.height;
+   if(px<0||px>1||py<0||py>1)return false;
+   if(part.mask?.kind!=='polygon')return true;
+   const pts=part.mask.points;
+   return pts.filter((a,i)=>{const b=pts[(i+1)%pts.length];return (a[1]>py)!==(b[1]>py)&&px<(b[0]-a[0])*(py-a[1])/(b[1]-a[1])+a[0];}).length%2===1;
+  }
+  for(const [office,x,y] of [['civilian',150,190],['governor',418+150,195],['commander',836+175,187]] as const){
+   const r=approvedPaintedRecipe('su-chuo',{...c,office,identity:{...c.identity,cultureId:'han'}}),hat=r.parts.find(p=>p.slot==='headwear')!,body=r.parts.find(p=>p.slot==='body')!;
+   expect(contains(hat,x,y)).toBe(true);expect(contains(body,x,y)).toBe(false);
+   const col=office==='civilian'?0:office==='governor'?1:2;
+   expect(contains(hat,col*418+245,260)).toBe(false);expect(contains(body,col*418+245,260)).toBe(true);
   }
  });
 
