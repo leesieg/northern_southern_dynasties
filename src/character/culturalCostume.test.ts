@@ -48,9 +48,9 @@ describe('文化服饰共用真实面部与素材',()=>{
    expect(head.crop.y+head.crop.height).toBeLessThan(reg.neck[3]);
    // Shallow female collars must not magnify the robe; old diagonal fitting reached ~1.5x.
    const bodyScale=body.place.width/body.crop.width*width;
-   expect(bodyScale).toBeGreaterThanOrEqual((young?.94:kind==='female'?.80:.90)-1e-9);expect(bodyScale).toBeLessThanOrEqual(1.06+1e-9);
+   expect(bodyScale,id+':'+cultureId+':'+office).toBeGreaterThanOrEqual((young?.94:.70)-1e-9);expect(bodyScale).toBeLessThanOrEqual(1.06+1e-9);
    const rimLeft=project(head,original.crop.x+reg.rim[0],reg.rim[1]),rimRight=project(head,original.crop.x+reg.rim[2],reg.rim[3]);
-   expect(rimRight[0]-rimLeft[0]).toBeCloseTo(young?.27:kind==='female'&&office!=='commander'?.23:.215,10);
+   expect(rimRight[0]-rimLeft[0]).toBeCloseTo(young?.27:kind==='male'?.25:office==='commander'?.235:.245,10);
    const cap=r.parts.find(p=>p.slot==='headwear');if(cap&&atlas.rim){
     const capLeft=project(cap,(young?row:col)*width+atlas.rim[0],(young?0:row)*height+atlas.rim[1]),capRight=project(cap,(young?row:col)*width+atlas.rim[2],(young?0:row)*height+atlas.rim[3]);
     expect(capLeft[0]).toBeCloseTo(rimLeft[0],10);expect(capRight[0]).toBeCloseTo(rimRight[0],10);

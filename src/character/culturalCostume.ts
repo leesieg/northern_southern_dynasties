@@ -38,7 +38,7 @@ export function culturalCostume(recipe:PaintedRecipe,context:PortraitContext):Pa
  const neck:Pair=young?[[.42,.35],[.57,.45]]:sex==='female'?[[.40,.285],[.56,.375]]:[[.40,.26],[.56,.35]];
  const sourceNeck=pair(registration.neck,original.crop.width,original.crop.height),sourceRim=pair(registration.rim,original.crop.width,original.crop.height);
  // Keep the same apparent head width across the 1024px study and 724px roster rigs.
- const headFit=centered(sourceNeck,midpoint(neck),(young?.27:sex==='female'&&office!=='commander'?.23:.215)/span(sourceRim));
+ const headFit=centered(sourceNeck,midpoint(neck),(young?.27:sex==='male'?.25:office==='commander'?.235:.245)/span(sourceRim));
  const rim=sourceRim.map(p=>point(p,headFit)) as Pair;
  // Preserve women's authored hair ornaments in civilian/official dress; a second cap would sit on the bun.
  const useHeadwear=!young&&(sex==='male'||office==='commander');
@@ -48,7 +48,12 @@ export function culturalCostume(recipe:PaintedRecipe,context:PortraitContext):Pa
  const offset=Math.max(0,.006-top),headTransform={...headFit,y:headFit.y+offset};
  const portraitBody=bodyRegistration[kind][index];
  const collar=pair(portraitBody?.neck??garment.neck,size.width,size.height);
- const dressScale=clamp(span(sourceNeck)*headFit.scale/span(collar),young?.94:sex==='female'?.80:.90,1.06);
+ // Enlarge adult heads independently of the robe, so correcting proportions does not enlarge the body too.
+ const bodyHeadWidth=young?.27:sex==='female'&&office!=='commander'?.23:.215;
+ const preferredDressScale=clamp(span(sourceNeck)*bodyHeadWidth/span(sourceRim)/span(collar),young?.94:sex==='female'?.80:.90,1.06);
+ // Taller adult crowns need more room above the collar. Fit the complete hands below it without stretching.
+ const handBottom=sex==='female'?558:row?561:583;
+ const dressScale=young?preferredDressScale:Math.min(preferredDressScale,(.98-midpoint(neck)[1]-offset)/(handBottom/cell.height-midpoint(collar)[1]));
  const dressFit=centered(collar,midpoint(neck),dressScale),dressTransform={...dressFit,y:dressFit.y+offset};
  const [back,front]=pair(registration.neck,original.crop.width,original.crop.height),[left,right]=pair(registration.rim,original.crop.width,original.crop.height);
  // Keep the original face AND neck; remove the old garment along its authored neck seam.
