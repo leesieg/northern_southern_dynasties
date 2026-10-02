@@ -2,6 +2,8 @@ import {expressGenome,type FacialGene} from '../core/genetics';
 import {paintedRig,paintedBounds,paintedRosterRigs,paintedFemaleRigs,type PaintedRigId} from '../data/paintedRoster';
 import {adjustPaintedFeature,validatePaintedRecipe,type PaintedPart,type PaintedRecipe,type PaintedSlot} from './paintedLayers';
 import type {PortraitContext} from './composition';
+import {characterById} from '../data/characters';
+import {expandedPersonById} from '../data/expandedPeople';
 
 export function rosterRigId(id:string|undefined,context:PortraitContext):PaintedRigId {
  if((context.life?.age??18)<16)return 'child';
@@ -10,7 +12,8 @@ export function rosterRigId(id:string|undefined,context:PortraitContext):Painted
  if(context.identity.sex==='female')return assigned&&paintedFemaleRigs.has(assigned)?assigned:context.identity.culture==='northern'?'female-north':'female';
  if(assigned&&!paintedFemaleRigs.has(assigned))return assigned;
  if((context.maturity??.35)>.7)return 'xiao-yan';
- if(context.office==='commander')return context.identity.culture==='southern'?'chen-baxian':'dugu-xin';
+ // A new commission changes clothing, never the person's underlying face rig.
+ if(id&&(characterById[id]?.role??expandedPersonById[id]?.role)==='commander')return context.identity.culture==='southern'?'chen-baxian':'dugu-xin';
  if(context.beard==='long')return context.identity.culture==='southern'?'xiao-yi':'yuwen-tai';
  return context.identity.culture==='southern'?'fictional':'yuan-qin';
 }

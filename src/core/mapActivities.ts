@@ -7,7 +7,8 @@ export function mapActivities(w:World){
   // Sieges and the estate already have dedicated map entrances; their flags remain above.
   if(item.id.startsWith('siege:')||item.target.page==='estate')continue;
   let site:string|undefined;
-  if(item.kind==='activity')site=w.mobility?.activities.find(a=>'activity:'+a.id===item.id)?.site;
+  if(item.id.startsWith('unrest:')&&item.target.page==='city')site=item.target.site;
+  else if(item.kind==='activity')site=w.mobility?.activities.find(a=>'activity:'+a.id===item.id)?.site;
   else if(item.id.startsWith('trade:'))site=w.commerce?.contracts.find(t=>'trade:'+t.id===item.id)?.location;
   else if(item.id.startsWith('enterprise:'))site=w.enterprises?.items.find(e=>'enterprise:'+e.id===item.id)?.site;
   else if(item.kind==='service')site=item.target.page==='duties'?'tianshui':w.service?.tasks.find(t=>'service:'+t.id===item.id)?.site;

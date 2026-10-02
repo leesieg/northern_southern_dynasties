@@ -1,3 +1,4 @@
+import {culturalPolicyInterest} from './culture';
 import {movementIds,movements,type MovementId} from '../data/court';
 import {movementMood,courtOf,courtEnabled} from './court';
 import {governmentOf,governingAuthority} from './government';
@@ -24,7 +25,8 @@ export function politicalAction(w:World,r:RealmId,domain:PolicyDomain,context?:P
   const m=movementMood(w,r,id),local=context?.site?m.members.filter(person=>w.realm!.cities[context.site!]?.governor===person||Object.entries(w.realm!.local?.seats??{}).some(([key,s])=>key.startsWith(r+'|')&&s.holder===person&&localActive(w,key.split('|')[1],r)&&localSites(w,key.split('|')[1],r).includes(context.site!))).length:0;
   const exposure=context?.site?.length?Math.min(1,m.share/100+local*.15):1;
   const interest=context?.dimension&&context.rule&&policyDefinition(context.dimension,context.rule)?rulePositions[context.rule]:positions[domain];
-  const stance=(context?.localService&&context.stage&&context.stage!=='commitment'?0:interest[id]??0)+(id==='conservative'?-burden*.8:id==='reform'?-burden*.6:0)+(id==='dynastic'||id==='reform'?benefit*.5:0);
+  const cultural=context?.dimension==='cultural'&&context.rule?(m.members.length?m.members.reduce((n,id)=>n+culturalPolicyInterest(w,r,id,context.rule!),0)/m.members.length:0):undefined;
+  const stance=(context?.localService&&context.stage&&context.stage!=='commitment'?0:cultural??interest?.[id]??0)+(id==='conservative'?-burden*.8:id==='reform'?-burden*.6:0)+(id==='dynastic'||id==='reform'?benefit*.5:0);
   const raw=m.share*stance*scale*reach*(.5+exposure/2)*(m.satisfaction<30?.5:1);return {id,label:movements[id].name,share:m.share,stance,value:Math.round(raw)||0,raw};
  });
  const support=parts.reduce((n,p)=>n+p.value,0);

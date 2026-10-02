@@ -1,3 +1,4 @@
+import {culturalMilitarySupport} from './culture';
 import {pactBreachRisk} from './allegiancePacts';
 import type {World} from './types';
 import type {Army} from './realm';
@@ -18,9 +19,9 @@ import {isMonthStart} from './calendar';
 export interface MilitaryCareer {lastDay:number;xp:Record<string,number>;studies:Record<string,{started:number;due:number;progress?:number}>}
 export type MilitaryCareerCommand={type:'militaryCareer';action:'study'}|{type:'militaryCareer';action:'privateRaise';site:string;kind:TroopKind}|{type:'militaryCareer';action:'pacify'|'integrate';army:number}|{type:'militaryCareer';action:'automation';army:number;control:'direct'|'delegated'}|{type:'militaryCareer';action:'priority';army:number;priority:number}|{type:'militaryCareer';action:'supplyPolicy';policy:'civilian'|'normal'|'emergency'};
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
-export function commanderCompliance(w:World,a:Army,kind:'replace'|'disband',successor?:string){const leader=armyCommander(w,a)??a.owner,ruler=governingAuthority(w,a.realm),cooperative=!leader||leader===w.characterId||leader===successor||relationOpinion(w,leader,ruler)>=20;
+export function commanderCompliance(w:World,a:Army,kind:'replace'|'disband',successor?:string){const leader=armyCommander(w,a)??a.owner,ruler=governingAuthority(w,a.realm),cultural=leader?culturalMilitarySupport(w,a.realm,leader):0,cooperative=!leader||leader===w.characterId||leader===successor||relationOpinion(w,leader,ruler)+cultural>=20;
  const personal=(a.regiments??[]).reduce((n,u)=>n+u.troops*(u.loyalTo===leader?(u.commanderLoyalty??0):0),0)/Math.max(1,a.troops),institution=(a.regiments??[]).reduce((n,u)=>n+u.troops*(u.institution??60),0)/Math.max(1,a.troops),risk=pactBreachRisk(w,leader,a.id)||!cooperative&&personal>=75&&institution<50||kind==='disband'&&personal>=85&&institution<30&&!!a.arrears;
- return {refuses:risk,personal:Math.round(personal),institution:Math.round(institution),reason:risk?'部队追随原将、制度信任不足，交接可能被拒绝':cooperative?'原将配合交接':'原将与朝廷不和，但部队尚可交接'};
+ return {refuses:risk,cultural,personal:Math.round(personal),institution:Math.round(institution),reason:(risk?'部队追随原将、制度信任不足，交接可能被拒绝':cooperative?'原将配合交接':'原将与朝廷不和，但部队尚可交接')+(cultural?'；文化待遇评价 '+(cultural>0?'+':'')+cultural:'')};
 }
 export function attemptCompliance(w:World,a:Army,kind:'replace'|'disband',successor?:string){const q=commanderCompliance(w,a,kind,successor);if(!q.refuses){delete a.refusal;return true;}if(!a.refusal){a.refusal={kind,commander:armyCommander(w,a)??null,day:w.day,reason:q.reason};log(w,`第 ${a.id} 军拒绝${kind==='replace'?'更换统帅':'遣散'}，原编制与资源保留，须安抚或结清欠饷。`);}return false;}
 export function awardMilitaryExperience(w:World,id:string,amount:number){const s=w.militaryCareer??={lastDay:w.day,xp:{},studies:{}};s.xp[id]=Math.min(240,(s.xp[id]??0)+Math.max(0,Math.floor(amount)));}

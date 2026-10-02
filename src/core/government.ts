@@ -24,6 +24,7 @@ import type { RealmId } from './realm';
 import {countyTerritory} from './localAdministration';
 import {appointmentEvaluation} from './appointmentRules';
 import {governanceRules} from './governanceRules';
+import {recordCulturalChange} from './unrest';
 import {policyDefinition,policyDimensions,type PolicyDimension} from '../data/governancePolicies';
 export type Contract='balanced'|'tax'|'levy';
 export interface GovernmentTask {kind:'government'|'law'|'succession'|'policy';target:string;started:number;progress:number;required:number;sponsor:string}
@@ -135,7 +136,7 @@ function completeTask(w:World,r:RealmId){
  const g=governmentOf(w,r)!,task=g.task!;g.task=null;
  if(task.kind==='government'){g.type=task.target as GovernmentType;g.legitimacy=cap(g.legitimacy-5);}
  if(task.kind==='law')g.laws.push(task.target as ReformId);
- if(task.kind==='policy'){const [dimension,policy]=task.target.split('|');g.rules={...governanceRules(w,r),[dimension]:policy,revision:governanceRules(w,r).revision+1,since:w.day};enactPoliticalAction(w,r,dimension==='registration'?'tax':'appointment',{source:g.regimeId+':policy:'+task.started+':'+task.target+':completion',actor:task.sponsor,authorizer:governingAuthority(w,r),dimension:dimension as PolicyDimension,rule:policy,policyRevision:g.rules.revision,stage:'completion'});}
+ if(task.kind==='policy'){const [dimension,policy]=task.target.split('|'),previous=governanceRules(w,r).cultural;g.rules={...governanceRules(w,r),[dimension]:policy,revision:governanceRules(w,r).revision+1,since:w.day};enactPoliticalAction(w,r,dimension==='registration'?'tax':'appointment',{source:g.regimeId+':policy:'+task.started+':'+task.target+':completion',actor:task.sponsor,authorizer:governingAuthority(w,r),dimension:dimension as PolicyDimension,rule:policy,policyRevision:g.rules.revision,stage:'completion'});if(dimension==='cultural')recordCulturalChange(w,r,previous);}
  if(task.kind==='succession'){const d=successionDefinitions[task.target as SuccessionId];g.stages.push(task.target as SuccessionId);applyPowerArrangement(w,r,{goal:d.nextDynasty?'dynasty':'executive',sponsor:task.sponsor,beneficiary:d.ruler,executive:d.executives[0],name:d.nextDynasty?dynastyNames[d.nextDynasty]:''},[],d.source.url);}
  syncRelationships(w);syncCourt(w,r);
  log(w,r,'complete',task.target,taskName(task)+'已完成。'+(task.kind==='succession'?'按实际表态承接官员与军务，保留个人家业。':''));

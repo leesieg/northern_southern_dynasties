@@ -3,7 +3,7 @@ import {courtOf} from '../core/court';
 import {policies} from '../data/court';
 import {servicePriorities} from '../data/assignments';
 import {countyTerritory} from '../core/localAdministration';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {HoverHint} from './HoverHint';
 import {ArtIcon} from './ArtIcon';
 import {ActionDialog} from './ActionDialog';
@@ -11,13 +11,15 @@ import {SingleChoiceCards} from './SingleChoiceCards';
 import {GovernmentPanel} from './GovernmentPanel';
 import {governanceRules} from '../core/governanceRules';
 import {governmentReason,governingExecutives,currentRealm,politicalName} from '../core/government';
-import {policyDefinitions,policyDimensions,policyLabels,policyDefinition,appointmentPolicies,type PolicyDimension} from '../data/governancePolicies';
+import {policyDefinitions,policyDimensions,policyLabels,policyDefinition,appointmentPolicies,culturalPolicyTradeoffs,type CulturalPolicy,type PolicyDimension} from '../data/governancePolicies';
 import {siteById} from '../data/scenario';
 import type {RealmId} from '../core/realm';
 import type {World,GameCommand} from '../core/types';
+import './culturePolicy.css';
 
 export function GovernancePolicyPanel({world:w,realm,pending,send,onPerson,onTerritory,onService}:{world:World;realm:RealmId;pending:boolean;send:(c:GameCommand)=>void;onPerson:(id:string)=>void;onTerritory:(id:string)=>void;onService:(id?:number,site?:string)=>void}){
  const [editing,setEditing]=useState<PolicyDimension|null>(null),[draft,setDraft]=useState('');
+ useEffect(()=>{setEditing(null);setDraft('');},[realm,w.characterId]);
  const rules=governanceRules(w,realm),own=realm===currentRealm(w),executive=own&&governingExecutives(w,realm).includes(w.characterId!);
  const command=editing?{type:'government',action:'policy',dimension:editing,policy:draft} as const:null;
  const reason=command?governmentReason(w,command):'';
@@ -26,7 +28,7 @@ export function GovernancePolicyPanel({world:w,realm,pending,send,onPerson,onTer
   <GovernmentPanel world={w} realm={realm} compact pending={pending} send={send}/>
   <section className="court-policy-rules"><header className="court-desk-heading"><h3>治理准则</h3><small>版本 {rules.revision}</small></header>
    <div className="governance-rule-grid">{policyDimensions.map(d=>{const definition=policyDefinition(d,rules[d])!;return <section className="court-rule" key={d}>
-    <ArtIcon name={d==='appointment'?'influence':d==='access'?'person':'coins'} size={30}/>
+    <ArtIcon name={d==='appointment'?'influence':d==='access'?'person':d==='cultural'?'gregarious':'coins'} size={30}/>
     <HoverHint label={policyLabels[d]} content={definition.effect}><div tabIndex={0}><small>{policyLabels[d]}</small><strong>{definition.name}</strong></div></HoverHint>
     {own&&<HoverHint label={'调整'+policyLabels[d]} content={executive?'100 本国公款、20 本人影响力、60 个有效日；启办支持 −8，颁行才换规则。':'须由本国实际执政者调整'}><button className="court-icon-button" aria-label={'调整'+policyLabels[d]} disabled={pending||!executive} onClick={()=>{setEditing(d);setDraft(rules[d]);}}><ArtIcon name="diligent" size={23}/></button></HoverHint>}
    </section>;})}</div>
@@ -41,6 +43,6 @@ export function GovernancePolicyPanel({world:w,realm,pending,send,onPerson,onTer
     {own&&<HoverHint label="查看案卷" content={archived?'原案已归档，保留当前呈报摘要':'打开该地点的真实清税案卷'}><button className="court-icon-button" aria-label={'查看'+siteById[site].name+'清税案卷'} disabled={archived} onClick={()=>onService(q.task,site)}><ArtIcon name="diligent" size={21}/></button></HoverHint>}
    </article>;})}{!reports.length&&<p className="court-empty">尚无执行呈报</p>}</div>
   </section>
-  {editing&&command&&<ActionDialog title={'调整 · '+policyLabels[editing]} onClose={()=>setEditing(null)} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||governmentReason(w,command))return;send(command);setEditing(null);}}>呈议 · 100 公款 / 20 影响力</button>}><SingleChoiceCards label={policyLabels[editing]+' · 单选'} value={draft} onChange={setDraft} disabled={pending} options={Object.entries(policyDefinitions[editing]).map(([id,d])=>{const reaction=politicalAction(w,realm,editing==='registration'?'tax':'appointment',{source:'policy-preview',actor:w.characterId,dimension:editing,rule:id});return {id,title:d.name,description:d.effect,detail:<><span>{id===rules[editing]?'现行规则':'60 个有效实施日 · 支持 −8 · 颁行后才生效'}</span><span>当前集团取舍：{reaction.parts.filter(p=>p.value).map(p=>p.label+' '+(p.value>0?'+':'')+p.value).join(' / ')||'无显著反应'}</span></>};})}/><p>当前由 {politicalName(w.characterId!)}提出。经本国中央公库支出，议程占用改革名额；战争、危局或执行条件不足时暂停，取消不退已付成本。颁行不追溯扣钱或处分旧官，地方须另行安排落实与查核。</p>{reason&&<p role="status" className="service-warning">{reason}</p>}</ActionDialog>}
+  {editing&&command&&own&&<ActionDialog title={'调整 · '+policyLabels[editing]} onClose={()=>setEditing(null)} actions={<><button onClick={()=>setEditing(null)}>取消</button><button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||!executive||governmentReason(w,command))return;send(command);setEditing(null);}}>呈议 · 100 公款 / 20 影响力</button></>}><div className={editing==='cultural'?'culture-policy-options':undefined}><SingleChoiceCards label={policyLabels[editing]+' · 单选'} value={draft} onChange={setDraft} disabled={pending} options={Object.entries(policyDefinitions[editing]).map(([id,d])=>{const reaction=politicalAction(w,realm,editing==='registration'?'tax':'appointment',{source:'policy-preview',actor:w.characterId,dimension:editing,rule:id});return {id,title:d.name,description:editing==='cultural'?<span className="culture-policy-tradeoffs">{Object.entries(culturalPolicyTradeoffs[id as CulturalPolicy]).map(([label,text])=><span key={label}><b>{label}</b>{text}</span>)}</span>:d.effect,detail:<><span>{id===rules[editing]?'现行规则':'60 个有效实施日 · 支持 −8 · 颁行后才生效'}</span><span>当前集团取舍：{reaction.parts.filter(p=>p.value).map(p=>p.label+' '+(p.value>0?'+':'')+p.value).join(' / ')||'无显著反应'}</span></>};})}/></div><p>当前由 {politicalName(w.characterId!)}提出。经本国中央公库支出，议程占用改革名额；战争、危局或执行条件不足时暂停，取消不退已付成本。颁行不追溯扣钱或处分旧官，地方须另行安排落实与查核。</p>{reason&&<p role="status" className="service-warning">{reason}</p>}</ActionDialog>}
  </div>;
 }

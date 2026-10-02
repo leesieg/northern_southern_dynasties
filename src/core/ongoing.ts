@@ -1,3 +1,4 @@
+import {demandNames} from './unrest';
 import {armyCommander,commandArmy} from './mobility';
 import {loadingDays} from './roadCapacity';
 import {serviceApprover,serviceException} from './serviceMandates';
@@ -18,7 +19,7 @@ import {lifestyleProgress,lifestylePoints,lifestylePerson} from './lifestyle';
 import {lifestyleBranches,lifestyleFocuses,type LifestyleBranch} from '../data/lifestyles';
 import {isAlive} from './lifeState';
 export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue'|'focus'|'skills';
-export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'};
+export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'|'governance'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'};
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;
 const name=(id:string)=>relationshipPersonById[id]?.name??id;
@@ -27,6 +28,7 @@ function journeyProgress(j:Journey){const total=j.durations.reduce((n,d)=>n+d,0)
 export function ongoingItems(w:World):OngoingItem[]{
  const items:OngoingItem[]=[],actor=w.characterId??'player',r=w.realm?playerRealm(w):null,chief=r?governingExecutives(w,r).includes(actor):false;
  const add=(item:OngoingItem)=>items.push(item);
+ for(const q of w.unrest?.items??[])if(q.realm===r&&['warning','armed'].includes(q.stage))add({id:'unrest:'+q.id,kind:q.stage==='armed'?'military':'petition',title:siteById[q.site].name+' · '+demandNames[q.demand],started:q.started,progress:null,days:q.deadline===null?null:Math.max(0,q.deadline-w.day),clock:q.deadline===null?'waiting':'deadline',status:q.stage==='armed'?'民变起事':q.reported!==undefined?'已上报，待实际处置':'地方诉求待处理',target:{page:'city',site:q.site,tab:'governance'}});
  if(w.campaign?.status==='active'&&isAlive(w,lifestylePerson(w))){
   const p=lifestyleProgress(w),person=lifestylePerson(w);
   if(!p?.focus)add({id:'focus:'+person,kind:'focus',title:'选择重心',started:0,progress:null,days:null,clock:'waiting',status:'尚未选择生活重心；初次选择获得该路线 1 点技能点',target:{page:'lifestyle'}});

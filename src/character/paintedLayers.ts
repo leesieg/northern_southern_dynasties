@@ -1,5 +1,5 @@
 /** Raster artwork contract. Art must be authored for the same rig, view and palette. */
-export type PaintedSlot='body'|'head'|'brow-left'|'brow-right'|'eye-left'|'eye-right'|'nose'|'mouth';
+export type PaintedSlot='body'|'head'|'brow-left'|'brow-right'|'eye-left'|'eye-right'|'nose'|'mouth'|'headwear';
 export interface PaintedRect {x:number;y:number;width:number;height:number}
 /** Mask coordinates are local to the crop; feathers are fractions of its dimensions. */
 export type PaintedMask={kind:'bottom-fade';start:number}|{kind:'polygon';points:[number,number][];softness:number};
@@ -7,9 +7,11 @@ export interface PaintedPart {
  id:string;slot:PaintedSlot;source:string;crop:PaintedRect;place:PaintedRect;
  rig:string;view:string;palette:string;
  mask?:PaintedMask;
+ /** Remove edge-connected paper from opaque painted head sheets after applying the silhouette. */
+ removePaper?:boolean;
 }
 export interface PaintedRecipe {version:1;rig:string;view:string;palette:string;parts:PaintedPart[];thumbnail?:PaintedRect}
-export const paintedOrder:PaintedSlot[]=['body','head','brow-left','brow-right','eye-left','eye-right','nose','mouth'];
+export const paintedOrder:PaintedSlot[]=['body','head','brow-left','brow-right','eye-left','eye-right','nose','mouth','headwear'];
 export function validatePaintedRecipe(recipe:PaintedRecipe){
  if(recipe.version!==1)throw new Error('未知立绘版本');
  if(!recipe.rig||!recipe.view||!recipe.palette)throw new Error('立绘规格缺失');
@@ -27,13 +29,13 @@ export function validatePaintedRecipe(recipe:PaintedRecipe){
   if(mask?.kind==='polygon'&&(!Number.isFinite(mask.softness)||mask.softness<0||mask.softness>.2||mask.points.length<3||mask.points.some(p=>p.length!==2||p.some(n=>!Number.isFinite(n)||n<0||n>1))))throw new Error('立绘融合范围无效');
   seen.add(part.slot);
  }
- if(paintedOrder.some(slot=>!seen.has(slot)))throw new Error('立绘部件不完整');
+ if(paintedOrder.some(slot=>slot!=='headwear'&&!seen.has(slot)))throw new Error('立绘部件不完整');
  return [...recipe.parts].sort((a,b)=>paintedOrder.indexOf(a.slot)-paintedOrder.indexOf(b.slot));
 }
 
 /** Bounded changes preserve the authored anatomy; no unbounded genetic stretching. */
 export function adjustPaintedFeature(part:PaintedPart,width:number,height:number):PaintedPart {
- if(part.slot==='body'||part.slot==='head')return part;
+ if(part.slot==='body'||part.slot==='head'||part.slot==='headwear')return part;
  const bounded=(value:number)=>{if(!Number.isFinite(value))throw new Error('五官参数无效');return 1+(Math.max(0,Math.min(1,value))-.5)*.12;};
  const w=part.place.width*bounded(width),h=part.place.height*bounded(height);
  return {...part,place:{x:part.place.x+(part.place.width-w)/2,y:part.place.y+(part.place.height-h)/2,width:w,height:h}};

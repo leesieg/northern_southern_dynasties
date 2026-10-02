@@ -10,7 +10,7 @@ import {validatePaintedRecipe} from './paintedLayers';
 it('全部开局、关系与架空人物接入绘制肖像，独立身份保留独立组合',()=>{
  const ids=[...new Set([...historicalCharacters.map(p=>p.id),...relationshipPeople.map(p=>p.id),'fictional'])];
  expect(ids.length).toBeGreaterThan(75);const recipes=new Set<string>();
- for(const id of ids){const r=approvedPaintedRecipe(id,portraitContext(id));expect(validatePaintedRecipe(r)).toHaveLength(8);recipes.add(JSON.stringify(r));}
+ for(const id of ids){const r=approvedPaintedRecipe(id,portraitContext(id));expect(validatePaintedRecipe(r).filter(p=>p.slot!=='headwear')).toHaveLength(8);recipes.add(JSON.stringify(r));}
  expect(recipes.size).toBe(ids.length);
 });
 it('女性、幼年和老年素材不错误套用青年男性底稿；陌生行旅也有绘制肖像',()=>{
@@ -23,7 +23,7 @@ it('女性、幼年和老年素材不错误套用青年男性底稿；陌生行�
 it('军旅和不同职位不会回退旧 SVG；遗传极值的五官和头像裁切不越界',()=>{
  for(const p of relationshipPeople)for(const value of [0,100]){
   const context=portraitContext(p.id);for(const pair of Object.values(context.identity.genome.facial!))pair.fill(value);
-  for(const office of ['civilian','governor','commander','ruler'] as const){const recipe=approvedPaintedRecipe(p.id,{...context,office});expect(validatePaintedRecipe(recipe)).toHaveLength(8);}
+  for(const office of ['civilian','governor','commander','ruler'] as const){const recipe=approvedPaintedRecipe(p.id,{...context,office});expect(validatePaintedRecipe(recipe).filter(p=>p.slot!=='headwear')).toHaveLength(8);}
  }
 });
 it('正式入口读取存档五官，重载不重抽；换职务服饰不改五官与存档',()=>{
@@ -32,6 +32,6 @@ it('正式入口读取存档五官，重载不重抽；换职务服饰不改五�
  expect(recipe.parts.find(p=>p.slot==='nose')!.source).toContain('features-b');
  expect(approvedPaintedRecipe('yuan-shanjian',portraitContext('yuan-shanjian',parseWorld(before)))).toEqual(recipe);
  const retired=approvedPaintedRecipe('yuan-shanjian',{...context,office:'civilian'})!;
- expect(retired.parts[0].source).not.toBe(recipe.parts[0].source);expect(retired.parts.slice(1)).toEqual(recipe.parts.slice(1));
+ expect(retired.parts[0].source).not.toBe(recipe.parts[0].source);const features=(r:typeof recipe)=>r.parts.filter(p=>!['body','head','headwear'].includes(p.slot)).map(({place,...p})=>p);expect(features(retired)).toEqual(features(recipe));
  expect(serializeWorld(world)).toBe(before);
 });

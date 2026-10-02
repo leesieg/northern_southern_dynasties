@@ -54,7 +54,7 @@ describe('可组合人物与遗传规则',()=>{
   const w=newCampaignWorld('xiao-yi',undefined,'sandbox');for(const c of Object.values(w.realm!.cities))c.governor=null;for(const s of Object.values(w.realm!.local!.seats))s.holder=null;
   expect(portraitContext('xiao-yi',w).office).toBe('civilian');w.realm!.cities.jiangling.governor='xiao-yi';
   expect(portraitContext('xiao-yi',w).office).toBe('governor');w.realm!.mandate=true;
-  w.realm!.armies.push({realm:'liang',location:'jiangling',troops:100,morale:50,supply:100,journey:null,siege:0});
+  w.realm!.armies.push({id:1,realm:'liang',location:'jiangling',troops:100,morale:50,supply:100,journey:null,siege:0});(w.mobility!.armyCommanders??={})[1]='xiao-yi';
   expect(portraitContext('xiao-yi',w).office).toBe('commander');w.social!.stress=90;
   expect(composePortrait(portraitContext('xiao-yi',w)).mood).toBe('tense');
   w.social!.lineage=[{id:'xiao-yi',day:0},{id:'xiao-gang',day:1}];expect(portraitContext('xiao-yi',w).office).toBe('civilian');

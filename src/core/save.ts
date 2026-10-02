@@ -1,3 +1,5 @@
+import {validUnrest,ensureUnrest} from './unrest';
+import {defaultPersonCulture,defaultCountyCulture} from '../data/cultures';
 import {validPowerPolitics} from './powerPoliticsSave';
 import {validPacts} from './allegiancePacts';
 import {migrateArmyFood} from './armyOrganization';
@@ -76,6 +78,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.characterId!==undefined&&!script.characterIds.includes(String(value.characterId)))return fail();
   if(value.resignations!==undefined&&!validResignations(value.resignations))return fail();
   if(value.identities!==undefined&&!validIdentities(value.identities))return fail();
+  if(!validUnrest(value as unknown as World))return fail();
   if(value.families!==undefined&&!validFamilies(value.families,Number(value.day),value.scriptId as string|undefined))return fail();
   if(value.duties!==undefined&&!validDuties(value.duties,Number(value.day),value.mode))return fail();
   if(value.service!==undefined&&!validService(value.service,Number(value.day),value.mode,value as unknown as World))return fail();
@@ -180,7 +183,8 @@ export function parseWorld(source: string): World {
   world.scriptId??=DEFAULT_SCRIPT;
   world.identities??=initialIdentities();
   const identityDefaults=initialIdentities();
-  for(const [id,identity] of Object.entries(world.identities.people))if(!identity.genome.facial)identity.genome.facial=identityDefaults.people[id].genome.facial;
+  for(const [id,identity] of Object.entries(world.identities.people)){identity.cultureId??=defaultPersonCulture(id);if(!identity.genome.facial)identity.genome.facial=identityDefaults.people[id].genome.facial;}
+  if(world.realm){for(const c of Object.values(world.realm.cities))c.cultureId??=defaultCountyCulture(c.owner==='frontier');ensureUnrest(world);for(const g of Object.values(world.realm.governments?.realms??{}))if(g.rules)g.rules.cultural??='inclusive';}
   world.families??=newFamilyState(world.day,world.scriptId);
   if(world.realm)for(const c of Object.values(world.realm.cities)){const old=c as typeof c & {households?:number};if(c.population===undefined&&old.households!==undefined){c.population=old.households*5;delete old.households;}}
   ensurePopulation(world);

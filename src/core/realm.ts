@@ -16,6 +16,8 @@ import {awardMilitaryExperience,advanceMilitaryCareer,attemptCompliance} from '.
 import {advanceRecruitmentRallies} from './recruitmentPlans';
 import {authorityGrant} from './authority';
 import {takeCasualties,battleStage} from './militaryAftermath';
+import {advanceUnrest} from './unrest';
+import {defaultCountyCulture} from '../data/cultures';
 import {civilCityCapture,armyControls,warArmySide,warCitySide,armiesHostile,playerCommandsArmy,civilCanAdmin,civilWar,settleCivilWar,advanceCivilPolitics} from './civilWars';
 import {annexPolity,advanceAnnexations} from './polityLifecycle';
 import {armyCampaign} from './militaryCampaigns';
@@ -48,7 +50,7 @@ import type { World,Journey,Polity } from './types';
 export const realms=['liang','east','west'] as const;
 export type RealmId=Exclude<Polity,'frontier'>;
 export type Tax='light'|'normal'|'heavy';
-export interface Province {administration?:{day:number;need:number;paid:number};militaryRequisition?:{month:number;grain:number;burden:number};owner:Polity;controller:Polity;governor:string|null;population:number;grain:number;irrigation:number;order:number;prosperity:number;tax:Tax;occupiedSince?:number;occupiedByWar?:number;integration?:{since:number;progress:number;funded:boolean};fortification?:{level:number;due:number|null}}
+export interface Province {cultureId?:import('../data/cultures').CultureId;culturalExemption?:{leader:string;since:number};administration?:{day:number;need:number;paid:number};militaryRequisition?:{month:number;grain:number;burden:number};owner:Polity;controller:Polity;governor:string|null;population:number;grain:number;irrigation:number;order:number;prosperity:number;tax:Tax;occupiedSince?:number;occupiedByWar?:number;integration?:{since:number;progress:number;funded:boolean};fortification?:{level:number;due:number|null}}
 export interface Treasury {coins:number;grain:number;lastIncome:number;lastExpense:number;lastFood:number}
 export interface Army {automation?:'direct'|'delegated';refusal?:{kind:'replace'|'disband';commander:string|null;day:number;reason:string};owner?:string;rally?:string;starvationDays?:number;supplyLost?:number;logisticsReason?:string;supplyPriority?:number;withdrawalUntil?:number;trainingStarted?:number;trainingUntil?:number;id?:number;payer?:string;arrears?:number;foodRemainder?:number;regiments?:import('./armyOrganization').Regiment[];convoy?:ArmyConvoy|null;realm:RealmId;location:string;troops:number;morale:number;supply:number;journey:Journey|null;siege:number}
 export interface Siege {started?:number;nextPhase?:number;breach?:number;round?:number;blockade?:number;event?:string;playerDecision?:boolean;war:number;side:'attack'|'defend';site:string;progress:number;last:number;lastAssault?:number}
@@ -84,7 +86,7 @@ export const executive=governmentExecutive;
 export const authority=(id:RealmId)=>id==='liang'?'xiao-yan':id==='east'?'gao-huan':'yuwen-tai';
 export const capital=(id:RealmId,w?:World)=>w?.realm?.identities?.[id]?.capital??(id==='liang'?'jiankang':id==='east'?'ye':'changan');
 export function newRealm(w:World):RealmState {
- const cities=Object.fromEntries(sites.map(s=>[s.id,{owner:s.polity,controller:s.polity,governor:s.id===w.people[0].home?w.characterId!:null,population:regionalEconomy(s.id).initialPopulation,grain:Math.ceil(regionalEconomy(s.id).initialPopulation/150)*2,irrigation:0,order:70,prosperity:50,tax:'normal' as Tax}]));
+ const cities=Object.fromEntries(sites.map(s=>[s.id,{cultureId:defaultCountyCulture(s.polity==='frontier'),owner:s.polity,controller:s.polity,governor:s.id===w.people[0].home?w.characterId!:null,population:regionalEconomy(s.id).initialPopulation,grain:Math.ceil(regionalEconomy(s.id).initialPopulation/150)*2,irrigation:0,order:70,prosperity:50,tax:'normal' as Tax}]));
  return {version:1,foodVersion:2,cities,treasuries:Object.fromEntries(worldRealms(w).map(id=>[id,{coins:600,grain:1000,lastIncome:0,lastExpense:0,lastFood:0}])) as Record<RealmId,Treasury>,influence:50,mandate:executive(w)||characterById[w.characterId!].role==='commander',offices:[],armies:[],war:null,truces:{},event:null,lastEvent:0,ledger:[]};
 }
 export function syncGovernance(w:World){if(w.realm)w.holdings.governedCities=Object.entries(w.realm.cities).filter(([,c])=>c.governor===w.characterId&&c.controller===playerRealm(w)).map(([id])=>id);}
@@ -273,7 +275,7 @@ export function advanceRealm(w:World){
  const target=s.cities[war.target];updateWarScore(w,war);
  if(target.owner==='frontier'||!warRealmSide(war,target.owner))settleWar(w,war);
  }
- for(const a of s.armies){reconcileRegiments(a);if(a.troops<100){takeCasualties(w,a,a.troops,undefined,true);returnArmyConvoy(w,a);if(a.arrears){const debts=s.armyDebts??=[],account=a.payer??'central:'+a.realm,old=debts.find(d=>d.realm===a.realm&&d.account===account);if(old)old.coins+=a.arrears;else debts.push({realm:a.realm,account,coins:a.arrears});}}}s.armies=s.armies.filter(a=>a.troops>=100);advanceCivilPolitics(w);
+ for(const a of s.armies){reconcileRegiments(a);if(a.troops<100){takeCasualties(w,a,a.troops,undefined,true);returnArmyConvoy(w,a);if(a.arrears){const debts=s.armyDebts??=[],account=a.payer??'central:'+a.realm,old=debts.find(d=>d.realm===a.realm&&d.account===account);if(old)old.coins+=a.arrears;else debts.push({realm:a.realm,account,coins:a.arrears});}}}s.armies=s.armies.filter(a=>a.troops>=100);advanceCivilPolitics(w);advanceUnrest(w);
  if(!s.event&&w.day-s.lastEvent>=90&&w.holdings.governedCities.length){const kinds=Object.keys(eventDefinitions) as EventKind[];s.event={kind:kinds[(Math.floor(w.day/90)-1)%kinds.length],site:w.holdings.governedCities[0],day:w.day};s.lastEvent=w.day;log(w,'收到待决事务：'+eventDefinitions[s.event.kind].title+'。');}
 }
 export function handoverOffice(w:World){if(w.realm){if(governmentOf(w)?.type==='feudal'){const former=w.social?.lineage.at(-2)?.id;if(former)for(const city of Object.values(w.realm.cities))if(city.governor===former&&city.owner===playerRealm(w)&&city.controller===playerRealm(w))city.governor=w.characterId!;}w.realm.mandate=executive(w)||(!(governmentOf(w)?.stages.length)&&characterById[w.characterId!].role==='commander');w.realm.event=null;syncGovernance(w);}}

@@ -139,7 +139,8 @@ export function App(){
   if(game.blocked)return <main className="blocking"><div className="brand-seal">风云</div><h1>山河暂歇</h1><p>{game.blocked}</p><button className="primary" onClick={()=>location.reload()}>重新载入</button></main>;
   const navigatePause=(event:PauseEvent)=>{
     game.dismissPause();game.dismiss();
-    if(event.kind==='arrival'||event.kind==='journey'){if(event.site){chooseCity(event.site);focus('selected');}}
+    if(event.id.startsWith('unrest:')&&event.site){chooseCity(event.site);setCityTab('governance');focus('selected');}
+    else if(event.kind==='arrival'||event.kind==='journey'){if(event.site){chooseCity(event.site);focus('selected');}}
     else if(event.kind==='economy')openCourt('finance',undefined,false,'budget','audit');
     else if(event.kind==='mobility')openPerson(game.world!.characterId!,false);
     else if(event.kind==='custody'||event.kind==='health'||event.kind==='inheritance')openPerson(event.person??game.world!.characterId!,false);

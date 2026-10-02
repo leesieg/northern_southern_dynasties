@@ -14,14 +14,27 @@ export const registrationPolicies = {
  survey: {name:'分步核籍',effect:'详办核查后提高清税实收；急办未核查只能追征现额，地方承受压力。'},
  equalized: {name:'统一赋役',effect:'核查后按同一口径追征；收入更高，需更多工期，地方秩序与集团协调代价更高。'},
 } as const;
-export const policyDefinitions = {appointment:appointmentPolicies,access:accessPolicies,registration:registrationPolicies};
+export const culturalPolicies={
+ customs:{name:'保留军镇旧俗',effect:'保留在任将领的组织待遇，军权交接评价 +6；异文化荐任评价 −4。统一赋役的清税另需 15 工作量，无额外产出。'},
+ inclusive:{name:'胡汉并用',effect:'任用不因文化差异扣分；无额外征收或军权收益。撤销旧俗优待时仍需回应已受影响将领的诉求。'},
+ integration:{name:'推行汉式整合',effect:'清税详办另需 15 工作量，质量达标时实收 +5%；异文化荐任评价 −4。撤销军镇旧俗优待会提出待遇诉求，未妥协时交接评价 −6。'},
+} as const;
+export type CulturalPolicy=keyof typeof culturalPolicies;
+export const policyDefinitions = {appointment:appointmentPolicies,access:accessPolicies,registration:registrationPolicies,cultural:culturalPolicies};
 export type PolicyDimension = keyof typeof policyDefinitions;
 export type AppointmentPolicy = keyof typeof appointmentPolicies;
 export type AccessPolicy = keyof typeof accessPolicies;
 export type RegistrationPolicy = keyof typeof registrationPolicies;
-export const policyDimensions:PolicyDimension[]=['appointment','access','registration'];
-export const policyLabels:Record<PolicyDimension,string>={appointment:'任官准则',access:'任职通道',registration:'赋役编管'};
+export const policyDimensions:PolicyDimension[]=['appointment','access','registration','cultural'];
+export const policyLabels:Record<PolicyDimension,string>={appointment:'任官准则',access:'任职通道',registration:'赋役编管',cultural:'文化治理'};
 export function policyDefinition(dimension:PolicyDimension,rule:string):{name:string;effect:string}|undefined {
  const entries=policyDefinitions[dimension] as Record<string,{name:string;effect:string}>;
  return entries&&Object.hasOwn(entries,rule)?entries[rule]:undefined;
 }
+
+/** Comparable summaries of implemented rules; values are gameplay parameters. */
+export const culturalPolicyTradeoffs:Record<CulturalPolicy,Record<string,string>>={
+ customs:{任用:'文化差异评价 −4；能力与履历另计',征收:'统一赋役清税 +15 工作量，无额外实收',军务:'在任将领交接评价 +6；撤销优待可能引发诉求'},
+ inclusive:{任用:'文化差异不扣分',征收:'无额外工作量或实收加成',军务:'无专属交接加成；原待遇撤销仍须处置'},
+ integration:{任用:'文化差异评价 −4；能力与履历另计',征收:'清税 +15 工作量；详办且质量达标实收 +5%，当地豁免除外',军务:'撤销旧俗形成真实诉求时，组织者交接评价 −6'},
+};

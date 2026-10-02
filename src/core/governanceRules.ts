@@ -1,12 +1,12 @@
 import type {World} from './types';
 import type {RealmId} from './realm';
-import type {AppointmentPolicy,AccessPolicy,RegistrationPolicy} from '../data/governancePolicies';
+import type {AppointmentPolicy,AccessPolicy,RegistrationPolicy,CulturalPolicy} from '../data/governancePolicies';
 import {policyDefinition,policyDimensions} from '../data/governancePolicies';
 import {siteById} from '../data/scenario';
 import {relationshipPersonById} from '../data/relationships';
 export interface PolicyLocalReport {task:number;officer:string;issuer:string;revision:number;registration:RegistrationPolicy;access:AccessPolicy;reportedDay:number;applied:boolean;quality:number;recovered:number;checkedDay:number|null;inspector:string|null;inspectionTask:number|null}
 export interface GovernanceRules {
- revision:number;since:number;appointment:AppointmentPolicy;access:AccessPolicy;registration:RegistrationPolicy;
+ revision:number;since:number;appointment:AppointmentPolicy;access:AccessPolicy;registration:RegistrationPolicy;cultural?:CulturalPolicy;
  reports?:Record<string,PolicyLocalReport>;
 }
 export function validGovernanceRules(value:unknown,day:number,w?:World,realm?:RealmId){
@@ -14,7 +14,7 @@ export function validGovernanceRules(value:unknown,day:number,w?:World,realm?:Re
  if(!value||typeof value!=='object'||Array.isArray(value))return false;
  const q=value as Record<string,unknown>;
  const integer=(v:unknown,min:number,max:number)=>Number.isSafeInteger(v)&&Number(v)>=min&&Number(v)<=max;
- if(!integer(q.revision,1,1000000)||!integer(q.since,0,day)||!policyDimensions.every(d=>typeof q[d]==='string'&&!!policyDefinition(d,String(q[d]))))return false;
+ if(!integer(q.revision,1,1000000)||!integer(q.since,0,day)||!policyDimensions.every(d=>d==='cultural'&&q[d]===undefined||typeof q[d]==='string'&&!!policyDefinition(d,String(q[d]))))return false;
  const reports=q.reports;if(reports===undefined)return true;
  if(!reports||typeof reports!=='object'||Array.isArray(reports)||Object.keys(reports).length>Object.keys(siteById).length)return false;
  return Object.entries(reports).every(([site,value])=>{
@@ -33,7 +33,7 @@ export function validGovernanceRules(value:unknown,day:number,w?:World,realm?:Re
  });
 }
 /** Missing old-save metadata supplies rules only; it never fabricates reports or charges costs. */
-export function governanceRules(w:World,r:RealmId):GovernanceRules {
+export function governanceRules(w:World,r:RealmId):GovernanceRules&{cultural:CulturalPolicy} {
  const g=w.realm!.governments!.realms[r];
- return g.rules??{revision:1,since:w.realm!.governments!.since,appointment:g.laws.includes('west-six')?'assessment':g.laws.includes('east-selection')?'selection':'lineage',access:g.laws.includes('west-six')?'trial':'patronage',registration:g.laws.includes('west-register')?'survey':'compact'};
+ return g.rules?{...g.rules,cultural:g.rules.cultural??'inclusive'}:{revision:1,since:w.realm!.governments!.since,appointment:g.laws.includes('west-six')?'assessment':g.laws.includes('east-selection')?'selection':'lineage',access:g.laws.includes('west-six')?'trial':'patronage',registration:g.laws.includes('west-register')?'survey':'compact',cultural:'inclusive'};
 }

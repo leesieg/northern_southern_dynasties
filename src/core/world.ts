@@ -12,6 +12,8 @@ import {actCommerce,advanceCommerce} from './commerce';
 import {actHousehold,advanceHousehold} from './householdPlans';
 import {actMilitaryAction,advanceAftermath} from './militaryAftermath';
 import {advanceObligations} from './obligations';
+import {actUnrest,ensureUnrest} from './unrest';
+import {governanceRules} from './governanceRules';
 import {actCivilWar,civilCanAdmin} from './civilWars';
 import {actEnterprise,advanceEnterprises} from './enterprises';
 import {actMilitaryCampaign,advanceMilitaryCampaigns} from './militaryCampaigns';
@@ -114,7 +116,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
     w.campaign={id:'stewardship',deadline:120,appointed:true,status:'active',finishedDay:null};
     w.chronicle=[{day:0,person:'player',text:c.name+'以'+c.title+'身份启程，经营地方与家业。'}];
   }else w.campaign={id:'jiangzuo',deadline:120,appointed:false,status:'active',finishedDay:null};
-  if(mode==='sandbox'){w.mode='sandbox';w.realm=newRealm(w);if(!historicalCharacters.some(c=>c.id===characterId)){for(const city of Object.values(w.realm.cities))if(city.governor===characterId)city.governor=null;w.holdings.governedCities=[];}w.realm.governments=newGovernments(w);ensureCourts(w);ensureDuties(w);ensureService(w);}
+  if(mode==='sandbox'){w.mode='sandbox';w.realm=newRealm(w);if(!historicalCharacters.some(c=>c.id===characterId)){for(const city of Object.values(w.realm.cities))if(city.governor===characterId)city.governor=null;w.holdings.governedCities=[];}w.realm.governments=newGovernments(w);for(const r of ['liang','east','west'] as const)w.realm.governments.realms[r].rules={...governanceRules(w,r),cultural:r==='east'?'customs':r==='liang'?'integration':'inclusive'};ensureUnrest(w);ensureCourts(w);ensureDuties(w);ensureService(w);}
   ensureRelationships(w);
   ensureDiplomacy(w);
   ensureLifestyle(w);
@@ -176,6 +178,7 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   if(command.type==='polity'){actPolity(world,command);return;}
   if(command.type==='pact'){actPact(world,command);return;}
   if(command.type==='power'){actPower(world,command);return;}
+  if(command.type==='unrest'){actUnrest(world,command);return;}
   if(command.type==='civilWar'){actCivilWar(world,command);return;}
   if(command.type==='enterprise'){actEnterprise(world,command);return;}
   if(command.type==='militaryCampaign'){actMilitaryCampaign(world,command);return;}

@@ -16,6 +16,23 @@ function loadSource(url:string){
  return request;
 }
 
+/** Opaque roster sheets contain white paper around the painted head. Only remove paper
+ * connected to the silhouette's outside, never a white detail enclosed by the face. */
+export function removeConnectedPaper(data:Uint8ClampedArray,width:number,height:number){
+ const length=width*height,visited=new Uint8Array(length),queue=new Int32Array(length);
+ let write=0,read=0;
+ const paper=(index:number)=>{const k=index*4,r=data[k],g=data[k+1],b=data[k+2];return r>=235&&g>=235&&b>=231&&Math.max(r,g,b)-Math.min(r,g,b)<=20;};
+ const accept=(index:number)=>{if(visited[index]||data[index*4+3]!==0&&!paper(index))return;visited[index]=1;queue[write++]=index;};
+ for(let x=0;x<width;x++){accept(x);accept((height-1)*width+x);}
+ for(let y=0;y<height;y++){accept(y*width);accept(y*width+width-1);}
+ while(read<write){
+  const index=queue[read++],x=index%width,y=Math.floor(index/width);
+  if(data[index*4+3]!==0)data[index*4+3]=0;
+  if(x>0)accept(index-1);if(x+1<width)accept(index+1);
+  if(y>0)accept(index-width);if(y+1<height)accept(index+width);
+ }
+}
+
 function maskedPart(image:HTMLImageElement,part:PaintedPart){
  const box=part.crop,canvas=document.createElement('canvas');
  canvas.width=Math.ceil(box.width);canvas.height=Math.ceil(box.height);
@@ -33,6 +50,7 @@ function maskedPart(image:HTMLImageElement,part:PaintedPart){
   mc.beginPath();mask.points.forEach(([x,y],i)=>{if(i===0)mc.moveTo(x*layer.width,y*layer.height);else mc.lineTo(x*layer.width,y*layer.height);});mc.closePath();mc.fill();
  }
  ctx.globalCompositeOperation='destination-in';ctx.drawImage(layer,0,0);
+ if(part.removePaper){const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);removeConnectedPaper(pixels.data,canvas.width,canvas.height);ctx.putImageData(pixels,0,0);}
  return canvas;
 }
 

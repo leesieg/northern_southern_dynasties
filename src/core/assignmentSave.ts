@@ -28,7 +28,7 @@ export function validService(v:unknown,day:number,mode:unknown,w?:World):boolean
  const ids=new Set<number>(),busy=new Set<string>(),counts:Record<string,number>={};
  for(const t of v.tasks){
   if(!obj(t))return false;
-  const policy=t.policy;if(policy!==undefined&&(!obj(policy)||!int(policy.revision,1,1000000)||!['appointment','registration','access'].every(k=>typeof policy[k]==='string'&&!!policyDefinition(k as 'appointment'|'registration'|'access',String(policy[k])))))return false;
+  const policy=t.policy;if(policy!==undefined&&(!obj(policy)||policy.culturalExemption!==undefined&&typeof policy.culturalExemption!=='boolean'||policy.cultural!==undefined&&!policyDefinition('cultural',String(policy.cultural))||!int(policy.revision,1,1000000)||!['appointment','registration','access'].every(k=>typeof policy[k]==='string'&&!!policyDefinition(k as 'appointment'|'registration'|'access',String(policy[k])))))return false;
   if(t.approvedBy!==undefined&&!person(t.approvedBy))return false;
   if(t.direct!==undefined&&!localChange(t.direct))return false;
   if(!obj(t)||(t.extended!==undefined&&typeof t.extended!=='boolean')||(t.quality!==undefined&&!int(t.quality,50,130))||!int(t.id,1,v.nextId-1)||ids.has(t.id)||!realm(t.realm)||!key(t.kind,assignmentTemplates)||!key(t.site,siteById)||!person(t.officer)||t.phase!=='closed'&&relationshipPersonById[t.officer].realm!==t.realm&&(!w||allegianceRealm(w,t.officer)!==t.realm))return false;ids.add(t.id);

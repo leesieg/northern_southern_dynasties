@@ -52,6 +52,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  <div className={audience?'pause-dialog-scroll':undefined}>
  <header>{!audience&&<span className="eyebrow">时光暂停{count>1?` · 尚有 ${count} 件消息`:''}</span>}<h2 id="pause-title">{event.title}</h2></header>
  {!audience&&<p id="pause-body">{body}</p>}
+ {!actionable&&event.id.startsWith('unrest:')&&<button disabled={pending} onClick={()=>onNavigate(event)}>前往当地治理 ›</button>}
  {!actionable&&event.kind==='situation'&&<button disabled={pending} onClick={()=>onNavigate(event)}>查看原因与应对 ›</button>}
  {!actionable&&event.kind==='service'&&task?.result&&<><ServiceOutcome task={task}/><button disabled={pending} onClick={()=>onNavigate(event)}>查看结案与后续 ›</button></>}
  {actionable&&event.kind==='custody'&&event.person&&<CustodyPerson key={event.person} world={world} person={event.person} pending={pending} send={send}/>}
