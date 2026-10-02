@@ -1,6 +1,6 @@
 import type {PortraitContext} from './composition';
 import type {PaintedRecipe,PaintedPart,PaintedRect} from './paintedLayers';
-import {headRegistration,costumeRegistration} from './costumeRegistration';
+import {headRegistration,costumeRegistration,bodyRegistration} from './costumeRegistration';
 type Point=[number,number];
 type Pair=[Point,Point];
 type Transform={scale:number;x:number;y:number};
@@ -35,21 +35,24 @@ export function culturalCostume(recipe:PaintedRecipe,context:PortraitContext):Pa
  const column=office==='commander'?2:office==='governor'?1:0,row=culture==='han'?0:1,index=young?row:row*3+column;
  const size=young?{width:724,height:1086}:{width:418,height:627},cell={x:(young?row:column)*size.width,y:(young?0:row)*size.height,...size};
  const garment=costumeRegistration[kind][index],source=import.meta.env.BASE_URL+'art/portraits/painted-c/costumes/'+kind+'-v1.png';
- const neck:Pair=young?[[.42,.35],[.57,.45]]:sex==='female'?[[.46,.32],[.62,.38]]:[[.46,.31],[.62,.40]];
+ const neck:Pair=young?[[.42,.35],[.57,.45]]:sex==='female'?[[.40,.285],[.56,.375]]:[[.40,.26],[.56,.35]];
  const sourceNeck=pair(registration.neck,original.crop.width,original.crop.height),sourceRim=pair(registration.rim,original.crop.width,original.crop.height);
  // Keep the same apparent head width across the 1024px study and 724px roster rigs.
- const headFit=centered(sourceNeck,midpoint(neck),(young?.25:.24)/span(sourceRim));
+ const headFit=centered(sourceNeck,midpoint(neck),(young?.27:sex==='female'&&office!=='commander'?.23:.215)/span(sourceRim));
  const rim=sourceRim.map(p=>point(p,headFit)) as Pair;
- const capFit=(g:typeof garment)=>g.rim?centered(pair(g.rim,size.width,size.height),midpoint(rim),span(rim)/span(pair(g.rim,size.width,size.height))):null;
+ // Preserve women's authored hair ornaments in civilian/official dress; a second cap would sit on the bun.
+ const useHeadwear=!young&&(sex==='male'||office==='commander');
+ const capFit=(g:typeof garment)=>useHeadwear&&g.rim?centered(pair(g.rim,size.width,size.height),midpoint(rim),span(rim)/span(pair(g.rim,size.width,size.height))):null;
  // Reserve space for every hat in this rig, so rank/culture switches share the same head transform.
  const top=Math.min(0,headFit.y,...costumeRegistration[kind].map(g=>capFit(g)?.y??0));
  const offset=Math.max(0,.006-top),headTransform={...headFit,y:headFit.y+offset};
- const collar=pair(garment.neck,size.width,size.height);
- const dressScale=clamp(span(sourceNeck)*headFit.scale/span(collar),.84,1.06);
+ const portraitBody=bodyRegistration[kind][index];
+ const collar=pair(portraitBody?.neck??garment.neck,size.width,size.height);
+ const dressScale=clamp(span(sourceNeck)*headFit.scale/span(collar),young?.94:sex==='female'?.80:.90,1.06);
  const dressFit=centered(collar,midpoint(neck),dressScale),dressTransform={...dressFit,y:dressFit.y+offset};
  const [back,front]=pair(registration.neck,original.crop.width,original.crop.height),[left,right]=pair(registration.rim,original.crop.width,original.crop.height);
  // Keep the original face AND neck; remove the old garment along its authored neck seam.
- const keepHair=young||sex==='female',points:Point[]=[
+ const keepHair=young||sex==='female'&&!useHeadwear,points:Point[]=[
   [left[0]-(keepHair?.16:.005),keepHair?0:left[1]-.012],[right[0]+.025,keepHair?0:right[1]-.012],
   [right[0]+.025,back[1]-.025],[front[0]+.07,front[1]-.065],
   [front[0],front[1]-.018],[back[0]-.006,back[1]-.008],[back[0]-(keepHair?.16:.012),back[1]-.03],
@@ -65,7 +68,11 @@ export function culturalCostume(recipe:PaintedRecipe,context:PortraitContext):Pa
   const outline:Point[]=isBody?[...seam,[cell.width,cell.height],[0,cell.height]]:[[0,0],[cell.width,0],...seam.slice().reverse()];
   return {...part(slot,start,end),mask:{kind:'polygon',points:outline.map(([x,y])=>[x/cell.width,(y-start)/(end-start)]),softness:0}};
  };
- const body=placed(garmentPart('body'),dressTransform),newHead=placed(face,headTransform),newFeatures=features.map(p=>placed(p,headTransform));
+ const torso=portraitBody?{...part('body',portraitBody.top,cell.height),id:`costume-body-v2:${kind}:${culture}:${office}`,source:source.replace('-v1.png','-v2.png')}:garmentPart('body');
+ // The adjacent long sleeve reaches into the left edge of the women's armor cells.
+ // Exclude that isolated strip below the shoulder, retaining the actual armor silhouette.
+ if(portraitBody&&sex==='female'&&office==='commander')torso.mask={kind:'polygon',points:[[0,0],[1,0],[1,1],[.06,1],[.06,(300-portraitBody.top)/(cell.height-portraitBody.top)],[0,(240-portraitBody.top)/(cell.height-portraitBody.top)]],softness:0};
+ const body=placed(torso,dressTransform),newHead=placed(face,headTransform),newFeatures=features.map(p=>placed(p,headTransform));
  const hat=capFit(garment);
  const headwear=hat?placed(garmentPart('headwear'),{...hat,y:hat.y+offset}):null;
  const thumbnail=recipe.thumbnail?box(recipe.thumbnail,headTransform):box({x:310/1024,y:180/1536,width:360/1024,height:360/1536},headTransform);

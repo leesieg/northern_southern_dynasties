@@ -48,3 +48,17 @@ export const costumeRegistration:Record<'male'|'female'|'child',CostumeRegistrat
   {neck:[309,248,413,321],rim:null,bodyTop:236},
  ],
 };
+
+/** V2 bodies use the accepted half-length brush style and include complete forearms/hands.
+ * Coordinates describe the collar, not the cut neck stump. V1 remains headwear-only. */
+export const bodyRegistration:Record<'male'|'female'|'child',{neck:Pair;top:number}[]>={
+ male:[
+  {neck:[163,126,245,207],top:110},{neck:[166,126,248,207],top:110},{neck:[164,126,248,207],top:110},
+  {neck:[164,88,245,163],top:68},{neck:[166,88,248,163],top:68},{neck:[164,88,248,163],top:68},
+ ],
+ female:[
+  {neck:[175,86,265,173],top:48},{neck:[171,85,262,169],top:48},{neck:[175,85,263,171],top:48},
+  {neck:[175,39,265,116],top:8},{neck:[172,39,263,116],top:8},{neck:[175,39,265,116],top:8},
+ ],
+ child:[{neck:[305,387,420,482],top:350},{neck:[305,387,420,482],top:350}],
+};

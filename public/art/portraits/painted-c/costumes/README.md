@@ -42,3 +42,13 @@ Preserve the six existing garment designs and their ink-watercolor style. Correc
 ```
 
 实现入口：`src/character/culturalCostume.ts`。配方包含 `costume-v1` 与素材路径；替换内容时须新建版本文件并同步版本标识，保证肖像缓存随实际内容失效。
+
+## v2 · 2026-10-03 半身构图与手部
+
+v1 成人与儿童衣身停止用于文化服饰；v1 成人图集仅保留冠帽。新增 `male-v2.png`、`female-v2.png`（各 1254 × 1254，3 列 × 2 行，每格 418 × 627）及 `child-v2.png`（1448 × 1086，2 格，每格 724 × 1086）。全为真透明 PNG，按实际尺寸登记。
+
+使用内置 ImageGen，以原 `xiao-yan-base.png`、`female-base.png`、`child.png` 为笔触、姿态和人体参考重新绘制。新衣身包含短颈、完整前臂和自然手部；汉式宽袖交领、鲜卑式窄袖束带与军服分别绘制。脸、五官、年龄、遗传仍由原肖像组合提供。女性非军职沿用原发髻发饰；女统帅使用头盔并排除原高发髻，避免双重头饰。女性军服在源单元左缘有邻格长袖残片，渲染遮罩只排除肩线以下该细条。
+
+提示词核心：match accepted flat ink-brush and muted watercolor half-length portraits; three-quarter body facing viewer right; natural curved shoulders; waist-up framing with bent forearms and visible relaxed hands within frame; six equal 2:3 cells on a square sheet; Han scholar/official/lamellar outfits above Xianbei belted civilian/official/riding armor; no head, face or hair; short neck and natural hands; transparent alpha, no backdrop, no detached accessories. Children use two equal cells with narrower child shoulders and small hands, no armor. Female output另经一次方形排版和真实透明背景修订。
+
+本轮使用用户明确授权的截图检查：原版萧衍、高欢、独孤信、苏绰、王灵宾、娄昭君、陆明徽、萧方智及女性军服预览。对照页调用真实配方和渲染器，不改游戏世界或存档。截图与诊断页保存在忽略的 `.cache/portrait-rework-20261003/`。

@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {portraitContext} from './composition';
 import {approvedPaintedRecipe} from './paintedSelection';
 import {validatePaintedRecipe} from './paintedLayers';
-import {headRegistration,costumeRegistration} from './costumeRegistration';
+import {headRegistration,costumeRegistration,bodyRegistration} from './costumeRegistration';
 import {composePaintedRoster} from './paintedRoster';
 import {composePaintedStudy} from './paintedStudy';
 import {removeConnectedPaper} from './paintedRenderer';
@@ -30,7 +30,7 @@ describe('文化服饰共用真实面部与素材',()=>{
   expect(inside).toBe(false);
  });
  it.each(['gao-huan','su-chuo','dugu-xin','wang-lingbin','guest-west','xiao-fangzhi','yuwen-jue'])('%s 改文化衣装与当前职位保留面部和五官',id=>{const c=portraitContext(id),genome=structuredClone(c.identity.genome);const recipes=['han','xianbei'].map(cultureId=>approvedPaintedRecipe(id,{...c,identity:{...c.identity,cultureId: cultureId as 'han'|'xianbei'},office:'civilian'}));expect(face(recipes[0])).toEqual(face(recipes[1]));expect(recipes[0].parts[0].crop).not.toEqual(recipes[1].parts[0].crop);const officer=approvedPaintedRecipe(id,{...c,identity:{...c.identity,cultureId:'han'},office:'governor'});expect(face(officer)).toEqual(face(recipes[0]));expect(c.identity.genome).toEqual(genome);for(const r of [...recipes,officer])expect(()=>validatePaintedRecipe(r)).not.toThrow();});
- it('成人三类服装有各自真实衣身与冠帽，幼年不穿甲或用成人身形',()=>{const c=portraitContext('su-chuo');const recipes=['civilian','governor','commander'].map(office=>approvedPaintedRecipe('su-chuo',{...c,office:office as 'civilian'|'governor'|'commander'}));expect(new Set(recipes.map(r=>JSON.stringify(r.parts[0].crop))).size).toBe(3);for(const r of recipes)expect(r.parts.find(p=>p.slot==='headwear')?.source).toContain('male-v1');const child=approvedPaintedRecipe('yuwen-jue',{...portraitContext('yuwen-jue'),office:'commander'});expect(child.parts[0].source).toContain('child-v1');expect(child.parts.some(p=>p.slot==='headwear')).toBe(false);});
+ it('成人三类服装有各自真实衣身与冠帽，幼年不穿甲或用成人身形',()=>{const c=portraitContext('su-chuo');const recipes=['civilian','governor','commander'].map(office=>approvedPaintedRecipe('su-chuo',{...c,office:office as 'civilian'|'governor'|'commander'}));expect(new Set(recipes.map(r=>JSON.stringify(r.parts[0].crop))).size).toBe(3);for(const r of recipes)expect(r.parts.find(p=>p.slot==='headwear')?.source).toContain('male-v1');const child=approvedPaintedRecipe('yuwen-jue',{...portraitContext('yuwen-jue'),office:'commander'});expect(child.parts[0].source).toContain('child-v2');expect(child.parts.some(p=>p.slot==='headwear')).toBe(false);});
  it('君主保留原礼服，其他文化不会冒用鲜卑图集',()=>{const c=portraitContext('yuan-shanjian'),r=approvedPaintedRecipe('yuan-shanjian',{...c,office:'ruler'});expect(r.parts[0].source).toContain('base.png');const other=approvedPaintedRecipe('hulu-jin',portraitContext('hulu-jin'));expect(other.parts[0].source).not.toContain('costumes');});
  it('五官遗传极值只改对应五官，不移动领口、头部遮罩和冠帽',()=>{
   for(const id of ['su-chuo','gao-huan','wang-lingbin','guest-west','xiao-fangzhi']){
@@ -41,16 +41,16 @@ describe('文化服饰共用真实面部与素材',()=>{
  it('原头部保留到真实颈部；各衣领注册到共同颈部，不用嘴巴边缘代替领口',()=>{
   for(const id of ['yuan-shanjian','su-chuo','gao-huan','dugu-xin','xiao-gang','xiao-yi','gao-cheng','gao-yang','yuan-baoju','yuan-qin','fictional','chen-baxian','guest-liang','guest-west','lou-zhaojun','wang-lingbin','xu-zhaopei','xiao-fangzhi'])for(const cultureId of ['han','xianbei'] as const)for(const office of ['civilian','governor','commander'] as const){
    const c={...portraitContext(id),office},raw=id==='yuan-shanjian'?composePaintedStudy(c.identity.genome,{robe:'b'}):composePaintedRoster(id,c),r=approvedPaintedRecipe(id,{...c,identity:{...c.identity,cultureId}}),body=r.parts.find(p=>p.slot==='body')!,head=r.parts.find(p=>p.slot==='head')!,original=raw.parts[0],reg=headRegistration[raw.rig]??headRegistration[raw.rig.replace(/^c-roster-/,'').replace(/-v1$/,'')];
-   const young=(c.life?.age??18)<16,kind=young?'child':c.identity.sex,row=cultureId==='han'?0:1,col=office==='commander'?2:office==='governor'?1:0,atlas=costumeRegistration[kind][young?row:row*3+col],width=young?724:418,height=young?1086:627;
+   const young=(c.life?.age??18)<16,kind=young?'child':c.identity.sex,row=cultureId==='han'?0:1,col=office==='commander'?2:office==='governor'?1:0,atlas=costumeRegistration[kind][young?row:row*3+col],torso=bodyRegistration[kind][young?row:row*3+col],width=young?724:418,height=young?1086:627;
    const project=(part:typeof body,x:number,y:number)=>[part.place.x+(x-part.crop.x)*part.place.width/part.crop.width,part.place.y+(y-part.crop.y)*part.place.height/part.crop.height];
-   const skin=project(head,original.crop.x+(reg.neck[0]+reg.neck[2])/2,(reg.neck[1]+reg.neck[3])/2),collar=project(body,(young?row:col)*width+(atlas.neck[0]+atlas.neck[2])/2,(young?0:row)*height+(atlas.neck[1]+atlas.neck[3])/2);
+   const skin=project(head,original.crop.x+(reg.neck[0]+reg.neck[2])/2,(reg.neck[1]+reg.neck[3])/2),collar=project(body,(young?row:col)*width+(torso.neck[0]+torso.neck[2])/2,(young?0:row)*height+(torso.neck[1]+torso.neck[3])/2);
    expect(skin[0]).toBeCloseTo(collar[0],10);expect(skin[1]).toBeCloseTo(collar[1],10);expect(head.crop.y+head.crop.height).toBeGreaterThan(reg.neck[3]-32);
    expect(head.crop.y+head.crop.height).toBeLessThan(reg.neck[3]);
    // Shallow female collars must not magnify the robe; old diagonal fitting reached ~1.5x.
    const bodyScale=body.place.width/body.crop.width*width;
-   expect(bodyScale).toBeGreaterThanOrEqual(.84-1e-9);expect(bodyScale).toBeLessThanOrEqual(1.06+1e-9);
+   expect(bodyScale).toBeGreaterThanOrEqual((young?.94:kind==='female'?.80:.90)-1e-9);expect(bodyScale).toBeLessThanOrEqual(1.06+1e-9);
    const rimLeft=project(head,original.crop.x+reg.rim[0],reg.rim[1]),rimRight=project(head,original.crop.x+reg.rim[2],reg.rim[3]);
-   expect(rimRight[0]-rimLeft[0]).toBeCloseTo(young?.25:.24,10);
+   expect(rimRight[0]-rimLeft[0]).toBeCloseTo(young?.27:kind==='female'&&office!=='commander'?.23:.215,10);
    const cap=r.parts.find(p=>p.slot==='headwear');if(cap&&atlas.rim){
     const capLeft=project(cap,(young?row:col)*width+atlas.rim[0],(young?0:row)*height+atlas.rim[1]),capRight=project(cap,(young?row:col)*width+atlas.rim[2],(young?0:row)*height+atlas.rim[3]);
     expect(capLeft[0]).toBeCloseTo(rimLeft[0],10);expect(capRight[0]).toBeCloseTo(rimRight[0],10);
@@ -72,9 +72,23 @@ describe('文化服饰共用真实面部与素材',()=>{
   }
   for(const [office,x,y] of [['civilian',150,190],['governor',418+150,195],['commander',836+175,187]] as const){
    const r=approvedPaintedRecipe('su-chuo',{...c,office,identity:{...c.identity,cultureId:'han'}}),hat=r.parts.find(p=>p.slot==='headwear')!,body=r.parts.find(p=>p.slot==='body')!;
-   expect(contains(hat,x,y)).toBe(true);expect(contains(body,x,y)).toBe(false);
+   expect(contains(hat,x,y)).toBe(true);expect(body.source).toContain('male-v2.png');expect(hat.source).toContain('male-v1.png');
    const col=office==='civilian'?0:office==='governor'?1:2;
    expect(contains(hat,col*418+245,260)).toBe(false);expect(contains(body,col*418+245,260)).toBe(true);
+  }
+ });
+
+ it('手部画面留在半身画布内，女性常服保留原发髻而不叠第二顶帽子',()=>{
+  for(const id of ['gao-huan','su-chuo','dugu-xin','wang-lingbin','lou-zhaojun','xiao-fangzhi'])for(const cultureId of ['han','xianbei'] as const)for(const office of ['civilian','governor','commander'] as const){
+   const c=portraitContext(id),young=(c.life?.age??18)<16,kind=young?'child':c.identity.sex,row=cultureId==='han'?0:1,col=office==='commander'?2:office==='governor'?1:0;
+   const r=approvedPaintedRecipe(id,{...c,office,identity:{...c.identity,cultureId}}),body=r.parts.find(p=>p.slot==='body')!;
+   const width=young?724:418,height=young?1086:627,cellX=(young?row:col)*width,cellY=(young?0:row)*height;
+   // Authored fingertips near the lower edge of each atlas cell: prevent reverting to leg-length framing.
+   const handY=young?1040:kind==='female'?558:row?561:583;
+   const y=body.place.y+(cellY+handY-body.crop.y)*body.place.height/body.crop.height;
+   const x=body.place.x+(cellX+(young?330:280)-body.crop.x)*body.place.width/body.crop.width;
+   expect(y).toBeGreaterThan(.65);expect(y,id+":"+cultureId+":"+office).toBeLessThan(.99);expect(x).toBeGreaterThan(0);expect(x).toBeLessThan(1);
+   if(kind==='female'&&office!=='commander')expect(r.parts.some(p=>p.slot==='headwear')).toBe(false);
   }
  });
 
