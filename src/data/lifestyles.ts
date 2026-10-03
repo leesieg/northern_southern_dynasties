@@ -37,6 +37,6 @@ export const lifestylePerks:Record<string,LifestylePerk>={
  patience:{branch:'diplomacy',name:'循循相交',effect:'新交好行动成功率 +10 个百分点，上限 95%',requires:['gifting'],bonus:{scheme:10},tier:2,side:0},
  network:{branch:'diplomacy',name:'纵横家',effect:'人物接受度 +7；每月 1 日额外减压 3',requires:['patience','mediation'],bonus:{acceptance:7,calm:3},tier:3,side:0,mastery:true},
 };
-export const LIFESTYLE_XP_PER_POINT=120;
+export const LIFESTYLE_XP_PER_POINT=360;
 export const LIFESTYLE_SWITCH_DAYS=90;
 export const branchPerks=(branch:LifestyleBranch)=>Object.entries(lifestylePerks).filter(([,p])=>p.branch===branch);

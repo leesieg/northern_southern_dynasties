@@ -1,3 +1,5 @@
+import {accountWallet} from './obligations';
+import {personResidence} from './residence';
 import {worldRealms} from './polityRuntime';
 import {isMonthStart} from './calendar';
 import {getPerson} from './personRegistry';
@@ -19,17 +21,17 @@ const staticPersonName=(id:string)=>characterById[id]?.name??relationshipPersonB
 const personName=(w:World,id:string)=>getPerson(w,id)?.name??staticPersonName(id);
 export function ensureLife(w:World){return w.life??=newLifeState(w);}
 function roll(w:World){const s=ensureLife(w);s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
-export function careReason(w:World,id:string){
+export function careReason(w:World,id:string,actor=w.characterId??'fictional'){
  const p=lifeOf(w,id);if(!p||p.death)return '无法照料已故或未录人物';
  if(w.campaign&&w.campaign.status!=='active')return '本局已结束';
- if(w.people[0].journey)return '抵达后才能延医';
- const actor=w.characterId??'fictional';
+ if(!isAlive(w,actor))return '须由在世人物延医';
+ if(actor===(w.characterId??'fictional')?w.people[0].journey:personResidence(w,actor).traveling)return '抵达后才能延医';
  const marriage=w.relationships?.marriages.some(m=>m.until===null&&(m.a===actor&&m.b===id||m.b===actor&&m.a===id));
  const family=getPerson(w,actor)?.family;
  if(id!==actor&&!marriage&&(!family||getPerson(w,id)?.family!==family))return '仅可为自己、配偶或同族延医';
  if(p.careUntil>w.day)return `医者正在照料，余 ${p.careUntil-w.day} 日`;
  if(!p.illness&&(p.injuryUntil??0)<=w.day&&p.health>=healthCapacity(ageAt(w,id)!))return '当前无需延医';
- return w.people[0].coins<30?'延医需 30 钱':'';
+ return (accountWallet(w,'person:'+actor)?.read()??0)<30?'延医需 30 钱':'';
 }
 export function autoCareReason(w:World,id:string){
  if(id!==(w.characterId??'fictional'))return '自动延医仅由本人授权私财';
@@ -37,15 +39,16 @@ export function autoCareReason(w:World,id:string){
  if(w.campaign&&w.campaign.status!=='active')return '本局已结束';
  return '';
 }
-export function actLife(w:World,c:LifeCommand){
+export function actLife(w:World,c:LifeCommand,actor=w.characterId??'fictional'){
  const s=ensureLife(w);
  if(c.action==='auto-care'||c.action==='stop-auto-care'){
+  if(actor!==(w.characterId??'fictional'))throw new Error('自动延医额度仅由玩家本人授权');
   const reason=autoCareReason(w,c.target);if(reason)throw new Error(reason);
   if(c.action==='stop-auto-care'){delete s.autoCare;log(w,'停止自动延医；未用额度未扣款。');return;}
   if(s.autoCare?.payer===c.target&&s.autoCare.remaining>0)throw new Error('已有自动延医额度');
   s.autoCare={payer:c.target,remaining:90};log(w,'授权本人自动延医，最多支出 90 私钱；每次 30 钱，按需扣款。');return;
  }
- if(c.action!=='care')throw new Error('未知养护行动');const reason=careReason(w,c.target);if(reason)throw new Error(reason);w.people[0].coins-=30;s.people[c.target].careUntil=w.day+90;if(c.target!==(w.characterId??'fictional'))changeRelationOpinion(w,w.characterId??'fictional',c.target,5);log(w,'为'+personName(w,c.target)+'延医照料九十日，支出 30 钱。');
+ if(c.action!=='care')throw new Error('未知养护行动');const reason=careReason(w,c.target,actor);if(reason)throw new Error(reason);const wallet=accountWallet(w,'person:'+actor)!;wallet.write(wallet.read()-30);s.people[c.target].careUntil=w.day+90;if(c.target!==actor)changeRelationOpinion(w,actor,c.target,5);if(actor===(w.characterId??'fictional'))log(w,'为'+personName(w,c.target)+'延医照料九十日，支出 30 钱。');
 }
 /** One-way transition. All live appointments are reconciled before control can pass. */
 export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'){

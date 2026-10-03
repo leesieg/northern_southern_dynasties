@@ -3,7 +3,7 @@ import {routeGrant,localBalance} from './treasury';
 import { describe,it,expect } from 'vitest';
 import {act,advance} from './world';
 import { ensureLifestyle,lifestyleProgress,lifestylePoints,lifestyleLearning,lifestyleBonuses,lifestyleMasteries } from './lifestyle';
-import { lifestylePerks,branchPerks,type LifestyleBranch } from '../data/lifestyles';
+import { lifestylePerks,branchPerks,LIFESTYLE_XP_PER_POINT,type LifestyleBranch } from '../data/lifestyles';
 import { buildingModifiers,interactionQuote,acceptance } from './social';
 import { cityYield,armyDailyFood,armyMonthlyPay,advanceRealm,siegeRequirement,type Army } from './realm';
 import { buildQuote } from './construction';
@@ -11,7 +11,7 @@ import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
 const focus=(w:World,id:string)=>act(w,{type:'lifestyle',action:'focus',focus:id});
 const unlock=(w:World,id:string)=>act(w,{type:'lifestyle',action:'unlock',perk:id});
-function trained(branch:LifestyleBranch,id='xiao-yan'){const w=newCampaignWorld(id,undefined,'sandbox');w.day=300;focus(w,branch==='martial'?'strategy':branch==='stewardship'?'architecture':'etiquette');const p=ensureLifestyle(w);p.xp[branch]=600;for(const [id] of branchPerks(branch))unlock(w,id);return w;}
+function trained(branch:LifestyleBranch,id='xiao-yan'){const w=newCampaignWorld(id,undefined,'sandbox');w.day=300;focus(w,branch==='martial'?'strategy':branch==='stewardship'?'architecture':'etiquette');const p=ensureLifestyle(w);p.xp[branch]=branchPerks(branch).length*LIFESTYLE_XP_PER_POINT;for(const [id] of branchPerks(branch))unlock(w,id);return w;}
 const army=(realm:'liang'|'east',location='jiankang'):Army=>({realm,location,troops:600,morale:100,supply:120,journey:null,siege:0});
 describe('生活重心',()=>{
  it('初选一技能点，前置／重复／错路线均拒绝且不改变状态',()=>{
@@ -20,8 +20,8 @@ describe('生活重心',()=>{
   unlock(w,'surveying');const before=structuredClone(w);expect(()=>unlock(w,'surveying')).toThrow('已经');expect(w).toEqual(before);
  });
  it('每日经验、性格契合、高压力和暂停日数正确累计',()=>{
-  const w=newCampaignWorld('gao-huan');focus(w,'strategy');expect(lifestyleLearning(w).total).toBe(5);advance(w,10);expect(ensureLifestyle(w).xp.martial).toBe(170);
-  w.social!.stress=90;expect(lifestyleLearning(w).total).toBe(4);advance(w,1);expect(ensureLifestyle(w).xp.martial).toBe(174);advance(w,0);expect(ensureLifestyle(w).xp.martial).toBe(174);
+  const w=newCampaignWorld('gao-huan');focus(w,'strategy');expect(lifestyleLearning(w).total).toBe(5);advance(w,10);expect(ensureLifestyle(w).xp.martial).toBe(LIFESTYLE_XP_PER_POINT+50);
+  w.social!.stress=90;expect(lifestyleLearning(w).total).toBe(4);advance(w,1);expect(ensureLifestyle(w).xp.martial).toBe(LIFESTYLE_XP_PER_POINT+54);advance(w,0);expect(ensureLifestyle(w).xp.martial).toBe(LIFESTYLE_XP_PER_POINT+54);
  });
  it('切换有 90 日冷却，保留原技能且初始点数不能重复领取',()=>{
   const w=newCampaignWorld('xiao-gang');focus(w,'architecture');unlock(w,'surveying');expect(()=>focus(w,'etiquette')).toThrow('90');advance(w,90);
@@ -66,7 +66,7 @@ describe('生活重心',()=>{
  });
  it('旧档补齐无经验记录，伪造点数／前置／未知重心被拒绝',()=>{
   const old=newCampaignWorld('xiao-yi');delete old.lifestyles;const migrated=parseWorld(serializeWorld(old));expect(lifestyleProgress(migrated)?.xp).toEqual({martial:0,stewardship:0,diplomacy:0});
-  for(const mutate of [(w:World)=>{ensureLifestyle(w).focus='__proto__';},(w:World)=>{ensureLifestyle(w).xp.martial=601;},(w:World)=>{ensureLifestyle(w).perks=['strategist'];},(w:World)=>{ensureLifestyle(w).perks=['drill','drill'];}]){const w=newCampaignWorld('gao-huan');focus(w,'strategy');mutate(w);expect(()=>serializeWorld(w)).toThrow('存档');}
+  for(const mutate of [(w:World)=>{ensureLifestyle(w).focus='__proto__';},(w:World)=>{ensureLifestyle(w).xp.martial=5*LIFESTYLE_XP_PER_POINT+1;},(w:World)=>{ensureLifestyle(w).perks=['strategist'];},(w:World)=>{ensureLifestyle(w).perks=['drill','drill'];}]){const w=newCampaignWorld('gao-huan');focus(w,'strategy');mutate(w);expect(()=>serializeWorld(w)).toThrow('存档');}
  });
  it('虚构人物也能学习管理，工程修正随存档保存',()=>{
   const w=newCampaignWorld();focus(w,'architecture');unlock(w,'surveying');expect(buildingModifiers(w).costRate).toBe(90);

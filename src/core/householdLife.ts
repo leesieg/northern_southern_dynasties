@@ -1,3 +1,4 @@
+import {advanceNPCLife} from './npcLife';
 import {advanceNPCMarriages} from './familyMarriage';
 import {allegianceRealm} from './officeEligibility';
 import type {World} from './types';
@@ -46,8 +47,8 @@ export function familyPlanningReason(w:World,id=w.characterId!){
  return '';
 }
 export function familyMomentSkill(_w:World,id:string):TaughtSkill {const code=[...id].reduce((n,c)=>n+c.charCodeAt(0),0);return (['stewardship','martial','diplomacy'] as const)[code%3];}
-export function familyCommandReason(w:World,c:FamilyCommand){
- const actor=w.characterId;if(!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前人物无法处理家事';
+export function familyCommandReason(w:World,c:FamilyCommand,actor=w.characterId){
+ if(!actor||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前人物无法处理家事';
  if(c.action==='plan'){
   if(typeof c.trying!=='boolean')return '无效家庭意向';
   const spouse=spouseOf(w,actor);if(!spouse)return '须先成婚';
@@ -61,7 +62,7 @@ export function familyCommandReason(w:World,c:FamilyCommand){
  if(!event||event.status!=='pending'||event.actor!==actor)return '此事已处理或不由你决定';
  if(!isAlive(w,event.person))return c.choice==='decline'?'':'当事人已故，请结束此事';
  if(c.choice==='decline')return '';
- if(event.kind==='aspiration'&&c.choice==='encourage')return householdReason(w,{type:'household',action:'educate',target:event.person,teacher:c.teacher??'',skill:familyMomentSkill(w,event.person)});
+ if(event.kind==='aspiration'&&c.choice==='encourage')return householdReason(w,{type:'household',action:'educate',target:event.person,teacher:c.teacher??'',skill:familyMomentSkill(w,event.person)},actor);
  if(event.kind==='inlaw'){
   const spouse=spouseOf(w,actor);if(!spouse||!relativesOf(w,spouse,'ancestors').concat(relativesOf(w,spouse,'descendants')).some(p=>p.id===event.person))return '姻亲关系已变化，请结束此事';
   const amount=c.choice==='encourage'?100:30,a=accountWallet(w,'person:'+actor),b=accountWallet(w,'person:'+event.person);
@@ -70,25 +71,25 @@ export function familyCommandReason(w:World,c:FamilyCommand){
  if(event.kind==='bereavement'&&c.choice==='encourage')return personResidence(w,actor).traveling||serviceBusy(w,actor)?'须先结束出行或交接公务再守丧':'';
  return '';
 }
-export function actFamily(w:World,c:FamilyCommand){const reason=familyCommandReason(w,c);if(reason)throw new Error(reason);const s=ensureHouseholdLife(w),a=w.characterId!;
- if(c.action==='plan'){s.plans[activeMarriage(w,a)!.id]={trying:c.trying,family:c.family};log(w,c.trying?'夫妻筹划添丁；每月依实际共同居所与健康判断。':'暂缓添丁；已经开始的孕期继续。');return;}
- if(c.action==='rest'){s.rest[a]=w.day+30;log(w,'安排休养三十日，暂停新出行与亲办差事；完成后健康恢复 +8，军中伤期缩短三十日。');return;}
- if(c.action==='resume'){delete s.rest[a];log(w,'结束休养，恢复亲办事务。');return;}
+export function actFamily(w:World,c:FamilyCommand,actor=w.characterId!){const reason=familyCommandReason(w,c,actor);if(reason)throw new Error(reason);const s=ensureHouseholdLife(w),a=actor;
+ if(c.action==='plan'){s.plans[activeMarriage(w,a)!.id]={trying:c.trying,family:c.family};if(a===w.characterId)log(w,c.trying?'夫妻筹划添丁；每月依实际共同居所与健康判断。':'暂缓添丁；已经开始的孕期继续。');return;}
+ if(c.action==='rest'){s.rest[a]=w.day+30;if(a===w.characterId)log(w,'安排休养三十日，暂停新出行与亲办差事；完成后健康恢复 +8，军中伤期缩短三十日。');return;}
+ if(c.action==='resume'){delete s.rest[a];if(a===w.characterId)log(w,'结束休养，恢复亲办事务。');return;}
  if(c.action!=='resolve')throw new Error('无效家事命令');
  const e=s.moments.find(e=>e.id===c.id)!;
  if(c.choice!=='decline'){
   if(e.kind==='childhood'){
    const trait:Trait=c.choice==='encourage'?'gregarious':'diligent';const traits=w.social!.traits[e.person]??=defaultTraits(e.person);
    if(!traits.includes(trait))traits.push(trait);
-   changeRelationOpinion(w,a,e.person,c.choice==='encourage'?5:-3);
+   if(a!==e.person)changeRelationOpinion(w,a,e.person,c.choice==='encourage'?5:-3);
   }else if(e.kind==='aspiration'){
-   if(c.choice==='encourage')actHousehold(w,{type:'household',action:'educate',target:e.person,teacher:c.teacher!,skill:familyMomentSkill(w,e.person)});
-   else {const traits=w.social!.traits[e.person]??=defaultTraits(e.person);if(!traits.includes('frugal'))traits.push('frugal');changeRelationOpinion(w,a,e.person,-5);}
+   if(c.choice==='encourage')actHousehold(w,{type:'household',action:'educate',target:e.person,teacher:c.teacher!,skill:familyMomentSkill(w,e.person)},a);
+   else {const traits=w.social!.traits[e.person]??=defaultTraits(e.person);if(!traits.includes('frugal'))traits.push('frugal');if(a!==e.person)changeRelationOpinion(w,a,e.person,-5);}
   }else if(e.kind==='inlaw'){
    transferAccount(w,'person:'+a,'person:'+e.person,c.choice==='encourage'?100:30,'姻亲家用相助');changeRelationOpinion(w,a,e.person,c.choice==='encourage'?10:4);
-  }else if(e.kind==='bereavement'&&c.choice==='encourage'){s.rest[a]=w.day+30;if(w.social)w.social.stress=Math.max(0,w.social.stress-8);}
+  }else if(e.kind==='bereavement'&&c.choice==='encourage'){s.rest[a]=w.day+30;if(a===w.characterId&&w.social)w.social.stress=Math.max(0,w.social.stress-8);}
  }else if(e.kind==='inlaw'&&isAlive(w,e.person))changeRelationOpinion(w,a,e.person,-3);
- e.status='resolved';e.choice=c.choice;log(w,'家事「'+familyMomentTitle[e.kind]+'」已处理：'+familyChoiceLabels[e.kind][c.choice]+'。');
+ e.status='resolved';e.choice=c.choice;if(a===w.characterId)log(w,'家事「'+familyMomentTitle[e.kind]+'」已处理：'+familyChoiceLabels[e.kind][c.choice]+'。');
 }
 export const familyMomentTitle={childhood:'初识世事',aspiration:'成年志向',inlaw:'姻亲请托',bereavement:'丧偶与家事'};
 export const familyChoiceLabels={childhood:{encourage:'鼓励交游',discipline:'督促勤学',decline:'任其成长'},aspiration:{encourage:'顺其志向，延师研习',discipline:'勉励持家',decline:'尊重自主安排'},inlaw:{encourage:'资助 100 钱',discipline:'量力资助 30 钱',decline:'婉拒请托'},bereavement:{encourage:'守丧三十日',discipline:'维持日常',decline:'亲自料理后事'}};
@@ -119,7 +120,7 @@ export function advanceHouseholdLife(w:World){
  const s=ensureHouseholdLife(w);
  for(const p of s.pregnancies)deliverChild(w,p);
  for(const e of s.moments)if(e.status==='pending'&&(!isAlive(w,e.actor)||!isAlive(w,e.person))){e.status='resolved';e.choice='decline';}
- for(const [id,until] of Object.entries(s.rest)){if(!isAlive(w,id)){delete s.rest[id];continue;}if(w.day<until)continue;const p=lifeOf(w,id);if(p){p.health=Math.min(healthCapacity(ageAt(w,id)??0),p.health+8);if((p.injuryUntil??0)>w.day)p.injuryUntil=Math.max(w.day,p.injuryUntil!-30);}delete s.rest[id];log(w,name(w,id)+'完成三十日休养，恢复健康并缓解伤情。');}
+ for(const [id,until] of Object.entries(s.rest)){if(!isAlive(w,id)){delete s.rest[id];continue;}if(w.day<until)continue;const p=lifeOf(w,id);if(p){p.health=Math.min(healthCapacity(ageAt(w,id)??0),p.health+8);if((p.injuryUntil??0)>w.day)p.injuryUntil=Math.max(w.day,p.injuryUntil!-30);}delete s.rest[id];if(id===w.characterId)log(w,name(w,id)+'完成三十日休养，恢复健康并缓解伤情。');}
  if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
  advanceNPCMarriages(w);
  for(const marriage of w.relationships.marriages){
@@ -143,10 +144,14 @@ export function advanceHouseholdLife(w:World){
   const previous=s.milestones[person.id];s.milestones[person.id]=stage;
   // Existing saves establish a baseline, never replay an adult's childhood.
   if(previous===undefined&&!w.generatedPeople?.[person.id]||!stage||stage<=(previous??0))continue;
-  if(relativesOf(w,actor,'descendants').some(p=>p.id===person.id)||person.id===actor)moment(w,'growth:'+person.id+':'+stage,stage===1?'childhood':'aspiration',person.id,actor);
+  const responsible=person.id===actor||relativesOf(w,actor,'descendants').some(p=>p.id===person.id)?actor:parentLinksOf(w).find(p=>p.child===person.id&&isAlive(w,p.parent)&&(ageAt(w,p.parent)??0)>=18&&!detained(w,p.parent))?.parent??(age>=16?person.id:null);
+ if(responsible)moment(w,'growth:'+person.id+':'+stage,stage===1?'childhood':'aspiration',person.id,responsible);
 
  }
- const spouse=spouseOf(w,actor);
- if(spouse){const marriage=activeMarriage(w,actor)!;if(w.day-marriage.from>=180){const relative=relativesOf(w,spouse,'ancestors').concat(relativesOf(w,spouse,'descendants')).find(p=>p.id!==actor&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=16&&(accountWallet(w,'person:'+p.id)?.read()??1000)<100);if(relative)moment(w,'inlaw:'+marriage.id,'inlaw',relative.id,actor);}}
- for(const m of w.relationships.marriages)if(m.until!==null&&[m.a,m.b].includes(actor)){const other=m.a===actor?m.b:m.a;if(lifeOf(w,other)?.death?.day===m.until&&m.until>=s.since)moment(w,'grief:'+m.id,'bereavement',actor,actor);}
+ for(const person of allPeople(w)){
+  const a=person.id;if(!isAlive(w,a)||(ageAt(w,a)??0)<16)continue;const spouse=spouseOf(w,a);
+  if(spouse){const marriage=activeMarriage(w,a)!;if(w.day-marriage.from>=180){const relative=relativesOf(w,spouse,'ancestors').concat(relativesOf(w,spouse,'descendants')).find(p=>p.id!==a&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=16&&(accountWallet(w,'person:'+p.id)?.read()??1000)<100);if(relative&&!s.moments.some(e=>e.key==='inlaw:'+marriage.id&&e.actor===a))moment(w,'inlaw:'+marriage.id+':'+a,'inlaw',relative.id,a);}}
+  for(const m of w.relationships.marriages)if(m.until!==null&&[m.a,m.b].includes(a)){const other=m.a===a?m.b:m.a;if(lifeOf(w,other)?.death?.day===m.until&&m.until>=s.since)moment(w,'grief:'+m.id,'bereavement',a,a);}
+ }
+ advanceNPCLife(w);
 }

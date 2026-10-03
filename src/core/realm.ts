@@ -98,7 +98,7 @@ const commandPower=(w:World,r:RealmId,army?:Army)=>{const id=army?armyCommander(
 const tactic=(w:World,r:RealmId,a?:Army)=>(!a||playerCommandsArmy(w,a))&&(a?armyCommander(w,a):w.mobility?.commanders[r])===w.characterId?w.mobility?.stance??'balanced':'balanced';
 const offense=(w:World,r:RealmId,a?:Army)=>tactic(w,r,a)==='attack'?1.2:tactic(w,r,a)==='guard'?.8:1;
 const exposure=(w:World,r:RealmId,a?:Army)=>tactic(w,r,a)==='attack'?1.15:tactic(w,r,a)==='guard'?.8:1;
-const armyBonuses=(w:World,a:Army)=>playerCommandsArmy(w,a)?armyLifestyle(w,a.realm):emptyLifestyleBonus();
+const armyBonuses=(w:World,a:Army)=>{const commander=armyCommander(w,a);return playerCommandsArmy(w,a)?armyLifestyle(w,a.realm):commander&&!detained(w,commander)?lifestyleBonuses(w,commander):emptyLifestyleBonus();};
 /** Campaign expenditure is derived from active participation; peace retains the base rate. */
 export const armyFoodRate=(w:World,a:Army)=>(100-armyBonuses(w,a).supply)*(realmAtWar(w,a.realm)?3:1);
 export const armyDailyFood=(w:World,a:Army)=>a.troops/4500*1.5*armyFoodRate(w,a)/100;

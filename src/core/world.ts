@@ -95,7 +95,7 @@ export function planRoute(from: string, to: string,allowed:(id:string)=>boolean=
 }
 export function newWorld(): World {
   return {
-    version: 2, life:newLifeState({day:0,scriptId:DEFAULT_SCRIPT}), families:newFamilyState(), lifestyles:{version:1,people:{}}, identities:initialIdentities(), scriptId:DEFAULT_SCRIPT, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,
+    version: 2, life:newLifeState({day:0,scriptId:DEFAULT_SCRIPT}), families:newFamilyState(), lifestyles:{version:2,people:{}}, identities:initialIdentities(), scriptId:DEFAULT_SCRIPT, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,
     people: [
       {id:'player',name:'沈行舟',location:'jiankang',home:'jiankang',coins:180,food:90,journey:null,itinerary:[],itineraryIndex:0},
       {id:'merchant',name:'陆商',location:'changan',home:'changan',coins:0,food:0,journey:null,itinerary:['tianshui','jincheng','wuwei','changan'],itineraryIndex:0},

@@ -49,7 +49,7 @@ import { validRelationships } from './relationshipSave';
 import { ensureCourts } from './court';
 import { newGovernments } from './government';
 import { newFamilyState,validFamilies } from './family';
-import { ensureLifestyle,validLifestyles } from './lifestyle';
+import { ensureLifestyle,validLifestyles,migrateLifestyles } from './lifestyle';
 import { initialIdentities,validIdentities } from '../data/characterIdentities';
 import { validRealm } from './realmSave';
 import { DEFAULT_SCRIPT,getScript } from '../data/scripts';
@@ -194,10 +194,11 @@ export function parseWorld(source: string): World {
   ensureRelationships(world);syncRelationships(world);
   ensureCourts(world);
   ensureDiplomacy(world);
-  if(!world.lifestyles)ensureLifestyle(world);
+  migrateLifestyles(world);if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
   ensureMobility(world);ensureCustody(world);migrateArmyFood(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
   const renamed=normalizeLegacyDynastyNames(world);
   if(repairLegacyWestDynastyName(world)||renamed)validateWorld(world);
+  if(!validLifestyles(world))throw new Error('生活重心存档迁移失败。');
   return world;
 }
