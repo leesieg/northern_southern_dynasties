@@ -1,4 +1,3 @@
-import {CommandButton} from './CommandButton';
 import {ActionDialog} from './ActionDialog';
 import {LifestyleTree} from './LifestyleTree';
 import {HoverHint} from './HoverHint';
@@ -14,7 +13,7 @@ export function LifestyleMasteryBadges({world,id}:{world:World;id?:string}){
 export function LifestylePanel({world:w,pending,send}:{world:World;pending:boolean;send:(c:LifestyleCommand)=>void}){
  const progress=lifestyleProgress(w)??freshLifestyle(w.day),current=progress.focus?lifestyleFocuses[progress.focus]:null;
  const [expanded,setExpanded]=useState(false);
- return <div className="lifestyle-panel"><section className="lifestyle-current"><ArtIcon name={current?lifestyleBranches[current.branch].icon:'person'} size={42}/><div><small>{w.people[0].name} · 当前生活重心</small><h3>{current?`${lifestyleBranches[current.branch].name} · ${current.name}`:'选择此生所长'}</h3><p>{current?current.effect:'初次选择获得该路线 1 点入门技能点'}</p></div></section><LifestyleMasteryBadges world={w}/><CommandButton label={current?'生活重心':'选择生活重心'} icon="diligent" selected={expanded} summary={progress.study?'有待处理的研习抉择':current?'查看修习图 · 选择重心':'选择路线与重心'} hint="查看修习图、路线与重心；调整后确认生效。" onClick={()=>setExpanded(true)}/>
+ return <div className="lifestyle-panel"><section className="lifestyle-current"><ArtIcon name={current?lifestyleBranches[current.branch].icon:'person'} size={42}/><div><small>{w.people[0].name} · 当前生活重心</small><h3>{current?`${lifestyleBranches[current.branch].name} · ${current.name}`:'选择此生所长'}</h3><p>{current?current.effect:'初次选择获得该路线 1 点入门技能点'}</p></div></section><LifestyleMasteryBadges world={w}/><button className="lifestyle-scene-entry" onClick={()=>setExpanded(true)}><span><strong>{current?'生活重心':'选择生活重心'}</strong><small>{progress.study?'有待处理的研习抉择':current?'查看修习图 · 选择重心':'选择路线与重心 · 预览后确认'}</small></span><ArtIcon name="diligent" size={34}/></button>
  {expanded&&<LifestyleDialog key={lifestylePerson(w)} world={w} pending={pending} send={send} onClose={()=>setExpanded(false)} cancelLabel="返回人物"/>}
  </div>;
 }
