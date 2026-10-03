@@ -1,7 +1,7 @@
 import {warObjectiveSites} from './warTerritories';
 import {warCaptives} from './warCaptives';
-import {armyDailyFood} from './realm';
-import {siteById} from '../data/scenario';
+import {armyDailyFood,fortificationLevel} from './realm';
+import {isCapitalSite} from './fortifications';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import type {War} from './wars';
@@ -17,8 +17,8 @@ export function snapshotWarValues(w:World,war:War,commit=true){
  const values:Record<string,number>={};
  for(const [id,city] of Object.entries(w.realm!.cities)){
   if(city.owner==='frontier'||!side(war,city.owner))continue;
-  const fort=city.fortification?.level??(siteById[id].capital||id==='luoyang'?1:0);
-  values[id]=clamp(3+Math.floor(city.population/20_000)+Math.floor(city.prosperity/25)+fort*2+(siteById[id].capital?3:0),3,15);
+  const fort=fortificationLevel(w,id);
+  values[id]=clamp(3+Math.floor(city.population/20_000)+Math.floor(city.prosperity/25)+fort*2+(isCapitalSite(w,id)?3:0),3,15);
  }
  if(commit)war.values=values;
  return values;
