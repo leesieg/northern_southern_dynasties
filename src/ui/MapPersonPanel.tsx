@@ -1,3 +1,4 @@
+import type {PersonLifeEntry} from '../core/ongoing';
 import {ActionDialog} from './ActionDialog';
 import {getCharacter,getPerson,familyPersonOf} from '../core/personRegistry';
 import {terrainSceneStyle,personTerrainSite} from './terrainScene';
@@ -41,7 +42,7 @@ import { SocialPanel } from './SocialPanel';
 import { LifestylePanel } from './LifestylePanel';
 import './personSheet.css';
 export type PersonTab='overview'|'family'|'relations'|'interaction'|'focus';
-export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,pending,send}:{world:World;ids:string[];tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:()=>void;onCity:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
+export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,pending,send}:{world:World;ids:string[];lifeEntry?:PersonLifeEntry|null;tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:()=>void;onCity:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
  const [order,setOrder]=useState<'provision'|'repatriate'|null>(null);
  const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'legacy'>('tree');
  const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=getCharacter(w,id)!,extra=getPerson(w,id)!,self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
@@ -64,7 +65,7 @@ export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onEconom
  <PersonAbilities world={w} person={id}/>
  <PersonDomains world={w} person={id} onCity={onCity}/>
  {deceased&&w.realm&&<button className="person-court-entry" onClick={()=>onCourtPerson(id)}><ArtIcon name="influence" size={22}/>查看任职档案</button>}
- <LifeDetails world={w} id={lifeId} pending={pending} send={send}/>
+ <LifeDetails world={w} id={lifeId} entry={lifeEntry?.person===id?lifeEntry:null} pending={pending} send={send}/>
  <div className="person-quick-actions">{self?<>{w.realm&&<CommandButton label="查看经济" icon="coins" hint="查看本人财产、收入与支出。" onClick={onEconomy}/>}<CommandButton label="家族庄园" icon="estate" hint="查看庄园与营建。" onClick={onEstate}/></>:extra&&w.social&&<CommandButton label={'与'+name+'互动'} icon="gregarious" reason={deceased?'已故':retired?'已退居':''} hint="查看交往、婚姻、委任及权力行动。" onClick={()=>onTab('interaction')}/>}</div>
  {self&&w.social&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson} section="self"/>}
  {!isDeceased(w,id)&&!self&&<p><ArtIcon name="world" size={24}/><button onClick={()=>onCity(personResidence(w,id).site)}>{siteById[personResidence(w,id).site]?.name} · {personResidence(w,id).traveling?'在途':'驻留'}</button></p>}

@@ -1,3 +1,4 @@
+import type {PersonLifeEntry} from '../core/ongoing';
 import {allPeople} from '../core/personRegistry';
 import {ActionDialog} from './ActionDialog';
 import {useEffect,useState} from 'react';
@@ -8,9 +9,9 @@ import {politicalName} from '../core/government';
 import {PersonChoice} from './PersonSelection';
 import {ArtIcon} from './ArtIcon';
 import {CommandButton} from './CommandButton';
-export function HouseholdPlansPanel({world:w,target,pending,send}:{world:World;target:string;pending:boolean;send:(c:GameCommand)=>void}){
+export function HouseholdPlansPanel({world:w,target,entry,pending,send}:{world:World;target:string;entry?:PersonLifeEntry|null;pending:boolean;send:(c:GameCommand)=>void}){
  const [teacher,setTeacher]=useState(''),[skill,setSkill]=useState<TaughtSkill>('stewardship'),[action,setAction]=useState<'educate'|'dowry'|'loan'|'cancel'|null>(null),[course,setCourse]=useState(0);
- useEffect(()=>{setAction(null);setTeacher('');},[target]);
+ useEffect(()=>{setAction(entry?.action==='education'?'educate':null);setTeacher('');},[target,entry]);
  const command:HouseholdCommand=action==='cancel'?{type:'household',action:'cancel',id:course}:action==='loan'||action==='dowry'?{type:'household',action,target}:{type:'household',action:'educate',target,teacher,skill};
  const labels={educate:'出资延师',dowry:'交付家资',loan:'家用借款',cancel:'结束培养'},details={educate:'首期学资 30 私钱，之后每月 1 日向教师结算 30 私钱；整期未授课不续费。每 90 个有效受教日对应能力 +1，最多 +3，异地或忙于公务不计进度。',dowry:'向当前配偶转交 100 私钱，本对配偶仅一次；双方好感 +5。',loan:'借出 100 私钱给配偶或后代，每月 1 日从借款人实际私财偿还最多 50，无息，缺钱顺延。',cancel:'停止后续培养和续费；已付学资不退，已完成成长保留。'};
  const reason=householdReason(w,command);

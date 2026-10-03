@@ -1,3 +1,4 @@
+import type {PersonLifeEntry} from '../core/ongoing';
 import {HouseholdLifePanel} from './HouseholdLifePanel';
 import {useEffect,useState} from 'react';
 import {ActionDialog} from './ActionDialog';
@@ -24,7 +25,7 @@ export function LifeSummary({world,id}:{world:World;id:string}){
  if(isDeceased(world,id))return <p className="person-vitals deceased"><span>已故</span>{life?.death&&<strong>{ageLabel(world,id)}</strong>}</p>;
  return <p className="person-vitals"><strong title="按出生年份计龄；生年不详者显示约龄">{ageLabel(world,id)}</strong>{age!==null&&<span>{lifeStage(age)}</span>}{life&&<span>{healthLabel(world,id)}</span>}</p>;
 }
-export function LifeDetails({world:w,id,pending,send}:{world:World;id:string;pending:boolean;send:(c:GameCommand)=>void}){
+export function LifeDetails({world:w,id,entry,pending,send}:{world:World;id:string;entry?:PersonLifeEntry|null;pending:boolean;send:(c:GameCommand)=>void}){
  const [careAction,setCareAction]=useState<LifeCommand['action']|null>(null);
  useEffect(()=>setCareAction(null),[id]);
  const life=lifeOf(w,id),generated=w.generatedPeople?.[id],birth=birthRecords[id]??(generated?{year:new Date(Date.UTC(getScript(w.scriptId).year,0,1+generated.birthDay)).getUTCFullYear(),basis:'fictional'}:undefined);if(!life||!birth)return null;
@@ -46,6 +47,6 @@ export function LifeDetails({world:w,id,pending,send}:{world:World;id:string;pen
  {careBlocker&&<p className="service-warning" role="status">{careBlocker}</p>}
  </ActionDialog>}
  </>}
- {!life.death&&<HouseholdLifePanel world={w} id={id} pending={pending} send={send}/>}
+ {!life.death&&<HouseholdLifePanel world={w} id={id} entry={entry} pending={pending} send={send}/>}
  </section>;
 }

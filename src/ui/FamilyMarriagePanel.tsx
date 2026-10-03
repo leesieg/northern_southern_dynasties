@@ -1,3 +1,4 @@
+import type {PersonLifeEntry} from '../core/ongoing';
 import {CommandButton} from './CommandButton';
 import {useEffect,useState} from 'react';
 import type {World} from '../core/types';
@@ -8,9 +9,9 @@ import {personResidence} from '../core/residence';
 import {marriageSubjects,quoteFamilyMarriage,type FamilyMarriageCommand} from '../core/familyMarriage';
 import {ActionDialog} from './ActionDialog';
 import {PersonChoice} from './PersonSelection';
-export function FamilyMarriagePanel({world:w,id,pending,send,partner}:{world:World;id:string;partner?:string;pending:boolean;send:(c:FamilyMarriageCommand)=>void}){
+export function FamilyMarriagePanel({world:w,id,entry,pending,send,partner}:{world:World;id:string;entry?:PersonLifeEntry|null;partner?:string;pending:boolean;send:(c:FamilyMarriageCommand)=>void}){
  const [open,setOpen]=useState(false),[subject,setSubject]=useState(id),[target,setTarget]=useState(''),[coins,setCoins]=useState<50|100|200>(100),[family,setFamily]=useState('');
- useEffect(()=>{setOpen(false);setSubject(id);setTarget('');setFamily('');},[id]);
+ useEffect(()=>{setOpen(entry?.action==='marriage');setSubject(id);setTarget('');setFamily('');},[id,entry]);
  const subjects=marriageSubjects(w),a=getPerson(w,subject),b=getPerson(w,target),residence=personResidence(w,subject).site,chosenFamily=family||a?.family||'',command:FamilyMarriageCommand={type:'familyMarriage',subject,target,coins,residence,family:chosenFamily},quote=quoteFamilyMarriage(w,command);
  return <><CommandButton label="家族议婚" icon="renown" pending={pending} reason={!subjects.includes(id)?'只能为本人或在世成年直系子女议婚':''} hint="预览双方条件、实际婚资与子女家支，确认后成婚。" onClick={()=>{setSubject(id);setTarget(partner??'');setFamily('');setCoins(100);setOpen(true);}}/>{open&&<ActionDialog title="家族议婚" scene="landscape" onClose={()=>setOpen(false)} actions={<button className="primary" disabled={pending||!!quote.reason} onClick={()=>{if(pending||quoteFamilyMarriage(w,command).reason)return;send(command);setOpen(false);}}>确认成婚 · {coins} 私钱</button>}>
  <PersonChoice world={w} title="议婚本人" value={subject} onChange={value=>{setSubject(value);setTarget('');setFamily('');}} pending={pending} options={subjects.map(id=>({id}))}/>

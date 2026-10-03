@@ -31,10 +31,11 @@ export function actHousehold(w:World,c:HouseholdCommand,actor=w.characterId!){co
  if(c.action!=='educate')throw new Error('无效培养操作');
  transferAccount(w,'person:'+actor,'person:'+c.teacher,30,'首期学资');s.tuition.push({id:s.nextId++,payer:actor,student:c.target,teacher:c.teacher,skill:c.skill,billingWork:0,next:nextMonthStart(w.day,w.scriptId),progress:0,lastWorked:w.day,completed:0,paid:30,status:'active',reason:''});
 }
+export function tuitionPause(w:World,t:Tuition){const a=personResidence(w,t.student),b=personResidence(w,t.teacher);return resting(w,t.student)||resting(w,t.teacher)||a.traveling||b.traveling||a.site!==b.site||serviceBusy(w,t.teacher)||serviceBusy(w,t.student)?'师生异地或办理公务，课程顺延':'';}
 export function advanceHousehold(w:World){if(w.mode!=='sandbox')return;const s=w.householdPlans??={nextId:1,tuition:[],gifts:[],growth:{},lastNPC:w.day};
  for(const t of s.tuition){if(t.status!=='active'||w.day<=t.lastWorked)continue;if(![t.payer,t.student,t.teacher].every(id=>isAlive(w,id))){t.status='cancelled';t.reason='师生或出资人离世，停止后续扣费';continue;}
- t.billingWork??=t.completed*30+t.progress;t.lastWorked=w.day;const a=personResidence(w,t.student),b=personResidence(w,t.teacher);
- if(resting(w,t.student)||resting(w,t.teacher)||a.traveling||b.traveling||a.site!==b.site||serviceBusy(w,t.teacher)||serviceBusy(w,t.student))t.reason='师生异地或办理公务，课程顺延';
+ t.billingWork??=t.completed*30+t.progress;t.lastWorked=w.day;const pause=tuitionPause(w,t);
+ if(pause)t.reason=pause;
  else {t.reason='';t.progress++;if(t.progress>=30){t.progress=0;t.completed++;if(t.completed%3===0){const g=s.growth[t.student]??={};g[t.skill]=Math.min(3,(g[t.skill]??0)+1);changeRelationOpinion(w,t.student,t.teacher,3);changeRelationOpinion(w,t.teacher,t.student,3);}}}
  if(t.completed>=9||(s.growth[t.student]?.[t.skill]??0)>=3){t.status='done';t.reason='学业完成';continue;}
  if(!isMonthStart(w.day,w.scriptId)||t.next>w.day)continue;t.next=nextMonthStart(w.day,w.scriptId);

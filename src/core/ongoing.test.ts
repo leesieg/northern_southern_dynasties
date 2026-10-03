@@ -13,8 +13,8 @@ import {ensureLifestyle} from './lifestyle';
 const start=(id='xiao-yan')=>newCampaignWorld(id,undefined,'sandbox');
 const event=(kind:PauseEvent['kind'],extra:Partial<PauseEvent>={}):PauseEvent=>({id:'test',kind,title:'事项',body:'说明',...extra});
 describe('顶部进行中事项投影',()=>{
- it('无进行中事项时仅留初选待办，读取不改变世界，普通行程逐日计时并在抵达后移除',()=>{
-  const w=start();expect(ongoingItems(w).filter(i=>i.kind!=='focus')).toEqual([]);act(w,{type:'travel',destination:'jingkou'});const before=structuredClone(w),flag=ongoingItems(w).find(i=>i.kind==='travel')!;expect(w).toEqual(before);expect(flag.days).toBe(remainingDays(w.people[0]));expect(flag.progress).toBe(0);advance(w);const next=ongoingItems(w).find(i=>i.id===flag.id)!;expect(next.days).toBe(flag.days!-1);expect(next.progress).toBeGreaterThan(0);advance(w,remainingDays(w.people[0]));expect(ongoingItems(w).some(i=>i.kind==='travel')).toBe(false);
+ it('无进行中事项时仅留初选及生活待办，读取不改变世界，普通行程逐日计时并在抵达后移除',()=>{
+  const w=start();expect(ongoingItems(w).filter(i=>!['focus','marriage','education','family','care'].includes(i.kind))).toEqual([]);act(w,{type:'travel',destination:'jingkou'});const before=structuredClone(w),flag=ongoingItems(w).find(i=>i.kind==='travel')!;expect(w).toEqual(before);expect(flag.days).toBe(remainingDays(w.people[0]));expect(flag.progress).toBe(0);advance(w);const next=ongoingItems(w).find(i=>i.id===flag.id)!;expect(next.days).toBe(flag.days!-1);expect(next.progress).toBeGreaterThan(0);advance(w,remainingDays(w.people[0]));expect(ongoingItems(w).some(i=>i.kind==='travel')).toBe(false);
  });
  it('出行与亲自赴约合成一面旗，驻留与决定阶段继续使用同一ID',()=>{
   const w=start('xiao-gang');act(w,{type:'mobility',action:'plan',kind:'visit',site:'xunyang',target:'xiao-yi'});let flags=ongoingItems(w);expect(flags.filter(f=>f.kind==='activity')).toHaveLength(1);expect(flags.some(f=>f.kind==='travel')).toBe(false);const id=flags.find(f=>f.kind==='activity')!.id,a=w.mobility!.activities[0];
