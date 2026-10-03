@@ -1,6 +1,6 @@
 /* Explicit ink ownership: paper surfaces, dark inset panels and controls never inherit the opposite ink. */
 dialog.paper-dialog{--dialog-ink:#30382d;--dialog-muted:#525c49;color:var(--dialog-ink)}
-dialog.paper-dialog.paper-dialog :is(p,small,span,strong,b,label,legend,dt,dd,h3,h4){color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(p,small,span,strong,b,label,legend,dt,dd,h3,h4,h5,li,th,td,summary,figcaption){color:var(--dialog-ink)}
 dialog.paper-dialog.paper-dialog :is(.action-summary,.person-selection-description,.person-selection-tools,.single-choice-card,.construction-plan-card,.muster-service-card,.military-preview-rows article,.military-recruit-site,.person-option,.lifestyle-focus-choice fieldset){--dialog-ink:#30382d;--dialog-muted:#525c49;color:var(--dialog-ink);background:#eeebe0}
 dialog.paper-dialog.paper-dialog :is(.single-choice-card,.construction-plan-card,.muster-service-card,.person-option):is(.is-selected,[aria-pressed=true]){background:#d7d1b8;--dialog-ink:#263523;border-color:#93783d}
 dialog.paper-dialog.paper-dialog :is(.military-record,.war-objective,.war-assessment,.war-settlement-facts,.army-supply-status,.muster-order,.single-choice-submit,.service-commission-recommended,.lifestyle-node-detail,.position-seat,.realm-flag,.diplomacy-tooltip,.ongoing-group-list article),dialog.paper-dialog .service-commission>section{--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9;color:var(--dialog-ink)}
@@ -21,3 +21,36 @@ dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-tree-node[aria-pressed=true
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail{--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9}
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-branches button[aria-pressed=true]{--dialog-ink:#283925;background:#d7d1b8;border-color:#947b48}
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail footer span{color:#d9cfb3}
+
+/* Embedded content keeps its surface ink when reused in a paper dialog. */
+dialog.paper-dialog.paper-dialog :is(
+ .economy-cases article,.economy-records,.government-audit>section,.government-audit-launch,
+ .court-fiscal-toolbar,.court-fiscal-section,.court-fiscal-request,.court-fiscal-cities article,
+ .treasury-cities article,.treasury-request,.treasury-ledger article,.treasury-central-summary,
+ .service-choice-overview,.service-board-section,.service-audience-stage,.service-audience-title,
+ .service-audience-inquiry-body,.service-audience-answer,.service-audience-comparison article,.service-audience-confirm,
+ .career-systems article,.military-choice,.journey-preview,.journey-activity,.army-command,
+ .war-participant-columns article,.public-succession article,.dynasty-dial,.dynasty-dial-caption,
+ .government-panel>section,.government-panel article
+){--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(.treasury-cities article,.treasury-request,.treasury-ledger article,.treasury-central-summary,.military-choice,.journey-preview,.journey-activity,.army-command,.public-succession article,.government-panel article){background:#172a24}
+dialog.paper-dialog.paper-dialog :is(.military-choice:has(input:checked),.military-record:has(input[type=checkbox]:checked)){background:#344733;border-color:#ccb078}
+dialog.paper-dialog.paper-dialog .military-recruit-site[data-selected=true]{background:#d7d1b8;border-color:#93783d}
+dialog.paper-dialog.paper-dialog :is(.power-options label,.power-stances article,.custody-choices label,.lifestyle-focus-choice label){--dialog-ink:#30382d;--dialog-muted:#525c49;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(small,.single-choice-description,.single-choice-state,.construction-plan-description,.construction-plan-state,.person-selection-description){color:var(--dialog-muted)}
+dialog.paper-dialog.paper-dialog :is(.service-warning,.military-warning,.single-choice-reason,.person-option-reason,.pause-error){--dialog-ink:#893c2b;--dialog-muted:#893c2b;color:var(--dialog-ink);background:#f0dfd1}
+dialog.paper-dialog.paper-dialog .person-selection-tools button[aria-pressed=true]{border-color:#e7ca89;box-shadow:inset 0 -3px #e7ca89}
+
+/* Unit cards and portrait labels have their own pale / colored grounds. */
+dialog.paper-dialog.paper-dialog .regiment-cards .regiment-card{--dialog-ink:#30382d;--dialog-muted:#525c49;background:#e8e5da;color:var(--dialog-ink);text-shadow:none}
+dialog.paper-dialog.paper-dialog .regiment-card-count{--dialog-ink:#fff9e8;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .painted-portrait-status{--dialog-ink:#66583f;--dialog-muted:#66583f;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .portrait-loading-sigil{--dialog-ink:#d1bd87;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .portrait-memorial{--dialog-ink:#504b41;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(.person-option,.power-person,.lifestyle-tree-node){text-shadow:none}
+
+/* Portrait geometry must not inherit the spacing of a text/action button. */
+:is(dialog,.modal) .painted-portrait{box-sizing:border-box;margin:0;flex-shrink:0}
+dialog.paper-dialog.paper-dialog :is(.custody-subject>button,.custody-roster-portrait,.war-leader,.engagement-portrait,.career-portrait-link){padding:0;line-height:0}
+dialog.paper-dialog.paper-dialog .appointment-candidate{padding:4px;min-width:0}
+dialog.paper-dialog.paper-dialog :is(.audit-person,.court-audit-inspector){padding:0}
