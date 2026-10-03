@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {act,newCampaignWorld,planRoute} from './world';
 import {declareRealmWar,declareRealmWarReason,realmReason,settleWar,type Army} from './realm';
-import {ensureWars,peaceQuote,peaceLandCost} from './wars';
+import {ensureWars,peaceQuote,peaceLandCost,warOccupationSites,type War} from './wars';
 import {awardInfluence,personInfluence} from './personalInfluence';
 import {warObjectiveControl,warScoreBreakdown,updateWarScore,peaceCostForCity} from './warScoring';
 import {warTerritorySites,warObjectiveSites,warDeclarationCost,warTargetName} from './warTerritories';
@@ -15,6 +15,11 @@ function setup(person='xiao-yan'){const w=newCampaignWorld(person,undefined,'san
 function regional(w=setup(),territory='province:east:并州',site='jinyang'){return {w,war:declareRealmWar(w,w.characterId!,'liang',site,'territory',territory)};}
 function victory(w:World,defender='east'){for(const c of Object.values(w.realm!.cities))if(c.owner===defender){c.controller='liang';c.occupiedSince=w.day;}w.realm!.armies=w.realm!.armies.filter(a=>a.realm!==defender);}
 function objective(w:World,war:ReturnType<typeof declareRealmWar>){return warScoreBreakdown(w,war).parts.find(p=>p.key==='objective')!.value;}
+
+// These regional-clause cases explicitly return all other occupied counties under the new default.
+function returnOutside(w:World,war:War,claims:string[]=[]){const desired=new Set([...warObjectiveSites(war,w),...claims.flatMap(id=>w.realm!.cities[id]?[id]:warTerritorySites(w,id,war.defender))]);return warOccupationSites(w,war).filter(id=>!desired.has(id));}
+function quoteRegionalPeace(w:World,war:War,actor:War['attacker'],terms:Parameters<typeof peaceQuote>[3],claims:string[]=[],coins=0,recipient?:War['attacker']){return peaceQuote(w,war,actor,terms,claims,coins,recipient,returnOutside(w,war,claims));}
+function settleRegionalPeace(w:World,war:War,terms:Parameters<typeof peaceQuote>[3]='demand',actor:War['attacker']=war.attacker,claims:string[]=[],coins=0,recipient?:War['attacker']){return settleWar(w,war,terms,actor,claims,coins,recipient,returnOutside(w,war,claims));}
 
 describe('州郡战争目标与割地',()=>{
  it('declares a real province with a fixed county list and higher personal influence cost',()=>{
@@ -37,12 +42,12 @@ describe('州郡战争目标与割地',()=>{
  });
  it('freezes only the defender-owned portion and never cedes a third state’s county',()=>{
   const w=setup();w.realm!.cities.yuci.owner='west';w.realm!.cities.yuci.controller='west';w.realm!.cities.yuci.governor=null;const {war}=regional(w);
-  expect(warObjectiveSites(war)).not.toContain('yuci');victory(w);expect(peaceQuote(w,war,'liang','demand').reason).toBe('');
-  settleWar(w,war,'demand');expect(w.realm!.cities.yuci.owner).toBe('west');expect(w.realm!.cities.jinyang.owner).toBe('liang');validateWorld(w);
+  expect(warObjectiveSites(war)).not.toContain('yuci');victory(w);expect(quoteRegionalPeace(w,war,'liang','demand').reason).toBe('');
+  settleRegionalPeace(w,war,'demand');expect(w.realm!.cities.yuci.owner).toBe('west');expect(w.realm!.cities.jinyang.owner).toBe('liang');validateWorld(w);
  });
  it('requires every county for objective scoring and resets sustained control after a loss',()=>{
   const {w,war}=regional();w.day=100;w.realm!.cities.jinyang.controller='liang';updateWarScore(w,war);
-  expect(warObjectiveControl(w,war)).toBeNull();expect(objective(w,war)).toBe(0);expect(peaceQuote(w,war,'liang','demand').reason).toContain('全部');
+  expect(warObjectiveControl(w,war)).toBeNull();expect(objective(w,war)).toBe(0);expect(quoteRegionalPeace(w,war,'liang','demand').reason).toContain('全部');
   for(const id of warObjectiveSites(war)){w.realm!.cities[id].controller='liang';w.realm!.cities[id].occupiedSince=w.day;}updateWarScore(w,war);expect(objective(w,war)).toBe(5);
   w.day=150;updateWarScore(w,war);expect(objective(w,war)).toBe(10);w.realm!.cities.yuci.controller='east';updateWarScore(w,war);expect(objective(w,war)).toBe(0);
   w.day=151;w.realm!.cities.yuci.controller='liang';updateWarScore(w,war);expect(objective(w,war)).toBe(5);
@@ -50,44 +55,44 @@ describe('州郡战争目标与割地',()=>{
  it('settles a whole province once, preserving resources and private property and starting county integration',()=>{
   const {w,war}=regional();victory(w);const lands=warObjectiveSites(war),untouched=w.realm!.cities.ye.owner;
   w.realm!.cities.yuci.fortification={level:1,due:90};const resources=lands.map(id=>({population:w.realm!.cities[id].population,grain:w.realm!.cities[id].grain})),wallets=structuredClone(w.realm!.treasuries),privateCoins=w.people[0].coins;
-  const quote=peaceQuote(w,war,'liang','demand');expect(quote.reason).toBe('');expect(quote.cost).toBeGreaterThan(peaceCostForCity(w,war,'jinyang'));settleWar(w,war,'demand');
+  const quote=quoteRegionalPeace(w,war,'liang','demand');expect(quote.reason).toBe('');expect(quote.cost).toBeGreaterThan(peaceCostForCity(w,war,'jinyang'));settleRegionalPeace(w,war,'demand');
   for(const [i,id] of lands.entries()){expect(w.realm!.cities[id]).toMatchObject({owner:'liang',controller:'liang',governor:null,...resources[i],integration:{progress:0,funded:false}});}
   expect(w.realm!.cities.yuci.fortification?.due).toBeNull();expect(w.realm!.cities.ye.owner).toBe(untouched);expect(w.realm!.cities.ye.controller).toBe('east');expect(w.realm!.treasuries).toEqual(wallets);expect(w.people[0].coins).toBe(privateCoins);
-  const settled=serializeWorld(w);settleWar(w,war,'demand');expect(serializeWorld(w)).toBe(settled);expect(parseWorld(settled)).toEqual(w);
+  const settled=serializeWorld(w);settleRegionalPeace(w,war,'demand');expect(serializeWorld(w)).toBe(settled);expect(parseWorld(settled)).toEqual(w);
  });
  it('rejects a changed owner or reclaimed county before any partial cession',()=>{
-  for(const change of ['owner','controller'] as const){const {w,war}=regional();victory(w);const city=w.realm!.cities.yuci;if(change==='owner'){city.owner='west';city.controller='west';city.governor=null;}else city.controller='east';delete city.occupiedSince;const before=serializeWorld(w);expect(()=>settleWar(w,war,'demand')).toThrow('全部');expect(serializeWorld(w)).toBe(before);}
+  for(const change of ['owner','controller'] as const){const {w,war}=regional();victory(w);const city=w.realm!.cities.yuci;if(change==='owner'){city.owner='west';city.controller='west';city.governor=null;}else city.controller='east';delete city.occupiedSince;const before=serializeWorld(w);expect(()=>settleRegionalPeace(w,war,'demand')).toThrow('全部');expect(serializeWorld(w)).toBe(before);}
  });
  it('adds a whole prefecture or province as a peace clause with increased cost and conserved reparations',()=>{
   for(const id of ['prefecture:nanjun','province:liang:荆州']){
    const w=setup('gao-huan'),war=declareRealmWar(w,w.characterId!,'east','xiangyang');for(const c of Object.values(w.realm!.cities))if(c.owner==='liang')c.controller='east';w.realm!.treasuries.liang.coins=80;
-   const q=peaceQuote(w,war,'east','demand',[id],100);expect(q.reason).toBe('');expect(q.lands).toEqual(['xiangyang',...warTerritorySites(w,id,'liang')]);expect(q.landCosts[1].cost).toBeGreaterThan(peaceCostForCity(w,war,'jiangling'));
-   const coins=w.realm!.treasuries.east.coins;settleWar(w,war,'demand','east',[id],100);expect(w.realm!.cities.jiangling.owner).toBe('east');expect(w.realm!.cities.jiankang.owner).toBe('liang');expect(w.realm!.treasuries.east.coins).toBe(coins+80);expect(w.realm!.reparations!.at(-1)!.remaining).toBe(20);validateWorld(w);
+   const q=quoteRegionalPeace(w,war,'east','demand',[id],100);expect(q.reason).toBe('');expect(q.lands).toEqual(['xiangyang',...warTerritorySites(w,id,'liang')]);expect(q.landCosts[1].cost).toBeGreaterThan(peaceCostForCity(w,war,'jiangling'));
+   const coins=w.realm!.treasuries.east.coins;settleRegionalPeace(w,war,'demand','east',[id],100);expect(w.realm!.cities.jiangling.owner).toBe('east');expect(w.realm!.cities.jiankang.owner).toBe('liang');expect(w.realm!.treasuries.east.coins).toBe(coins+80);expect(w.realm!.reparations!.at(-1)!.remaining).toBe(20);validateWorld(w);
   }
  });
  it('rejects overlapping regional and city clauses, partially held regions and too many clauses',()=>{
   const {w,war}=regional();victory(w);
-  for(const claims of [['prefecture:taiyuan'],['province:east:并州'],['ye','ye'],['province:missing'],['province:east:司州','prefecture:weiyin'],['ye','luoyang','yuci','jinyang']])expect(peaceQuote(w,war,'liang','demand',claims).reason).toContain('附加割地');
-  w.realm!.cities.linzhang.controller='east';expect(peaceQuote(w,war,'liang','demand',['prefecture:weiyin']).reason).toContain('全部已占领');
+  for(const claims of [['prefecture:taiyuan'],['province:east:并州'],['ye','ye'],['province:missing'],['province:east:司州','prefecture:weiyin'],['ye','luoyang','yuci','jinyang']])expect(quoteRegionalPeace(w,war,'liang','demand',claims).reason).toContain('附加割地');
+  w.realm!.cities.linzhang.controller='east';expect(quoteRegionalPeace(w,war,'liang','demand',['prefecture:weiyin']).reason).toContain('全部已占领');
  });
  it('upgrades an existing city goal to its whole prefecture or province without duplicate land or pricing',()=>{
   for(const id of ['prefecture:taiyuan','province:east:并州']){
    const w=setup(),war=declareRealmWar(w,w.characterId!,'liang','jinyang');victory(w);
    // The additional corridor must be actually owned by the beneficiary, not just occupied elsewhere.
    for(const site of planRoute('xiangyang','jinyang')!.route.filter(id=>!warTerritorySites(w,'province:east:并州','east').includes(id))){const c=w.realm!.cities[site];c.owner='liang';c.controller='liang';c.governor=null;delete c.occupiedSince;}
-   const q=peaceQuote(w,war,'liang','demand',[id]);expect(q.reason).toBe('');expect(q.lands).toEqual(warTerritorySites(w,id,'east'));expect(new Set(q.lands).size).toBe(q.lands.length);
+   const q=quoteRegionalPeace(w,war,'liang','demand',[id]);expect(q.reason).toBe('');expect(q.lands).toEqual(warTerritorySites(w,id,'east'));expect(new Set(q.lands).size).toBe(q.lands.length);
    expect(q.landCosts).toHaveLength(1);expect(q.cost).toBe(peaceLandCost(w,war,id,q.lands));expect(q.cost).toBeGreaterThan(peaceCostForCity(w,war,'jinyang'));
-   settleWar(w,war,'demand','liang',[id]);expect(w.realm!.cities.yuci.owner).toBe('liang');expect(parseWorld(serializeWorld(w))).toEqual(w);
+   settleRegionalPeace(w,war,'demand','liang',[id]);expect(w.realm!.cities.yuci.owner).toBe('liang');expect(parseWorld(serializeWorld(w))).toEqual(w);
   }
  });
  it('keeps the largest regional term reachable after decisive victory with unchanged fixed city values',()=>{
   const {w,war}=regional(setup(),'province:east:司州','ye');victory(w);const costs=warObjectiveSites(war).map(id=>peaceCostForCity(w,war,id));
-  expect(peaceLandCost(w,war,war.territory!.id,warObjectiveSites(war))).toBe(90);expect(peaceQuote(w,war,'liang','demand').reason).toBe('');expect(peaceQuote(w,war,'liang','demand').cost).toBeGreaterThan(Math.max(...costs));
-  const before=peaceQuote(w,war,'liang','demand').cost;for(const id of warObjectiveSites(war))w.realm!.cities[id].population=100;expect(peaceQuote(w,war,'liang','demand').cost).toBe(before);
+  expect(peaceLandCost(w,war,war.territory!.id,warObjectiveSites(war))).toBe(90);expect(quoteRegionalPeace(w,war,'liang','demand').reason).toBe('');expect(quoteRegionalPeace(w,war,'liang','demand').cost).toBeGreaterThan(Math.max(...costs));
+  const before=quoteRegionalPeace(w,war,'liang','demand').cost;for(const id of warObjectiveSites(war))w.realm!.cities[id].population=100;expect(quoteRegionalPeace(w,war,'liang','demand').cost).toBe(before);
  });
  it('keeps white peace and defender yielding consistent with the full target and allied land recipient',()=>{
-  const {w,war}=regional();victory(w);war.allies={west:'attack'};expect(peaceQuote(w,war,'liang','white').lands).toEqual([]);expect(peaceQuote(w,war,'east','yield').lands).toEqual(warObjectiveSites(war));
-  settleWar(w,war,'demand','liang',[],0,'west');for(const id of warObjectiveSites(war))expect(w.realm!.cities[id].owner).toBe('west');expect(parseWorld(serializeWorld(w))).toEqual(w);
+  const {w,war}=regional();victory(w);war.allies={west:'attack'};expect(quoteRegionalPeace(w,war,'liang','white').lands).toEqual([]);expect(quoteRegionalPeace(w,war,'east','yield').lands).toEqual(warObjectiveSites(war));
+  settleRegionalPeace(w,war,'demand','liang',[],0,'west');for(const id of warObjectiveSites(war))expect(w.realm!.cities[id].owner).toBe('west');expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('sends a delegated army to remaining counties instead of stopping at the captured anchor',()=>{
   const {w,war}=regional();w.realm!.cities.jinyang.controller='liang';w.realm!.cities.jinyang.grain=0;w.day=5;

@@ -19,10 +19,10 @@ export type DefectionCommand={type:'defection';action:'accept'|'reject'|'relieve
 export function defectionReason(w:World,c:DefectionCommand){const q=w.defections?.items.find(q=>q.id===c.id),r=playerRealm(w);if(!q||q.status!=='pending')return '归附事项已结束';const city=w.realm!.cities[q.site];return !w.characterId||!governingExecutives(w,r).includes(w.characterId)?'须实际执政者裁定':c.action==='relieve'?(r!==q.from?'须原属国赈济':city.grain<50?'本城赈济需公粮 50':''):r!==q.to?'须接纳国裁定':city.owner!==q.from||city.controller!==q.from?'该城的控制或归属已经变化':c.action==='accept'&&w.day-q.created<7?'须等待原属国七日处置期':c.action==='accept'&&w.realm!.treasuries[q.to].coins<100?'接纳归附需中央保护预算 100 钱':'';}
 function resolve(w:World,q:Defection,action:DefectionCommand['action']){const city=w.realm!.cities[q.site];if(action==='relieve'){city.grain-=50;city.order=Math.min(100,city.order+20);q.status='withdrawn';return;}if(action==='reject'){q.status='rejected';return;}
  ensureWars(w);const s=w.realm!,existing=bilateralWar(w,q.to,q.from);s.treasuries[q.to].coins-=100;
- const war=existing??{id:s.nextWarId!++,attacker:q.to,defender:q.from,target:q.site,goal:'defection' as const,started:w.day,score:0,battles:0,disputes:[]};
+ const war=existing??{id:s.nextWarId!++,attacker:q.to,defender:q.from,target:q.site,goal:'defection' as const,started:w.day,score:0,battles:0,captureLosses:[],disputes:[]};
  if(!existing){for(const v of activeWars(w))if(!v.civil&&v.allies&&v.allies[q.to]&&v.allies[q.to]===((v.attacker===q.from)?'attack':(v.defender===q.from)?'defend':v.allies[q.from]))delete v.allies[q.to];snapshotWarValues(w,war);s.wars!.push(war);s.war=s.wars![0];diplomaticWar(w,q.to,q.from);delete s.truces[[q.to,q.from].sort().join('|')];}
  if(!war.disputes?.includes(q.site))(war.disputes??=[]).push(q.site);
- occupyCity(w,war,q.site,q.to);city.governor=null;q.status='accepted';city.order=Math.max(0,city.order-5);syncGovernance(w);
+ occupyCity(w,war,q.site,q.to,true);city.governor=null;q.status='accepted';city.order=Math.max(0,city.order-5);syncGovernance(w);
  w.chronicle.push({day:w.day,person:'player',text:`${regimeName(w,q.to)}接纳${siteById[q.site].name}归附，支出保护预算 100 钱，与${regimeName(w,q.from)}进入战争；法理归属保留，盟约与停战破坏由接纳方负责。`});w.chronicle=w.chronicle.slice(-100);
 }
 export function actDefection(w:World,c:DefectionCommand){const why=defectionReason(w,c);if(why)throw new Error(why);resolve(w,w.defections!.items.find(q=>q.id===c.id)!,c.action);}

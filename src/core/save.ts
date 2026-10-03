@@ -1,3 +1,4 @@
+import {migrateCaptureLosses} from './warOccupation';
 import {validGeneratedPeople,validHouseholdLife} from './householdLifeSave';
 import {getCharacter,getPerson} from './personRegistry';
 import {validUnrest,ensureUnrest} from './unrest';
@@ -188,7 +189,7 @@ export function parseWorld(source: string): World {
   if(world.realm){for(const c of Object.values(world.realm.cities))c.cultureId??=defaultCountyCulture(c.owner==='frontier');ensureUnrest(world);for(const g of Object.values(world.realm.governments?.realms??{}))if(g.rules)g.rules.cultural??='inclusive';}
   world.families??=newFamilyState(world.day,world.scriptId);
   if(world.realm)for(const c of Object.values(world.realm.cities)){const old=c as typeof c & {households?:number};if(c.population===undefined&&old.households!==undefined){c.population=old.households*5;delete old.households;}}
-  ensurePopulation(world);
+  ensurePopulation(world);migrateCaptureLosses(world);
   ensureLife(world);ensureDuties(world);
   if(world.realm&&!world.realm.governments)world.realm.governments=newGovernments(world);
   ensureRelationships(world);syncRelationships(world);

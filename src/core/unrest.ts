@@ -53,7 +53,7 @@ export function unrestBlock(w:World,q:LocalUnrest){const c=w.realm!.cities[q.sit
 function rise(w:World,q:LocalUnrest){if(unrestBlock(w,q))return;ensureWars(w);ensureArmyOrganization(w);const s=w.realm!,c=s.cities[q.site],supply=Math.min(40,c.grain),id=s.nextArmyId!++;
  // The undefended seat is actually seized. Only then may its stores pay for arms/supply.
  const following=s.armies.filter(a=>a.realm===q.realm&&a.location===q.site&&!a.journey&&armyCommander(w,a)===q.organizer).map(a=>a.id!);
- const war={id:s.nextWarId!++,attacker:q.realm,defender:q.realm,target:capital(q.realm,w),started:w.day,score:0,battles:0,civil:{grievance:q.id,claimant:q.organizer!,loyalist:governingAuthority(w,q.realm),supporters:[q.organizer!],base:q.site,cities:[q.site],armies:[...following,id],name:'民变'}};
+ const war={id:s.nextWarId!++,attacker:q.realm,defender:q.realm,target:capital(q.realm,w),started:w.day,score:0,battles:0,captureLosses:[],civil:{grievance:q.id,claimant:q.organizer!,loyalist:governingAuthority(w,q.realm),supporters:[q.organizer!],base:q.site,cities:[q.site],armies:[...following,id],name:'民变'}};
  for(const a of s.armies)if(following.includes(a.id!)&&!a.owner)a.payer=fiscalPath(w,q.site)[0];
  s.wars!.push(war);s.war=s.wars![0];spendLocal(w,q.site,50,'民变控制治所后置办兵装');c.population-=200;c.grain-=supply;
  s.armies.push({id,realm:q.realm,location:q.site,payer:fiscalPath(w,q.site)[0],troops:200,morale:50,supply,journey:null,siege:0,regiments:[{id:id+':1',kind:'spear',service:'levy',origin:q.site,troops:200,experience:0,institution:20,commanderLoyalty:70,loyalTo:q.organizer!,cohesion:40}]});

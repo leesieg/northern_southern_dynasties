@@ -3,7 +3,7 @@ import {battleReportSide} from '../core/battleReports';
 import type {RealmId} from '../core/realm';
 import type {World} from '../core/types';
 import type {War} from '../core/wars';
-import {activeWars,warRealmSide} from '../core/wars';
+import {activeWars,warOccupationSites} from '../core/wars';
 import {armyMapPosition} from '../map/armyMapPresentation';
 import {siteById} from '../data/scenario';
 
@@ -11,11 +11,7 @@ export type EngagementRef={kind:'battle';key:string}|{kind:'siege';war:number;si
 import {battleKey} from '../core/battleReports';
 export {battleKey} from '../core/battleReports';
 export function warBattles(w:World,war:War){return (w.militaryAftermath?.battles??[]).filter(b=>war.id!==undefined&&b.war===war.id).sort((a,b)=>b.day-a.day);}
-export function warOccupations(w:World,war:War){return Object.entries(w.realm?.cities??{}).filter(([,c])=>{
- if(war.civil||c.owner==='frontier'||c.controller==='frontier'||c.owner===c.controller)return false;
- const opposite=(v:War)=>!!warRealmSide(v,c.owner as War['attacker'])&&!!warRealmSide(v,c.controller as War['attacker'])&&warRealmSide(v,c.owner as War['attacker'])!==warRealmSide(v,c.controller as War['attacker']);
- return c.occupiedByWar!==undefined?c.occupiedByWar===war.id:opposite(war)&&activeWars(w).filter(opposite).length===1;
-});}
+export function warOccupations(w:World,war:War){return warOccupationSites(w,war).map(id=>[id,w.realm!.cities[id]] as [string,NonNullable<World['realm']>['cities'][string]]);}
 /** Public battle sites only; no private schemes or invented troop estimates. */
 export function engagementMarkers(w:World){
  const wars=activeWars(w),markers:{key:string;ref:EngagementRef;lon:number;lat:number;label:string;progress?:number;sides?:{realm:RealmId;strength:string}[]}[]=[];

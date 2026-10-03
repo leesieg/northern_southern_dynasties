@@ -9,11 +9,11 @@ import {HoverHint} from './HoverHint';
 import {politicalName} from '../core/government';
 export function MilitaryAftermathPanel({world:w,army,site,pending,send}:{world:World;army:number;site:string;pending:boolean;send:(c:GameCommand)=>void}){
  const [confirm,setConfirm]=useState<MilitaryAction|null>(null),s=w.militaryAftermath,a=w.realm!.armies.find(a=>a.id===army);if(!a)return null;
- const assault=assaultQuote(w,a),assaultDetail=site===a.location?`当前围城 ${assault.progress}/${assault.required}，城防 ${assault.fort}；预计消耗军粮 ${assault.grain}、损失 ${assault.losses} 人、士气 ${assault.success?'−10':'−15'}。按现状计算${assault.success?'可攻克':'难以攻克'}；失败退回围城进度 2 点，同日不可再攻。成功将降低秩序 25、繁荣 10，并损坏一级城防。`:'须在本军当前围城地点强攻。';
+ const assault=assaultQuote(w,a),assaultDetail=site===a.location?`当前围城 ${assault.progress}/${assault.required}，城防 ${assault.fort}；预计消耗军粮 ${assault.grain}、损失 ${assault.losses} 人、士气 ${assault.success?'−10':'−15'}。按现状计算${assault.success?'可攻克':'难以攻克'}；失败退回围城进度 2 点，同日不可再攻。成功还将造成 ${assault.civilianDeaths} 名居民战乱死亡（同场同城同方向一次），降低秩序 25、繁荣 10，并损坏一级城防。`:'须在本军当前围城地点强攻。';
  const buttons:{action:MilitaryAction['action'];label:string;icon:ArtName;detail:string;policy?:MilitaryAction['policy']}[]=[
  {action:'scout',label:'侦察此地',icon:'world',detail:'随军粮 5；斥候按往返路程回报十五日路程内驻军人数区间，报告保留日期，不持续更新敌情。'},
  {action:'retreat',label:'撤往此地',icon:'world',detail:'士气 −8；沿己方控制道路撤离，途中暂不主动交战。'},
- {action:'surrender',label:'招降守城',icon:'steadfast',detail:'围城十日、无有效守军且守城秩序或存粮不足时接管城市，免除强攻破坏。'},
+ {action:'surrender',label:'招降守城',icon:'steadfast',detail:'围城十日、无有效守军且守城秩序或存粮不足时接管城市，免除强攻破坏；议降交城损失当时居民人口的 0.5%，同场同城同方向仅结算一次，保留人口与劳力下限。'},
  {action:'assault',label:'强攻城池',icon:'army',detail:assaultDetail},
  {action:'discipline',policy:'restrained',label:'严守军纪',icon:'steadfast',detail:'禁止掠夺公库，保全当地税基。'},
  {action:'discipline',policy:'forage',label:'准许掠财',icon:'army',detail:'准许占领后押运敌方公库；每次掠取会降低当地秩序 15、繁荣 5。'},

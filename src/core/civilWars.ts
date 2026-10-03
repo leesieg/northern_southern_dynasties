@@ -1,3 +1,4 @@
+import {settleCaptureLoss,type CaptureCause} from './warOccupation';
 import {getPerson} from './personRegistry';
 import {validArrangement} from './powerPoliticsSave';
 import {settleGrievance} from './unrest';
@@ -44,7 +45,7 @@ export function civilReason(w:World,c:CivilCommand,actor=w.characterId!){if(c.ac
 }
 export function actCivilWar(w:World,c:CivilCommand,actor=w.characterId!){if(c.action==='respond'){respondCivil(w,c,actor);return;}const why=civilReason(w,c,actor);if(why)throw new Error(why);const s=w.realm!,r=allegianceRealm(w,actor)!,support=revoltSupport(w,actor),base=personResidence(w,actor).site;ensureWars(w);const source=fiscalPath(w,base)[0],f=ensureFiscal(w)!;const wallet=economyHost(w).personal(actor)!;wallet.write(wallet.read()-100);f.balances[source]=(f.balances[source]??0)+100;awardInfluence(w,actor,-60);fiscalRecord(w,r,'person:'+actor,source,100,'举兵军府私财捐输');
  support.armies=splitRevoltArmies(w,support.supporters,support.cities,support.armies);
- const war:War={id:s.nextWarId!++,attacker:r,defender:r,target:capital(r,w),started:w.day,score:0,battles:0,goal:'territory',civil:{...(c.arrangement?{arrangement:c.arrangement}:{}),claimant:actor,loyalist:governingAuthority(w,r),...support,base,name:c.name.trim()}};s.wars!.push(war);s.war=s.wars![0];
+ const war:War={id:s.nextWarId!++,attacker:r,defender:r,target:capital(r,w),started:w.day,score:0,battles:0,captureLosses:[],goal:'territory',civil:{...(c.arrangement?{arrangement:c.arrangement}:{}),claimant:actor,loyalist:governingAuthority(w,r),...support,base,name:c.name.trim()}};s.wars!.push(war);s.war=s.wars![0];
  for(const a of s.armies.filter(a=>support.armies.includes(a.id!)&&!a.owner))a.payer=source;
  if(actor===w.characterId)s.mandate=true;governmentOf(w,r)!.support=Math.max(0,governmentOf(w,r)!.support-20);w.chronicle.push({day:w.day,person:'player',text:'地方举兵争夺朝廷：支持地区停向中央输税，军队各依实控地区供养。'});w.chronicle=w.chronicle.slice(-100);
 }
@@ -87,7 +88,7 @@ export function advanceCivilPolitics(w:World){if(!w.realm)return;
 
 export function actorCommandsSide(w:World,actor:string,a:Army){const r=allegianceRealm(w,actor);if(a.realm!==r)return false;const war=civilWar(w,a.realm);return !war||war.civil!.supporters.includes(actor)===war.civil!.armies.includes(a.id!);}
 
-export function civilCityCapture(w:World,war:War,site:string,side:'attack'|'defend',army:Army){const c=war.civil!;if(side==='attack'){if(!c.cities.includes(site))c.cities.push(site);}else c.cities=c.cities.filter(id=>id!==site);const g=governmentOf(w,war.attacker)!;
+export function civilCityCapture(w:World,war:War,site:string,side:'attack'|'defend',army:Army,cause:CaptureCause='battle'){const c=war.civil!;if(warCitySide(w,war,site)!==side)settleCaptureLoss(w,war,site,side,cause);if(side==='attack'){if(!c.cities.includes(site))c.cities.push(site);}else c.cities=c.cities.filter(id=>id!==site);const g=governmentOf(w,war.attacker)!;
  for(const id of [g.ruler,w.realm!.cities[site].governor,...g.executives]){if(!id||!isAlive(w,id)||detained(w,id)||!presentAt(w,id,site)||c.supporters.includes(id)===(side==='attack'))continue;detainPerson(w,id,army.realm,site,'city','civil:'+war.id+':'+site+':'+w.day,army);}
  const custody=w.custody?.records[g.ruler];if(c.grievance===undefined&&custody&&custody.war===war.id&&custody.side===side&&side==='attack'&&w.relationships){w.relationships.regencies[war.attacker]={realm:war.attacker,regimeId:g.regimeId,basis:powerBasis(w,war.attacker),ruler:g.ruler,controller:c.claimant,since:w.day,grip:70,origin:'custody'};}
 }

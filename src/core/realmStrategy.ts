@@ -7,7 +7,7 @@ import {roads,siteById} from '../data/scenario';
 
 import {isMonthStart,monthIndex} from './calendar';
 import {capital,playerRealm,realmForecast,armyDailyFood,armyMonthlyPay,warApproach,declareRealmWar,declareRealmWarReason,settleWar,type RealmId} from './realm';
-import {activeWars,realmAtWar,peaceQuote,warRealmSide} from './wars';
+import {activeWars,realmAtWar,peaceQuote,peaceSignature,warRealmSide} from './wars';
 import {warWillToContinue,warScoreFor,warObjectiveControl} from './warScoring';
 import {governingAuthority,governingExecutives,governmentOf} from './government';
 import {diplomaticPair} from './diplomacy';
@@ -52,10 +52,10 @@ export function advanceRealmStrategy(w:World){
   if(wars.length){
    appointAICommanders(w,r);
    for(const war of wars){const enemy=r===war.attacker?war.defender:war.attacker,other=governingAuthority(w,enemy);if(!other||w.day-war.started<30)continue;
-    const ownWill=warWillToContinue(w,war,r).total,score=warScoreFor(w,war,r),demand=peaceQuote(w,war,r,'demand'),white=peaceQuote(w,war,r,'white'),hasDemand=demand.takesLand||demand.coins>0||demand.tributary||demand.annexes,enemyWill=warWillToContinue(w,war,enemy).total,repelled=r===war.defender&&score>=20&&enemyWill<=-15&&warObjectiveControl(w,war)==='defend'&&!s.armies.some(a=>warRealmSide(war,a.realm)==='attack'&&readyTroops(a,w.day)>=100&&a.morale>=25&&a.supply>=armyDailyFood(w,a)*2);
-    if(other===w.characterId){if(w.day-(war.peaceReviewed??-90)>=90){const terms=hasDemand&&!demand.reason&&(score>=demand.cost+10||ownWill<=0)?'demand':!white.reason&&(ownWill<=0||repelled)?'white':undefined;if(terms){war.peaceOffer={from:r,to:enemy,terms,created:w.day,until:w.day+15};war.peaceReviewed=w.day;log(w,r,'向玩家朝廷提出议和，等待裁定');}}continue;}
-    if(hasDemand&&!demand.reason&&(score>=demand.cost+10||ownWill<=0)){settleWar(w,war,'demand',r);set(w,r,'recover',null,'有限战争目标达成，转入战后休整');}
-    else if(!white.reason&&(ownWill<=0&&enemyWill<=5||repelled)){settleWar(w,war,'white',r);set(w,r,'recover',null,repelled?'来犯军队已失去进攻能力，守住目标后议定停战':'继续交战收益不足，双方议定停战');}
+    const ownWill=warWillToContinue(w,war,r).total,score=warScoreFor(w,war,r),demand=peaceQuote(w,war,r,'demand'),white=peaceQuote(w,war,r,'white'),statusQuo=peaceQuote(w,war,r,'statusQuo'),annex=peaceQuote(w,war,r,'annex'),hasDemand=demand.takesLand||demand.coins>0||demand.tributary||demand.annexes,enemyWill=warWillToContinue(w,war,enemy).total,repelled=r===war.defender&&score>=20&&enemyWill<=-15&&warObjectiveControl(w,war)==='defend'&&!s.armies.some(a=>warRealmSide(war,a.realm)==='attack'&&readyTroops(a,w.day)>=100&&a.morale>=25&&a.supply>=armyDailyFood(w,a)*2);
+    const terms:import('./wars').PeaceTerms|undefined=hasDemand&&!demand.reason&&(score>=demand.cost+10||ownWill<=0)?'demand':!annex.reason&&(score>=annex.cost+10||ownWill<=0)?'annex':!statusQuo.reason&&(ownWill<=0&&enemyWill<=5||repelled)?'statusQuo':!white.reason&&(ownWill<=0&&enemyWill<=5||repelled)?'white':undefined;
+    if(other===w.characterId){if(terms&&w.day-(war.peaceReviewed??-90)>=90){war.peaceOffer={from:r,to:enemy,terms,created:w.day,until:w.day+15,signature:peaceSignature(peaceQuote(w,war,r,terms))};war.peaceReviewed=w.day;log(w,r,'向玩家朝廷提出议和，等待裁定');}continue;}
+    if(terms){settleWar(w,war,terms,r);set(w,r,'recover',null,terms==='white'?'双方归还占领地，转入战后休整':terms==='statusQuo'?'双方按实际占领交割，转入战后休整':'战争条件达成，转入战后休整');}
    }
    if(realmAtWar(w,r))set(w,r,'war',wars[0].target,'依战争目标作战，按月复核续战成本');
    continue;
@@ -78,5 +78,5 @@ export function advanceRealmStrategy(w:World){
 export function validRealmStrategy(w:World){const s=w.realm?.strategy;if(s===undefined)return true;return !!s&&typeof s==='object'&&!Array.isArray(s)&&Object.entries(s).every(([r,v])=>worldRealms(w).includes(r as RealmId)&&v&&['rest','prepare','war','recover'].includes(v.phase)&&(v.target===null||!!siteById[v.target])&&Number.isSafeInteger(v.since)&&v.since>=0&&v.since<=w.day&&Number.isSafeInteger(v.reviewed)&&v.reviewed>=v.since&&v.reviewed<=w.day&&typeof v.reason==='string'&&v.reason.length<=200);}
 
 export type PeaceOfferCommand={type:'peaceOffer';war:number;accept:boolean};
-export function peaceOfferReason(w:World,c:PeaceOfferCommand){const war=activeWars(w).find(v=>v.id===c.war),q=war?.peaceOffer,r=playerRealm(w);if(!q||q.to!==r||q.until<w.day)return '当前没有有效的议和提议';if(!governingExecutives(w,r).includes(w.characterId!))return '须由实际执政者裁定';if(typeof c.accept!=='boolean')return '无效裁定';return c.accept?peaceQuote(w,war!,q.from,q.terms).reason:'';}
+export function peaceOfferReason(w:World,c:PeaceOfferCommand){const war=activeWars(w).find(v=>v.id===c.war),q=war?.peaceOffer,r=playerRealm(w);if(!q||q.to!==r||q.until<w.day)return '当前没有有效的议和提议';if(!governingExecutives(w,r).includes(w.characterId!))return '须由实际执政者裁定';if(typeof c.accept!=='boolean')return '无效裁定';if(!c.accept)return '';const quote=peaceQuote(w,war!,q.from,q.terms);return q.signature!==undefined&&q.signature!==peaceSignature(quote)?'占领或条款已变化，须重新议和':quote.reason;}
 export function actPeaceOffer(w:World,c:PeaceOfferCommand){const reason=peaceOfferReason(w,c);if(reason)throw new Error(reason);const war=activeWars(w).find(v=>v.id===c.war)!,q=war.peaceOffer!;if(c.accept)settleWar(w,war,q.terms,q.from);else {delete war.peaceOffer;w.chronicle.push({day:w.day,person:'player',text:'朝廷拒绝本次议和提议，战争继续'});w.chronicle=w.chronicle.slice(-100);}}
