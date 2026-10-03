@@ -1,3 +1,4 @@
+import {CommandButton} from './CommandButton';
 import {ConfirmAction} from './ConfirmAction';
 import {useState} from 'react';
 import {ArtIcon,Resource} from './ArtIcon';
@@ -13,7 +14,7 @@ export function GovernmentPanel({world:w,realm,compact=false,pending,send}:{worl
  const [confirmation,setConfirmation]=useState<string|null>(null),[selected,setSelected]=useState(w.people[0].home),[detailsOpen,setDetailsOpen]=useState(false);
  const r=realm??currentRealm(w),own=r===currentRealm(w),g=governmentOf(w,r);if(!g)return <p>读取存档后可使用政体制度。</p>;
  const definition=governmentDefinitions[g.type],bonus=governmentBonus(w,r),cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r&&c.controller===r),site=cities.some(([id])=>id===selected)?selected:cities[0]?.[0]??'',task=g.task,laws=reformIds.filter(id=>reformDefinitions[id].realm===r),records=w.realm!.governments!.history.filter(e=>e.realm===r).slice(-4).reverse();
- const action=(c:GovernmentCommand,label:string,consequence?:string)=>{const reason=own?governmentReason(w,c):'他国制度仅供查阅',key=JSON.stringify(c);return <div className="government-action"><button className={consequence?'primary':''} disabled={pending||!!reason} onClick={()=>{if(consequence)setConfirmation(key);else send(c);}}>{label}</button>{reason&&<small>{reason}</small>}{confirmation===key&&consequence&&<ConfirmAction title={label} detail={consequence} confirmLabel="确认执行" danger pending={pending||!!reason} onCancel={()=>setConfirmation(null)} onConfirm={()=>{if(pending||governmentReason(w,c))return;send(c);setConfirmation(null);}}/>}</div>;};
+ const action=(c:GovernmentCommand,label:string,consequence?:string)=>{const reason=own?governmentReason(w,c):'他国制度仅供查阅',key=JSON.stringify(c);return <div className="government-action"><CommandButton label={label} icon="influence" hint={consequence||label} pending={pending} reason={reason} onClick={()=>{if(consequence)setConfirmation(key);else send(c);}}/>{confirmation===key&&consequence&&<ConfirmAction title={label} detail={consequence} confirmLabel="确认执行" danger pending={pending||!!reason} onCancel={()=>setConfirmation(null)} onConfirm={()=>{if(pending||governmentReason(w,c))return;send(c);setConfirmation(null);}}/>}</div>;};
  if(compact){
   const council={type:'government',action:'council'} as const,councilReason=own?governmentReason(w,council):'他国事务仅供查阅',cancel={type:'government',action:'cancel'} as const,cancelReason=own?governmentReason(w,cancel):'他国事务仅供查阅';
   return <section className="court-government-state">

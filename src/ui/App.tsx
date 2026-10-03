@@ -63,6 +63,7 @@ import './campaignSkin.css';
 import './campaignReference.css';
 import './armyFormation.css';
 import './dialogContrast.css';
+import './detailActions.css';
 
 type IconName='play'|'pause'|'pin'|'layers'|'compass'|'plus'|'minus'|'arrow'|'close'|'save'|'menu';
 function Icon({name,size=18}:{name:IconName;size?:number}){

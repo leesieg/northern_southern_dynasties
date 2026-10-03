@@ -1,3 +1,4 @@
+import {CommandButton} from './CommandButton';
 import {useEffect,useState} from 'react';
 import type {World} from '../core/types';
 import {allPeople,getPerson} from '../core/personRegistry';
@@ -11,7 +12,7 @@ export function FamilyMarriagePanel({world:w,id,pending,send,partner}:{world:Wor
  const [open,setOpen]=useState(false),[subject,setSubject]=useState(id),[target,setTarget]=useState(''),[coins,setCoins]=useState<50|100|200>(100),[family,setFamily]=useState('');
  useEffect(()=>{setOpen(false);setSubject(id);setTarget('');setFamily('');},[id]);
  const subjects=marriageSubjects(w),a=getPerson(w,subject),b=getPerson(w,target),residence=personResidence(w,subject).site,chosenFamily=family||a?.family||'',command:FamilyMarriageCommand={type:'familyMarriage',subject,target,coins,residence,family:chosenFamily},quote=quoteFamilyMarriage(w,command);
- return <><button disabled={pending||!subjects.includes(id)} title={subjects.includes(id)?'为本人或成年直系子女议婚':'只能为本人或在世成年直系子女议婚'} onClick={()=>{setSubject(id);setTarget(partner??'');setFamily('');setCoins(100);setOpen(true);}}>议婚</button>{open&&<ActionDialog title="家族议婚" scene="landscape" onClose={()=>setOpen(false)} actions={<button className="primary" disabled={pending||!!quote.reason} onClick={()=>{if(pending||quoteFamilyMarriage(w,command).reason)return;send(command);setOpen(false);}}>确认成婚 · {coins} 私钱</button>}>
+ return <><CommandButton label="家族议婚" icon="renown" pending={pending} reason={!subjects.includes(id)?'只能为本人或在世成年直系子女议婚':''} hint="预览双方条件、实际婚资与子女家支，确认后成婚。" onClick={()=>{setSubject(id);setTarget(partner??'');setFamily('');setCoins(100);setOpen(true);}}/>{open&&<ActionDialog title="家族议婚" scene="landscape" onClose={()=>setOpen(false)} actions={<button className="primary" disabled={pending||!!quote.reason} onClick={()=>{if(pending||quoteFamilyMarriage(w,command).reason)return;send(command);setOpen(false);}}>确认成婚 · {coins} 私钱</button>}>
  <PersonChoice world={w} title="议婚本人" value={subject} onChange={value=>{setSubject(value);setTarget('');setFamily('');}} pending={pending} options={subjects.map(id=>({id}))}/>
  <PersonChoice world={w} title="拟议配偶" value={target} onChange={value=>{setTarget(value);setFamily('');}} pending={pending} options={allPeople(w).filter(p=>p.id!==subject).map(p=>{const q=quoteFamilyMarriage(w,{...command,target:p.id,family:a?.family??''});return {id:p.id,score:Math.min(q.left.score,q.right.score),metric:'双方最低接受度',reason:q.reason};})}/>
  <fieldset><legend>婚资 · 由 {getPerson(w,w.characterId!)?.name} 私财付给拟议配偶</legend>{([50,100,200] as const).map(value=><label key={value}><input type="radio" name="marriage-coins" checked={coins===value} onChange={()=>setCoins(value)}/>{value} 钱</label>)}<p>全额转入配偶私财；金额不提高接受度。</p></fieldset>
