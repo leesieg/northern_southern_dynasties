@@ -7,7 +7,16 @@
 .territory-navigation .realm-flag{width:30px;min-width:30px}
 .territory-navigation .territory-peers{margin-top:6px}.territory-peers button{min-height:28px;font-size:11px}
 .local-territory .local-seats-grid{max-height:none;overflow:visible}
-.local-territory .city-summary-identity>.city-office-seat{flex:0 0 auto;max-width:48%}
+.local-territory .city-summary-identity>.city-office-seat{min-width:0;max-width:none;width:100%}
 .local-territory .local-office-options{margin:8px 0}.local-territory .local-budget-row>span{margin-right:auto}
 .local-territory .district-counties button>span:first-of-type{flex:1;text-align:left}.local-territory .district-counties small{display:block;color:#b9bea8}
 .territory-navigation button:focus-visible{outline:2px solid #edd79d;outline-offset:-2px}
+
+/* 州郡主官：占满分配的列，姓名、官职和任职状态各有固定位置。 */
+.local-territory .city-summary .city-summary-identity{grid-template-columns:34px minmax(0,1fr) minmax(150px,42%)}
+.local-territory .city-summary .city-office-seat .position-seat{grid-template-columns:44px minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:7px;row-gap:3px;align-items:center}
+.local-territory .city-summary .city-office-seat .position-image{grid-column:1;grid-row:1/4;width:44px;aspect-ratio:2/3;align-self:start}
+.local-territory .city-summary .city-office-seat .position-name{grid-column:2;grid-row:1;align-self:center;min-width:0;overflow-wrap:anywhere}
+.local-territory .city-summary .city-office-seat .position-title{grid-column:2;grid-row:2;align-self:center;justify-content:flex-start;text-align:left;white-space:normal}
+.local-territory .city-summary .city-office-seat .position-status{grid-column:2;grid-row:3;min-width:0;overflow-wrap:anywhere;line-height:1.4;margin:0}
+@media(max-width:440px){.local-territory .city-summary .city-summary-identity{grid-template-columns:34px minmax(0,1fr)}.local-territory .city-summary .city-office-seat{grid-column:2;max-width:none}}
