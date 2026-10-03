@@ -28,8 +28,8 @@ export function includeParticipantValues(w:World,war:War){const current=snapshot
 
 function values(w:World,war:War){return war.values&&Object.keys(war.values).length?war.values:snapshotWarValues(w,war,false);}
 
-export function warObjectiveControl(w:World,war:War){const sides=warObjectiveSites(war).map(id=>side(war,w.realm!.cities[id].controller as RealmId));return sides.every(s=>s==='attack')?'attack':sides.every(s=>s==='defend')?'defend':null;}
-function objectiveSince(w:World,war:War){return Math.max(...warObjectiveSites(war).map(id=>w.realm!.cities[id].occupiedSince??w.day));}
+export function warObjectiveControl(w:World,war:War){const sides=warObjectiveSites(war,w).map(id=>side(war,w.realm!.cities[id].controller as RealmId));return !sides.length?null:sides.every(s=>s==='attack')?'attack':sides.every(s=>s==='defend')?'defend':null;}
+function objectiveSince(w:World,war:War){return Math.max(...warObjectiveSites(war,w).map(id=>w.realm!.cities[id].occupiedSince??w.day));}
 
 export function warScoreBreakdown(w:World,war:War){
  const fixed=values(w,war),cities=w.realm!.cities;
@@ -74,7 +74,7 @@ export function warWillToContinue(w:World,war:War,realm:RealmId){
  // Current operations provide a bounded opportunity to finish, never a permanent war lock.
  const recentWin=w.militaryAftermath?.battles.some(b=>b.war===war.id&&b.ended!==undefined&&w.day-b.ended<=30&&b.winner===ownSide);
  const siege=w.realm!.sieges?.some(v=>v.war===war.id&&v.side===ownSide&&(v.blockade??0)>=100&&v.progress>0&&w.day-(v.started??war.started)<=120&&own.some(a=>a.location===v.site&&!a.journey&&a.supply>0&&a.troops>=100));
- const advance=own.some(a=>a.journey&&warObjectiveSites(war).includes(a.journey.route.at(-1)??'')&&w.day-a.journey.started<=60&&a.supply>=armyDailyFood(w,a)*5&&a.morale>=40&&!a.withdrawalUntil);
+ const advance=own.some(a=>a.journey&&warObjectiveSites(war,w).includes(a.journey.route.at(-1)??'')&&w.day-a.journey.started<=60&&a.supply>=armyDailyFood(w,a)*5&&a.morale>=40&&!a.withdrawalUntil);
  const parts:WarWillPart[]=[
   {label:'有力维持战争目标',value:ownStrength>=600&&treasury.coins>=200&&arrears===0&&lowSupply===0?10:0},
   {label:'近期战役胜利',value:recentWin?8:0},
