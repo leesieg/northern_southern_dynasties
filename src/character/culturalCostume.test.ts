@@ -2,94 +2,71 @@ import {describe,it,expect} from 'vitest';
 import {portraitContext} from './composition';
 import {approvedPaintedRecipe} from './paintedSelection';
 import {validatePaintedRecipe} from './paintedLayers';
-import {headRegistration,costumeRegistration,bodyRegistration} from './costumeRegistration';
 import {composePaintedRoster} from './paintedRoster';
-import {composePaintedStudy} from './paintedStudy';
-import {removeConnectedPaper} from './paintedRenderer';
-const face=(r:ReturnType<typeof approvedPaintedRecipe>)=>r.parts.filter(p=>!['body','headwear'].includes(p.slot));
-describe('文化服饰共用真实面部与素材',()=>{
- it('头部底图边缘相连的白纸会清除，人物和封闭的亮色细节保留',()=>{
-  const width=5,height=5,data=new Uint8ClampedArray(width*height*4);
-  for(let i=0;i<width*height;i++)data.set([249,248,246,255],i*4);
-  for(let y=1;y<4;y++)for(let x=1;x<4;x++)data.set([220,180,150,255],(y*width+x)*4);
-  data.set([250,250,248,255],(2*width+2)*4);
-  removeConnectedPaper(data,width,height);
-  expect(data[3]).toBe(0);expect(data[(2*width+1)*4+3]).toBe(255);
-  expect(data[(2*width+2)*4+3]).toBe(255);
-  const isolated=new Uint8ClampedArray([240,240,238,255,0,0,0,0,220,180,150,255]);
-  removeConnectedPaper(isolated,3,1);
-  expect(isolated[3]).toBe(0);expect(isolated[7]).toBe(0);expect(isolated[11]).toBe(255);
- });
- it('独孤信的原肩甲不进入面部遮罩，纸背景单独抠除',()=>{
-  const c=portraitContext('dugu-xin'),r=approvedPaintedRecipe('dugu-xin',{...c,identity:{...c.identity,cultureId:'han'},office:'commander'});
-  const head=r.parts.find(p=>p.slot==='head')!,mask=head.mask;
-  expect(head.removePaper).toBe(true);expect(mask?.kind).toBe('polygon');
-  if(mask?.kind!=='polygon')return;
-  const x=(724+295-head.crop.x)/head.crop.width,y=(310-head.crop.y)/head.crop.height;
-  const inside=mask.points.filter((p,i)=>{const q=mask.points[(i+1)%mask.points.length];return (p[1]>y)!==(q[1]>y)&&x<(q[0]-p[0])*(y-p[1])/(q[1]-p[1])+p[0];}).length%2===1;
-  expect(inside).toBe(false);
- });
- it.each(['gao-huan','su-chuo','dugu-xin','wang-lingbin','guest-west','xiao-fangzhi','yuwen-jue'])('%s 改文化衣装与当前职位保留面部和五官',id=>{const c=portraitContext(id),genome=structuredClone(c.identity.genome);const recipes=['han','xianbei'].map(cultureId=>approvedPaintedRecipe(id,{...c,identity:{...c.identity,cultureId: cultureId as 'han'|'xianbei'},office:'civilian'}));expect(face(recipes[0])).toEqual(face(recipes[1]));expect(recipes[0].parts[0].crop).not.toEqual(recipes[1].parts[0].crop);const officer=approvedPaintedRecipe(id,{...c,identity:{...c.identity,cultureId:'han'},office:'governor'});expect(face(officer)).toEqual(face(recipes[0]));expect(c.identity.genome).toEqual(genome);for(const r of [...recipes,officer])expect(()=>validatePaintedRecipe(r)).not.toThrow();});
- it('成人三类服装有各自真实衣身与冠帽，幼年不穿甲或用成人身形',()=>{const c=portraitContext('su-chuo');const recipes=['civilian','governor','commander'].map(office=>approvedPaintedRecipe('su-chuo',{...c,office:office as 'civilian'|'governor'|'commander'}));expect(new Set(recipes.map(r=>JSON.stringify(r.parts[0].crop))).size).toBe(3);for(const r of recipes)expect(r.parts.find(p=>p.slot==='headwear')?.source).toContain('male-v1');const child=approvedPaintedRecipe('yuwen-jue',{...portraitContext('yuwen-jue'),office:'commander'});expect(child.parts[0].source).toContain('child-v2');expect(child.parts.some(p=>p.slot==='headwear')).toBe(false);});
- it('君主保留原礼服，其他文化不会冒用鲜卑图集',()=>{const c=portraitContext('yuan-shanjian'),r=approvedPaintedRecipe('yuan-shanjian',{...c,office:'ruler'});expect(r.parts[0].source).toContain('base.png');const other=approvedPaintedRecipe('hulu-jin',portraitContext('hulu-jin'));expect(other.parts[0].source).not.toContain('costumes');});
- it('五官遗传极值只改对应五官，不移动领口、头部遮罩和冠帽',()=>{
-  for(const id of ['su-chuo','gao-huan','wang-lingbin','guest-west','xiao-fangzhi']){
-   const context=portraitContext(id),recipes=[0,100].map(value=>{const c=structuredClone(context);for(const pair of Object.values(c.identity.genome.facial!))pair.fill(value);return approvedPaintedRecipe(id,{...c,office:'governor'});});
-   const frame=(r:typeof recipes[number])=>r.parts.filter(p=>['body','head','headwear'].includes(p.slot));expect(frame(recipes[0])).toEqual(frame(recipes[1]));expect(recipes[0].thumbnail).toEqual(recipes[1].thumbnail);
-  }
- });
- it('原头部保留到真实颈部；各衣领注册到共同颈部，不用嘴巴边缘代替领口',()=>{
-  for(const id of ['yuan-shanjian','su-chuo','gao-huan','dugu-xin','xiao-gang','xiao-yi','gao-cheng','gao-yang','yuan-baoju','yuan-qin','fictional','chen-baxian','guest-liang','guest-west','lou-zhaojun','wang-lingbin','xu-zhaopei','xiao-fangzhi'])for(const cultureId of ['han','xianbei'] as const)for(const office of ['civilian','governor','commander'] as const){
-   const c={...portraitContext(id),office},raw=id==='yuan-shanjian'?composePaintedStudy(c.identity.genome,{robe:'b'}):composePaintedRoster(id,c),r=approvedPaintedRecipe(id,{...c,identity:{...c.identity,cultureId}}),body=r.parts.find(p=>p.slot==='body')!,head=r.parts.find(p=>p.slot==='head')!,original=raw.parts[0],reg=headRegistration[raw.rig]??headRegistration[raw.rig.replace(/^c-roster-/,'').replace(/-v1$/,'')];
-   const young=(c.life?.age??18)<16,kind=young?'child':c.identity.sex,row=cultureId==='han'?0:1,col=office==='commander'?2:office==='governor'?1:0,atlas=costumeRegistration[kind][young?row:row*3+col],torso=bodyRegistration[kind][young?row:row*3+col],width=young?724:418,height=young?1086:627;
-   const project=(part:typeof body,x:number,y:number)=>[part.place.x+(x-part.crop.x)*part.place.width/part.crop.width,part.place.y+(y-part.crop.y)*part.place.height/part.crop.height];
-   const skin=project(head,original.crop.x+(reg.neck[0]+reg.neck[2])/2,(reg.neck[1]+reg.neck[3])/2),collar=project(body,(young?row:col)*width+(torso.neck[0]+torso.neck[2])/2,(young?0:row)*height+(torso.neck[1]+torso.neck[3])/2);
-   expect(skin[0]).toBeCloseTo(collar[0],10);expect(skin[1]).toBeCloseTo(collar[1],10);expect(head.crop.y+head.crop.height).toBeGreaterThan(reg.neck[3]-32);
-   expect(head.crop.y+head.crop.height).toBeLessThan(reg.neck[3]);
-   // Shallow female collars must not magnify the robe; old diagonal fitting reached ~1.5x.
-   const bodyScale=body.place.width/body.crop.width*width;
-   expect(bodyScale,id+':'+cultureId+':'+office).toBeGreaterThanOrEqual((young?.94:.70)-1e-9);expect(bodyScale).toBeLessThanOrEqual(1.06+1e-9);
-   const rimLeft=project(head,original.crop.x+reg.rim[0],reg.rim[1]),rimRight=project(head,original.crop.x+reg.rim[2],reg.rim[3]);
-   expect(rimRight[0]-rimLeft[0]).toBeCloseTo(young?.27:kind==='male'?.25:office==='commander'?.235:.245,10);
-   const cap=r.parts.find(p=>p.slot==='headwear');if(cap&&atlas.rim){
-    const capLeft=project(cap,(young?row:col)*width+atlas.rim[0],(young?0:row)*height+atlas.rim[1]),capRight=project(cap,(young?row:col)*width+atlas.rim[2],(young?0:row)*height+atlas.rim[3]);
-    expect(capLeft[0]).toBeCloseTo(rimLeft[0],10);expect(capRight[0]).toBeCloseTo(rimRight[0],10);
-    expect((capLeft[1]+capRight[1])/2).toBeCloseTo((rimLeft[1]+rimRight[1])/2,10);
-   }
-   const features=r.parts.filter(p=>!['body','head','headwear'].includes(p.slot)),scale=features[0].place.width/raw.parts[2].place.width;for(let i=0;i<features.length;i++){expect(features[i].place.width/raw.parts[i+2].place.width).toBeCloseTo(scale,10);expect(features[i].place.height/raw.parts[i+2].place.height).toBeCloseTo(scale,10);expect(features[i].crop).toEqual(raw.parts[i+2].crop);}
-   expect(()=>validatePaintedRecipe(r)).not.toThrow();
-  }
- });
+import {culturalCostume} from './culturalCostume';
+import {wholeCulturalPortrait,xianbeiWholeRigs} from './wholePortrait';
+import {paintedRig,paintedBounds,type PaintedRigId} from '../data/paintedRoster';
+import {wholePortraitBounds} from '../data/wholePortraitBounds';
 
- it('帽带与护耳完整归冠帽层，衣身不重复携带碎片，衣领不进入帽层',()=>{
-  const c=portraitContext('su-chuo');
-  function contains(part:ReturnType<typeof approvedPaintedRecipe>['parts'][number],x:number,y:number){
-   const px=(x-part.crop.x)/part.crop.width,py=(y-part.crop.y)/part.crop.height;
-   if(px<0||px>1||py<0||py>1)return false;
-   if(part.mask?.kind!=='polygon')return true;
-   const pts=part.mask.points;
-   return pts.filter((a,i)=>{const b=pts[(i+1)%pts.length];return (a[1]>py)!==(b[1]>py)&&px<(b[0]-a[0])*(py-a[1])/(b[1]-a[1])+a[0];}).length%2===1;
-  }
-  for(const [office,x,y] of [['civilian',150,190],['governor',418+150,195],['commander',836+175,187]] as const){
-   const r=approvedPaintedRecipe('su-chuo',{...c,office,identity:{...c.identity,cultureId:'han'}}),hat=r.parts.find(p=>p.slot==='headwear')!,body=r.parts.find(p=>p.slot==='body')!;
-   expect(contains(hat,x,y)).toBe(true);expect(body.source).toContain('male-v2.png');expect(hat.source).toContain('male-v1.png');
-   const col=office==='civilian'?0:office==='governor'?1:2;
-   expect(contains(hat,col*418+245,260)).toBe(false);expect(contains(body,col*418+245,260)).toBe(true);
-  }
- });
-
- it('手部画面留在半身画布内，女性常服保留原发髻而不叠第二顶帽子',()=>{
-  for(const id of ['gao-huan','su-chuo','dugu-xin','wang-lingbin','lou-zhaojun','xiao-fangzhi'])for(const cultureId of ['han','xianbei'] as const)for(const office of ['civilian','governor','commander'] as const){
-   const c=portraitContext(id),young=(c.life?.age??18)<16,kind=young?'child':c.identity.sex,row=cultureId==='han'?0:1,col=office==='commander'?2:office==='governor'?1:0;
-   const r=approvedPaintedRecipe(id,{...c,office,identity:{...c.identity,cultureId}}),body=r.parts.find(p=>p.slot==='body')!;
-   const width=young?724:418,height=young?1086:627,cellX=(young?row:col)*width,cellY=(young?0:row)*height;
-   // Authored fingertips near the lower edge of each atlas cell: prevent reverting to leg-length framing.
-   const handY=young?1040:kind==='female'?558:row?561:583;
-   const y=body.place.y+(cellY+handY-body.crop.y)*body.place.height/body.crop.height;
-   const x=body.place.x+(cellX+(young?330:280)-body.crop.x)*body.place.width/body.crop.width;
-   expect(y).toBeGreaterThan(.65);expect(y,id+":"+cultureId+":"+office).toBeLessThan(.99);expect(x).toBeGreaterThan(0);expect(x).toBeLessThan(1);
-   if(kind==='female'&&office!=='commander')expect(r.parts.some(p=>p.slot==='headwear')).toBe(false);
+describe('完整成人底图与保留的儿童组合',()=>{
+ it.each(['xiao-fangzhi','yuwen-jue'])('%s 儿童配方保持原样，文化及任职不引入成人模板',id=>{
+  for(const cultureId of ['han','xianbei'] as const)for(const office of ['civilian','governor','commander'] as const){
+   const base=portraitContext(id),c={...base,office,identity:{...base.identity,cultureId}};
+   const actual=approvedPaintedRecipe(id,c);
+   expect(actual).toEqual(culturalCostume(composePaintedRoster(id,c),c));
+   expect(actual.parts[0].source).toContain('child-v2.png');
+   expect(actual.parts.some(p=>p.slot==='headwear')).toBe(false);
+   const body=actual.parts[0],row=cultureId==='han'?0:1;
+   const handY=body.place.y+(1040-body.crop.y)*body.place.height/body.crop.height;
+   const handX=body.place.x+(row*724+330-body.crop.x)*body.place.width/body.crop.width;
+   expect(handY).toBeLessThan(.99);expect(handY).toBeGreaterThan(.65);
+   expect(handX).toBeGreaterThan(0);expect(handX).toBeLessThan(1);
   }
  });
-
+ it.each(['gao-huan','su-chuo','dugu-xin','wang-lingbin','guest-west','lou-zhaojun'])('%s 成人不再拆头换身，任职不改变整幅比例',id=>{
+  const c=portraitContext(id);
+  for(const cultureId of ['han','xianbei'] as const){
+   const civilian=approvedPaintedRecipe(id,{...c,office:'civilian',identity:{...c.identity,cultureId}});
+   for(const office of ['governor','commander'] as const)expect(approvedPaintedRecipe(id,{...c,office,identity:{...c.identity,cultureId}})).toEqual(civilian);
+   expect(civilian.parts[0].place).toEqual({x:0,y:0,width:1,height:1});
+   expect(civilian.parts.some(p=>p.slot==='headwear'||p.removePaper)).toBe(false);
+   expect(civilian.parts.find(p=>p.slot==='head')!.mask).toBeUndefined();
+   expect(()=>validatePaintedRecipe(civilian)).not.toThrow();
+  }
+ });
+ it('汉式完整原画、君主礼服和其他文化保留，不以鲜卑图冒充',()=>{
+  for(const cultureId of ['han','gaoche','jie','unknown'] as const){
+   const c=portraitContext('gao-huan'),context={...c,identity:{...c.identity,cultureId}},raw=composePaintedRoster('gao-huan',context);
+   expect(approvedPaintedRecipe('gao-huan',context)).toEqual(raw);
+  }
+  const c=portraitContext('gao-huan'),context={...c,office:'ruler' as const};
+  expect(approvedPaintedRecipe('gao-huan',context)).toEqual(composePaintedRoster('gao-huan',context));
+ });
+ it('新增文化图的源坐标映射保持原五官位置，头身均取完整同源画面',()=>{
+  for(const id of xianbeiWholeRigs){
+   const c=portraitContext('gao-huan'),rig=paintedRig(id as PaintedRigId),raw=composePaintedRoster('gao-huan',c);
+   const fixture={...raw,rig:`c-roster-${id}-v1`,parts:raw.parts.map((p,i)=>{
+    const crop=i===0?{x:rig.baseX,y:0,width:rig.width,height:rig.height}:i===1?{x:rig.baseX,y:0,width:rig.width,height:rig.height/2}:(()=>{const [x,y,width,height]=paintedBounds[id as PaintedRigId][i-2];return {x,y,width,height};})();
+    return {...p,rig:`c-roster-${id}-v1`,crop};
+   })};
+   const r=wholeCulturalPortrait(fixture,{...c,office:'civilian'});
+   expect(new Set(r.parts.map(p=>p.source)).size).toBe(1);
+   expect(r.parts[0].source).toContain(`${id}-xianbei-v1.png`);
+   expect(r.parts[0].crop).toEqual({x:0,y:0,width:1024,height:1536});
+   expect(r.parts.slice(0,2).map(p=>p.place)).toEqual(fixture.parts.slice(0,2).map(p=>p.place));
+   const [x,y,width,height]=wholePortraitBounds[id][0];
+   expect(r.parts[2].crop).toEqual({x,y,width,height});
+   expect(r.parts[2].place.x+r.parts[2].place.width/2).toBeCloseTo((x+width/2)/1024);
+  }
+ });
+ it('遗传仍改变局部五官，不改变头身、构图和存档身份',()=>{
+  for(const id of ['gao-huan','wang-lingbin','lou-zhaojun','xiao-fangzhi']){
+   const context=portraitContext(id),before=structuredClone(context);
+   const recipes=[0,100].map(value=>{const c=structuredClone(context);for(const pair of Object.values(c.identity.genome.facial!))pair.fill(value);return approvedPaintedRecipe(id,c);});
+   const frame=(r:typeof recipes[number])=>r.parts.filter(p=>['body','head','headwear'].includes(p.slot));
+   expect(frame(recipes[0])).toEqual(frame(recipes[1]));expect(recipes[0].thumbnail).toEqual(recipes[1].thumbnail);
+   expect(recipes[0].parts.find(p=>p.slot==='nose')!.place).not.toEqual(recipes[1].parts.find(p=>p.slot==='nose')!.place);
+   expect(context).toEqual(before);
+  }
+ });
 });

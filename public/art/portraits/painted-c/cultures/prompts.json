@@ -1,0 +1,80 @@
+{
+  "generator": "built-in ImageGen",
+  "outputs": [
+    {
+      "asset": "gao-huan-xianbei-v1.png",
+      "reference": "../roster/gao-huan-face.png",
+      "prompt": "Edit this complete 2:3 historical strategy game portrait into a Xianbei-cultural clothing variant. Change ONLY the clothing below the neck into an elegant muted dark teal narrow-sleeved riding robe, leather belt with modest metal plaques, Northern Dynasties 6th century visual design. Preserve EXACT original face, head size, head position, head angle, hair, cap, neck anatomy, shoulders, hand positions, pose, framing, watercolor and ink brush style, plain ivory background. Whole coherent portrait, no pasted head. Keep original canvas 1024x1536, do not reposition or resize person. Keep all existing facial details intact. No text."
+    },
+    {
+      "asset": "yuwen-tai-xianbei-v1.png",
+      "reference": "../roster/yuwen-tai.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "gao-cheng-xianbei-v1.png",
+      "reference": "../roster/gao-cheng.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "gao-yang-xianbei-v1.png",
+      "reference": "../roster/gao-yang.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "yuan-baoju-xianbei-v1.png",
+      "reference": "../roster/yuan-baoju.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "yuan-qin-xianbei-v1.png",
+      "reference": "../roster/yuan-qin.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "lou-zhaojun-xianbei-v1.png",
+      "reference": "../roster/lou-zhaojun.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "female-north-xianbei-v1.png",
+      "reference": "../roster/female-north.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Input is a two-panel reference: use ONLY the LEFT complete face portrait and output ONE single 2:3 portrait, not two panels. Preserve its exact proportional positions within that left panel. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "xiao-yan-xianbei-v1.png",
+      "reference": "../roster/xiao-yan-face.png",
+      "prompt": "Edit clothing only for a complete coherent historical game portrait. Keep the single portrait framing exactly. Output 1024x1536. Change robe to Xianbei-inspired 6th century Northern Dynasties narrow sleeves, fitted cuff, leather waist belt with restrained metal plaques, modest patterned collar. Keep original colors and muted watercolor/ink line art. Preserve the SAME PERSON, exact head size and angle, facial anatomy, beard/hair/hat, shoulders, neck, arm gesture and hands, no pose change. Keep the head at the exact same normalized position and scale as reference. All facial features intact. Plain ivory paper background. Clothes must form one natural painting with neck and shoulders; no floating head or seam. No text, no grid."
+    },
+    {
+      "asset": "female-xianbei-v1.png",
+      "reference": "../roster/female-face.png",
+      "prompt": "Use case: identity-preserving costume edit. Keep the single portrait exact composition. Output 1024x1536. Change ONLY robe below the neck to Xianbei-inspired Northern Dynasties 6th century fitted riding robe, narrow sleeves, close cuffs, leather waist belt with modest metal plaques and woven collar trim. Keep original muted colors, watercolor ink brush medium. Preserve exact original face, head size and angle, normalized facial position, hairstyle, hairpins or hat, shoulders, neck, arm and hand gesture. Complete natural anatomy, same identity. No head swap or pasted seams. Ivory background. No text or grid."
+    },
+    {
+      "asset": "wang-lingbin-xianbei-v1.png",
+      "reference": "../roster/wang-lingbin.png",
+      "prompt": "Use case: identity-preserving costume edit. Use ONLY the LEFT fully painted person from this two-panel sheet. Output ONE single complete 2:3 portrait with exactly the same framing as that left panel. Output 1024x1536. Change ONLY robe below the neck to Xianbei-inspired Northern Dynasties 6th century fitted riding robe, narrow sleeves, close cuffs, leather waist belt with modest metal plaques and woven collar trim. Keep original muted colors, watercolor ink brush medium. Preserve exact original face, head size and angle, normalized facial position, hairstyle, hairpins or hat, shoulders, neck, arm and hand gesture. Complete natural anatomy, same identity. No head swap or pasted seams. Ivory background. No text or grid."
+    },
+    {
+      "asset": "xu-zhaopei-xianbei-v1.png",
+      "reference": "../roster/xu-zhaopei.png",
+      "prompt": "Use case: identity-preserving costume edit. Use ONLY the LEFT fully painted person from this two-panel sheet. Output ONE single complete 2:3 portrait with exactly the same framing as that left panel. Output 1024x1536. Change ONLY robe below the neck to Xianbei-inspired Northern Dynasties 6th century fitted riding robe, narrow sleeves, close cuffs, leather waist belt with modest metal plaques and woven collar trim. Keep original muted colors, watercolor ink brush medium. Preserve exact original face, head size and angle, normalized facial position, hairstyle, hairpins or hat, shoulders, neck, arm and hand gesture. Complete natural anatomy, same identity. No head swap or pasted seams. Ivory background. No text or grid."
+    },
+    {
+      "asset": "xiao-gang-xianbei-v1.png",
+      "reference": "../roster/xiao-gang.png",
+      "prompt": "Use case: identity-preserving costume edit. Use ONLY the LEFT fully painted person from this two-panel sheet. Output ONE single complete 2:3 portrait with exactly the same framing as that left panel. Output 1024x1536. Change ONLY robe below the neck to Xianbei-inspired Northern Dynasties 6th century fitted riding robe, narrow sleeves, close cuffs, leather waist belt with modest metal plaques and woven collar trim. Keep original muted colors, watercolor ink brush medium. Preserve exact original face, head size and angle, normalized facial position, hairstyle, hairpins or hat, shoulders, neck, arm and hand gesture. Complete natural anatomy, same identity. No head swap or pasted seams. Ivory background. No text or grid."
+    },
+    {
+      "asset": "xiao-yi-xianbei-v1.png",
+      "reference": "../roster/xiao-yi.png",
+      "prompt": "Use case: identity-preserving costume edit. Use ONLY the LEFT fully painted person from this two-panel sheet. Output ONE single complete 2:3 portrait with exactly the same framing as that left panel. Output 1024x1536. Change ONLY robe below the neck to Xianbei-inspired Northern Dynasties 6th century fitted riding robe, narrow sleeves, close cuffs, leather waist belt with modest metal plaques and woven collar trim. Keep original muted colors, watercolor ink brush medium. Preserve exact original face, head size and angle, normalized facial position, hairstyle, hairpins or hat, shoulders, neck, arm and hand gesture. Complete natural anatomy, same identity. No head swap or pasted seams. Ivory background. No text or grid."
+    },
+    {
+      "asset": "fictional-xianbei-v1.png",
+      "reference": "../roster/fictional.png",
+      "prompt": "Use case: identity-preserving costume edit. Use ONLY the LEFT fully painted person from this two-panel sheet. Output ONE single complete 2:3 portrait with exactly the same framing as that left panel. Output 1024x1536. Change ONLY robe below the neck to Xianbei-inspired Northern Dynasties 6th century fitted riding robe, narrow sleeves, close cuffs, leather waist belt with modest metal plaques and woven collar trim. Keep original muted colors, watercolor ink brush medium. Preserve exact original face, head size and angle, normalized facial position, hairstyle, hairpins or hat, shoulders, neck, arm and hand gesture. Complete natural anatomy, same identity. No head swap or pasted seams. Ivory background. No text or grid."
+    }
+  ]
+}
