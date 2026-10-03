@@ -35,18 +35,15 @@ const CityViewport=lazy(()=>import('../city/CityViewport'));
 
 export type CityTab='model'|'build'|'governance'|'military'|'coordination'|'service'|'finance'|'population'|'offices'|'people'|'travel'|'history';
 export function LocationDevelopment({world,selected,onSelect,onPerson,onRetinue,onService,send,pending=false,tab:requestedTab,onTab,localTasks,overview,travel,people,peopleCount,onDiplomacy,onTerritory}:{onDiplomacy:(r:RealmId)=>void;onTerritory:(id:string)=>void;onPerson?:(id:string)=>void;onRetinue?:()=>void;onService?:()=>void;pending?:boolean;tab:CityTab;onTab:(tab:CityTab)=>void;people:ReactNode;localTasks:ReactNode;peopleCount:number;overview:ReactNode;travel:ReactNode;world:World;selected:string;onSelect:(id:string)=>void;send:(command:GameCommand)=>void}){
-  const tab:CityTab=!world.realm&&['governance','service','military','finance','population','coordination','offices'].includes(requestedTab)?'history':requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab;
-  const [cityBuilding,setCityBuilding]=useState<CityBuilding|null>(null);
-  useEffect(()=>setCityBuilding(null),[selected]);
+  const tab:CityTab=!world.realm&&['governance','service','military','finance','population','coordination','offices'].includes(requestedTab)?'history':requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab==='model'?'build':requestedTab;
 
   return <section className="location-development">
     <CitySummary key={selected} world={world} site={selected} pending={pending} send={send} onPerson={onPerson} onDiplomacy={onDiplomacy} onDistrict={()=>onTab('history')}/>
     <TerritoryTabs tab={tab} onTab={onTab} peopleCount={peopleCount} governance={!!world.realm}/>
     <div key={selected+'|'+tab} className="territory-page-content">
-    {tab==='model'&&<Suspense fallback={<div className="city-model-loading">正在载入城市模型…</div>}><CityViewport key={selected} holding={world.holdings.cities[selected]??emptyCity()} day={world.day} name={siteById[selected].name} capital={!!siteById[selected].capital} selected={cityBuilding} onSelect={id=>{setCityBuilding(id);onTab('build');}}/></Suspense>}
     {(['governance','service','military','finance','population'].includes(tab))&&<CityManagement onTransport={()=>onTab('population')} section={tab} localTasks={localTasks} onPerson={onPerson} key={selected} world={world} selected={selected} pending={pending} send={send}/>}
     {tab==='governance'&&world.realm?.local?.requests.some(q=>q.status==='pending'&&q.territory===countyTerritory(selected)&&(q.actor===world.characterId||q.approver===world.characterId))&&<LocalRequests world={world} pending={pending} send={send} territory={countyTerritory(selected)} pendingOnly/>}
-    {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}</>:tab==='history'?<><CityDistrict world={world} site={selected} onTerritory={onTerritory} onCity={onSelect}/>{overview}</>:tab==='build'?<ConstructionPanel key={selected} world={world} scope="city" site={selected} send={send} onPerson={onPerson} onService={onService} onRetinue={onRetinue} pending={pending} selectedCityBuilding={cityBuilding}/>:null}
+    {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}</>:tab==='history'?<><CityDistrict world={world} site={selected} onTerritory={onTerritory} onCity={onSelect}/>{overview}</>:tab==='build'?<ConstructionPanel key={selected} world={world} scope="city" site={selected} send={send} onPerson={onPerson} onService={onService} onRetinue={onRetinue} pending={pending}/>:null}
     </div>
   </section>;
 }

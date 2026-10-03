@@ -1,0 +1,47 @@
+/* Shared painted banners: existing game assets, decorative and never substitutes for state. */
+:root{--scene-court:url('/art/court/audience-hall-v1.png');--scene-city:url('/art/menu/realm-dawn.png');--scene-landscape:url('/art/estate/landscape.png');--detail-scene:var(--scene-court)}
+.action-detail-dialog.war-details-dialog,.battle-result-dialog{--detail-scene:var(--scene-city)}
+.person-selection-dialog{--detail-scene:var(--scene-landscape)}
+dialog.paper-dialog>header,.pause-dialog:not(.pause-dialog--audience)>div>header{
+ box-sizing:border-box;min-height:80px;padding:16px 20px;border-bottom:3px double #baa16b;
+ --dialog-ink:#f0ddb0;--dialog-muted:#c9cbb9;background-color:#183027;background-image:linear-gradient(90deg,#10251fea,#14271e80 55%,#10251fe0),var(--detail-scene);background-size:cover;background-position:center 48%;color:#f0ddb0;
+}
+.action-detail-dialog>header h2,.action-confirm-dialog>header h2,.person-selection-dialog>header h3,.pause-dialog:not(.pause-dialog--audience)>div>header h2{margin:0;text-shadow:0 2px 5px #07140f,0 0 12px #10251f;line-height:1.4}
+.action-detail-dialog>header button,.person-selection-dialog>header button{flex:none;background:#14271feb;border:1px solid #bca06c;min-width:36px;min-height:36px}
+.focused-shell .dynasty-drawer-header{background-image:linear-gradient(90deg,#14271fdc,#1c302567 48%,#14271fdc),var(--drawer-scene);background-position:center 48%}
+.modal:is(.audience-modal,.staff-modal,.estate-modal)>header{background-image:linear-gradient(90deg,#10251ff0,#14271e80 55%,#10251ff0),var(--scene-court);background-size:cover;background-position:center 48%;border-bottom:3px double #baa16b}
+.modal.estate-modal>header{background-image:linear-gradient(90deg,#10251ff0,#14271e80 55%,#10251ff0),var(--scene-landscape)}
+/* Confirmation follows the same fixed header / scrolling evidence / fixed decision structure. */
+.action-confirm-dialog{box-sizing:border-box;padding:0;overflow:hidden}
+.action-confirm-dialog[open]{display:flex;flex-direction:column}
+.action-confirm-dialog>header,.action-confirm-dialog>footer{flex:none}
+.action-confirm-dialog>.action-confirm-detail{min-height:0;overflow:auto;padding:18px 20px;scrollbar-width:thin}
+.action-confirm-dialog>footer{margin:0;padding:12px 20px;border-top:1px solid #bba47166;background:#21372d;flex-wrap:wrap}
+.action-detail-dialog>footer{flex-wrap:wrap}
+.person-selection-decision{flex-wrap:wrap}
+/* Keep the object and navigation visible; long detail sections scroll independently. */
+.focused-shell .left-utility-drawer:is([data-detail="map-person"],[data-detail="wealth"],[data-detail="realm"],[data-detail="military"]){display:flex;flex-direction:column;overflow:hidden}
+.focused-shell .left-utility-drawer:is([data-detail="map-person"],[data-detail="wealth"],[data-detail="realm"],[data-detail="military"])>.dynasty-drawer-header{flex:none}
+.left-utility-drawer :is(.person-sheet,.personal-economy,.realm-panel,.military-hub){display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+:is(.person-sheet,.personal-economy,.realm-panel,.military-hub)>:not(.person-page-content,.economy-page,.detail-page-content){flex-shrink:0}
+.person-page-content,.personal-economy>.economy-page,.detail-page-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:12px}
+.person-sheet .person-identity{grid-template-columns:96px minmax(0,1fr);gap:12px;padding:10px}
+.person-identity-info h2{font-size:25px}
+.person-picker-list{max-height:88px;overflow:auto}
+.person-page-content>.person-ability-summary{margin-top:10px}
+.person-page-content>.person-domains{margin-bottom:12px}
+@media(max-height:680px){
+ .focused-shell .left-utility-drawer:is([data-detail="map-person"],[data-detail="wealth"],[data-detail="realm"],[data-detail="military"]){overflow:auto;display:block}
+ .left-utility-drawer :is(.person-sheet,.personal-economy,.realm-panel,.military-hub){overflow:visible;display:block}
+ .person-page-content,.personal-economy>.economy-page,.detail-page-content{overflow:visible}
+ .action-detail-dialog>header,.action-confirm-dialog>header,.person-selection-dialog>header{min-height:60px;padding-block:10px}
+}
+
+.ongoing-group-dialog{--detail-scene:var(--scene-city);overflow:hidden}
+.ongoing-group-dialog[open]{display:flex;flex-direction:column}
+.ongoing-group-dialog>header{flex:none}
+.ongoing-group-dialog>.ongoing-group-list{min-height:0;overflow:auto;scrollbar-width:thin}
+.war-declaration{--detail-scene:var(--scene-city)}
+.lifestyle-tree-dialog,.action-detail-dialog[data-scene="landscape"]{--detail-scene:var(--scene-landscape)}
+.person-selection-dialog .person-selection-decision{position:sticky;bottom:0;background:var(--dialog-paper,#d5d1c3);padding-block:8px;z-index:1}
+.pause-dialog:not(.pause-dialog--audience)>div>footer{position:sticky;bottom:-28px;background:var(--dialog-paper,#d5d1c3);padding:12px 0;z-index:2}

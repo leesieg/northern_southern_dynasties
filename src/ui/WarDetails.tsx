@@ -1,3 +1,4 @@
+import {HoverHint} from './HoverHint';
 import {BattleResult} from './BattleResult';
 import {warCaptives} from '../core/warCaptives';
 import {CharacterPortrait} from './CharacterPortrait';
@@ -5,11 +6,11 @@ import {useContext,useState} from 'react';
 import type {World,GameCommand} from '../core/types';
 import {activeWars,warRealmSide,type War} from '../core/wars';
 import {warArmySide,warCitySide} from '../core/civilWars';
-import {warScoreBreakdown} from '../core/warScoring';
+import {warScoreBreakdown,warWillToContinue} from '../core/warScoring';
 import {militaryArmyView} from '../core/militaryView';
-import {fortificationLevel} from '../core/realm';
+import {fortificationLevel,playerRealm} from '../core/realm';
 import {armyCommander} from '../core/mobility';
-import {governmentOf,politicalName,regimeName} from '../core/government';
+import {governmentOf,governingExecutives,politicalName,regimeName} from '../core/government';
 import {siteById} from '../data/scenario';
 import {ActionDialog} from './ActionDialog';
 import {DetailTabs} from './DetailTabs';
@@ -26,10 +27,12 @@ const signed=(n:number)=>(n>0?'+':'')+n;
 export function WarDetails({world:w,war,pending,send,onPerson,onRealm}:Props){
  const [tab,setTab]=useState<'overview'|'records'|'peace'>('overview'),[engagement,setEngagement]=useState<EngagementRef|null>(null);
  const score=war.civil?null:warScoreBreakdown(w,war),battles=warBattles(w,war),sieges=(w.realm?.sieges??[]).filter(s=>war.id!==undefined&&s.war===war.id),occupations=warOccupations(w,war),target=w.realm!.cities[war.target];
+ const own=playerRealm(w),side=warRealmSide(war,own),enemy=side==='attack'?war.defender:war.attacker,will=!war.civil&&side&&governingExecutives(w,own).includes(w.characterId!)?warWillToContinue(w,war,enemy):null;
  return <section className="war-details">
-  <div className="war-details-objective"><ArtIcon name="army" size={30}/><div><h3>{war.civil?war.civil.name:siteById[war.target].name+'之战'}</h3><p>{war.civil?'争夺朝廷控制权':goalNames[war.goal??'territory']} · {siteById[war.target].name} · 已持续 {Math.max(0,w.day-war.started)} 日</p></div><strong>攻方战分 {signed(score?.total??war.score)}</strong></div>
+  <div className="war-details-objective"><ArtIcon name="army" size={30}/><div><h3>{war.civil?war.civil.name:siteById[war.target].name+'之战'}</h3><p>{war.civil?'争夺朝廷控制权':goalNames[war.goal??'territory']} · {siteById[war.target].name} · 已持续 {Math.max(0,w.day-war.started)} 日</p></div><HoverHint label="攻方战分" content={score?score.parts.map(p=>p.label+' '+signed(p.value)).join('；'):'内战当前战分'}><strong>攻方战分 {signed(score?.total??war.score)}</strong></HoverHint></div>
   <div className="war-details-parties">{(['attack','defend'] as const).map(side=>{const realm=side==='attack'?war.attacker:war.defender,leader=war.civil?(side==='attack'?war.civil.claimant:war.civil.loyalist):null,armies=w.realm!.armies.filter(a=>warArmySide(w,war,a)===side),known=armies.every(a=>militaryArmyView(w,a).exact);return <article key={side}><RealmBadge realm={realm} world={w} onOpen={onRealm}/><div><small>{side==='attack'?'进攻方':'防御方'}</small>{leader&&<button onClick={()=>onPerson?.(leader)} disabled={!onPerson}>{politicalName(leader)}</button>}<strong>{known?armies.reduce((n,a)=>n+a.troops,0)+' 人':'现役兵力未详'}</strong><small>累计野战损失 {war.casualties?.[side]??0} 人</small></div><div className="war-allies">{Object.entries(war.allies??{}).filter(([,s])=>s===side).map(([r])=><RealmBadge key={r} realm={r as War['attacker']} world={w} onOpen={onRealm}/>)}</div></article>;})}</div>
 
+  {will&&<HoverHint label="对方续战意愿" content={will.parts.map(p=>p.label+' '+signed(p.value)).join('；')}><span>对方续战意愿 {will.total} · 正值表示仍愿继续</span></HoverHint>}
   <DetailTabs label="战争详情" value={tab} onChange={setTab} items={[{id:'overview',label:'战况',icon:'army'},{id:'records',label:'战报',icon:'diligent'},{id:'peace',label:'议和',icon:'world'}]}/>
   {tab==='overview'&&<div className="war-details-content">
    <div className="war-score"><div className="war-score-labels"><span>守方优势</span><span>攻方优势</span></div><meter min={-100} max={100} value={score?.total??war.score} aria-label="攻方战争分数"/><p>战分表示当前优势，不是战争完成度；战争须经议和或规则结算结束。</p>{score&&<div className="war-facts">{score.parts.map(part=><span key={part.key}>{part.label}<b>{signed(part.value)}</b></span>)}{score?.decisive&&<span>决定性胜负</span>}</div>}</div>
@@ -40,7 +43,6 @@ export function WarDetails({world:w,war,pending,send,onPerson,onRealm}:Props){
   </div>}
   {tab==='records'&&<div className="war-details-content war-event-list">{battles.map(b=><button key={battleKey(b)} onClick={()=>setEngagement({kind:'battle',key:battleKey(b)})}><ArtIcon name="army" size={24}/><span>{siteById[b.site??'']?.name??'道路'}战役<small>开战后第 {b.day-war.started+1} 日 · {b.ended===undefined?(w.day-b.last<=1?'交战中':'已脱离接触，待归档'):b.winner==='attack'?'攻方获胜':b.winner==='defend'?'守方获胜':b.winner==='draw'?'未分胜负':'结果未详'}</small></span><span>野战成果 {b.scoreDelta===undefined?'待结算':signed(b.scoreDelta)}<small>损失 攻 {b.lossA} / 守 {b.lossB}</small></span></button>)}{!battles.length&&<p>尚无可关联本场战争的战报；旧档未记录的战役不补造。</p>}<p className="war-footnote">战报保留范围以存档为准。野战成果会受战争总分上限影响。</p></div>}
   {tab==='peace'&&<WarSettlement world={w} war={war} pending={pending} send={send} onPerson={onPerson}/>}
-  <div className="war-details-actions"><button className="primary" aria-pressed={tab==='peace'} onClick={()=>setTab('peace')}><ArtIcon name="world" size={22}/>审阅议和条件</button></div>
   {engagement&&<EngagementDialog world={w} selected={engagement} onClose={()=>setEngagement(null)} onRealm={onRealm} onPerson={onPerson}/>}
  </section>;
 }

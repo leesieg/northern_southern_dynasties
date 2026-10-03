@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './ui/App';
 import './ui/style.css';
+import './ui/detailScenes.css';
 
 if (import.meta.env.BASE_URL.startsWith('/games/fengyun-nanbeichao/')) {
   let owner: string | undefined;

@@ -7,7 +7,7 @@ export function ConfirmAction({title,detail,confirmLabel,onConfirm,onCancel,pend
  useEffect(()=>{const dialog=ref.current,previous=document.activeElement instanceof HTMLElement?document.activeElement:null;if(!dialog)return;dialog.showModal();return()=>{if(dialog.open)dialog.close();previous?.focus();};},[]);
  if(typeof document==='undefined')return null;
  return createPortal(<dialog ref={ref} className="action-confirm-dialog paper-dialog" role={danger?'alertdialog':'dialog'} aria-labelledby={titleId} aria-describedby={detailId} onCancel={e=>{e.preventDefault();onCancel();}} onKeyDown={e=>e.stopPropagation()}>
-  <h2 id={titleId}>{title}</h2><div id={detailId} className="action-confirm-detail">{detail}</div>
+  <header><h2 id={titleId}>{title}</h2></header><div id={detailId} className="action-confirm-detail">{detail}</div>
   <footer><button autoFocus onClick={onCancel}>取消</button><button className={danger?'danger':'primary'} disabled={pending} onClick={onConfirm}>{confirmLabel}</button></footer>
  </dialog>,document.body);
 }

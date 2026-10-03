@@ -29,7 +29,7 @@ export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEsta
   <HoverHint label="基础结余" content="庄园减去持家和幕俸的预测；官俸须公库有款才实付，事业合同与其他行动另计。"><span><ArtIcon name="frugal" size={26}/><small>基础结余</small><b>{net>=0?'+':''}{net}</b></span></HoverHint>
  </div>
  <DetailTabs label="经济章节" value={section} onChange={setSection} items={[{id:'overview',label:'概览',icon:'coins'},{id:'household',label:'持家',icon:'estate'},{id:'business',label:'事业',icon:'city'},{id:'accounts',label:'公库',icon:'coins'}]}/>
- <div className="economy-page">
+ <div key={section} className="economy-page">
  {section==='overview'&&<>
  <article className="private-estate"><ArtIcon name="estate" size={64}/><div><h4>{siteById[world.holdings.estate.location]?.name} · 家族庄园</h4><small>下期余 {nextMonthStart(world.day,world.scriptId)-world.day} 日 · 行粮 +{estate.food} 日份</small><small>作坊 {world.holdings.estate.levels.workshop} 级 · 每级增收 6 钱／月</small></div>{onEstate&&<button onClick={onEstate}><ArtIcon name="estate" size={22}/>营建</button>}</article>
  {world.chronicle.filter(e=>e.person==='player'&&e.text.startsWith('家产收入结算')).slice(-1).map(e=><p className="private-receipt" key={e.day}>第 {e.day} 日 · {e.text}</p>)}
@@ -49,7 +49,7 @@ function EconomyTransferDialog({world,pending,send,kind,initialAccount,onClose}:
  const command:PersonalEconomyCommand={type:'economy',action:kind,account,amount};
  const reason=!selected?'该公库已不可操作，请重新选择。':economyCommandReason(world,command);
  const donation=kind==='donate',title=donation?'捐输公库':'侵吞公款';
- return <ActionDialog title={title} onClose={onClose} actions={<button className={donation?'primary':'danger'} disabled={pending||!!reason} onClick={()=>{if(pending||!selected||economyCommandReason(world,command))return;send(command);onClose();}}>确认{donation?'捐输':'侵吞'} · {Number.isFinite(amount)?amount:0} 钱</button>}>
+ return <ActionDialog scene="landscape" title={title} onClose={onClose} actions={<button className={donation?'primary':'danger'} disabled={pending||!!reason} onClick={()=>{if(pending||!selected||economyCommandReason(world,command))return;send(command);onClose();}}>确认{donation?'捐输':'侵吞'} · {Number.isFinite(amount)?amount:0} 钱</button>}>
   <p>{donation?'从个人现钱拨入所选公库，不能撤回。不增加功绩或官职，赈助的秩序与性格效果每九十日最多一次。':'公共预算减少、私财等额增加。可能受到监察、追缴和处分，离任不免除责任。'}</p>
   <div className="economy-parameters"><label>公库<select value={account} onChange={e=>setAccount(e.target.value)}>{!selected&&<option value={account}>请选择可用公库</option>}{accounts.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label><label>钱数<input type="number" min={10} max={200} step={5} value={Number.isFinite(amount)?amount:''} onChange={e=>setAmount(e.target.valueAsNumber)}/></label></div>
   <p>{donation?'来源：个人现钱 '+world.people[0].coins+' 钱':'来源：'+(selected?.name??'未选择公库')} → {donation?selected?.name??'未选择公库':'个人现钱'}</p>
@@ -62,7 +62,7 @@ function LivingStandardDialog({world,pending,send,onClose}:Props&{onClose:()=>vo
  const [standard,setStandard]=useState<LivingStandard>(current);
  const command:PersonalEconomyCommand={type:'economy',action:'living',standard};
  const reason=economyCommandReason(world,command),chosen=livingStandards[standard];
- return <ActionDialog title="调整持家" onClose={onClose} actions={<button className="primary" disabled={pending||!!reason||standard===current} onClick={()=>{if(pending||standard===current||economyCommandReason(world,command))return;send(command);onClose();}}>确认 · {chosen.name}</button>}>
+ return <ActionDialog scene="landscape" title="调整持家" onClose={onClose} actions={<button className="primary" disabled={pending||!!reason||standard===current} onClick={()=>{if(pending||standard===current||economyCommandReason(world,command))return;send(command);onClose();}}>确认 · {chosen.name}</button>}>
   <p>支出来源：个人现钱 {world.people[0].coins} 钱。当前采用{livingStandards[current].name}；确认后按新标准结算后续账期。</p>
   <SingleChoiceCards label="持家方案" value={standard} onChange={setStandard} disabled={pending} options={(Object.keys(livingStandards) as LivingStandard[]).map(id=>({id,title:livingStandards[id].name,description:`每月 ${livingStandards[id].monthly} 钱 · 缓解压力 ${livingStandards[id].relief}`,detail:'欠费时降为朴素度日并增加压力。'}))}/>
   <p role="status">{reason||`已选${chosen.name}：每月从私财支付 ${chosen.monthly} 钱。`}</p>
