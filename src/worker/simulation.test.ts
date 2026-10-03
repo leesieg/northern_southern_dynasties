@@ -15,6 +15,29 @@ beforeEach(async()=>{
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();});
 describe('worker menu and save lifecycle without browser UI',()=>{
 
+ it('pauses for dynasty command completion only after successful saving, without replay on reload',async()=>{
+  await request({type:'init'});const {newCampaignWorld}=await import('../core/world'),{ensurePowerPolitics}=await import('../core/powerPolitics'),{serializeWorld}=await import('../core/save');
+  const w=newCampaignWorld('yuwen-tai',undefined,'sandbox');w.day=30;ensurePowerPolitics(w).proposals.west={goal:'dynasty',sponsor:'yuwen-hu',beneficiary:'yuwen-jue',executive:'yuwen-hu',name:'周',started:0,stage:'presented',due:180,promises:{},approached:{}};
+  const original=await request({type:'import',text:serializeWorld(w)}),command={type:'power',action:'answer',accept:true} as const;expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='dynasty'))).toBe(false);replies=[];
+  const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});const failed=await request({type:'command',command});fault.mockRestore();
+  expect(failed.world).toEqual(original.world);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='dynasty'))).toBe(false);
+  replies=[];const completed=await request({type:'command',command});expect(completed.speed).toBe(0);
+  const events=replies.flatMap(r=>r.type==='paused'?r.events:[]).filter(e=>e.kind==='dynasty');expect(events).toHaveLength(1);expect(events[0].dynasty).toMatchObject({previousName:'西魏',name:'周',ruler:'yuwen-jue',realm:'west'});
+  replies=[];await request({type:'command',command});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='dynasty'))).toBe(false);
+  await request({type:'menu'});replies=[];expect((await request({type:'resume'})).world).toEqual(completed.world);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='dynasty'))).toBe(false);
+ });
+
+ it('stops accelerated time on a natural dynasty change and rolls back an unsaved transition',async()=>{
+  await request({type:'init'});const {newCampaignWorld,act,advance}=await import('../core/world'),{serializeWorld}=await import('../core/save'),{governmentOf}=await import('../core/government'),{nextMonthStart}=await import('../core/calendar');
+  const w=newCampaignWorld('xiao-yan',undefined,'sandbox');governmentOf(w,'liang')!.support=80;act(w,{type:'government',action:'nominate',office:'ruler',candidate:'chen-baxian',name:'陈'});advance(w,29);w.life!.seed=100000;w.life!.people['xiao-yan'].health=1;w.life!.people['xiao-yan'].illness={kind:'fever',since:29,severity:3};
+  const original=await request({type:'import',text:serializeWorld(w)});expect((await request({type:'speed',speed:7})).speed).toBe(7);replies=[];
+  const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});const failedUpdate=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const failed=await failedUpdate;fault.mockRestore();
+  expect(failed.world).toEqual(original.world);expect(failed.speed).toBe(0);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='dynasty'))).toBe(false);
+  expect((await request({type:'speed',speed:7})).speed).toBe(7);replies=[];const update=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const completed=await update;
+  expect(completed.speed).toBe(0);expect(completed.world.day).toBe(nextMonthStart(original.world.day,w.scriptId));const events=replies.flatMap(r=>r.type==='paused'?r.events:[]);expect(events.filter(e=>e.kind==='dynasty')).toHaveLength(1);expect(events.find(e=>e.kind==='dynasty')?.dynasty).toMatchObject({name:'陈',cause:'inheritance'});expect(events.some(e=>e.kind==='inheritance')).toBe(true);
+  await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(completed.world);
+ },30000);
+
  it('keeps military defection decisions paused after reload and rolls back a failed save',async()=>{
   await request({type:'init'});const {newCampaignWorld}=await import('../core/world'),{serializeWorld}=await import('../core/save');const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.day=7;w.defections={nextId:2,lastDay:0,items:[{id:1,site:'luoyang',from:'east',to:'liang',created:0,status:'pending',reason:'地方归附请求'}]};
   const imported=await request({type:'import',text:serializeWorld(w)});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='military'))).toBe(true);expect((await request({type:'step'})).world.day).toBe(7);expect((await request({type:'speed',speed:7})).speed).toBe(0);
