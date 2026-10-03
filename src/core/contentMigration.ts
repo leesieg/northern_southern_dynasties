@@ -28,7 +28,7 @@ export function upgradeContent(value:unknown){
   if(object(value.life)&&object(value.life.people)&&!Object.hasOwn(value.life.people,p.id))value.life.people[p.id]={health:healthCapacity(ageAt(w,p.id)??18),illness:null,careUntil:0,death:null};
   if(object(value.relationships)){
    if(object(value.relationships.reserves)&&!Object.hasOwn(value.relationships.reserves,p.id))value.relationships.reserves[p.id]=0;
-   if(object(value.relationships.maritalBasis)&&!Object.hasOwn(value.relationships.maritalBasis,p.id))value.relationships.maritalBasis[p.id]=p.fictional?'free':'unknown';
+   if(object(value.relationships.maritalBasis)&&!Object.hasOwn(value.relationships.maritalBasis,p.id))value.relationships.maritalBasis[p.id]='free';
   }
   if(object(value.mobility)&&object(value.mobility.residences)&&!Object.hasOwn(value.mobility.residences,p.id))value.mobility.residences[p.id]={site:p.home,journey:null};
  }

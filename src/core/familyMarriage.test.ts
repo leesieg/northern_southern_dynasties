@@ -20,9 +20,9 @@ describe('family marriage',()=>{
   expect(low.reason).toContain('双方婚姻接受度');expect(high.left).toEqual(low.left);expect(high.right).toEqual(low.right);
   const before=structuredClone(w);expect(()=>actFamilyMarriage(w,c)).toThrow();expect(w).toEqual(before);
  });
- it('rejects unrelated subjects, unknown marital histories, cooling-off periods and fictional relocation',()=>{
+ it('allows legacy unknown singles but rejects unrelated subjects, cooling-off periods and fictional relocation',()=>{
   const {w,c}=prepared();expect(quoteFamilyMarriage(w,{...c,subject:'gao-yang'}).reason).toContain('直系子女');
-  w.relationships!.maritalBasis[c.target]='unknown';expect(quoteFamilyMarriage(w,c).reason).toContain('未录');
+  w.relationships!.maritalBasis[c.target]='unknown';expect(quoteFamilyMarriage(w,c).reason).toBe('');
   w.relationships!.maritalBasis[c.target]='free';w.relationships!.cooldowns[c.target+'|'+c.subject+'|marry']=w.day+10;expect(quoteFamilyMarriage(w,c).reason).toContain('冷却');
   delete w.relationships!.cooldowns[c.target+'|'+c.subject+'|marry'];expect(quoteFamilyMarriage(w,{...c,residence:'ye'}).reason).toContain('同城');
   w.mobility!.residences[c.target]={site:'ye',journey:null};expect(quoteFamilyMarriage(w,c).reason).toContain('同城');

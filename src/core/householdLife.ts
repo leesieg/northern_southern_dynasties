@@ -1,3 +1,4 @@
+import {advanceNPCMarriages} from './familyMarriage';
 import {allegianceRealm} from './officeEligibility';
 import type {World} from './types';
 import {allPeople,getPerson,relativesOf,parentLinksOf,familyMembersOf} from './personRegistry';
@@ -120,12 +121,12 @@ export function advanceHouseholdLife(w:World){
  for(const e of s.moments)if(e.status==='pending'&&(!isAlive(w,e.actor)||!isAlive(w,e.person))){e.status='resolved';e.choice='decline';}
  for(const [id,until] of Object.entries(s.rest)){if(!isAlive(w,id)){delete s.rest[id];continue;}if(w.day<until)continue;const p=lifeOf(w,id);if(p){p.health=Math.min(healthCapacity(ageAt(w,id)??0),p.health+8);if((p.injuryUntil??0)>w.day)p.injuryUntil=Math.max(w.day,p.injuryUntil!-30);}delete s.rest[id];log(w,name(w,id)+'完成三十日休养，恢复健康并缓解伤情。');}
  if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
+ advanceNPCMarriages(w);
  for(const marriage of w.relationships.marriages){
   if(marriage.until!==null)continue;
-  const a=marriage.a,b=marriage.b,player=[a,b].includes(w.characterId!),children=Object.values(w.generatedPeople??{}).filter(p=>[p.father,p.mother].includes(a)).length;
-  const plan=s.plans[marriage.id],trying=plan?.trying??(!player&&marriage.origin==='simulation'&&children<2);
-  if(!trying||familyPlanningReason(w,a)||draw(w)>=.18)continue;
-  const father=getPerson(w,a)!.sex==='male'?a:b,mother=father===a?b:a;
+  const a=marriage.a,b=marriage.b,player=[a,b].includes(w.characterId!),father=getPerson(w,a)!.sex==='male'?a:b,mother=father===a?b:a,children=Object.values(w.generatedPeople??{}).filter(p=>p.mother===mother).length;
+  const plan=s.plans[marriage.id],trying=plan?.trying??!player;
+  if(!trying||!player&&children>=2||familyPlanningReason(w,a)||draw(w)>=.18)continue;
   s.pregnancies.push({id:s.nextId++,father,mother,family:plan?.family??getPerson(w,father)!.family,since:w.day,due:w.day+270,status:'expecting',child:null});
   log(w,name(w,mother)+'有孕，预计二百七十日后添丁。');
  }

@@ -25,9 +25,9 @@ it('stores monthly conception once and produces the same inherited child after l
  // Select a deterministic conception draw, never a render-time draw.
  let seed=0;while(((Math.imul(seed,1664525)+1013904223)>>>0)/4294967296>=.18)seed++;
  w.householdLife!.seed=seed;w.day=nextMonthStart(w.day);advanceHouseholdLife(w);
- expect(w.householdLife!.pregnancies).toHaveLength(1);const saved=parseWorld(serializeWorld(w)),p=w.householdLife!.pregnancies[0];
- advanceHouseholdLife(w);expect(w.householdLife!.pregnancies).toHaveLength(1);
- w.day=p.due;saved.day=p.due;deliverChild(w,p);deliverChild(saved,saved.householdLife!.pregnancies[0]);
+ expect(w.householdLife!.pregnancies.filter(p=>p.mother==='guest-east')).toHaveLength(1);const saved=parseWorld(serializeWorld(w)),p=w.householdLife!.pregnancies.find(p=>p.mother==='guest-east')!,count=w.householdLife!.pregnancies.length;
+ advanceHouseholdLife(w);expect(w.householdLife!.pregnancies).toHaveLength(count);
+ w.day=p.due;saved.day=p.due;deliverChild(w,p);deliverChild(saved,saved.householdLife!.pregnancies.find(child=>child.id===p.id)!);
  expect(w.generatedPeople).toEqual(saved.generatedPeople);expect(w.identities).toEqual(saved.identities);expect(w.householdLife!.seed).toBe(saved.householdLife!.seed);
 });
 

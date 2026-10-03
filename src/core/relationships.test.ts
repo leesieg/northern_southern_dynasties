@@ -26,8 +26,8 @@ describe('婚姻、友敌、效忠与傀儡控制',()=>{
   w.relationships!.reserves[b]=0;w.social!.hooks[pair(w.characterId!,b)]=1;
   expect(()=>act(w,{type:'interact',action:'favor',target:b})).toThrow('储备不足');save(w);
  });
- it('初始化已录婚姻和权臣格局；旧档迁移不发明历史单身',()=>{
-  const w=start('xiao-gang');expect(spouseOf(w,'xiao-gang')).toBe('wang-lingbin');expect(spouseOf(w,'gao-huan')).toBe('lou-zhaojun');expect(w.relationships!.maritalBasis['yuan-qin']).toBe('unknown');expect(governingExecutives(w,'east')).toEqual(['gao-huan','gao-cheng']);
+ it('初始化保留已录婚姻和权臣格局；未录婚姻按单身模拟',()=>{
+  const w=start('xiao-gang');expect(spouseOf(w,'xiao-gang')).toBe('wang-lingbin');expect(spouseOf(w,'gao-huan')).toBe('lou-zhaojun');expect(w.relationships!.maritalBasis['yuan-qin']).toBe('free');expect(governingExecutives(w,'east')).toEqual(['gao-huan','gao-cheng']);
   const old=structuredClone(w);delete old.relationships;const migrated=parseWorld(serializeWorld(old));expect(spouseOf(migrated,'xiao-gang')).toBe('wang-lingbin');expect(migrated.people).toEqual(w.people);save(w);
  });
  it('赠礼、结亲、亲友援助与离婚形成有成本的完整婚姻生命周期',()=>{
@@ -35,8 +35,8 @@ describe('婚姻、友敌、效忠与傀儡控制',()=>{
   const sum=w.people[0].coins+w.relationships!.reserves[b];relation(w,'aid',b);expect(w.people[0].coins+w.relationships!.reserves[b]).toBe(sum);expect(()=>relation(w,'aid',b)).toThrow('冷却');
   relation(w,'divorce',b);expect(spouseOf(w,b)).toBeNull();expect(friendship(w,'xiao-yan',b)).toBe('rival');expect(w.relationships!.marriages.at(-1)!.until).toBe(w.day);expect(()=>relation(w,'marry',b)).toThrow('冷却');save(w);
  });
- it('婚姻未知需明确建立架空起点，不覆盖已婚、不允许未成年、近亲或重婚',()=>{
-  const w=start('yuan-qin');ready(w);expect(relationshipQuote(w,{type:'relationship',action:'marry',target:'guest-west'}).reason).toContain('资料未录');act(w,{type:'relationship',action:'marital-branch'});expect(w.relationships!.maritalBasis['yuan-qin']).toBe('simulation');expect(()=>act(w,{type:'relationship',action:'marital-branch'})).toThrow('已有');
+ it('未录婚姻可直接议婚，不覆盖已婚、不允许未成年、近亲或重婚',()=>{
+  const w=start('yuan-qin');ready(w);expect(relationshipQuote(w,{type:'relationship',action:'marry',target:'guest-west'}).reason).not.toContain('资料未录');expect(w.relationships!.maritalBasis['yuan-qin']).toBe('free');expect(()=>act(w,{type:'relationship',action:'marital-branch'})).toThrow('已有');
   const married=start('xiao-gang');expect(relationshipQuote(married,{type:'relationship',action:'marry',target:'guest-liang'}).reason).toContain('已有');expect(closeKin('gao-yang','lou-zhaojun')).toBe(true);expect(closeKin('yuan-baoju','yuan-shanjian')).toBe(true);
   expect(relationshipQuote(w,{type:'relationship',action:'marry',target:'yuan-kuo'}).reason).toContain('成年');save(w);
  });
@@ -75,7 +75,7 @@ describe('婚姻、友敌、效忠与傀儡控制',()=>{
  });
  it('所有拒绝均不扣资源；无在途计谋时取消无效；资料分支不能绕过待决事件',()=>{
   const w=start('yuan-qin');ready(w);for(const cmd of [{type:'relationship',action:'marry',target:'guest-west'},{type:'relationship',action:'control',target:'yuan-baoju'},{type:'relationship',action:'gift',target:'__proto__'},{type:'relationship',action:'cancel'}]){const before=structuredClone(w);expect(()=>act(w,cmd as never)).toThrow();expect(w).toEqual(before);}
-  w.realm!.event={kind:'flood',site:'changan',day:0} as never;expect(()=>act(w,{type:'relationship',action:'marital-branch'})).toThrow('待决');expect(w.relationships!.maritalBasis['yuan-qin']).toBe('unknown');
+  w.realm!.event={kind:'flood',site:'changan',day:0} as never;expect(()=>act(w,{type:'relationship',action:'marital-branch'})).toThrow('待决');expect(w.relationships!.maritalBasis['yuan-qin']).toBe('free');
  });
  it('拒绝伪造婚姻、重复配偶、非法人物、循环关系、失配控制和计谋',()=>{
   const edits:((w:World)=>void)[]=[w=>{w.relationships!.marriages.push({...w.relationships!.marriages[0],id:'forged'});},w=>{w.relationships!.reserves.ghost=100;},w=>{w.relationships!.maritalBasis['guest-liang']='bad' as never;},w=>{w.relationships!.regencies.east!.ruler='xiao-yan';},w=>{w.relationships!.regencies.east!.grip=-1;},w=>{w.relationships!.bonds['xiao-yan|xiao-yan']={a:'xiao-yan',b:'xiao-yan',kind:'friend',since:0};},w=>{w.relationships!.scheme={kind:'control',actor:'xiao-yan',target:'gao-huan',started:0,due:30,chance:80,basis:'bad'};}];for(const edit of edits){const w=start();edit(w);expect(()=>serializeWorld(w)).toThrow('存档');}
