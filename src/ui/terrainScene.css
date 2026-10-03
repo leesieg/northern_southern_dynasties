@@ -1,0 +1,39 @@
+/* Terrain belongs to the identity card, not the drawer title or resource ledger. */
+.city-summary .terrain-identity,.person-sheet .terrain-identity{
+ background-color:#20372c;background-image:linear-gradient(90deg,#11271ee6,#182e23a8 48%,#11271ed9),var(--terrain-scene);background-size:cover;background-position:center 58%;
+ border:1px solid #bfa16b80;border-radius:3px;padding:10px;box-shadow:inset 0 0 0 2px #14271f55;color:#f1e6c8;
+}
+.city-summary .city-summary-identity{display:grid;grid-template-columns:38px minmax(0,1fr) minmax(112px,38%);gap:8px;align-items:center}
+.city-summary-identity>.realm-badge-link,.city-summary-identity>.city-country{justify-self:center}
+.city-summary-identity .city-country svg,.city-summary-identity>.realm-badge-link svg{width:36px;height:46px}
+.city-summary .city-identity-copy h2{font-size:24px;line-height:1.2;margin:0 0 6px;color:#f2e5be;text-shadow:0 2px 4px #0d211a}
+.city-identity-meta{display:flex;flex-wrap:wrap;gap:3px 8px;margin-bottom:6px;line-height:1.5}
+.city-summary .city-identity-meta small,.city-summary .territory-seat-terrain{color:#e0deca;font-size:11px}
+.territory-seat-terrain{display:block;margin-block:4px}
+.city-identity-actions{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.city-summary .city-identity-actions .city-district-link{margin:0;min-height:30px;padding:4px 6px;background:#152b22d9}
+.city-control{display:inline-flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap}
+.city-control .realm-flag svg{width:25px;height:32px}
+.city-summary .city-office-seat{min-width:0;width:100%}
+.city-summary .city-office-seat .position-seat{width:100%;box-sizing:border-box;grid-template-columns:36px minmax(0,1fr);column-gap:7px;padding:6px;background:#14291fd4}
+.city-summary .city-office-seat .position-image{width:36px;aspect-ratio:2/3}
+.city-summary .city-office-seat .position-name{font-size:13px;min-width:0;overflow-wrap:anywhere}
+.city-summary .city-office-seat .position-title{font-size:10px;white-space:normal;min-height:30px}
+.city-summary .city-office-seat .position-title .art-icon{width:18px!important;height:18px!important}
+.person-sheet .person-identity.terrain-identity{grid-template-columns:82px minmax(0,1fr);gap:10px;align-items:start;padding:10px}
+.person-identity.terrain-identity .person-identity-info{position:relative;min-width:0}
+.person-identity.terrain-identity .eyebrow{position:absolute;right:0;top:0;font-size:10px;line-height:1.4;letter-spacing:0;color:#e1dfc8}
+.person-identity.terrain-identity .person-name-row{display:flex;align-items:center;gap:7px;padding-right:26px;min-height:40px;flex-wrap:wrap}
+.person-identity.terrain-identity .person-name-row h2{margin:0;font-size:25px;line-height:1.2;text-shadow:0 2px 4px #0d211a}
+.person-identity.terrain-identity .person-name-row .realm-flag svg{width:28px;height:35px}
+.person-identity.terrain-identity .person-clan{margin:0;flex:none}
+.person-demographics{display:flex;flex-wrap:wrap;align-items:center;gap:2px 9px;margin:5px 0}
+.person-identity-info .person-demographics .person-vitals{margin:0;gap:6px;font-size:11px;line-height:1.5;color:#e1dfc8}
+.person-demographics>.hover-hint{font-size:11px;color:#e1dfc8}
+.person-identity.terrain-identity .person-symbol-row{overflow:visible;flex-wrap:wrap;gap:5px;margin:5px 0}
+.person-identity.terrain-identity .trait-strip{flex-wrap:wrap;gap:5px}
+.person-identity.terrain-identity .person-identity-icons{gap:5px}
+.person-identity.terrain-identity .person-identity-icons :is(button,[role=img]){min-width:40px;min-height:40px;padding:3px;background:#14291fda}
+.person-identity.terrain-identity .person-identity-icons .art-icon{width:24px!important;height:24px!important}
+.person-identity.terrain-identity .person-retinue-entry{min-height:38px;margin-top:2px;padding:3px 7px;font-size:12px;background:#14291fda}
+@media(max-width:400px){.city-summary .city-summary-identity{grid-template-columns:32px minmax(0,1fr)}.city-summary .city-office-seat{grid-column:2}.person-sheet .person-identity.terrain-identity{grid-template-columns:68px minmax(0,1fr)}}
