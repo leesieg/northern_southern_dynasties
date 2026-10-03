@@ -312,7 +312,7 @@ export function WorldMap(props:Props){
         if(!map||disposed)return;
         for(const name of ATLAS_MATERIALS)if(!map.hasImage(name))map.addImage(name,atlasMaterial(name),{pixelRatio:2});
         styleReady=true;
-        void import('./CampaignLayer').then(({campaignLayer})=>{if(!map||disposed||map.getLayer('campaign-scenery'))return;try{sceneryLayer=campaignLayer(()=>current.current,reason=>setWarning(reason),scheduleLabels);map.addLayer(sceneryLayer,'settlement-buildings');}catch(e){sceneryLayer=undefined;setWarning('城池与植被图层不可用，保留基础城邑：'+(e instanceof Error?e.message:'WebGL 不可用'));}}).catch(()=>setWarning('城池与植被模型加载失败，保留基础城邑。'));
+        void import('./CampaignLayer').then(({campaignLayer})=>{if(!map||disposed||map.getLayer('campaign-scenery'))return;try{sceneryLayer=campaignLayer(()=>current.current,reason=>setWarning(reason),scheduleLabels);map.addLayer(sceneryLayer,'settlement-buildings');}catch(e){sceneryLayer=undefined;setWarning('城池图层不可用，保留基础城邑：'+(e instanceof Error?e.message:'WebGL 不可用'));}}).catch(()=>setWarning('城池模型加载失败，保留基础城邑。'));
         void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();},id=>armyPlacements.get(String(id))));}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';

@@ -1,14 +1,11 @@
 import {describe,it,expect,vi} from 'vitest';
 import {Mesh} from 'three';
-import type {Polygon,MultiPolygon} from 'geojson';
 import {newWorld,newCampaignWorld} from '../core/world';
 import {newRealm} from '../core/realm';
 import {siteById} from '../data/scenario';
 import {emptyCity} from '../core/construction';
-import {campaignCityAppearance,campaignCityKey,campaignCityPixels,campaignCityPlacements,forestTrees,insideSceneryPolygon,MAX_FOREST_TREES,MAX_SCENERY_CITIES,MAX_CITY_GEOMETRIES} from './campaignScenery';
+import {campaignCityAppearance,campaignCityKey,campaignCityPixels,campaignCityPlacements,MAX_SCENERY_CITIES,MAX_CITY_GEOMETRIES} from './campaignScenery';
 import {campaignCityGeometry,campaignModelAssets} from './CampaignModels';
-
-function rectangle(west:number,south:number,east:number,north:number):Polygon{return {type:'Polygon',coordinates:[[[west,south],[east,south],[east,north],[west,north],[west,south]]]};}
 
 describe('campaign scenery projection and budgets (CPU only)',()=>{
  it('reads actual completed construction, pending upgrades, fortification and controller without modifying the world',()=>{
@@ -29,27 +26,6 @@ describe('campaign scenery projection and budgets (CPU only)',()=>{
   const world=newWorld(),a=campaignCityAppearance(world,siteById.jiankang);world.day=7;
   expect(campaignCityKey(campaignCityAppearance(world,siteById.jiankang))).toBe(campaignCityKey(a));
   expect(campaignCityKey({...a,color:'#ffffff'})).toBe(campaignCityKey(a));
- });
- it('keeps distant tree-free maps and caps near-view trees even over oversized polygons',()=>{
-  const woods=[rectangle(70,15,135,55)],bounds={west:100,south:28,east:105,north:32};
-  expect(forestTrees(woods,[],bounds,4)).toEqual([]);
-  const trees=forestTrees(woods,[],bounds,8);
-  expect(trees.length).toBeGreaterThan(0);expect(trees.length).toBeLessThanOrEqual(MAX_FOREST_TREES);
-  expect(forestTrees(woods,[],bounds,8)).toEqual(trees);
-  for(const p of trees){expect(p.lon).toBeGreaterThanOrEqual(bounds.west);expect(p.lon).toBeLessThanOrEqual(bounds.east);expect(p.lat).toBeGreaterThanOrEqual(bounds.south);expect(p.lat).toBeLessThanOrEqual(bounds.north);}
- });
- it('respects multipolygon holes, water exclusion and city foundations',()=>{
-  const hole=rectangle(101,29,102,30),water=rectangle(103,28,104,32),outer=rectangle(100,28,105,32);
-  const woods:MultiPolygon={type:'MultiPolygon',coordinates:[[outer.coordinates[0],hole.coordinates[0]]]};
-  const trees=forestTrees([woods],[water],{west:100,south:28,east:105,north:32},8,[{lon:100.5,lat:28.5,radius:18000}]);
-  expect(trees.length).toBeGreaterThan(0);
-  for(const p of trees){expect(insideSceneryPolygon(p.lon,p.lat,woods)).toBe(true);expect(insideSceneryPolygon(p.lon,p.lat,hole)).toBe(false);expect(insideSceneryPolygon(p.lon,p.lat,water)).toBe(false);expect(Math.hypot((p.lon-100.5)*Math.cos(p.lat*Math.PI/180),p.lat-28.5)*111320).toBeGreaterThanOrEqual(18000);}
- });
- it('deduplicates repeated tile polygons and keeps anchors stable when panning within the same grid',()=>{
-  const wood=rectangle(100,28,105,32),bounds={west:100,south:28,east:100.5,north:28.5};
-  const a=forestTrees([wood],[],bounds,8),b=forestTrees([wood,wood],[],{...bounds,west:100.1},8);
-  expect(forestTrees([wood,wood],[],bounds,8)).toEqual(a);
-  expect(b).toEqual(a.filter(t=>t.lon>=100.1));
  });
  it('prioritizes the selected city and suppresses neighboring models without moving coordinates',()=>{
   const nearby=[{site:siteById.jiankang,capital:true,point:{x:100,y:100}},{site:siteById.jingkou,capital:false,point:{x:115,y:105}}];

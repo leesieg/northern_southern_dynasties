@@ -1,4 +1,4 @@
-import {BoxGeometry,BufferGeometry,Color,CylinderGeometry,Float32BufferAttribute,IcosahedronGeometry,Mesh,MeshLambertMaterial,Group,DoubleSide} from 'three';
+import {BoxGeometry,BufferGeometry,Color,CylinderGeometry,Float32BufferAttribute,Mesh,MeshLambertMaterial,Group,DoubleSide} from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {cityRoofGeometry} from '../city/architecture';
 import {MAX_CITY_GEOMETRIES,campaignCityKey,type CampaignCityAppearance} from './campaignScenery';
@@ -82,10 +82,4 @@ export function campaignModelAssets(){
  }
  function dispose(){for(const g of geometries.values())g.dispose();geometries.clear();material.dispose();poleGeometry.dispose();bannerGeometry.dispose();poleMaterial.dispose();for(const m of bannerMaterials.values())m.dispose();bannerMaterials.clear();}
  return {city,prune,dispose};
-}
-
-export function campaignTreeGeometry(){
- const crown=new IcosahedronGeometry(1,1).scale(.8,1.05,.75).translate(0,1.25,0);
- const trunk=new CylinderGeometry(.06,.1,1.1,5).translate(0,.55,0);
- return {crown,trunk};
 }
