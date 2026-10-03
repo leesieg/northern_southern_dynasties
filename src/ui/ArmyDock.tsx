@@ -1,3 +1,4 @@
+import {terrainSceneStyle} from './terrainScene';
 import {RegimentCards} from './RegimentCards';
 import {useEffect,useState,type CSSProperties} from 'react';
 import {MilitaryCampaignPanel} from './CareerSystems';
@@ -51,7 +52,7 @@ export function ArmyDock({world:w,pending,send,onPerson,onLocate,selectedArmies,
  if(!armies.length)return null;
  const action=(label:string,icon:'world'|'person',reason:string,onClick:()=>void)=><HoverHint label={label} content={reason||label}><button aria-label={label} disabled={pending||!!reason} onClick={onClick}><ArtIcon name={icon} size={20}/></button></HoverHint>;
  return <aside className={"army-dock"+(inspected?" is-inspecting":"")} aria-label="军队单位">{inspected?<>
-  <header className="army-dock-heading"><button onClick={()=>setDetail(null)} aria-label="返回军队列表">←</button><strong>第 {inspected.id} 军</strong></header>
+  <header className="army-dock-heading detail-landscape" style={terrainSceneStyle(inspected.location)}><button onClick={()=>setDetail(null)} aria-label="返回军队列表">←</button><strong>第 {inspected.id} 军</strong></header>
   <p className="army-inspected-summary">{siteById[inspected.location].name} · {inspected.troops} 人 · 士气 {inspected.morale} · 随军粮 {inspected.supply} · 已训练 {readyTroops(inspected,w.day)} 人{w.mobility?.pendingCommanders?.[inspected.id!]?' · '+politicalName(w.mobility.pendingCommanders[inspected.id!].person)+'待赴任':''}</p>
   <DetailTabs label="军队详情" value={detailTab} onChange={setDetailTab} items={[{id:'supply',label:'军情',icon:'grain'},{id:'orders',label:'军令',icon:'army'},{id:'organization',label:'编制',icon:'person'},{id:'campaign',label:'战役',icon:'world'}]}/>
   <div className="army-inspected-body">{detailTab!=='organization'&&<RegimentCards army={inspected} world={w}/>}

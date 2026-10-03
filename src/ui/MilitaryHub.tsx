@@ -1,3 +1,4 @@
+import {terrainSceneStyle} from './terrainScene';
 import {worldRealms} from '../core/polityRuntime';
 import {PactRequestPanel} from './PactRequestPanel';
 import {CustodyPanel} from './CustodyPanel';
@@ -44,7 +45,7 @@ export function MilitaryHub({world:w,pending,send,onArmy,onCity,onPerson,onDiplo
  const order=(command:GameCommand,title:string,detail:string)=>setConfirm({command,title,detail});
  const askArmy=(army:number)=>onArmy(army);
  const battleHistory=(w.militaryAftermath?.battles??[]).filter(b=>central?b.participants?.some(p=>p.realm===r):b.participants?.some(p=>p.commander===id)).slice().reverse();
- return <div className="military-hub"><div className="military-hub-identity"><ArtIcon name="army" size={30}/><strong>{central?regimeName(w,r)+'军务':politicalName(id)+'军务'}</strong><span className="military-identity-summary">{armies.length} 支可指挥军队 · {wars.length} 场相关战争</span></div><DetailTabs label="军事事务" value={tab} items={tabs} onChange={setTab}/>
+ return <div className="military-hub"><div className="military-hub-identity detail-landscape" style={terrainSceneStyle(site)}><ArtIcon name="army" size={30}/><strong>{central?regimeName(w,r)+'军务':politicalName(id)+'军务'}</strong><span className="military-identity-summary">{armies.length} 支可指挥军队 · {wars.length} 场相关战争</span></div><DetailTabs label="军事事务" value={tab} items={tabs} onChange={setTab}/>
  <div key={tab} className="detail-page-content">
  {(tab==='overview'||tab==='armies')&&<div className="military-hub-actions" role="group" aria-label="军队行动">
   <CommandButton label="征募计划" icon="army" pending={pending} reason={!recruitSites.length?'当前无合法征募辖区':''} hint="预览兵种、人数、出资、地方负担与集结安排。" onClick={()=>setRecruit(true)}/>

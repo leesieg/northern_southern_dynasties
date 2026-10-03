@@ -1,3 +1,4 @@
+import {terrainSceneStyle} from './terrainScene';
 import type {World} from '../core/types';
 import type {BattleRecord} from '../core/militaryAftermath';
 import {battleReportSide} from '../core/battleReports';
@@ -9,7 +10,7 @@ import './battleResult.css';
 
 export function BattleResult({world,battle:b}:{world:World;battle:BattleRecord}){
  return <section className="battle-result" aria-label="战役结算">
-  <div className="battle-result-ribbon"><ArtIcon name="army" size={28}/><strong>{b.winner==='attack'?'攻方获胜':b.winner==='defend'?'守方获胜':b.winner==='draw'?'未分胜负':'交战结束'}</strong><span>{b.round} 轮交锋 · {b.ended!==undefined?b.ended-b.day+1:'—'} 日</span></div>
+  <div className="battle-result-ribbon detail-landscape" style={terrainSceneStyle(b.site)}><ArtIcon name="army" size={28}/><strong>{b.winner==='attack'?'攻方获胜':b.winner==='defend'?'守方获胜':b.winner==='draw'?'未分胜负':'交战结束'}</strong><span>{b.round} 轮交锋 · {b.ended!==undefined?b.ended-b.day+1:'—'} 日</span></div>
   <div className="battle-result-sides">{(['attack','defend'] as const).map(side=>{const report=battleReportSide(b,side),realms=[...new Set(report.participants.map(p=>p.realm))],commanders=[...new Set(report.participants.flatMap(p=>p.commander?[p.commander]:[]))];return <section className="battle-result-side" key={side} data-winner={b.winner===side}>
    <header><h3>{side==='attack'?'进攻方':'防御方'}</h3><b>{b.winner===side?'胜':b.winner==='draw'?'平':b.winner?'败':'结案'}</b>{realms.map(realm=><RealmFlag key={realm} realm={realm} world={world} compact showLabel={false}/>)}</header>
    <div className="battle-result-commanders">{commanders.map(id=><figure key={id}><CharacterPortrait characterId={id} world={world} compact/><figcaption>{politicalName(id)}<small>{b.fates?.[id]==='dead'?'阵亡':b.fates?.[id]==='captured'?'被俘':b.fates?.[id]==='escaped'?'脱离战场':'参战将领'}</small></figcaption></figure>)}{!commanders.length&&<p>将领记录未详</p>}</div>

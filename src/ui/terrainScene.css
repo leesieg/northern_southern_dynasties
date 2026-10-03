@@ -37,3 +37,19 @@
 .person-identity.terrain-identity .person-identity-icons .art-icon{width:24px!important;height:24px!important}
 .person-identity.terrain-identity .person-retinue-entry{min-height:38px;margin-top:2px;padding:3px 7px;font-size:12px;background:#14291fda}
 @media(max-width:400px){.city-summary .city-summary-identity{grid-template-columns:32px minmax(0,1fr)}.city-summary .city-office-seat{grid-column:2}.person-sheet .person-identity.terrain-identity{grid-template-columns:68px minmax(0,1fr)}}
+/* Other object summaries share the same frame and contrast, preserving their own layout. */
+.detail-landscape.detail-landscape{
+ --dialog-ink:#f1e6c8;--dialog-muted:#d0d8c1;
+ background-color:#20372c;background-image:linear-gradient(90deg,#11271ee8,#182e23a3 48%,#11271ede),var(--terrain-scene,none);
+ background-size:cover;background-position:center 58%;border:1px solid #bfa16b80;border-radius:3px;padding:10px 12px;box-sizing:border-box;color:#f1e6c8;
+}
+.detail-landscape--court{--terrain-scene:var(--scene-court)}
+.detail-landscape--family{--terrain-scene:var(--scene-landscape)}
+.detail-landscape.detail-landscape :is(h2,h3,h4,strong){color:#f1e6c8;text-shadow:0 1px 3px #10251f}
+.detail-landscape.detail-landscape :is(small,p,.eyebrow){color:#d0d8c1}
+.detail-landscape.detail-landscape button{color:#f1e6c8}
+.detail-landscape.detail-landscape button:not(.realm-badge-link):not(.position-image){background-color:#14291fd9}
+.detail-landscape.detail-landscape button:disabled{color:#b9c2ad}
+.detail-landscape.detail-landscape .art-resource-value>b{color:#f1e6c8}
+.retinue-chamber-master.detail-landscape{background-position:45% center}
+.court-ribbon.detail-landscape,.military-hub-identity.detail-landscape,.diplomacy-banner.detail-landscape{flex-shrink:0}

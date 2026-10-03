@@ -1,3 +1,4 @@
+import {terrainSceneStyle,personTerrainSite} from './terrainScene';
 import {PowerPoliticsPanel} from './PowerPoliticsPanel';
 import {CustodyPanel} from './CustodyPanel';
 import {useState,useEffect,type ReactNode} from 'react';
@@ -52,7 +53,7 @@ function belongsToProvince(territory:string,province:string){
 
 export function RetinueChamber({world:w,host,pending,send,onPerson,onFind,onInteract}:{world:World;host:string;pending:boolean;send:(command:GameCommand)=>void;onPerson:(id:string)=>void;onFind:()=>void;onInteract:(id:string)=>void}){
  const members=retinueMembers(w,host),own=host===w.characterId;
- return <div className="retinue-chamber"><aside className="retinue-chamber-master"><div className="retinue-master-portrait"><CharacterPortrait characterId={host} world={w}/></div><div className="retinue-master-seal" aria-hidden="true"><ArtIcon name="influence" size={21}/>幕府</div><small className="retinue-master-rank">{own?'你的幕府':'人物幕府'}</small><h3>{politicalName(host)}</h3><p>属员协理文书、财计与军务；授予幕职后可按职责差遣。</p><div className="retinue-master-metrics"><span><b>{members.length}<small> / 6</small></b>属员</span><span><b>{members.filter(m=>!!m.post).length}</b>授职</span><span><b>{members.reduce((sum,m)=>sum+(m.post?4:2),0)}</b>钱／月俸</span></div></aside><div className="retinue-chamber-work"><div className="retinue-work-heading"><h3>署中席位</h3><small>{own?'点击席位任命，已任职者可在席位内差遣':'查阅幕职与属员'}</small></div><RetinuePanel world={w} host={host} pending={pending} send={send} onPerson={onPerson} onFind={onFind} onInteract={onInteract}/></div></div>;
+ return <div className="retinue-chamber"><aside className="retinue-chamber-master detail-landscape" style={terrainSceneStyle(personTerrainSite(w,host))}><div className="retinue-master-portrait"><CharacterPortrait characterId={host} world={w}/></div><div className="retinue-master-seal" aria-hidden="true"><ArtIcon name="influence" size={21}/>幕府</div><small className="retinue-master-rank">{own?'你的幕府':'人物幕府'}</small><h3>{politicalName(host)}</h3><p>属员协理文书、财计与军务；授予幕职后可按职责差遣。</p><div className="retinue-master-metrics"><span><b>{members.length}<small> / 6</small></b>属员</span><span><b>{members.filter(m=>!!m.post).length}</b>授职</span><span><b>{members.reduce((sum,m)=>sum+(m.post?4:2),0)}</b>钱／月俸</span></div></aside><div className="retinue-chamber-work"><div className="retinue-work-heading"><h3>署中席位</h3><small>{own?'点击席位任命，已任职者可在席位内差遣':'查阅幕职与属员'}</small></div><RetinuePanel world={w} host={host} pending={pending} send={send} onPerson={onPerson} onFind={onFind} onInteract={onInteract}/></div></div>;
 }
 
 export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,onTerritory,onService,tab,onTab,region,onRegion,person,financeView,treasuryTab}:Props){
@@ -85,7 +86,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
  const closeOffice=()=>{setOffice(null);setDismissConfirm(false);};
  const metric=(icon:ArtName,value:number|string,label:string,detail:ReactNode)=><HoverHint label={label} content={detail}><span className="court-metric" tabIndex={0} aria-label={label+'：'+value}><ArtIcon name={icon} size={25}/><b>{value}</b></span></HoverHint>;
  return <div className="court-audience">
-  <div className="court-ribbon">
+  <div className="court-ribbon detail-landscape" style={terrainSceneStyle(capital(realm,w))}>
    <div className="court-identity"><RealmBadge realm={realm} world={w}/><span>{role}</span>{own&&<HoverHint label="我的官爵与任职" content="查看自己的科层、履历与辞官操作。"><button className="court-icon-button" aria-label="查看我的官爵与任职" onClick={()=>onTab('person')}><ArtIcon name="person" size={24}/></button></HoverHint>}</div>
    <div className="court-metrics">
     {metric('coins',w.realm!.treasuries[realm].coins,'中央公款',<>当前中央公库余额，单位钱。下月预计收入 {forecast.income}、支出 {forecast.expense}；拨款须经实际权限批准。</>)}

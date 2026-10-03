@@ -1,3 +1,4 @@
+import {terrainSceneStyle,personTerrainSite} from './terrainScene';
 import {SingleChoiceCards} from './SingleChoiceCards';
 import {ActionDialog} from './ActionDialog';
 import {economyCommandReason,type PersonalEconomyCommand} from '../core/personalEconomyAdapter';
@@ -22,7 +23,7 @@ export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEsta
  const p=economyPresentation(world),b=p.view.budget;
  const props={world,pending,send},estate=estateYield(world),living=livingStandards[b?.standard??'modest'].monthly,staff=Object.values(world.retinue?.members??{}).filter(m=>m.host===world.characterId).reduce((n,m)=>n+(m.post?4:2),0),net=estate.coins-living-staff;
  const obligations=world.obligations?.items.filter(d=>d.remaining&&(d.from==='person:'+world.characterId||d.to==='person:'+world.characterId))??[];
- return <section className="personal-economy" aria-label="个人经济"><header><Resource name="coins" value={world.people[0].coins} label="个人现钱" caption/></header>
+ return <section className="personal-economy" aria-label="个人经济"><header className="detail-landscape" style={terrainSceneStyle(personTerrainSite(world,world.characterId))}><Resource name="coins" value={world.people[0].coins} label="个人现钱" caption/></header>
  <div className="private-budget" aria-label="每月 1 日基础收支预测">
   <HoverHint label="庄园收入" content="家产每月 1 日收入 4 钱，作坊每级另收入 6 钱；自动存入个人现钱，任官或在途均可领取。"><span><ArtIcon name="estate" size={26}/><small>庄园 / 月</small><b>+{estate.coins}</b></span></HoverHint>
   <HoverHint label="固定支出" content={`持家 ${living} 钱，幕府俸钱 ${staff} 钱；不含旧欠、研习、行动支出。`}><span><ArtIcon name="coins" size={26}/><small>常支 / 月</small><b>−{living+staff}</b></span></HoverHint>
@@ -31,7 +32,7 @@ export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEsta
  <DetailTabs label="经济章节" value={section} onChange={setSection} items={[{id:'overview',label:'概览',icon:'coins'},{id:'household',label:'持家',icon:'estate'},{id:'business',label:'事业',icon:'city'},{id:'accounts',label:'公库',icon:'coins'}]}/>
  <div key={section} className="economy-page">
  {section==='overview'&&<>
- <article className="private-estate"><ArtIcon name="estate" size={64}/><div><h4>{siteById[world.holdings.estate.location]?.name} · 家族庄园</h4><small>下期余 {nextMonthStart(world.day,world.scriptId)-world.day} 日 · 行粮 +{estate.food} 日份</small><small>作坊 {world.holdings.estate.levels.workshop} 级 · 每级增收 6 钱／月</small></div>{onEstate&&<button onClick={onEstate}><ArtIcon name="estate" size={22}/>营建</button>}</article>
+ <article className="private-estate detail-landscape" style={terrainSceneStyle(world.holdings.estate.location)}><ArtIcon name="estate" size={64}/><div><h4>{siteById[world.holdings.estate.location]?.name} · 家族庄园</h4><small>下期余 {nextMonthStart(world.day,world.scriptId)-world.day} 日 · 行粮 +{estate.food} 日份</small><small>作坊 {world.holdings.estate.levels.workshop} 级 · 每级增收 6 钱／月</small></div>{onEstate&&<button onClick={onEstate}><ArtIcon name="estate" size={22}/>营建</button>}</article>
  {world.chronicle.filter(e=>e.person==='player'&&e.text.startsWith('家产收入结算')).slice(-1).map(e=><p className="private-receipt" key={e.day}>第 {e.day} 日 · {e.text}</p>)}
  <small>官俸按实际任职与公库余款发放；事业须承接并完成合同，收入归个人。</small>
  </>}

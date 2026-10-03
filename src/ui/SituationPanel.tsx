@@ -37,7 +37,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
  const cancelCommand={type:'court',action:'cancel'} as const;
  return <div className="court-situation-desk">
   <section className="court-factions court-desk-column">
-   <header className="court-desk-heading"><h3>政治集团</h3><small>{ownRealm?'你的归属 · '+movements[own].name:'他国集团'}</small></header>
+   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>政治集团</h3><small>{ownRealm?'你的归属 · '+movements[own].name:'他国集团'}</small></header>
    <div className="court-group-select court-group-ledger" aria-label="政治集团势力与满意度">{movementIds.map(group=>{const mood=movementMood(w,r,group);return <button key={group} aria-label={'查看'+movements[group].name+'，势力 '+mood.share+'%，满意度 '+mood.satisfaction} aria-pressed={selected===group} onClick={()=>setSelected(group)}>{mood.leader?<CharacterPortrait characterId={mood.leader} world={w} compact/>:<ArtIcon name={icons[group]} size={32}/>}<span><strong>{movements[group].name}</strong><small>{mood.leader?politicalName(mood.leader):'无领袖'} · {movements[group].goal}</small></span><span className="court-group-numbers"><b>{mood.share}%</b><small>满意 {mood.satisfaction}</small><meter min={0} max={100} value={mood.satisfaction} aria-label={movements[group].name+'满意度'}/></span></button>;})}</div>
    <div className="court-scroll-list court-faction-detail">
     <header><ArtIcon name={icons[selected]} size={28}/><h4>{movements[selected].name}</h4><b>{m.share}%</b></header>
@@ -65,7 +65,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
    {ownRealm&&c.petition&&<div className="court-petition-pending"><span>{movements[c.petition.group].name}奏议<small>{c.petition.due<=w.day?'候裁决':'余 '+(c.petition.due-w.day)+' 日'}</small></span><HoverHint label="查看集团奏议" content={'由 '+politicalName(c.petition.sponsor)+' 呈奏；批复仍受实际权限、钱粮与日期限制。'}><button className="court-icon-button" aria-label="查看集团奏议" onClick={()=>setPetitionOpen(true)}><ArtIcon name="influence" size={25}/></button></HoverHint></div>}
   </section>
   <section className="court-outlook court-desk-column">
-   <header className="court-desk-heading"><h3>朝局</h3><HoverHint label="阶段画像预览" content="比较安定、动荡与危局的画像及规则，不改变实际局势。"><button className="court-icon-button" aria-label="打开阶段画像预览" onClick={()=>setPreviewOpen(true)}><ArtIcon name="renown" size={25}/></button></HoverHint></header>
+   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>朝局</h3><HoverHint label="阶段画像预览" content="比较安定、动荡与危局的画像及规则，不改变实际局势。"><button className="court-icon-button" aria-label="打开阶段画像预览" onClick={()=>setPreviewOpen(true)}><ArtIcon name="renown" size={25}/></button></HoverHint></header>
    <SituationWheel phase={c.phase} tension={c.tension} realm={<RealmBadge realm={r} world={w}/>} interactive={false}/>
    <HoverHint label="局势阈值与增益" content={<>每月 1 日结算；紧张 40 转入动荡、80 转入危局，合法性低于 15 也会进入危局。动荡须降至 35 以下恢复；危局须降至 70 以下且合法性至少 20 才缓解。税收 {bonus.tax}% · 军饷 {bonus.pay}% · 攻击 {bonus.attack}%。</>}><div className="court-outlook-forecast" tabIndex={0}><strong>{policies[c.policy].name}</strong><span>{enabled?(nextMonthStart(w.day,w.scriptId)-w.day)+' 日后月结':'暂停结算'}</span><b>{enabled?(projection.delta>=0?'+':'')+projection.delta:'—'}</b><small>{enabled?'条件预估 '+phases[projection.phase].name:'当前政体暂停集团与局势结算'}</small></div></HoverHint>
    <div className="court-scroll-list court-catalysts">
@@ -80,7 +80,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
    {ownRealm&&c.founding&&<section className="court-founding"><header><strong>{c.founding.name} · 承统</strong><HoverHint label="撤回承统议程" content="撤回后已付成本不退。"><button className="court-icon-button" aria-label="撤回承统议程" disabled={pending||!!courtReason(w,cancelCommand)} onClick={()=>setCancel(true)}><ArtIcon name="wary" size={23}/></button></HoverHint></header><progress max={120} value={c.founding.progress}/><small>{foundingPause(w,r)||`${c.founding.progress} / 120 日`}</small></section>}
   </section>
   <section className="court-pressure court-desk-column">
-   <header className="court-desk-heading"><h3>地方压力</h3><HoverHint label="承压人口" content={'承压地区 '+local.population.toLocaleString()+' 人，本国总人口 '+local.total.toLocaleString()+' 人。'}><small tabIndex={0}>{local.affected.length} 处</small></HoverHint></header>
+   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>地方压力</h3><HoverHint label="承压人口" content={'承压地区 '+local.population.toLocaleString()+' 人，本国总人口 '+local.total.toLocaleString()+' 人。'}><small tabIndex={0}>{local.affected.length} 处</small></HoverHint></header>
    <div className="court-scroll-list">
     {local.affected.map(v=><article className="court-pressure-place" key={v.site}>
      <header><button onClick={()=>onTerritory?.(countyTerritory(v.site))}>{siteById[v.site].name}</button>{ownRealm&&<HoverHint label={v.tasks.length?'查看地方案卷':'安排地方应对'} content={!v.tasks.length&&w.realm!.cities[v.site].controller!==r?'该地未由本国控制，须先恢复控制再安排治理差事':'打开本地案卷，或带入地点拟定差事。'}><button className="court-icon-button" aria-label={(v.tasks.length?'查看案卷 · ':'安排地方应对 · ')+siteById[v.site].name} disabled={!v.tasks.length&&w.realm!.cities[v.site].controller!==r} onClick={()=>onService?.(v.tasks[0],v.site)}><ArtIcon name="diligent" size={23}/>{v.tasks.length>0&&<b>{v.tasks.length}</b>}</button></HoverHint>}</header>
