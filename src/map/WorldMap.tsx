@@ -33,6 +33,7 @@ import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
 import { territoryHit } from './territories';
 import { mapResourceUrl } from './mapResources';
+import type {CampaignSceneryLayer} from './CampaignLayer';
 import {armyShowsModel,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
 
 setWorkerUrl(mapWorkerUrl);
@@ -91,6 +92,7 @@ export function WorldMap(props:Props){
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
+    let sceneryLayer:CampaignSceneryLayer|undefined;
     const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;portrait:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
     const labels:{marker:Marker;data:typeof atlasLabels[number]}[]=[];
@@ -134,7 +136,7 @@ export function WorldMap(props:Props){
       for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(presentation.strategic&&id!=='player'&&id!==current.current.world.characterId);}
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
       const viewport=container.getBoundingClientRect(),mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
-      const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,-7] as [number,number]})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
+      const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,sceneryLayer?.showsSite(p.id)?25:-7] as [number,number]})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
       // Measure the undocked rectangle, so last frame's offset cannot feed back into the next layout.
       for(const {marker,offset} of annotations){
         const element=marker.getElement();if(element.hidden)continue;
@@ -174,7 +176,7 @@ export function WorldMap(props:Props){
     }
     function focusSite(id:string){
       const site=siteById[id];
-      map?.easeTo({center:[site.lon,site.lat],zoom:6.8,pitch:current.current.tilted?38:0,duration:reduced?0:500});
+      map?.easeTo({center:[site.lon,site.lat],zoom:6.8,pitch:atlasPresentation(6.8,current.current.tilted).pitch,duration:reduced?0:500});
     }
     function openMenu(id:string,x:number,y:number){
       if(current.current.selectedArmies.length&&current.current.onCommandArmy(id)){setMenu(null);setHover(null);return;}
@@ -310,6 +312,7 @@ export function WorldMap(props:Props){
         if(!map||disposed)return;
         for(const name of ATLAS_MATERIALS)if(!map.hasImage(name))map.addImage(name,atlasMaterial(name),{pixelRatio:2});
         styleReady=true;
+        void import('./CampaignLayer').then(({campaignLayer})=>{if(!map||disposed||map.getLayer('campaign-scenery'))return;try{sceneryLayer=campaignLayer(()=>current.current,reason=>setWarning(reason),scheduleLabels);map.addLayer(sceneryLayer,'settlement-buildings');}catch(e){sceneryLayer=undefined;setWarning('城池与植被图层不可用，保留基础城邑：'+(e instanceof Error?e.message:'WebGL 不可用'));}}).catch(()=>setWarning('城池与植被模型加载失败，保留基础城邑。'));
         void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();},id=>armyPlacements.get(String(id))));}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
@@ -347,6 +350,7 @@ export function WorldMap(props:Props){
       });
       const hit=(point:{x:number;y:number})=>{
         if(!map||!styleReady)return null;
+        const scenerySite=sceneryLayer?.siteAt(point);if(scenerySite)return scenerySite;
         const city=map.queryRenderedFeatures([point.x,point.y],{layers:['site-halo']})[0];
         if(city?.properties?.id)return String(city.properties.id);
         return territoryHit(map.queryRenderedFeatures([point.x,point.y],{layers:['territory-fill','ocean','inland-water']}));
@@ -393,7 +397,7 @@ export function WorldMap(props:Props){
         }
         else if(type==='player'){
           const p=position(current.current.world.people[0]);
-          map.easeTo({center:[p.lon,p.lat],zoom:7,pitch:current.current.tilted?42:0,duration});
+          map.easeTo({center:[p.lon,p.lat],zoom:7,pitch:atlasPresentation(7,current.current.tilted).pitch,duration});
         }else if(type==='in')map.zoomIn({duration});else map.zoomOut({duration});
       }};
     }catch(e){setError(e instanceof Error?e.message:'无法启动 WebGL 2 地图。');}

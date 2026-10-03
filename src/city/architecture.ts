@@ -10,8 +10,8 @@ export function cityRoofPoint(w:number,d:number,h:number,side:number,u:number,t:
  const y=h*Math.pow(t,1.5)+.075*Math.pow(Math.abs(along),5)*Math.pow(1-t,3);
  return new THREE.Vector3(side%2?(side===1?b:-b):a,y,side%2?a:(side===0?b:-b));
 }
-export function cityRoofGeometry(w:number,d:number,h:number){
- const p:number[]=[],uv:number[]=[],indices:number[]=[],cols=16,rows=8;
+export function cityRoofGeometry(w:number,d:number,h:number,cols=16,rows=8){
+ const p:number[]=[],uv:number[]=[],indices:number[]=[];
  for(let side=0;side<4;side++){
   const start=p.length/3;
   for(let r=0;r<=rows;r++)for(let c=0;c<=cols;c++){const v=cityRoofPoint(w,d,h,side,c/cols,r/rows);p.push(v.x,v.y,v.z);uv.push(c/cols,r/rows);}

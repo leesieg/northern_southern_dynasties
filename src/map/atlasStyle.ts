@@ -18,7 +18,7 @@ export function atlasStyle():StyleSpecification {
     version:8,
     name:'风云南北朝 · 山河舆图',
     projection:{type:'mercator'},
-    light:{anchor:'map',color:'#fff0ce',intensity:.48,position:[1.5,315,42]},
+    light:{anchor:'map',color:'#fff0ce',intensity:.55,position:[1.5,315,42]},
     sky:{'sky-color':'#aebfb7','horizon-color':'#e3d8b8','fog-color':'#d0cdb3','sky-horizon-blend':.8,'horizon-fog-blend':.65,'fog-ground-blend':['interpolate',['linear'],['zoom'],PAPER_ZOOM,1,LANDSCAPE_ZOOM,.88],'atmosphere-blend':0},
     sources:{
       land:{type:'geojson',data:import.meta.env.BASE_URL+'data/land.geojson',attribution:'<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>'},
@@ -58,7 +58,7 @@ export function atlasStyle():StyleSpecification {
       {id:'hierarchy-lines',type:'line',source:'hierarchy',layout:{visibility:'none','line-cap':'round','line-join':'round'},filter:['==',['get','level'],'realm'],paint:{'line-color':'#746b4d','line-width':['interpolate',['linear'],['zoom'],4,.45,7,.8,10,1],'line-opacity':['interpolate',['linear'],['zoom'],4,.35,7,.48,10,.32]}},
       {id:'hierarchy-selected',type:'fill',source:'hierarchy',filter:['==',['get','id'],''],paint:{'fill-color':'#f0d287','fill-opacity':['interpolate',['linear'],['zoom'],4,.12,7,.055,10,.025]}},
       {id:'hierarchy-selected-edge',type:'line',source:'hierarchy',filter:['==',['get','id'],''],paint:{'line-color':'#ead49b','line-width':['interpolate',['linear'],['zoom'],4,1.4,7,2,10,2.4],'line-opacity':.9}},
-      {id:'mountain-shadow',type:'hillshade',source:'dem-visual',paint:{'hillshade-exaggeration':['interpolate',['linear'],['zoom'],PAPER_ZOOM,.16,LANDSCAPE_ZOOM,.66],'hillshade-illumination-direction':315,'hillshade-illumination-anchor':'map','hillshade-shadow-color':'#34483e','hillshade-highlight-color':'#f7e4b4','hillshade-accent-color':'#877d5e'}},
+      {id:'mountain-shadow',type:'hillshade',source:'dem-visual',paint:{'hillshade-exaggeration':['interpolate',['linear'],['zoom'],PAPER_ZOOM,.16,LANDSCAPE_ZOOM,.8],'hillshade-illumination-direction':315,'hillshade-illumination-anchor':'map','hillshade-shadow-color':'#2d473e','hillshade-highlight-color':'#f7e4b4','hillshade-accent-color':'#8b8062'}},
       {id:'fallback-rivers',type:'line',source:'local-rivers',maxzoom:6,layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#517f86','line-width':['interpolate',['linear'],['zoom'],3,.6,6,1.2],'line-opacity':.55}},
       {id:'frontier-shadow',type:'line',source:'frontiers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#403f35','line-width':['interpolate',['linear'],['zoom'],3,2,7,4],'line-opacity':.22,'line-blur':1}},
       {id:'frontier-ink',type:'line',source:'frontiers',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#756348','line-width':['interpolate',['linear'],['zoom'],3,.9,7,1.5],'line-opacity':.75}},
