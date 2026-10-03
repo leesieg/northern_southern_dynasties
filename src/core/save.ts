@@ -1,3 +1,5 @@
+import {validGeneratedPeople,validHouseholdLife} from './householdLifeSave';
+import {getCharacter,getPerson} from './personRegistry';
 import {validUnrest,ensureUnrest} from './unrest';
 import {defaultPersonCulture,defaultCountyCulture} from '../data/cultures';
 import {validPowerPolitics} from './powerPoliticsSave';
@@ -29,7 +31,6 @@ import {ensurePopulation} from './population';
 import {ensureFiscal} from './treasury';
 import {validFiscal} from './treasurySave';
 import {ensurePersonalInfluence} from './personalInfluence';
-import {relationshipPersonById} from '../data/relationships';
 import {ensureRetinue} from './retinue';
 import {validRetinue} from './retinueSave';
 import {ensureMobility} from './mobility';
@@ -54,7 +55,6 @@ import { validRealm } from './realmSave';
 import { DEFAULT_SCRIPT,getScript } from '../data/scripts';
 import { validSocial } from './socialSave';
 import { newSocial } from './social';
-import { characterById } from '../data/characters';
 import { campaignGoals } from './campaign';
 import { cityBuildings, estateBuildings, newHoldings } from './construction';
 import { CONTENT_VERSION, siteById } from '../data/scenario';
@@ -75,15 +75,16 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.scriptId!==undefined&&typeof value.scriptId!=='string')return fail();
   const script=getScript(value.scriptId as string|undefined);
   if(value.calendarSince!==undefined&&!integer(value.calendarSince,0,value.day))return fail();
-  if(value.characterId!==undefined&&!script.characterIds.includes(String(value.characterId)))return fail();
-  if(value.resignations!==undefined&&!validResignations(value.resignations))return fail();
-  if(value.identities!==undefined&&!validIdentities(value.identities))return fail();
+  if(!validGeneratedPeople(value as unknown as World)||!validHouseholdLife(value as unknown as World))return fail();
+  if(value.characterId!==undefined&&!script.characterIds.includes(String(value.characterId))&&!getCharacter(value as unknown as World,String(value.characterId)))return fail();
+  if(value.resignations!==undefined&&!validResignations(value.resignations,value as unknown as World))return fail();
+  if(value.identities!==undefined&&!validIdentities(value.identities,value as unknown as World))return fail();
   if(!validUnrest(value as unknown as World))return fail();
-  if(value.families!==undefined&&!validFamilies(value.families,Number(value.day),value.scriptId as string|undefined))return fail();
-  if(value.duties!==undefined&&!validDuties(value.duties,Number(value.day),value.mode))return fail();
+  if(value.families!==undefined&&!validFamilies(value.families,Number(value.day),value.scriptId as string|undefined,value as unknown as World))return fail();
+  if(value.duties!==undefined&&!validDuties(value.duties,Number(value.day),value.mode,value as unknown as World))return fail();
   if(value.service!==undefined&&!validService(value.service,Number(value.day),value.mode,value as unknown as World))return fail();
-  if(value.mobility!==undefined&&(value.mode!=='sandbox'||!validMobility(value.mobility,Number(value.day))))return fail();
-  if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day),value.scriptId as string|undefined)))return fail();
+  if(value.mobility!==undefined&&(value.mode!=='sandbox'||!validMobility(value.mobility,Number(value.day),value as unknown as World)))return fail();
+  if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day),value.scriptId as string|undefined,value as unknown as World)))return fail();
   const h=value.holdings;
   if(!obj(h)||!Array.isArray(h.governedCities)||!h.governedCities.every(site)||new Set(h.governedCities).size!==h.governedCities.length||!obj(h.cities)||!obj(h.estate))return fail();
   if(h.lastMonthly!==undefined&&(!integer(h.lastMonthly,0,value.day)||!isMonthStart(Number(h.lastMonthly),value.scriptId as string|undefined)))return fail();
@@ -100,7 +101,7 @@ export function validateWorld(value: unknown): asserts value is World {
       const d=(definitions as Record<string,{cost:number;days:number}>)[p.building];
       let costRate=100,timeRate=100;
       if(p.modifiers!==undefined){if((!value.social&&!value.lifestyles)||!obj(p.modifiers)||!integer(p.modifiers.costRate,45,100)||!integer(p.modifiers.timeRate,60,120)||![60,70,80,90,100,110,120].includes(Number(p.modifiers.timeRate)))return false;costRate=Number(p.modifiers.costRate);timeRate=Number(p.modifiers.timeRate);}
-      if(p.engineerBonus!==undefined){if(scope!=='city'||!integer(p.engineerBonus,0,10)||typeof p.supervisor!=='string'||!Object.hasOwn(relationshipPersonById,p.supervisor))return false;timeRate=Math.max(40,timeRate-Number(p.engineerBonus));}else if(p.supervisor!==undefined)return false;
+      if(p.engineerBonus!==undefined){if(scope!=='city'||!integer(p.engineerBonus,0,10)||typeof p.supervisor!=='string'||!getPerson(value as unknown as World,p.supervisor))return false;timeRate=Math.max(40,timeRate-Number(p.engineerBonus));}else if(p.supervisor!==undefined)return false;
       if(p.cost!==Math.ceil(d.cost*p.level*costRate/100)||p.due!==p.started+Math.ceil(d.days*p.level*timeRate/100))return false;
       if(scope==='estate'&&p.building!=='hall'&&holding.levels[p.building]===0&&Object.entries(holding.levels).filter(([id,n])=>id!=='hall'&&Number(n)>0).length>=Number(holding.levels.hall))return false;
     }
@@ -129,8 +130,8 @@ export function validateWorld(value: unknown): asserts value is World {
   if(!validSocial(value as unknown as World)||!validLifestyles(value as unknown as World))return fail();
   if(value.calendarSince!==undefined&&!integer(value.calendarSince,0,value.day))return fail();
   if(value.characterId!==undefined){
-    if(typeof value.characterId!=='string'||!Object.hasOwn(characterById,value.characterId))return fail();
-    const c=characterById[value.characterId],p=value.people[0],founder=characterById[(value as unknown as World).social?.founder??value.characterId];
+    if(typeof value.characterId!=='string'||!getCharacter(value as unknown as World,value.characterId))return fail();
+    const c=getCharacter(value as unknown as World,value.characterId)!,p=value.people[0],founder=getCharacter(value as unknown as World,(value as unknown as World).social?.founder??value.characterId)!;
     if(p.name!==c.name||p.home!==c.home||h.estate.family!==c.family||h.estate.location!==founder.home||!value.realm&&!h.governedCities.includes(founder.home))return fail();
     if(!obj(value.campaign)||value.campaign.id!=='stewardship')return fail();
   }else if(h.estate.family!=='shen')return fail();

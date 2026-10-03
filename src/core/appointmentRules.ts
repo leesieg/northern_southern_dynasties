@@ -1,3 +1,4 @@
+import {getPerson} from './personRegistry';
 import {culturalAppointment} from './culture';
 import {presentAt} from './residence';
 import {attributes,type Ability} from './social';
@@ -5,7 +6,7 @@ import {familyPrestige} from './family';
 import {clanStanding} from './clans';
 import {recommendationBonus} from './retinue';
 import {relationOpinion} from './relationships';
-import {relationshipPersonById} from '../data/relationships';
+
 import {territoryNodes} from '../data/territorialHierarchy';
 import type {MinistryId} from '../data/court';
 import type {World} from './types';
@@ -17,7 +18,7 @@ export const ministryAbility:Record<MinistryId,Ability>={secretariat:'diplomacy'
 /** Qualification stays in officeEligibility/localAdministration; this is preference, not permission. */
 export function appointmentEvaluation(w:World,r:RealmId,id:string,post:AppointmentPost={},approver?:string) {
  const g=w.realm!.governments!.realms[r],rules=governanceRules(w,r),level=post.territory?territoryNodes[post.territory]?.level:'county';
- const merit=g.merit[id]??0,prestige=w.families?.prestige[id]??0,family=familyPrestige(w,relationshipPersonById[id]?.family??'');
+ const merit=g.merit[id]??0,prestige=w.families?.prestige[id]??0,family=familyPrestige(w, getPerson(w,id)?.family??'');
  const ability=attributes(w,id)[post.ministry?ministryAbility[post.ministry]:'stewardship'];
  const practical=!!post.ministry&&['finance','military','censorate'].includes(post.ministry);
  const weights=rules.appointment==='lineage'?{ability:practical?2.5:1.5,merit:.5,family:practical?12:28,prestige:20}:rules.appointment==='selection'?{ability:2.5,merit:.7,family:12,prestige:15}:{ability:3,merit:.9,family:5,prestige:8};

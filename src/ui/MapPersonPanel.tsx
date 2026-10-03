@@ -1,3 +1,4 @@
+import {getCharacter,getPerson,familyPersonOf} from '../core/personRegistry';
 import {terrainSceneStyle,personTerrainSite} from './terrainScene';
 import {personCulture} from '../core/culture';
 import {cultureNames,cultureSources} from '../data/cultures';
@@ -24,10 +25,10 @@ import type { RealmId } from '../core/realm';
 import { useState } from 'react';
 import {PersonConnections,PersonDomains} from './PersonConnections';
 import { RelationshipPanel } from './RelationshipPanel';
-import { relationshipPersonById } from '../data/relationships';
+
 import { FamilyPanel,FamilyCrest } from './FamilyPanel';
-import { familyById,familyPersonById } from '../data/families';
-import { characterById } from '../data/characters';
+import {familyById} from '../data/families';
+
 import { siteById } from '../data/scenario';
 import { traitsFor } from '../core/social';
 import { remainingDays } from '../core/world';
@@ -41,13 +42,13 @@ import './personSheet.css';
 export type PersonTab='overview'|'family'|'relations'|'interaction'|'focus';
 export function MapPersonPanel({world:w,ids,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,pending,send}:{world:World;ids:string[];tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:()=>void;onCity:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
  const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'legacy'>('tree');
- const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=characterById[id],extra=relationshipPersonById[id],self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
- const reference=familyPersonById[id];
+ const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=getCharacter(w,id)!,extra=getPerson(w,id)!,self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
+ const reference=familyPersonOf(w,id)!;
  if(!c&&!p&&!extra&&!reference)return <p>未找到人物。</p>;
  const lifeId=id==='player'?'fictional':id,deceased=isDeceased(w,lifeId);
  const name=c?.name??extra?.name??reference?.name??p!.name,family=familyById[c?.family??reference?.family??extra?.family??''],realm=w.realm?allegianceRealm(w,id):c?.polity??extra?.realm,clan=family?clanStanding(w,id):null;
  return <div className="person-sheet">
- {ids.length>1&&<nav className="person-picker-list" aria-label="此处人物">{ids.map(person=><button key={person} aria-pressed={person===raw} onClick={()=>onSelect(person)}><ArtIcon name="person" size={22}/>{characterById[person]?.name??relationshipPersonById[person]?.name??w.people.find(p=>p.id===person)?.name}</button>)}</nav>}
+ {ids.length>1&&<nav className="person-picker-list" aria-label="此处人物">{ids.map(person=><button key={person} aria-pressed={person===raw} onClick={()=>onSelect(person)}><ArtIcon name="person" size={22}/>{getCharacter(w,person)?.name??getPerson(w,person)?.name??w.people.find(p=>p.id===person)?.name}</button>)}</nav>}
  <header className="person-identity terrain-identity" style={terrainSceneStyle(personTerrainSite(w,id))}><div className="person-portrait"><CharacterPortrait characterId={self&&!c?'fictional':id} name={name} world={w}/></div><div className="person-identity-info"><span className="eyebrow">{deceased?' · 已故':self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</span><div className="person-name-row">{realm?<RealmBadge realm={realm} world={w} onOpen={onDiplomacy}/>:reference?'族谱记载':'行旅'}<h2>{name}</h2>{family&&<HoverHint label={family.name+'家族'} content={<><strong>{family.name}</strong>{clan?.elite&&<><p>本国世族 · 族望第 {clan.rank} 位 · 家族威望 {clan.prestige}</p><p>联姻荫望 +{clan.marriage}；求官接受度 +{clan.petition}，城邑请任功绩门槛 −{clan.merit}。</p></>}</>}><button className={'person-clan'+(clan?.elite?' is-elite':'')} aria-label={'查看'+family.name+'家族详情'} onClick={()=>onTab('family')}><FamilyCrest family={family.id} small/></button></HoverHint>}</div><div className="person-demographics"><LifeSummary world={w} id={lifeId}/><HoverHint label="文化身份" content={(id==='gao-huan'?cultureSources.gao.note:id.startsWith('hulu-')?cultureSources.hulu.note:id==='hou-jing'?cultureSources.hou.note:'文化身份为剧本概括。')+' 文化独立于家族与效忠，换官、换国、换衣不改变身份；未详者保留未详。'}><small tabIndex={0}>{cultureNames[personCulture(w,id)]}</small></HoverHint></div><div className="person-symbol-row">{!deceased&&<PersonIdentityIcons world={w} person={id} onOffice={()=>onCourtPerson(id)} onLifestyle={()=>onTab('focus')}/>}{(c||extra)&&<div className="trait-strip">{traitsFor(w,id).map(t=><TraitBadge key={t} trait={t}/>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div>}</div>{w.retinue&&!isSovereign(w,id)&&(self||retinueMembers(w,id).length>0)&&<button className="person-retinue-entry" onClick={()=>onStaff(id)} aria-label={'打开'+name+'的幕府'}><ArtIcon name="person" size={24}/>幕府 <small>{retinueMembers(w,id).length} / 6</small><span aria-hidden="true">›</span></button>}{!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}</div></header>
  <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'focus',label:'重心',icon:'diligent'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='relations'||key==='focus'&&self||key==='interaction'&&!retired&&!deceased&&(self&&!!w.realm||!self&&!!extra&&!!w.social))}/>
 

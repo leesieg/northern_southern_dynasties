@@ -1,8 +1,9 @@
+import {getPerson} from '../core/personRegistry';
 import {isSovereign} from '../core/officialDuties';
 import {PositionSeat,PersonSelectionDialog} from './PersonSelection';
 import {useState} from 'react';
 import {retinueMembers,retinuePosts,retinueQuote,retinueAptitude,postStatus,isOfficial,type RetinueCommand,type RetinuePost} from '../core/retinue';
-import {relationshipPersonById} from '../data/relationships';
+
 import {personResidence} from '../core/residence';
 import {siteById} from '../data/scenario';
 import {CharacterPortrait} from './CharacterPortrait';
@@ -11,11 +12,12 @@ import {HoverHint} from './HoverHint';
 import type {World,GameCommand} from '../core/types';
 import './retinue.css';
 type Props={world:World;pending:boolean;send:(c:GameCommand)=>void;onPerson:(id:string)=>void;onInteract?:(id:string)=>void};
-const name=(id:string)=>relationshipPersonById[id]?.name??id;
+
 export function RetinuePanel({world:w,host,pending,send,onPerson,onFind,onInteract}:{host:string;onFind:()=>void}&Props){
+ const name=(id:string)=>getPerson(w,id)?.name??id;
  const [selected,setSelected]=useState<RetinuePost|null>(null),[candidate,setCandidate]=useState(''),[site,setSite]=useState('');
  if(!w.retinue||isSovereign(w,host))return null;
- const members=retinueMembers(w,host),own=host===w.characterId,official=isOfficial(w,host),places=Object.entries(w.realm?.cities??{}).filter(([,c])=>c.owner===relationshipPersonById[host]?.realm&&c.controller===c.owner),post=selected??'secretary';
+ const members=retinueMembers(w,host),own=host===w.characterId,official=isOfficial(w,host),places=Object.entries(w.realm?.cities??{}).filter(([,c])=>c.owner===getPerson(w,host)?.realm&&c.controller===c.owner),post=selected??'secretary';
  const action=(c:RetinueCommand,label:string)=>{const q=retinueQuote(w,c);return <HoverHint label={label} content={<>{q.effect&&<p>{q.effect}</p>}{q.cost>0&&<p>支出个人钱 {q.cost}</p>}{q.reason&&<p>{q.reason}</p>}</>}><button disabled={pending||!!q.reason} onClick={()=>send(c)}>{label}</button></HoverHint>;};
  const assign:RetinueCommand={type:'retinue',action:'assign',person:candidate,post,...site?{site}:{}};
  const tasks:Record<RetinuePost,{task:'resupply'|'audit'|'drill'|'recommend';name:string}[]>={engineer:[],steward:[{task:'resupply',name:'整备行粮'},{task:'audit',name:'清查仓赋'}],marshal:[{task:'drill',name:'整训军伍'}],secretary:[{task:'recommend',name:'修书荐举'}]};

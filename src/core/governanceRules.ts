@@ -1,9 +1,10 @@
+import {getPerson} from './personRegistry';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import type {AppointmentPolicy,AccessPolicy,RegistrationPolicy,CulturalPolicy} from '../data/governancePolicies';
 import {policyDefinition,policyDimensions} from '../data/governancePolicies';
 import {siteById} from '../data/scenario';
-import {relationshipPersonById} from '../data/relationships';
+
 export interface PolicyLocalReport {task:number;officer:string;issuer:string;revision:number;registration:RegistrationPolicy;access:AccessPolicy;reportedDay:number;applied:boolean;quality:number;recovered:number;checkedDay:number|null;inspector:string|null;inspectionTask:number|null}
 export interface GovernanceRules {
  revision:number;since:number;appointment:AppointmentPolicy;access:AccessPolicy;registration:RegistrationPolicy;cultural?:CulturalPolicy;
@@ -20,9 +21,9 @@ export function validGovernanceRules(value:unknown,day:number,w?:World,realm?:Re
  return Object.entries(reports).every(([site,value])=>{
   if(!Object.hasOwn(siteById,site)||!value||typeof value!=='object'||Array.isArray(value))return false;
   const v=value as PolicyLocalReport;
-  if(!integer(v.task,1,1000000)||!integer(v.revision,1,Number(q.revision))||!relationshipPersonById[v.officer]||!relationshipPersonById[v.issuer]||!policyDefinition('registration',v.registration)||!policyDefinition('access',v.access)||!integer(v.reportedDay,0,day)||typeof v.applied!=='boolean'||!integer(v.quality,50,130)||!integer(v.recovered,0,1000000))return false;
+  if(!integer(v.task,1,1000000)||!integer(v.revision,1,Number(q.revision))||! getPerson(w,v.officer)!||! getPerson(w,v.issuer)!||!policyDefinition('registration',v.registration)||!policyDefinition('access',v.access)||!integer(v.reportedDay,0,day)||typeof v.applied!=='boolean'||!integer(v.quality,50,130)||!integer(v.recovered,0,1000000))return false;
   if(v.checkedDay===null){if(v.inspector!==null||v.inspectionTask!==null)return false;}
-  else if(!integer(v.checkedDay,v.reportedDay,day)||v.inspector===v.officer||!relationshipPersonById[v.inspector!]||!integer(v.inspectionTask,1,1000000)||v.inspectionTask===v.task)return false;
+  else if(!integer(v.checkedDay,v.reportedDay,day)||v.inspector===v.officer||! getPerson(w,v.inspector!)!||!integer(v.inspectionTask,1,1000000)||v.inspectionTask===v.task)return false;
   if(!w)return true;
   // An archived case can outlive the bounded task list, but cannot precede service or invent an ID.
   const service=w.service;if(!service||v.task>=service.nextId||v.reportedDay<service.since||v.inspectionTask!==null&&v.inspectionTask>=service.nextId)return false;

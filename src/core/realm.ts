@@ -1,3 +1,4 @@
+import {getCharacter} from './personRegistry';
 import {awardDeed} from './deeds';
 import {worldRealms} from './polityRuntime';
 import {detained} from './custodyState';
@@ -42,7 +43,7 @@ import { governmentExecutive,governingAuthority,governmentBonus,meritAccess,gove
 import type { GovernmentState } from './government';
 import { lifestyleBonuses } from './lifestyle';
 import { emptyLifestyleBonus } from '../data/lifestyles';
-import { characterById } from '../data/characters';
+
 import { roads,siteById,sites } from '../data/scenario';
 import { acceptance } from './social';
 import { planRoute } from './world';
@@ -81,13 +82,13 @@ export const eventDefinitions={
 };
 export type EventKind=keyof typeof eventDefinitions;
 const clamp=(v:number,min=0,max=1_000_000)=>Math.max(min,Math.min(max,v));
-export const playerRealm=(w:World):RealmId=>allegianceRealm(w,w.characterId!)??characterById[w.characterId!].polity as RealmId;
+export const playerRealm=(w:World):RealmId=>allegianceRealm(w,w.characterId!)?? getCharacter(w,w.characterId!)!.polity as RealmId;
 export const executive=governmentExecutive;
 export const authority=(id:RealmId)=>id==='liang'?'xiao-yan':id==='east'?'gao-huan':'yuwen-tai';
 export const capital=(id:RealmId,w?:World)=>w?.realm?.identities?.[id]?.capital??(id==='liang'?'jiankang':id==='east'?'ye':'changan');
 export function newRealm(w:World):RealmState {
  const cities=Object.fromEntries(sites.map(s=>[s.id,{cultureId:defaultCountyCulture(s.polity==='frontier'),owner:s.polity,controller:s.polity,governor:s.id===w.people[0].home?w.characterId!:null,population:regionalEconomy(s.id).initialPopulation,grain:Math.ceil(regionalEconomy(s.id).initialPopulation/150)*2,irrigation:0,order:70,prosperity:50,tax:'normal' as Tax}]));
- return {version:1,foodVersion:2,cities,treasuries:Object.fromEntries(worldRealms(w).map(id=>[id,{coins:600,grain:1000,lastIncome:0,lastExpense:0,lastFood:0}])) as Record<RealmId,Treasury>,influence:50,mandate:executive(w)||characterById[w.characterId!].role==='commander',offices:[],armies:[],war:null,truces:{},event:null,lastEvent:0,ledger:[]};
+ return {version:1,foodVersion:2,cities,treasuries:Object.fromEntries(worldRealms(w).map(id=>[id,{coins:600,grain:1000,lastIncome:0,lastExpense:0,lastFood:0}])) as Record<RealmId,Treasury>,influence:50,mandate:executive(w)|| getCharacter(w,w.characterId!)!.role==='commander',offices:[],armies:[],war:null,truces:{},event:null,lastEvent:0,ledger:[]};
 }
 export function syncGovernance(w:World){if(w.realm)w.holdings.governedCities=Object.entries(w.realm.cities).filter(([,c])=>c.governor===w.characterId&&c.controller===playerRealm(w)).map(([id])=>id);}
 export function occupyCity(w:World,war:War,site:string,controller:RealmId,peaceful=false){captureCityPeople(w,site,controller,'city:'+war.id+':'+site+':'+w.day,peaceful);const city=w.realm!.cities[site];if(city.controller!==controller&&war.id!==undefined){const leaders=new Set([governingAuthority(w,controller),...w.realm!.armies.filter(a=>a.realm===controller&&a.location===site&&!a.journey).map(a=>armyCommander(w,a))]);for(const id of leaders)if(id)awardDeed(w,controller,id,'siege:'+site+':'+war.id,5,'攻取城市，按本场战争与城池记录一次军功');}city.controller=controller;if(city.controller===city.owner){delete city.occupiedSince;delete city.occupiedByWar;}else{city.occupiedSince=w.day;city.occupiedByWar=war.id;}syncGovernance(w);}
@@ -278,7 +279,7 @@ export function advanceRealm(w:World){
  for(const a of s.armies){reconcileRegiments(a);if(a.troops<100){takeCasualties(w,a,a.troops,undefined,true);returnArmyConvoy(w,a);if(a.arrears){const debts=s.armyDebts??=[],account=a.payer??'central:'+a.realm,old=debts.find(d=>d.realm===a.realm&&d.account===account);if(old)old.coins+=a.arrears;else debts.push({realm:a.realm,account,coins:a.arrears});}}}s.armies=s.armies.filter(a=>a.troops>=100);advanceCivilPolitics(w);advanceUnrest(w);
  if(!s.event&&w.day-s.lastEvent>=90&&w.holdings.governedCities.length){const kinds=Object.keys(eventDefinitions) as EventKind[];s.event={kind:kinds[(Math.floor(w.day/90)-1)%kinds.length],site:w.holdings.governedCities[0],day:w.day};s.lastEvent=w.day;log(w,'收到待决事务：'+eventDefinitions[s.event.kind].title+'。');}
 }
-export function handoverOffice(w:World){if(w.realm){if(governmentOf(w)?.type==='feudal'){const former=w.social?.lineage.at(-2)?.id;if(former)for(const city of Object.values(w.realm.cities))if(city.governor===former&&city.owner===playerRealm(w)&&city.controller===playerRealm(w))city.governor=w.characterId!;}w.realm.mandate=executive(w)||(!(governmentOf(w)?.stages.length)&&characterById[w.characterId!].role==='commander');w.realm.event=null;syncGovernance(w);}}
+export function handoverOffice(w:World){if(w.realm){w.realm.mandate=executive(w)||(!(governmentOf(w)?.stages.length)&& getCharacter(w,w.characterId!)!.role==='commander');w.realm.event=null;syncGovernance(w);}}
 
 export function declareRealmWarReason(w:World,actor:string,r:RealmId,site:string,goal:War['goal']='territory',checkCost=true){
  const s=w.realm,c=s?.cities[site];if(!s||!c)return '目标城市不存在';

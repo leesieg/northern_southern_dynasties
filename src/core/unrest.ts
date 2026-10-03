@@ -1,3 +1,4 @@
+import {allPeople,getPerson} from './personRegistry';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import {isRealmId} from './polityRuntime';
@@ -15,7 +16,7 @@ import {ensureArmyOrganization} from './armyOrganization';
 import {civilianFood} from './population';
 import {mobilizedTransportLabor} from './armyLogistics';
 import {localBalance,fiscalPath,spendLocal} from './treasury';
-import {relationshipPeople,relationshipPersonById} from '../data/relationships';
+
 import {siteById} from '../data/scenario';
 import {canCommission} from './serviceMandates';
 import {organizedCommander} from './culture';
@@ -38,7 +39,7 @@ export function recordCulturalChange(w:World,r:RealmId,previous:string){
  for(const [site,c] of Object.entries(w.realm!.cities))if(c.owner===r&&c.controller===r&&(previous==='customs'||c.culturalExemption)){delete c.culturalExemption;const a=w.realm!.armies.find(a=>a.realm===r&&a.location===site&&!a.journey&&armyCommander(w,a)&&armyCommander(w,a)!==w.characterId&&isAlive(w,armyCommander(w,a)!)&&!governingExecutives(w,r).includes(armyCommander(w,a)!)&&organizedCommander(w,r,armyCommander(w,a)!));if(a){add(w,r,site,'customs','policy:'+r+':'+governanceRules(w,r).revision,armyCommander(w,a)!);}}
 }
 export function demandSatisfied(w:World,q:LocalUnrest){const c=w.realm!.cities[q.site];return q.demand==='food'?c.grain>=Math.max(50,civilianFood(w,q.site)):q.demand==='tax'?c.tax==='light':governanceRules(w,q.realm).cultural==='customs';}
-function organizer(w:World,q:LocalUnrest){return relationshipPeople.find(p=>p.id!==w.characterId&&!governingExecutives(w,q.realm).includes(p.id)&&allegianceRealm(w,p.id)===q.realm&&isAlive(w,p.id)&&!detained(w,p.id)&&(ageAt(w,p.id)??0)>=16&&!personResidence(w,p.id).traveling&&personResidence(w,p.id).site===q.site)?.id??null;}
+function organizer(w:World,q:LocalUnrest){return allPeople(w).find(p=>p.id!==w.characterId&&!governingExecutives(w,q.realm).includes(p.id)&&allegianceRealm(w,p.id)===q.realm&&isAlive(w,p.id)&&!detained(w,p.id)&&(ageAt(w,p.id)??0)>=16&&!personResidence(w,p.id).traveling&&personResidence(w,p.id).site===q.site)?.id??null;}
 export function unrestBlock(w:World,q:LocalUnrest){const c=w.realm!.cities[q.site],chief=governingAuthority(w,q.realm);
  if(civilWar(w,q.realm))return '本国已有内战，其他地方诉求暂留预警';
  if(!q.organizer||q.organizer===chief||!isAlive(w,q.organizer)||detained(w,q.organizer)||allegianceRealm(w,q.organizer)!==q.realm||personResidence(w,q.organizer).traveling||personResidence(w,q.organizer).site!==q.site)return '缺少在地组织者';
@@ -70,7 +71,7 @@ export function unrestReason(w:World,c:UnrestCommand,actor=w.characterId!){const
  return q.demand!=='customs'?'经济诉求须通过当地减税或实际运粮解决':governanceRules(w,q.realm).cultural==='customs'?'现行规则已保留待遇':'';
 }
 export function actUnrest(w:World,c:UnrestCommand,actor=w.characterId!){const why=unrestReason(w,c,actor);if(why)throw new Error(why);const q=w.unrest!.items.find(q=>q.id===c.id)!;
- if(c.action==='report'){q.reported=w.day;log(w,siteById[q.site].name+'诉求已上报'+relationshipPersonById[governingAuthority(w,q.realm)]?.name+'，等待实际处置。');return;}
+ if(c.action==='report'){q.reported=w.day;log(w,siteById[q.site].name+'诉求已上报'+ getPerson(w,governingAuthority(w,q.realm))?.name+'，等待实际处置。');return;}
  // A local exception preserves organization; it does not grant cash or rewrite the whole policy.
  if(q.stage==='armed'){const war=civilWar(w,q.realm);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'yield','rebel');}
  else {w.realm!.cities[q.site].culturalExemption={leader:q.organizer!,since:w.day};close(w,q,'中央恢复当地军镇待遇，文化诉求和解');}
@@ -97,7 +98,7 @@ export function advanceUnrest(w:World){if(!w.realm||w.mode!=='sandbox')return;co
 }
 export function validUnrest(w:World){const s=w.unrest;if(s===undefined)return true;const n=(v:unknown,min:number,max:number)=>Number.isSafeInteger(v)&&Number(v)>=min&&Number(v)<=max;
  if(!s||!n(s.since,0,w.day)||!n(s.lastDay,s.since,w.day)||!n(s.nextId,1,1000000000)||!Array.isArray(s.items)||s.items.length>Object.keys(siteById).length*2)return false;
- const ids=new Set<number>(),active=new Set<string>();return s.items.every(q=>{if(!q||!n(q.id,1,s.nextId-1)||ids.has(q.id)||!isRealmId(q.realm)||!w.realm?.governments?.realms[q.realm]||typeof q.site!=='string'||!Object.hasOwn(siteById,q.site)||!Object.hasOwn(demandNames,q.demand)||!['growing','warning','armed','closed'].includes(q.stage)||typeof q.source!=='string'||!q.source.length||q.source.length>160||q.organizer!==null&&(typeof q.organizer!=='string'||!Object.hasOwn(relationshipPersonById,q.organizer))||!n(q.started,s.since,w.day)||!n(q.distressedDays,0,w.day-q.started)||typeof q.outcome!=='string'||q.outcome.length>200||q.reported!==undefined&&!n(q.reported,q.started,w.day))return false;ids.add(q.id);
+ const ids=new Set<number>(),active=new Set<string>();return s.items.every(q=>{if(!q||!n(q.id,1,s.nextId-1)||ids.has(q.id)||!isRealmId(q.realm)||!w.realm?.governments?.realms[q.realm]||typeof q.site!=='string'||!Object.hasOwn(siteById,q.site)||!Object.hasOwn(demandNames,q.demand)||!['growing','warning','armed','closed'].includes(q.stage)||typeof q.source!=='string'||!q.source.length||q.source.length>160||q.organizer!==null&&(typeof q.organizer!=='string'||!getPerson(w,q.organizer))||!n(q.started,s.since,w.day)||!n(q.distressedDays,0,w.day-q.started)||typeof q.outcome!=='string'||q.outcome.length>200||q.reported!==undefined&&!n(q.reported,q.started,w.day))return false;ids.add(q.id);
  if(q.stage!=='closed'){if(active.has(q.site))return false;active.add(q.site);if(q.closed!==null||q.outcome)return false;}else if(!n(q.closed,q.started,w.day)||!q.outcome)return false;
  if(q.stage==='growing'&&q.distressedDays>=30||['warning','armed'].includes(q.stage)&&q.distressedDays<30)return false;
  if(q.stage==='warning'?!n(q.deadline,q.started+60,w.day+30):q.deadline!==null)return false;

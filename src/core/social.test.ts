@@ -3,6 +3,7 @@ import { act,advance,newCampaignWorld } from './world';
 import { acceptance,buildingModifiers,heirs,interactionQuote,pair } from './social';
 import { buildQuote } from './construction';
 import { parseWorld,serializeWorld,validateWorld } from './save';
+import {getCharacter,getPerson} from './personRegistry';
 import { campaignGoals } from './campaign';
 describe('人物、家族与交往闭环',()=>{
  it('特质与世业影响实付工程，开工后快照不重算',()=>{
@@ -36,6 +37,15 @@ describe('人物、家族与交往闭环',()=>{
   const loaded=parseWorld(serializeWorld(w));
   for(const building of ['market','market','granary'] as const){act(loaded,{type:'build',scope:'city',site:'jiankang',building});advance(loaded,loaded.holdings.cities.jiankang.project!.due-loaded.day);}
   expect(loaded.campaign!.status).toBe('won');expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
+ });
+ it('本局出生的幼年子女可以继任家业，父辈及其他家支仍不可继任',()=>{
+  const w=newCampaignWorld('xiao-yi',undefined,'sandbox'),id='born-test-child';
+  w.generatedPeople={[id]:{person:{...getPerson(w,'xiao-yi')!,id,name:'幼年子女',adult:false,status:'fictional'},character:{...getCharacter(w,'xiao-yi')!,id,name:'幼年子女'},birthDay:w.day,father:'xiao-yi',mother:'xu-zhaopei'}};
+  expect(heirs(w).map(p=>p.id)).toContain(id);
+  expect(heirs(w).map(p=>p.id)).not.toContain('xiao-yan');
+  act(w,{type:'heir',target:id});expect(w.social!.heir).toBe(id);
+  w.generatedPeople[id].character.family='gao';
+  expect(heirs(w).map(p=>p.id)).not.toContain(id);
  });
  it('跨家支继任拒绝，旧历史档补齐社交，旧工程保持原工期',()=>{
   const w=newCampaignWorld('yuan-baoju');expect(()=>act(w,{type:'heir',target:'yuan-shanjian'})).toThrow();delete w.social;delete w.relationships;

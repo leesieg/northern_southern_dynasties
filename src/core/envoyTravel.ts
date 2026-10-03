@@ -1,3 +1,4 @@
+import {getPerson} from './personRegistry';
 import {detained} from './custodyState';
 import type {World,Journey} from './types';
 import type {Envoy,DiplomacyAction} from './diplomacy';
@@ -8,7 +9,7 @@ import {personResidence} from './residence';
 import {officeCandidates,allegianceRealm} from './officeEligibility';
 import {ageAt,isAlive,lifeOf} from './lifeState';
 import {serviceBusy} from './assignments';
-import {relationshipPersonById} from '../data/relationships';
+
 import {attributes} from './social';
 import {planRoute} from './world';
 export const needsEnvoy=(action:string)=>!['insult','revoke','independence'].includes(action);
@@ -19,7 +20,7 @@ export function envoyRoute(w:World,id:string,from:RealmId,to:RealmId,destination
 export function envoyReason(w:World,id:string,from:RealmId,to:RealmId,actor?:string){
  if(actor&&civilWar(w,from)&&civilWar(w,from)!.civil!.supporters.includes(id)!==civilWar(w,from)!.civil!.supporters.includes(actor))return '使者不属于请求方实际阵营';
  if(!id||!isAlive(w,id)||allegianceRealm(w,id)!==from||!w.mobility?.residences[id])return '须选择本国在世人物';
- if((ageAt(w,id)??(relationshipPersonById[id]?.adult?18:0))<16)return '使者须成年';
+ if((ageAt(w,id)??( getPerson(w,id)?.adult?18:0))<16)return '使者须成年';
  if(lifeOf(w,id)?.illness?.severity===3)return '重病期间不能出使';
  if(personResidence(w,id).traveling||serviceBusy(w,id)||w.realm?.offices.some(o=>o.candidate===id))return '此人正在出行或办理事务';
  if(detained(w,id))return '被拘押期间不能出使';

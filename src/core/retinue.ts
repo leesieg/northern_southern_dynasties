@@ -1,7 +1,8 @@
+import {getPerson,allPeople} from './personRegistry';
 import {detained} from './custodyState';
 import {isMonthStart,monthStart,monthIndex} from './calendar';
 import {isSovereign} from './officialDuties';
-import {relationshipPeople,relationshipPersonById} from '../data/relationships';
+
 import {siteById} from '../data/scenario';
 import {isAlive,ageAt,lifeOf} from './lifeState';
 import {attributes,traitsFor} from './social';
@@ -12,7 +13,7 @@ import {planRoute} from './world';
 import {canEnter,atWar} from './diplomacy';
 import {governingExecutives} from './government';
 import type {World} from './types';
-const politicalName=(id:string)=>relationshipPersonById[id]?.name??id;
+const politicalName=(id:string,w?:World)=>getPerson(w,id)?.name??id;
 export const retinuePosts={
  engineer:{name:'营造参军',icon:'estate',skill:'stewardship',effect:'驻城后解锁城市营建；才干缩短新工程工期。',official:true},
  steward:{name:'仓曹',icon:'grain',skill:'stewardship',effect:'解锁整备行粮；在有治理权的城市可清查仓赋。',official:false},
@@ -29,7 +30,7 @@ export function isOfficial(w:World,id:string){return officeHierarchy(w,id).some(
 function hasPublicDuties(w:World,id:string){return officeHierarchy(w,id).some(n=>n.holder===id&&n.active&&['city','office','executive','sovereign'].includes(n.kind));}
 export function retinueBusy(w:World,id:string){return !!w.retinue?.members[id];}
 function externalBusy(w:World,id:string){return w.diplomacy?.missions.some(m=>m.envoy===id)||w.realm?.offices.some(o=>o.candidate===id)||!!w.mobility?.appointments[id]||(Object.values(w.mobility?.commanders??{}).includes(id)||Object.values(w.mobility?.armyCommanders??{}).includes(id))||w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id&&!a.delegate||a.delegate===id))||w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id))||w.duties?.task?.phase!=='closed'&&w.duties?.task?.officer===id;}
-function adult(w:World,id:string){return (ageAt(w,id)??(relationshipPersonById[id]?.adult?18:0))>=16;}
+function adult(w:World,id:string){return (ageAt(w,id)??( getPerson(w,id)?.adult?18:0))>=16;}
 const money=(w:World,id:string)=>id===w.characterId?w.people[0].coins:w.relationships?.reserves[id]??0;
 function pay(w:World,id:string,n:number){if(id===w.characterId)w.people[0].coins-=n;else if(w.relationships)w.relationships.reserves[id]-=n;}
 function log(w:World,host:string,person:string,text:string){w.retinue!.history.push({day:w.day,host,person,text});w.retinue!.history=w.retinue!.history.slice(-80);if(host===w.characterId){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}}
@@ -38,19 +39,19 @@ export function retinueAptitude(w:World,id:string,post:RetinuePost){return Math.
 export function postStatus(w:World,post:RetinuePost,site?:string,host=w.characterId!){
  const m=retinueMembers(w,host).find(m=>m.post===post);
  let reason=isSovereign(w,host)?'君主使用中央官职':!m?'须先任命'+retinuePosts[post].name:!isAlive(w,m.id)?'任职者已故':m.arrears?'幕府欠俸，职务暂停':lifeOf(w,m.id)?.illness?.severity===3?'任职者重病':retinuePosts[post].official&&!isOfficial(w,host)?'主公已无官职，幕职暂停':externalBusy(w,m.id)?'任职者另有公务':site&&m.site!==site?'须将'+retinuePosts[post].name+'派驻本城':!presentAt(w,m.id,site??personResidence(w,host).site)?'任职者尚未到岗':'';
- if(!reason&&site){const r=relationshipPersonById[host]?.realm;if(r&&(!w.realm||w.realm.cities[site].controller!==r||w.realm.cities[site].owner!==r))reason='驻地不受本国控制';}
+ if(!reason&&site){const r= getPerson(w,host)?.realm;if(r&&(!w.realm||w.realm.cities[site].controller!==r||w.realm.cities[site].owner!==r))reason='驻地不受本国控制';}
  return {member:m,reason,aptitude:m?retinueAptitude(w,m.id,post):0};
 }
 export function recommendationBonus(w:World,id:string){const r=w.retinue?.recommendations[id];return r&&r.until>w.day?r.bonus:0;}
 export function retinueQuote(w:World,c:RetinueCommand,host=w.characterId!){
- let reason='',cost=c.action==='recruit'?30:c.action==='work'?c.task==='resupply'?10:15:0;const s=w.retinue,r=relationshipPersonById[host]?.realm;
+ let reason='',cost=c.action==='recruit'?30:c.action==='work'?c.task==='resupply'?10:15:0;const s=w.retinue,r= getPerson(w,host)?.realm;
  if(!s||!r||!w.realm||!isAlive(w,host)||!adult(w,host)||w.campaign?.status!=='active')reason='当前人物不能经营幕府';
  else if(isSovereign(w,host)&&!['dismiss','unassign'].includes(c.action))reason='君主通过中央官职任命与委办公务，不另设幕府';
  else if(w.social?.lineage.slice(0,-1).some(p=>p.id===host))reason='退居后不能重新经营幕府';
  else if(w.retinue?.members[host])reason='已入他人幕府，不能另立幕府';
  else if(detained(w,host))reason='被拘押期间无法安排幕府';
  else if(c.action==='recruit'){
-  const p=relationshipPersonById[c.person],at=personResidence(w,c.person),to=personResidence(w,host).site;
+  const p= getPerson(w,c.person)!,at=personResidence(w,c.person),to=personResidence(w,host).site;
   if(c.person===w.characterId&&host!==w.characterId)reason='须本人同意，不自动入幕';
   else if(!p||c.person===host||!isAlive(w,c.person)||!adult(w,c.person))reason='须选择另一位在世成年人物';
   else if(w.relationships?.oaths[c.person])reason='对方已有个人誓约，请先解除效忠再延聘入幕';
@@ -96,37 +97,37 @@ export function retinueQuote(w:World,c:RetinueCommand,host=w.characterId!){
 }
 export function actRetinue(w:World,c:RetinueCommand,host=w.characterId!){
  const q=retinueQuote(w,c,host);if(q.reason)throw new Error(q.reason);pay(w,host,q.cost);const s=w.retinue!;
- if(c.action==='recruit'){s.members[c.person]={host,joined:w.day,post:null,site:null,arrears:0};log(w,host,c.person,politicalName(c.person)+'受聘入幕，束脩 30 钱；每月俸钱 2。');return;}
+ if(c.action==='recruit'){s.members[c.person]={host,joined:w.day,post:null,site:null,arrears:0};log(w,host,c.person,politicalName(c.person,w)+'受聘入幕，束脩 30 钱；每月俸钱 2。');return;}
  if(c.action==='dismiss'){release(w,c.person,'解聘离幕');return;}
- if(c.action==='unassign'){s.members[c.person].post=null;s.members[c.person].site=null;log(w,host,c.person,politicalName(c.person)+'卸下幕职，仍留幕府。');return;}
- if(c.action==='assign'){const m=s.members[c.person];m.post=c.post;m.site=c.site??null;log(w,host,c.person,'任命'+politicalName(c.person)+'为'+retinuePosts[c.post].name+'，每月俸钱 4。');return;}
+ if(c.action==='unassign'){s.members[c.person].post=null;s.members[c.person].site=null;log(w,host,c.person,politicalName(c.person,w)+'卸下幕职，仍留幕府。');return;}
+ if(c.action==='assign'){const m=s.members[c.person];m.post=c.post;m.site=c.site??null;log(w,host,c.person,'任命'+politicalName(c.person,w)+'为'+retinuePosts[c.post].name+'，每月俸钱 4。');return;}
  if(c.action!=='work')throw new Error('未知幕府命令');
- const status=postStatus(w,c.post,retinueMembers(w,host).find(m=>m.post===c.post)?.site??undefined,host),m=status.member!,site=m.site??personResidence(w,host).site,r=relationshipPersonById[host].realm;
+ const status=postStatus(w,c.post,retinueMembers(w,host).find(m=>m.post===c.post)?.site??undefined,host),m=status.member!,site=m.site??personResidence(w,host).site,r= getPerson(w,host)!.realm;
  s.cooldowns[host+'|work|'+c.task]=w.day+(c.task==='resupply'?30:90);
  let result='';
  if(c.task==='resupply'){const gain=20+Math.floor(status.aptitude/10);if(host===w.characterId)w.people[0].food=Math.min(1_000_000,w.people[0].food+gain);result='整备行粮 +'+gain;}
  if(c.task==='audit'){const city=w.realm!.cities[site],coins=15+Math.floor(status.aptitude/5),order=Math.min(100-city.order,3);w.realm!.treasuries[r].coins=Math.min(1_000_000,w.realm!.treasuries[r].coins+coins);city.order+=order;result='清查仓赋：公款 +'+coins+'，秩序 +'+order;}
  if(c.task==='drill'){const army=w.realm!.armies.find(a=>a.realm===r&&a.location===site&&!a.journey)!,gain=Math.min(100-army.morale,5+Math.floor(status.aptitude/10));army.morale+=gain;result='整训军伍：士气 +'+gain;}
  if(c.task==='recommend'){const bonus=4+Math.floor(status.aptitude/10);s.recommendations[host]={until:w.day+90,bonus};result='修书荐举：求官接受度 +'+bonus+'，持续九十日';}
- changeRelationOpinion(w,host,m.id,2);log(w,host,m.id,politicalName(m.id)+'办理'+result+'。');
+ changeRelationOpinion(w,host,m.id,2);log(w,host,m.id,politicalName(m.id,w)+'办理'+result+'。');
 }
-function release(w:World,id:string,why:string){const m=w.retinue!.members[id];if(!m)return;delete w.retinue!.members[id];w.retinue!.cooldowns[m.host+'|hire|'+id]=w.day+90;log(w,m.host,id,politicalName(id)+why+'。');}
+function release(w:World,id:string,why:string){const m=w.retinue!.members[id];if(!m)return;delete w.retinue!.members[id];w.retinue!.cooldowns[m.host+'|hire|'+id]=w.day+90;log(w,m.host,id,politicalName(id,w)+why+'。');}
 export function retinueDestination(w:World,id:string){const m=w.retinue?.members[id];if(!m||!isAlive(w,m.host))return undefined;return m.site??personResidence(w,m.host).site;}
 export function advanceRetinue(w:World){const s=w.retinue;if(!s)return;
  const publicHolders=new Set(Object.keys(s.members).length?officeHierarchy(w).filter(n=>n.holder&&n.active&&['city','office','executive','sovereign'].includes(n.kind)).map(n=>n.holder):[]);
  for(const [id,m] of Object.entries(s.members)){
   if(isSovereign(w,m.host)){release(w,id,'因主公使用中央官职而解除幕府编制，可由朝廷重新任官');continue;}
   if(!isAlive(w,id)||!isAlive(w,m.host)||publicHolders.has(id)||w.social?.lineage.slice(0,-1).some(p=>p.id===m.host)){release(w,id,!isAlive(w,id)?'去世，幕职出缺':!isAlive(w,m.host)?'因主公去世离幕':'因任职或主公退居离幕');continue;}
-  const r=relationshipPersonById[m.host].realm;if(atWar(w,r,relationshipPersonById[id].realm)){release(w,id,'因两国交战离幕');continue;}
-  if(m.post&&retinuePosts[m.post].official&&!publicHolders.has(m.host)){m.post=null;m.site=null;log(w,m.host,id,'主公卸任，'+politicalName(id)+'解去幕职。');}
+  const r= getPerson(w,m.host)!.realm;if(atWar(w,r, getPerson(w,id)!.realm)){release(w,id,'因两国交战离幕');continue;}
+  if(m.post&&retinuePosts[m.post].official&&!publicHolders.has(m.host)){m.post=null;m.site=null;log(w,m.host,id,'主公卸任，'+politicalName(id,w)+'解去幕职。');}
  }
  const month=monthStart(w.day,w.scriptId);if(!isMonthStart(w.day,w.scriptId)||month<=s.lastMonth)return;s.lastMonth=month;
- for(const [id,m] of Object.entries(s.members)){const wage=m.post?4:2,due=wage*(1+m.arrears);if(money(w,m.host)>=due){pay(w,m.host,due);creditPersonalCoins(w,id,due);m.arrears=0;}else{m.arrears++;log(w,m.host,id,politicalName(id)+'俸钱未付，职务暂停。');if(m.arrears>=2)release(w,id,'因连续欠俸离幕');}}
+ for(const [id,m] of Object.entries(s.members)){const wage=m.post?4:2,due=wage*(1+m.arrears);if(money(w,m.host)>=due){pay(w,m.host,due);creditPersonalCoins(w,id,due);m.arrears=0;}else{m.arrears++;log(w,m.host,id,politicalName(id,w)+'俸钱未付，职务暂停。');if(m.arrears>=2)release(w,id,'因连续欠俸离幕');}}
  for(const [id,r] of Object.entries(s.recommendations))if(r.until<=w.day)delete s.recommendations[id];
  // NPC hosts compete for the same known candidates and pay their own personal reserves.
- if(monthIndex(w.day,w.scriptId)%3===0)for(const host of relationshipPeople.filter(p=>p.status==='roster'&&p.id!==w.characterId&&isAlive(w,p.id)&&isOfficial(w,p.id))){
+ if(monthIndex(w.day,w.scriptId)%3===0)for(const host of allPeople(w).filter(p=>p.status==='roster'&&p.id!==w.characterId&&isAlive(w,p.id)&&isOfficial(w,p.id))){
   if(retinueMembers(w,host.id).length||money(w,host.id)<100)continue;
-  const candidate=relationshipPeople.find(p=>!retinueQuote(w,{type:'retinue',action:'recruit',person:p.id},host.id).reason);if(!candidate)continue;
+  const candidate= allPeople(w).find(p=>!retinueQuote(w,{type:'retinue',action:'recruit',person:p.id},host.id).reason);if(!candidate)continue;
   actRetinue(w,{type:'retinue',action:'recruit',person:candidate.id},host.id);
   const city=Object.entries(w.realm!.cities).find(([,c])=>c.governor===host.id&&c.owner===host.realm&&c.controller===host.realm)?.[0];
   const appointment:RetinueCommand=city?{type:'retinue',action:'assign',person:candidate.id,post:'engineer',site:city}:{type:'retinue',action:'assign',person:candidate.id,post:'secretary'};

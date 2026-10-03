@@ -1,12 +1,13 @@
-import {characterById} from '../data/characters';
+import {getCharacter} from './personRegistry';
+
 import {dutyPlans,dutyPhaseNames} from './duties';
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const int=(v:unknown,min:number,max:number):v is number=>Number.isInteger(v)&&Number(v)>=min&&Number(v)<=max;
-export function validDuties(v:unknown,day:number,mode:unknown):boolean{
+export function validDuties(v:unknown,day:number,mode:unknown,w?:import('./types').World):boolean{
  if(mode!=='sandbox'||!obj(v)||v.version!==1||!int(v.since,0,day)||!int(v.lastDay,v.since,day))return false;
  if(v.task===null)return true;
  const t=v.task;
- if(!obj(t)||t.id!=='tianshui-relief'||!int(t.created,v.since,day)||!int(t.changed,t.created,day)||t.deadline!==t.created+120||typeof t.officer!=='string'||!Object.hasOwn(characterById,t.officer)||characterById[t.officer].polity!=='west')return false;
+ if(!obj(t)||t.id!=='tianshui-relief'||!int(t.created,v.since,day)||!int(t.changed,t.created,day)||t.deadline!==t.created+120||typeof t.officer!=='string'||!getCharacter(w,t.officer)||getCharacter(w,t.officer)!.polity!=='west')return false;
  if(typeof t.phase!=='string'||!Object.hasOwn(dutyPhaseNames,t.phase)||t.plan!==null&&(typeof t.plan!=='string'||!Object.hasOwn(dutyPlans,t.plan)))return false;
  if(!int(t.required,0,10000)||!int(t.progress,0,t.required)||typeof t.started!=='boolean'||typeof t.incidentDone!=='boolean'||typeof t.aidRequested!=='boolean'||!obj(t.funds))return false;
  const p=t.plan===null?null:dutyPlans[t.plan as keyof typeof dutyPlans];

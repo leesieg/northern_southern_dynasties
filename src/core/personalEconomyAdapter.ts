@@ -1,3 +1,4 @@
+import {getPerson,allPeople} from './personRegistry';
 import {capital} from './realm';
 import {detained} from './custodyState';
 import {dispatchNPC} from './mobility';
@@ -5,7 +6,7 @@ import {planRoute} from './world';
 import {canEnter} from './diplomacy';
 import {localSeatSite} from './localAdministration';
 /** Adapter: operates on existing public/private accounts; no second wallet store. */
-import {relationshipPeople, relationshipPersonById} from '../data/relationships';
+
 import {territoryNodes} from '../data/territorialHierarchy';
 import {siteById} from '../data/scenario';
 import {isAlive, ageAt, lifeOf} from './lifeState';
@@ -48,7 +49,7 @@ export function economyHost(w: World, snapshot=false): EconomyHost {
   const realmCache=new Map<RealmId,PublicAccountRef[]>();
   const managedCache=new Map<string,PublicAccountRef[]>(),auditCache=new Map<string,PublicAccountRef[]>();
   const privateWallet = (id: string): WalletRef | undefined => {
-    if (!Object.hasOwn(relationshipPersonById, id)) return undefined;
+    if (!getPerson(w,id)) return undefined;
     if (id === w.characterId) return {key: 'person:' + id, capacity: 1_000_000,
       read: () => w.people[0].coins, write: n => {w.people[0].coins = n;}};
     if (!w.relationships || !Object.hasOwn(w.relationships.reserves, id)) return undefined;
@@ -57,14 +58,14 @@ export function economyHost(w: World, snapshot=false): EconomyHost {
       write: n => {w.relationships!.reserves[id] = n;}};
   };
   const actor = (id: string): EconomyActor | undefined => {
-    if (!Object.hasOwn(relationshipPersonById, id)) return undefined;
+    if (!getPerson(w,id)) return undefined;
     let skills:ReturnType<typeof attributes>|undefined;
     return {id, alive: isAlive(w, id), adult: (ageAt(w, id) ?? 0) >= 16,
       player: id === w.characterId, realm: allegianceRealm(w, id) ?? null,
       get available(){return available(w,id);}, get traits(){return traitsFor(w,id);},
       get stewardship(){return (skills??=attributes(w,id)).stewardship;}, get intrigue(){return (skills??=attributes(w,id)).intrigue;}};
   };
-  const actors = (): EconomyActor[] => relationshipPeople.filter(p=>isAlive(w,p.id)).map(p=>actor(p.id)!);
+  const actors = (): EconomyActor[] => allPeople(w).filter(p=>isAlive(w,p.id)).map(p=>actor(p.id)!);
   const account = (key: string): PublicAccountRef | undefined => {
     if (!w.realm) return undefined;
     if (key.startsWith('central:')) {
@@ -126,7 +127,7 @@ export function economyHost(w: World, snapshot=false): EconomyHost {
     day: w.day, scriptId:w.scriptId, actors, actor, personal: privateWallet, account, managedAccounts, auditableAccounts,
     inspectors: id => {
       const r = allegianceRealm(w, id);
-      return relationshipPeople.filter(p => allegianceRealm(w, p.id) === r && isAlive(w, p.id)
+      return allPeople(w).filter(p => allegianceRealm(w, p.id) === r && isAlive(w, p.id)
         && (ageAt(w, p.id) ?? 0) >= 16 && available(w, p.id)).map(p => p.id);
     },
     canMeet: (a, b) => available(w, a) && available(w, b)
@@ -189,8 +190,8 @@ export function economyPresentation(w: World) {
     managed: host.managedAccounts(id).map(a => ({id: a.id, name: a.name, balance: a.wallet.read()})),
     audits: host.auditableAccounts(id).map(a => ({id: a.id, name: a.name})),
     donations: donorKeys.map(key => host.account(key)).filter((a): a is PublicAccountRef => !!a).map(a => ({id: a.id, name: a.name})),
-    inspectors: host.inspectors(id).map(id => ({id, name: relationshipPersonById[id].name})),
-    acquaintances: relationshipPeople.filter(p => p.id !== id && host.actor(p.id)?.adult && host.actor(p.id)?.alive && host.canMeet(id, p.id))
+    inspectors: host.inspectors(id).map(id => ({id, name: getPerson(w,id)!.name})),
+    acquaintances: allPeople(w).filter(p => p.id !== id && host.actor(p.id)?.adult && host.actor(p.id)?.alive && host.canMeet(id, p.id))
       .map(p => ({id: p.id, name: p.name})),
     place: siteById[w.people[0].location]?.name ?? '',
   };

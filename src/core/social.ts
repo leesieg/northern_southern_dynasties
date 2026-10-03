@@ -1,3 +1,4 @@
+import {getCharacter,getPerson} from './personRegistry';
 import {allegianceRealm} from './officeEligibility';
 import {isMonthStart} from './calendar';
 import {expandedPersonById} from '../data/expandedPeople';
@@ -5,14 +6,15 @@ import {expressGenome} from './genetics';
 import {snapshotInfluence,restoreInfluence} from './personalInfluence';
 import {lifestyleFocuses,lifestylePerks} from '../data/lifestyles';
 import {personResidence,together} from './residence';
-import {isAlive,ageAt,lifeOf} from './lifeState';
+import {isAlive,lifeOf} from './lifeState';
 import { relationOpinion,setFriendship,friendship,syncRelationships } from './relationships';
 import { familyStanding,awardPrestige } from './family';
 import { lifestyleBonuses,ensureLifestyle } from './lifestyle';
 import { handoverOffice } from './realm';
 import { characterById,characterRelations,historicalCharacters } from '../data/characters';
 import type { World } from './types';
-import {relationshipPersonById} from '../data/relationships';
+
+import {allCharacters,parentLinksOf} from './personRegistry';
 import {educationBonus, stableEconomicTraits} from './personalEconomyRules';
 export const traitDefinitions={
   greedy:{name:'贪婪',effect:'更重视积财；NPC 可能侵吞经管公款，捐输压力 +5；'},
@@ -39,10 +41,11 @@ export type SocialCommand={type:'interact';target:string;action:Interaction}|{ty
 const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,n));
 export function defaultTraits(id:string):Trait[]{if(expandedPersonById[id])return expandedPersonById[id]?(expandedPersonById[id].role==='commander'?['diligent','steadfast']:expandedPersonById[id].role==='scholar'?['frugal','diligent']:['gregarious','generous']):[];if(!characterById[id])return [];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
 export const pair=(a:string,b:string)=>a+'|'+b;
-export function houseMembers(id:string){
-  const c=characterById[id];return Object.values(characterById).filter(p=>p.family===c.family&&p.polity===c.polity);
+export function houseMembers(id:string,w?:World){
+  const c=getCharacter(w,id);if(!c)return [];return (w?allCharacters(w):Object.values(characterById)).filter(p=>p.family===c.family&&p.polity===c.polity);
 }
-export function kin(a:string,b:string){
+export function kin(a:string,b:string,w?:World){
+  if(w){const links=parentLinksOf(w),parents=(id:string)=>links.filter(r=>r.child===id).map(r=>r.parent);return links.some(r=>r.parent===a&&r.child===b||r.parent===b&&r.child===a)||parents(a).some(id=>parents(b).includes(id));}
   const parents=(id:string)=>characterRelations.filter(r=>r.kind==='父子'&&r.to===id).map(r=>r.from);
   return characterRelations.some(r=>['父子','兄弟'].includes(r.kind)&&(r.from===a&&r.to===b||r.from===b&&r.to===a))||parents(a).some(id=>parents(b).includes(id));
 }
@@ -51,14 +54,14 @@ export function newSocial(id:string):Social{
   for(const a of historicalCharacters)for(const b of historicalCharacters)if(a.id!==b.id){const key=pair(a.id,b.id);opinions[key]=kin(a.id,b.id)?25:a.polity===b.polity?10:-25;hooks[key]=0;}
   return {version:1,founder:id,traits:{...Object.fromEntries(historicalCharacters.map(c=>[c.id,defaultTraits(c.id)])),[id]:defaultTraits(id)},opinions,hooks,cooldowns:{},stress:0,renown:40,legacies:{stewardship:0,kinship:0,learning:0},heir:null,advisor:null,lineage:[{id,day:0}],seed:546,scheme:null};
 }
-export function traitsFor(w:World,id=w.characterId):Trait[]{const base=id?(w.social?.traits[id]??defaultTraits(id)):[];return id&&w.economy?[...new Set<Trait>([...base,...stableEconomicTraits(id,relationshipPersonById[id]?.status==='fictional')])]:base;}
+export function traitsFor(w:World,id=w.characterId):Trait[]{const base=id?(w.social?.traits[id]??defaultTraits(id)):[];return id&&w.economy?[...new Set<Trait>([...base,...stableEconomicTraits(id, getPerson(w,id)?.status==='fictional')])]:base;}
 export const abilityNames={diplomacy:'外交',martial:'军事',stewardship:'管理',intrigue:'谋略'} as const;
 export type Ability=keyof typeof abilityNames;
 export function abilityBreakdown(w:World,id=w.characterId){
- const c=id?characterById[id]:null,t=traitsFor(w,id),p=w.lifestyles?.people[id??'fictional'],focus=p?.focus?lifestyleFocuses[p.focus].branch:null;
+ const c=id? getCharacter(w,id)!:null,t=traitsFor(w,id),p=w.lifestyles?.people[id??'fictional'],focus=p?.focus?lifestyleFocuses[p.focus].branch:null;
  return Object.fromEntries((Object.keys(abilityNames) as Ability[]).map(skill=>{
  const branch=skill==='intrigue'?null:skill,genome=id?w.identities?.people[id]?.genome:undefined;
- const parts=[{label:'师承培养',value:skill==='intrigue'?0:w.householdPlans?.growth[id??'']?.[skill]??0},{label:'基础能力',value:8},{label:'私人研习',value:skill==='stewardship'?educationBonus(w.economy,id??''):0},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'军事历练',value:skill==='martial'?Math.min(4,Math.floor((w.militaryCareer?.xp[id??'']??0)/60)):0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch?2:0},{label:'已学技能',value:branch?(p?.perks.filter(id=>lifestylePerks[id].branch===branch).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/360)):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
+ const parts=[{label:'师承培养',value:skill==='intrigue'?0:w.householdPlans?.growth[id??'']?.[skill]??0},{label:'基础能力',value:8},{label:'私人研习',value:skill==='stewardship'?educationBonus(w.economy,id??''):0},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'军事历练',value:skill==='martial'?Math.min(4,Math.floor((w.militaryCareer?.xp[id??'']??0)/60)):0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch?2:0},{label:'已学技能',value:branch?(p?.perks.filter(id=>lifestylePerks[id].branch===branch).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/360)):0},{label:'军中负伤',value:(lifeOf(w,id)?.injuryUntil??0)>w.day?-(skill==='martial'?2:1):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
  return [skill,{value:Math.max(0,Math.min(40,parts.reduce((n,p)=>n+p.value,0))),parts:parts.filter(p=>p.value!==0)}];
  })) as Record<Ability,{value:number;parts:{label:string;value:number}[]}>;
 }
@@ -67,7 +70,7 @@ export const managementDiscount=(w:World,id=w.characterId)=>Math.min(20,Math.max
 
 export function buildingModifiers(w:World){const b=lifestyleBonuses(w);if(!w.social)return {costRate:Math.max(45,100-b.buildCost-managementDiscount(w)),timeRate:100-b.buildTime};const t=traitsFor(w);return {costRate:Math.max(45,100-(t.includes('frugal')?10:0)-w.social.legacies.stewardship*5-b.buildCost-managementDiscount(w)),timeRate:100-(t.includes('diligent')?20:0)-(w.social.advisor?10:0)+(w.social.stress>=80?20:0)-b.buildTime};}
 export function acceptance(w:World,target:string){
-  if(!w.social||!w.characterId||!Object.hasOwn(characterById,target)||target===w.characterId)return [];
+  if(!w.social||!w.characterId||!getCharacter(w,target)||target===w.characterId)return [];
   return [{label:'基础',value:10},{label:'当前好感',value:relationOpinion(w,w.characterId,target)},{label:'外交',value:attributes(w).diplomacy*2},{label:'政权关系',value:allegianceRealm(w,target)===allegianceRealm(w,w.characterId)?15:-40},{label:'生活重心与技能',value:lifestyleBonuses(w).acceptance}];
 }
 export function interactionQuote(w:World,target:string,action:Interaction){
@@ -78,7 +81,7 @@ export function interactionQuote(w:World,target:string,action:Interaction){
   let reason='';
   if(!w.social||!w.characterId)reason='历史人物开局可使用交往系统';
   else if(w.campaign?.status!=='active')reason='本局已结束';
-  else if(!Object.hasOwn(characterById,target)||target===w.characterId||!Object.hasOwn(interactionNames,action))reason='无效的互动对象或行动';
+  else if(!getCharacter(w,target)||target===w.characterId||!Object.hasOwn(interactionNames,action))reason='无效的互动对象或行动';
   else if(!isAlive(w,target))reason='对方已经去世';
   else if(w.social.lineage.slice(0,-1).some(p=>p.id===target))reason='对方已经退居，不再参与本局交往';
   else if(w.realm?.event)reason='先处理待决事务';
@@ -100,7 +103,7 @@ export function interactionQuote(w:World,target:string,action:Interaction){
   else if(action==='favor'&&!w.social.hooks[pair(w.characterId,target)])reason='没有可兑现的人情';
   return {cost,days,score,chance,reason};
 }
-export function heirs(w:World){if(!w.social||!w.characterId)return [];const seen=new Set(w.social.lineage.map(p=>p.id));return houseMembers(w.social.founder).filter(c=>isAlive(w,c.id)&&ageAt(w,c.id)!>=16&&!seen.has(c.id)&&kin(w.characterId!,c.id)&&!characterRelations.some(r=>r.kind==='父子'&&r.from===c.id&&r.to===w.characterId));}
+export function heirs(w:World){if(!w.social||!w.characterId)return [];const seen=new Set(w.social.lineage.map(p=>p.id));return houseMembers(w.social.founder,w).filter(c=>isAlive(w,c.id)&&!seen.has(c.id)&&kin(w.characterId!,c.id,w)&&!parentLinksOf(w).some(r=>r.parent===c.id&&r.child===w.characterId));}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 function opinion(w:World,target:string,delta:number){const s=w.social!,key=pair(w.characterId!,target);s.opinions[key]=clamp((s.opinions[key]??(allegianceRealm(w,w.characterId!)===allegianceRealm(w,target)?10:-25))+delta,-100,100);}
 export function applySocial(w:World,command:SocialCommand){
@@ -118,7 +121,7 @@ export function applySocial(w:World,command:SocialCommand){
       case 'pressure':if(['friend','confidant'].includes(friendship(w,w.characterId!,command.target)??''))setFriendship(w,w.characterId!,command.target,'rival');s.renown-=10;opinion(w,command.target,-25);s.stress=clamp(s.stress+15,0,100);s.hooks[key]=(s.hooks[key]??0)+1;s.cooldowns[key+'|pressure']=w.day+15;break;
       case 'favor':if(w.relationships)w.relationships.reserves[command.target]-=50;s.hooks[key]--;opinion(w,command.target,-10);p.coins=Math.min(1_000_000,p.coins+50);break;
     }
-    log(w,`${p.name}对${characterById[command.target].name}安排「${interactionNames[command.action]}」${q.cost?'，支出 '+q.cost+' 钱':''}${q.days?'，预计 '+q.days+' 日':''}。`);return;
+    log(w,`${p.name}对${getCharacter(w,command.target)!.name}安排「${interactionNames[command.action]}」${q.cost?'，支出 '+q.cost+' 钱':''}${q.days?'，预计 '+q.days+' 日':''}。`);return;
   }
   if(command.type==='cancel-scheme'){if(!s.scheme)throw new Error('没有进行中的交好。');s.scheme=null;log(w,'你取消了交好行动，已花费用不退还。');return;}
   if(command.type==='rest'){
@@ -130,7 +133,7 @@ export function applySocial(w:World,command:SocialCommand){
     if(level>=2)throw new Error('世业已满级。');if(s.renown<cost)throw new Error('家业名望不足。');s.renown-=cost;s.legacies[command.branch]++;log(w,'家族解锁「'+legacyDefinitions[command.branch].name+'」第 '+(level+1)+' 级。');return;
   }
   if(command.type==='heir'){
-    if(!heirs(w).some(c=>c.id===command.target))throw new Error('只能指定已录、同家支且未退居的合格亲属。');s.heir=command.target;log(w,'指定'+characterById[command.target].name+'为家业继任者。');return;
+    if(!heirs(w).some(c=>c.id===command.target))throw new Error('只能指定已录、同家支且未退居的合格亲属。');s.heir=command.target;log(w,'指定'+getCharacter(w,command.target)!.name+'为家业继任者。');return;
   }
   if(command.type==='handover'){
     if(p.journey)throw new Error('请先抵达，再交接家业。');const c=heirs(w).find(c=>c.id===s.heir);if(!c)throw new Error('请先指定合格继任者。');
@@ -143,6 +146,7 @@ export function applySocial(w:World,command:SocialCommand){
       w.relationships.reserves[w.characterId]=p.coins-inherited;
       p.coins=own+inherited;w.relationships.reserves[c.id]=0;
     }
+    if(w.life)delete w.life.autoCare;
     const former=snapshotInfluence(w);w.characterId=c.id;p.name=c.name;p.home=c.home;s.lineage.push({id:c.id,day:w.day});s.heir=null;s.advisor=null;s.scheme=null;s.stress=20;handoverOffice(w);syncRelationships(w);ensureLifestyle(w);restoreInfluence(w,former);return;
   }
 }
@@ -154,6 +158,6 @@ export function advanceSocial(w:World){
     const success=s.seed/4294967296*100<task.chance;
     if(success){awardPrestige(w,w.characterId!,'friendship');setFriendship(w,w.characterId!,task.target,'friend');}
     opinion(w,task.target,success?25+s.legacies.kinship*5:-5);
-    s.stress=clamp(s.stress+(success?-8:10),0,100);log(w,'与'+characterById[task.target].name+'的交好'+(success?'成功，成为朋友，好感提升。':'未能奏效，好感下降，压力增加。'));
+    s.stress=clamp(s.stress+(success?-8:10),0,100);log(w,'与'+ getCharacter(w,task.target)!.name+'的交好'+(success?'成功，成为朋友，好感提升。':'未能奏效，好感下降，压力增加。'));
   }
 }

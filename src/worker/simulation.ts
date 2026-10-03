@@ -1,6 +1,6 @@
 import {commandReceived,recordCommand} from '../core/requestReceipts';
 import {appointmentPauses} from '../core/appointmentCycle';
-import {pauseSnapshot,pauseEvents,economyPauses,militaryPauses,type PauseEvent} from '../core/pauseEvents';
+import {pauseSnapshot,pauseEvents,familyPauses,economyPauses,militaryPauses,type PauseEvent} from '../core/pauseEvents';
 import { act, advance, newWorld, newCampaignWorld } from '../core/world';
 import { deleteSave, latestSaveInfo, loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
 import { parseWorld, serializeWorld } from '../core/save';
@@ -43,7 +43,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
       }else if(request.type==='menu'){speed=0;await save();reply({type:'screen',page:'menu'});}
       else if(request.type==='background'){if(speed)paused([{id:`${world.day}:background`,kind:'background',title:'暂歇片刻',body:'你离开了游戏页面，时间已暂停。回来后可继续安排事务。'}]);}
       else if (request.type === 'speed') speed = [0,1,3,7].includes(request.speed) ? request.speed : 0;
-      else if (request.type === 'step') { if([...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)].length)throw new Error('请先处理待决文书。');const next=structuredClone(world);advance(next);const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;speed=0;slots=await listSaves(); }
+      else if (request.type === 'step') { if([...familyPauses(world),...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)].length)throw new Error('请先处理待决文书。');const next=structuredClone(world);advance(next);const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;speed=0;slots=await listSaves(); }
       else if (request.type === 'command') {
         if(commandReceived(world,request.key,request.command))return;
         const next=structuredClone(world);act(next,request.command);recordCommand(next,request.key,request.command);
@@ -64,7 +64,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
         lastSaved=await saveWorld(imported);world = imported;hasCurrentWorld=true;speed = 0;slots=await listSaves(); notice('导入成功，原进度保留在切换前备份中。');reply({type:'screen',page:'play'});
       }
     } catch (error) { let message=error instanceof Error ? error.message : '操作失败。';if(['new','load','import'].includes(request.type)){try{slots=await listSaves();}catch{message+=' 存档列表未能刷新，请重试。';}}notice(message,true); }
-    finally { if(['init','load','import','resume'].includes(request.type))paused([...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='speed'&&request.speed>0)paused([...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish(); }
+    finally { if(['init','load','import','resume'].includes(request.type))paused([...familyPauses(world),...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='speed'&&request.speed>0)paused([...familyPauses(world),...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish(); }
   });
 };
 setInterval(() => {

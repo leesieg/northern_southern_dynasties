@@ -1,9 +1,10 @@
-import { characterById,startRules } from '../data/characters';
+import {getCharacter} from './personRegistry';
+import {startRules} from '../data/characters';
 import { siteById } from '../data/scenario';
 import type { World } from './types';
 export interface Campaign {id:'jiangzuo'|'stewardship';deadline:120;appointed:boolean;status:'active'|'won'|'lost';finishedDay:number|null}
 export function campaignGoals(w:World){
-  if(w.characterId){const c=characterById[w.social?.founder??w.characterId],r=startRules(c),levels=w.holdings.cities[c.home]?.levels;
+  if(w.characterId){const c= getCharacter(w,w.social?.founder??w.characterId)!,r=startRules(c),levels=w.holdings.cities[c.home]?.levels;
     return [
       {title:siteById[c.home].name+'市肆升至 '+r.market+' 级',done:(levels?.market??0)>=r.market,hint:'在起始城市安排市肆建设，等待竣工。'},
       {title:r.granary?'城仓升至 '+r.granary+' 级':'建成一级驿舍',done:r.granary?(levels?.granary??0)>=r.granary:(levels?.hostel??0)>=1,hint:'同一城市只能同时推进一个工程。'},
@@ -30,4 +31,4 @@ export function evaluateCampaign(w:World){
   if(c.status!=='active'){c.finishedDay=w.day;w.chronicle.push({day:w.day,person:'player',text:c.status==='won'?(w.characterId?'营建有成：本局全部目标达成。':'立足江左：你完成营建，返抵建康，本局达成。'):'期限已至，营建目标未全部完成。本局结束，可重新开局。'});w.chronicle=w.chronicle.slice(-100);}
 }
 
-export const campaignTitle=(w:World)=>w.characterId?characterById[w.characterId].name+' · 营建有成':'立足江左';
+export const campaignTitle=(w:World)=>w.characterId? getCharacter(w,w.characterId)!.name+' · 营建有成':'立足江左';

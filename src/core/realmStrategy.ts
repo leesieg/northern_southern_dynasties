@@ -1,9 +1,10 @@
+import {allPeople} from './personRegistry';
 import {armyCampaign} from './militaryCampaigns';
 import {civilWar,warArmySide} from './civilWars';
 import {worldRealms} from './polityRuntime';
 import type {World} from './types';
 import {roads,siteById} from '../data/scenario';
-import {relationshipPeople} from '../data/relationships';
+
 import {isMonthStart,monthIndex} from './calendar';
 import {capital,playerRealm,realmForecast,armyDailyFood,armyMonthlyPay,warApproach,declareRealmWar,declareRealmWarReason,settleWar,type RealmId} from './realm';
 import {activeWars,realmAtWar,peaceQuote,warRealmSide} from './wars';
@@ -36,7 +37,7 @@ export function strategicTargets(w:World,r:RealmId){
 export function appointAICommanders(w:World,r:RealmId){
  if(!w.mobility)return;
  for(const a of w.realm!.armies.filter(a=>a.realm===r&&!a.journey&&!armyCommander(w,a)&&!w.mobility!.pendingCommanders?.[a.id!])){
-  const candidate=relationshipPeople.filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&(!civilWar(w,r)||civilWar(w,r)!.civil!.supporters.includes(p.id)===(warArmySide(w,civilWar(w,r)!,a)==='attack'))&&!publicOfficeReason(w,p.id)&&!governingExecutives(w,r).includes(p.id)).sort((x,y)=>attributes(w,y.id).martial-attributes(w,x.id).martial).find(p=>presentAt(w,p.id,a.location)||!!npcRoute(w,p.id,a.location));
+  const candidate= allPeople(w).filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&(!civilWar(w,r)||civilWar(w,r)!.civil!.supporters.includes(p.id)===(warArmySide(w,civilWar(w,r)!,a)==='attack'))&&!publicOfficeReason(w,p.id)&&!governingExecutives(w,r).includes(p.id)).sort((x,y)=>attributes(w,y.id).martial-attributes(w,x.id).martial).find(p=>presentAt(w,p.id,a.location)||!!npcRoute(w,p.id,a.location));
   if(!candidate)continue;
   if(presentAt(w,candidate.id,a.location))installCommander(w,a,candidate.id);
   else {w.mobility.pendingCommanders??={};w.mobility.pendingCommanders[a.id!]={person:candidate.id,ordered:w.day};dispatchNPC(w,candidate.id,a.location);}

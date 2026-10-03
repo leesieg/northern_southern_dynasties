@@ -1,10 +1,11 @@
+import {allPeople} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {isAdventurer} from './resignation';
 import {civilCanAdmin} from './civilWars';
 import {isAlive} from './lifeState';
 import {governmentOf,governingAuthority} from './government';
 import {type RealmId} from './realm';
-import {relationshipPeople} from '../data/relationships';
+
 import {territoryNodes} from '../data/territorialHierarchy';
 import {getScript} from '../data/scripts';
 import {personInfluence,awardInfluence} from './personalInfluence';
@@ -25,7 +26,7 @@ export function appointmentFactors(w:World,id:string,r:RealmId,t?:string){const 
 function positions(w:World,r:RealmId){return Object.values(territoryNodes).filter(n=>n.level!=='realm'&&canonicalTerritory(n.id)===n.id&&localSites(w,n.id,r).length&&localActive(w,n.id,r)).sort((a,b)=>appointmentRank(b.id)-appointmentRank(a.id)||a.id.localeCompare(b.id));}
 function rankOf(w:World,id:string,r:RealmId){return positions(w,r).reduce((max,n)=>localHolder(w,n.id,r)===id?Math.max(max,appointmentRank(n.id)):max,0);}
 export function makeAppointmentRound(w:World,r:RealmId,year=appointmentYear(w)):AppointmentRound{
- const g=governmentOf(w,r)!,approver=appointmentApprover(w,r),used=new Set<string>(),posts=positions(w,r),eligible=relationshipPeople.filter(p=>allegianceRealm(w,p.id)===r&&!isAdventurer(w,p.id)&&!publicOfficeReason(w,p.id)&&p.id!==g.ruler&&!g.executives.includes(p.id)&&!Object.values(g.court?.ministries??{}).includes(p.id));
+ const g=governmentOf(w,r)!,approver=appointmentApprover(w,r),used=new Set<string>(),posts=positions(w,r),eligible= allPeople(w).filter(p=>allegianceRealm(w,p.id)===r&&!isAdventurer(w,p.id)&&!publicOfficeReason(w,p.id)&&p.id!==g.ruler&&!g.executives.includes(p.id)&&!Object.values(g.court?.ministries??{}).includes(p.id));
  for(const n of posts){const holder=localHolder(w,n.id,r);if(holder&&(g.type==='feudal'||!civilCanAdmin(w,approver,localSeatSite(w,n.id,r)!)||!eligible.some(p=>p.id===holder)||w.realm!.offices.some(o=>canonicalTerritory(o.territory??'city:'+o.site)===n.id)))used.add(holder);}
  const scores=new Map(eligible.map(p=>[p.id,appointmentFactors(w,p.id,r)])),ranks=new Map(eligible.map(p=>[p.id,rankOf(w,p.id,r)]));
  const rows:AppointmentRow[]=posts.map(n=>{

@@ -1,9 +1,10 @@
+import {getPerson} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {relatives} from '../data/families';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import {siteById} from '../data/scenario';
-import {relationshipPersonById} from '../data/relationships';
+
 import {economyHost} from './personalEconomyAdapter';
 import {personResidence} from './residence';
 import {isAlive} from './lifeState';
@@ -39,7 +40,7 @@ export function actEnterprise(w:World,c:EnterpriseCommand){const why=enterpriseR
 function refund(w:World,e:Enterprise){const q=e.order;if(!q)return;const f=ensureFiscal(w)!,room=1_000_000-(f.balances[q.account]??0),n=Math.min(room,q.escrow);f.balances[q.account]=(f.balances[q.account]??0)+n;q.escrow-=n;fiscalRecord(w,q.realm,'enterprise:'+e.id,q.account,n,'承包撤销退回未付价款');if(!q.escrow)e.order=null;}
 export function advanceEnterprises(w:World){if(!w.enterprises||!w.realm)return;const host=economyHost(w);
  for(const e of w.enterprises.items){if(e.closed)continue;
- if(!isAlive(w,e.owner)){const successor=w.social?.lineage.findIndex(p=>p.id===e.owner)??-1;if(successor>=0&&w.social?.lineage[successor+1])e.owner=w.social.lineage[successor+1].id;else{const heir=relatives(e.owner,'descendants').find(p=>relationshipPersonById[p.id]&&isAlive(w,p.id));if(heir)e.owner=heir.id;else{refund(w,e);continue;}}}
+ if(!isAlive(w,e.owner)){const successor=w.social?.lineage.findIndex(p=>p.id===e.owner)??-1;if(successor>=0&&w.social?.lineage[successor+1])e.owner=w.social.lineage[successor+1].id;else{const heir=relatives(e.owner,'descendants').find(p=> getPerson(w,p.id)!&&isAlive(w,p.id));if(heir)e.owner=heir.id;else{refund(w,e);continue;}}}
  const q=e.order;if(!q)continue;const city=w.realm.cities[e.site];
  if(w.day>q.deadline||city.controller!==q.realm||allegianceRealm(w,e.owner)!==q.realm){refund(w,e);continue;}
  if(q.progress===q.required){refund(w,e);continue;}
@@ -54,5 +55,5 @@ export function advanceEnterprises(w:World){if(!w.enterprises||!w.realm)return;c
  }
 }
 export function validEnterprises(w:World){const s=w.enterprises;if(s===undefined)return true;const n=(v:unknown,max=1_000_000)=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;
- return !!s&&n(s.nextId)&&s.nextId>0&&Array.isArray(s.items)&&s.items.length<=256&&new Set(s.items.map(e=>e?.id)).size===s.items.length&&s.items.every(e=>e&&n(e.id,s.nextId-1)&&e.id>0&&!!relationshipPersonById[e.owner]&&!!siteById[e.site]&&['workshop','agriculture'].includes(e.kind)&&n(e.capital)&&n(e.opened,w.day)&&Number.isSafeInteger(e.lastOrder)&&e.lastOrder>=-90&&e.lastOrder<=w.day&&n(e.earned,1e9)&&n(e.spent,1e9)&&typeof e.closed==='boolean'&&(!e.closed||!e.order&&e.capital===0)&&(e.order===null||!!e.order&&worldRealms(w).includes(e.order.realm)&&e.order.account===e.order.realm+'|city:'+e.site&&n(e.order.lastWorked,w.day)&&e.order.lastWorked>=e.order.started&&n(e.order.escrow,100)&&e.order.price===100&&n(e.order.progress,e.order.required)&&e.order.required===(e.order.method==='careful'?30:20)&&['careful','swift'].includes(e.order.method)&&n(e.order.started,w.day)&&e.order.deadline===e.order.started+90));
+ return !!s&&n(s.nextId)&&s.nextId>0&&Array.isArray(s.items)&&s.items.length<=256&&new Set(s.items.map(e=>e?.id)).size===s.items.length&&s.items.every(e=>e&&n(e.id,s.nextId-1)&&e.id>0&&!! getPerson(w,e.owner)!&&!!siteById[e.site]&&['workshop','agriculture'].includes(e.kind)&&n(e.capital)&&n(e.opened,w.day)&&Number.isSafeInteger(e.lastOrder)&&e.lastOrder>=-90&&e.lastOrder<=w.day&&n(e.earned,1e9)&&n(e.spent,1e9)&&typeof e.closed==='boolean'&&(!e.closed||!e.order&&e.capital===0)&&(e.order===null||!!e.order&&worldRealms(w).includes(e.order.realm)&&e.order.account===e.order.realm+'|city:'+e.site&&n(e.order.lastWorked,w.day)&&e.order.lastWorked>=e.order.started&&n(e.order.escrow,100)&&e.order.price===100&&n(e.order.progress,e.order.required)&&e.order.required===(e.order.method==='careful'?30:20)&&['careful','swift'].includes(e.order.method)&&n(e.order.started,w.day)&&e.order.deadline===e.order.started+90));
 }

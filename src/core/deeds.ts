@@ -1,6 +1,8 @@
+import {allPeople} from './personRegistry';
+import {getPerson} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {siteById} from '../data/scenario';
-import {relationshipPersonById} from '../data/relationships';
+
 import type {World} from './types';
 import type {RealmId} from './realm';
 
@@ -14,7 +16,7 @@ export function ensureDeeds(w:World){
 }
 /** Every result uses its durable source ID; repeating a settlement cannot award again. */
 export function awardDeed(w:World,realm:RealmId,person:string,source:string,amount:number,reason:string,evidence?:DeedEvidence){
- const g=w.realm?.governments?.realms[realm];if(!g||!Object.hasOwn(relationshipPersonById,person))return 0;
+ const g=w.realm?.governments?.realms[realm];if(!g||!getPerson(w,person))return 0;
  if(!Number.isSafeInteger(amount)||Math.abs(amount)>100||!source||source.length>250)throw new Error('无效成果结算');
  const cut=source.lastIndexOf(':'),sequence=Number(source.slice(cut+1));if(cut<0||!Number.isSafeInteger(sequence)||sequence<0)throw new Error('成果须有稳定流水号');
  const s=ensureDeeds(w)!,key=realm+'|'+person+'|'+source.slice(0,cut),ranges=s.settled[key]??[];if(contains(ranges,sequence))return 0;
@@ -24,10 +26,10 @@ export function awardDeed(w:World,realm:RealmId,person:string,source:string,amou
 export function validDeeds(w:World){
  if(w.deeds===undefined)return true;
  const s=w.deeds;if(!s||s.version!==1||!s.opening||typeof s.opening!=='object'||Array.isArray(s.opening)||!s.settled||typeof s.settled!=='object'||Array.isArray(s.settled)||!Array.isArray(s.recent)||s.recent.length>512)return false;
- const validKey=(key:string)=>{const [r,id,...rest]=key.split('|');return worldRealms(w).includes(r as never)&&Object.hasOwn(relationshipPersonById,id)&&rest.length===0;};
+ const validKey=(key:string)=>{const [r,id,...rest]=key.split('|');return worldRealms(w).includes(r as never)&& !!getPerson(w,id)&&rest.length===0;};
  return Object.entries(s.opening).every(([k,n])=>validKey(k)&&Number.isSafeInteger(n)&&n>=0&&n<=100)
  &&Object.entries(s.settled).every(([k,v])=>k.length<=500&&validKey(k.split('|').slice(0,2).join('|'))&&k.split('|').length>=3&&Array.isArray(v)&&v.length%2===0&&v.every((n,i)=>Number.isSafeInteger(n)&&n>=0&&(i%2?n>=v[i-1]:i===0||n>v[i-1]+1)))
- &&s.recent.every(d=>d&&(d.evidence===undefined||validEvidence(d.evidence,d.source))&&typeof d.source==='string'&&typeof d.reason==='string'&&d.reason.length<=500&&validKey(d.realm+'|'+d.person)&&Number.isSafeInteger(d.day)&&d.day>=0&&d.day<=w.day&&Number.isSafeInteger(d.amount)&&Math.abs(d.amount)<=100&&contains(s.settled[d.realm+'|'+d.person+'|'+d.source.slice(0,d.source.lastIndexOf(':'))]??[],Number(d.source.slice(d.source.lastIndexOf(':')+1))));
+ &&s.recent.every(d=>d&&(d.evidence===undefined||validEvidence(d.evidence,d.source,w))&&typeof d.source==='string'&&typeof d.reason==='string'&&d.reason.length<=500&&validKey(d.realm+'|'+d.person)&&Number.isSafeInteger(d.day)&&d.day>=0&&d.day<=w.day&&Number.isSafeInteger(d.amount)&&Math.abs(d.amount)<=100&&contains(s.settled[d.realm+'|'+d.person+'|'+d.source.slice(0,d.source.lastIndexOf(':'))]??[],Number(d.source.slice(d.source.lastIndexOf(':')+1))));
 }
 
 function contains(ranges:number[],n:number){for(let i=0;i<ranges.length;i+=2)if(n>=ranges[i]&&n<=ranges[i+1])return true;return false;}
@@ -36,8 +38,8 @@ function insert(ranges:number[],n:number){
  const result:number[]=[];for(const [lo,hi] of pairs){if(result.length&&lo<=result[result.length-1]+1)result[result.length-1]=Math.max(hi,result[result.length-1]);else result.push(lo,hi);}return result;
 }
 
-function validEvidence(e:DeedEvidence,source:string){
+function validEvidence(e:DeedEvidence,source:string,w:World){
  const int=(v:unknown,max:number)=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;
- const person=(p:unknown)=>typeof p==='string'&&Object.hasOwn(relationshipPersonById,p);
- return !!e&&source==='assignment:'+e.task&&int(e.task,1000000)&&Object.hasOwn(siteById,e.site)&&person(e.issuer)&&person(e.assessor)&&!!e.allocated&&!!e.spent&&int(e.allocated.coins,400)&&int(e.allocated.grain,200)&&int(e.spent.coins,e.allocated.coins)&&int(e.spent.grain,e.allocated.grain)&&int(e.quality,130)&&int(e.progress,100)&&Array.isArray(e.effects)&&e.effects.length<=12&&e.effects.every(p=>typeof p==='string'&&p.length<=300)&&Array.isArray(e.contributors)&&e.contributors.length<=Object.keys(relationshipPersonById).length&&new Set(e.contributors.map(p=>p.person)).size===e.contributors.length&&e.contributors.every(p=>p&&person(p.person)&&int(p.lead,10000)&&int(p.support,10000));
+ const person=(p:unknown)=>typeof p==='string'&&!!getPerson(w,p);
+ return !!e&&source==='assignment:'+e.task&&int(e.task,1000000)&&Object.hasOwn(siteById,e.site)&&person(e.issuer)&&person(e.assessor)&&!!e.allocated&&!!e.spent&&int(e.allocated.coins,400)&&int(e.allocated.grain,200)&&int(e.spent.coins,e.allocated.coins)&&int(e.spent.grain,e.allocated.grain)&&int(e.quality,130)&&int(e.progress,100)&&Array.isArray(e.effects)&&e.effects.length<=12&&e.effects.every(p=>typeof p==='string'&&p.length<=300)&&Array.isArray(e.contributors)&&e.contributors.length<=allPeople(w).length&&new Set(e.contributors.map(p=>p.person)).size===e.contributors.length&&e.contributors.every(p=>p&&person(p.person)&&int(p.lead,10000)&&int(p.support,10000));
 }

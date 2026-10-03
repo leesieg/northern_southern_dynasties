@@ -1,3 +1,4 @@
+import {getCharacter,getPerson} from './personRegistry';
 import {allegianceRealm} from './officeEligibility';
 import {worldRealms} from './polityRuntime';
 import {isMonthStart} from './calendar';
@@ -5,10 +6,10 @@ import {personResidence} from './residence';
 import {missionJourney} from './envoyTravel';
 import {capital} from './realm';
 import {siteById} from '../data/scenario';
-import { relationshipPersonById } from '../data/relationships';
+
 import type { World } from './types';
 import { type RealmId } from './realm';
-import { characterById } from '../data/characters';
+
 import { diplomacyActions,diplomaticKey,diplomaticFactorNames } from './diplomacy';
 import { governmentOf } from './government';
 const obj=(v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -24,13 +25,13 @@ export function validDiplomacy(w:World){
  for(const [key,p] of Object.entries(s.pairs)){
  if(!keys.includes(key)||!obj(p)||!realm(p.a)||!realm(p.b)||p.a===p.b||diplomaticKey(p.a,p.b)!==key||!num(p.opinion,-100,100)||typeof p.recognized!=='boolean'||!Array.isArray(p.treaties)||p.treaties.length>8||!obj(p.cooldowns))return false;
  if(p.opinionFactors!==undefined){const f=p.opinionFactors;if(!obj(f)||!num(f.base,-100,100)||!obj(f.effects)||Object.entries(f.effects).some(([k,v])=>!Object.hasOwn(diplomaticFactorNames,k)||!num(v,-1000000,1000000))||f.base+Object.values(f.effects).reduce((sum,v)=>sum+(v??0),0)!==p.opinion)return false;}
- const seen=new Set<string>();for(const t of p.treaties){if(!obj(t)||!['transit','safe','military','pact','alliance'].includes(t.kind)||!realm(t.from)||!realm(t.to)||t.from===t.to||diplomaticKey(t.from,t.to)!==key||!num(t.since,s.since,w.day)||!num(t.until,t.since+1,w.day+720)||t.until!==t.since+(t.kind==='safe'?240:720))return false;if(t.meeting!==undefined&&(t.kind!=='safe'||!['invited','held'].includes(t.meeting)))return false;const tk=t.kind+(['pact','alliance'].includes(t.kind)?'':t.from);if(seen.has(tk))return false;seen.add(tk);if(t.kind==='safe'?(typeof t.actor!=='string'||!characterById[t.actor]||allegianceRealm(w,t.actor)!==t.from):t.actor!==null)return false;}
+ const seen=new Set<string>();for(const t of p.treaties){if(!obj(t)||!['transit','safe','military','pact','alliance'].includes(t.kind)||!realm(t.from)||!realm(t.to)||t.from===t.to||diplomaticKey(t.from,t.to)!==key||!num(t.since,s.since,w.day)||!num(t.until,t.since+1,w.day+720)||t.until!==t.since+(t.kind==='safe'?240:720))return false;if(t.meeting!==undefined&&(t.kind!=='safe'||!['invited','held'].includes(t.meeting)))return false;const tk=t.kind+(['pact','alliance'].includes(t.kind)?'':t.from);if(seen.has(tk))return false;seen.add(tk);if(t.kind==='safe'?(typeof t.actor!=='string'||! getCharacter(w,t.actor)!||allegianceRealm(w,t.actor)!==t.from):t.actor!==null)return false;}
  for(const [k,v] of Object.entries(p.cooldowns)){const [r,action,...extra]=k.split('|');if(extra.length||![p.a,p.b].includes(r as RealmId)||!Object.hasOwn(diplomacyActions,action)||!num(v,0,w.day+360))return false;}
  }
  for(const [r,overlord] of Object.entries(s.subjects)){if(!realm(r)||!realm(overlord)||r===overlord)return false;const seen=new Set<string>([r]);let n:RealmId|undefined=overlord;while(n){if(seen.has(n))return false;seen.add(n);n=s.subjects[n];}}
  const seen=new Set<number>(),envoys=new Set<string>(),routes=new Set<string>();for(const m of s.missions){if(!obj(m)||!num(m.id,1,s.nextId-1)||seen.has(m.id)||!realm(m.from)||!realm(m.to)||m.from===m.to||!Object.hasOwn(diplomacyActions,m.action)||['revoke','insult','independence'].includes(m.action)||m.arrivalSite!==undefined&&!siteById[m.arrivalSite]||m.civilSide!==undefined&&(!['attack','defend'].includes(String(m.civilSide))||m.action!=='join')||m.action==='join'&&!num(m.war,1,(w.realm.nextWarId??2)-1)||m.action!=='join'&&m.war!==undefined||typeof m.actor!=='string'||!str(m.actor)||allegianceRealm(w,m.actor)!==m.from||!['traveling','audience','returning'].includes(m.status)||!num(m.sent,s.since,w.day)||!num(m.due,m.sent,m.sent+2000)||m.expires!==m.due+30||!num(m.expires,w.day+1,w.day+1030)||!Array.isArray(m.bases)||m.bases.length!==2||!m.bases.every(v=>str(v)))return false;
  if(m.envoy&&envoys.has(m.envoy))return false;if(m.envoy)envoys.add(m.envoy);
- if(m.envoy!==undefined&&(!relationshipPersonById[m.envoy]||!siteById[m.home!]||!num(m.negotiation,2,14)||!num(m.lastTravel,m.sent,w.day)||m.arrived!==undefined&&!num(m.arrived,m.sent,w.day)||m.returnStarted!==undefined&&!num(m.returnStarted,m.sent,w.day)))return false;
+ if(m.envoy!==undefined&&(! getPerson(w,m.envoy)!||!siteById[m.home!]||!num(m.negotiation,2,14)||!num(m.lastTravel,m.sent,w.day)||m.arrived!==undefined&&!num(m.arrived,m.sent,w.day)||m.returnStarted!==undefined&&!num(m.returnStarted,m.sent,w.day)))return false;
  if(m.status==='returning'&&(!m.envoy||m.returnStarted===undefined))return false;
  if(m.envoy){const j=missionJourney(w,m.envoy),destination=m.status==='returning'?m.home!:m.arrivalSite??capital(m.to,w);if(j?j.route.at(-1)!==destination:personResidence(w,m.envoy).site!==destination)return false;if(m.status==='audience'&&j)return false;}
  if(m.status==='audience'&&m.due>w.day)return false;const k=m.from+'|'+m.to;if(routes.has(k))return false;seen.add(m.id);routes.add(k);

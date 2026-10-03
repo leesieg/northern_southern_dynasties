@@ -1,3 +1,4 @@
+import {getCharacter} from '../core/personRegistry';
 import {RealmBadge} from './RealmBadge';
 import {PositionSeat,PersonSelectionDialog} from './PersonSelection';
 import {LocalOfficeSeat,LocalRequests} from './LocalAdministration';
@@ -14,16 +15,16 @@ import {movementPower} from '../core/court';
 import { officeHierarchy,officeChain,superiorOffice,directSubordinates,type OfficeNode } from '../core/offices';
 import { politicalName } from '../core/government';
 import { playerRealm,type RealmId } from '../core/realm';
-import { characterById } from '../data/characters';
+
 import { siteById } from '../data/scenario';
 import type { World,GameCommand } from '../core/types';
 import './offices.css';
 export function OfficeHierarchy({world,person,realm=playerRealm(world),onPerson,expanded=false,send,pending=false}:{send?:(command:GameCommand)=>void;pending?:boolean;world:World;person?:string;realm?:RealmId;expanded?:boolean;onPerson:(id:string)=>void}){
  const [office,setOffice]=useState<MinistryId|null>(null),[candidate,setCandidate]=useState(world.characterId!),[dismissConfirm,setDismissConfirm]=useState(false);
  const all=officeHierarchy(world);if(!all.length)return null;
- const affiliation=person&&characterById[person]?courtOf(world,characterById[person].polity)?.members[person]:undefined;
+ const affiliation=person&&getCharacter(world,person)!?courtOf(world,getCharacter(world,person)!.polity)?.members[person]:undefined;
  const held=person?all.filter(n=>n.holder===person):all.filter(n=>n.realm===realm);
- const link=(id:string)=><button className="office-person" onClick={()=>onPerson(id)}>{politicalName(id)} ↗</button>;
+ const link=(id:string)=><button className="office-person" onClick={()=>onPerson(id)}>{politicalName(id,world)} ↗</button>;
  const card=(n:OfficeNode)=>{const superior=superiorOffice(all,n);return <article className="office-card" key={n.id}>
   <header><strong>{n.name}</strong><small><RealmBadge realm={n.realm} world={world}/> · {n.kind==='honour'?'身份／爵号':n.kind==='city'?(n.active?'在任辖地':'失守 · 治理暂停'):n.active?'朝廷职位':'政体停用 · 无履职增益'}</small></header>
   {!person&&<div>{n.holder?link(n.holder):<span className="small-note">空缺 · 未任命</span>}</div>}
@@ -39,7 +40,7 @@ export function OfficeHierarchy({world,person,realm=playerRealm(world),onPerson,
  const dismiss=office?{type:'court',action:'appoint',ministry:office,candidate:null} as const:null;
  return <section className="office-hierarchy">{office&&send&&command&&<PersonSelectionDialog world={world} title={ministries[office].name} value={candidate} onSelect={setCandidate} onClose={()=>setOffice(null)} pending={pending} description={<>{ministries[office].duty} · {ministries[office].effect}。功绩达到 40 时称职；新任命将撤换原任者。</>} options={officeCandidates(world,playerRealm(world)).filter(p=>isAlive(world,p.id)&&(governmentExecutive(world)||p.id===world.characterId)).map(p=>({id:p.id,score:governmentOf(world)?.merit[p.id]??0,metric:'功绩',reason:courtReason(world,command.action==='appoint'?{...command,candidate:p.id}:command)}))} confirmLabel={governmentExecutive(world)?'任命 · 15 影响力':'申请 · 25 影响力'} onConfirm={()=>{send(command);setOffice(null);}}>{governmentExecutive(world)&&courtOf(world)?.ministries[office]&&dismiss&&<><button disabled={pending||!!courtReason(world,dismiss)} onClick={()=>setDismissConfirm(true)}>免职 · 15 影响力</button>{dismissConfirm&&<ConfirmAction title="免职" detail="撤销此人的中央官职与履职增益。" confirmLabel="确认免职" danger pending={pending||!!courtReason(world,dismiss)} onCancel={()=>setDismissConfirm(false)} onConfirm={()=>{if(pending||courtReason(world,dismiss))return;send(dismiss);setOffice(null);setDismissConfirm(false);}}/>}</>}</PersonSelectionDialog>}<div className="realm-section-title"><h3>{person?'官爵与统属':'政权科层'}</h3>{!person&&<small>中央官职俸给 {courtSalary(world,realm)} 钱／月</small>}</div>
  {!person&&!courtEnabled(world,realm)&&<p className="government-warning">当前政体暂停中央履职与俸给；可在制度页改定政体。</p>}
- {person&&affiliation&&<p className="small-note">政治立场：{movements[affiliation].name} · 集团势力 {movementPower(world,characterById[person].polity,person)}</p>}
+ {person&&affiliation&&<p className="small-note">政治立场：{movements[affiliation].name} · 集团势力 {movementPower(world,getCharacter(world,person)!.polity,person)}</p>}
  {person?held.map(card):<ul className="office-tree">{held.filter(n=>!n.parentId).map(n=>tree(n))}</ul>}
  {send&&<LocalRequests world={world} send={send} pending={pending}/>}
  {person&&!held.length&&<p>暂无在任官职。</p>}

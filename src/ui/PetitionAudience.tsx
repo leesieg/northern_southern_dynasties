@@ -16,7 +16,7 @@ export function AudienceStage({world:w,person,realm,subject,role,speech,terms,on
  return <div className="service-audience-stage">
   {decorHost?createPortal(decorations,decorHost):decorations}
   <div className="service-audience-conversation">
-   <div className="service-audience-speaker"><RealmBadge realm={realm} world={w}/>{onPerson?<button className="service-audience-person" type="button" onClick={()=>onPerson(person)} aria-label={'查看'+politicalName(person)+'的人物详情'}>{politicalName(person)} ↗</button>:<strong>{politicalName(person)}</strong>}<span>{role}</span></div>
+   <div className="service-audience-speaker"><RealmBadge realm={realm} world={w}/>{onPerson?<button className="service-audience-person" type="button" onClick={()=>onPerson(person)} aria-label={'查看'+politicalName(person,w)+'的人物详情'}>{politicalName(person,w)} ↗</button>:<strong>{politicalName(person,w)}</strong>}<span>{role}</span></div>
    <p className="service-audience-speech">“{speech}”</p>{terms}
   </div>
  </div>;

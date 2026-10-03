@@ -39,6 +39,7 @@ describe('人物年龄、健康与身后事',()=>{
  });
  it('ends a line without an eligible heir and cannot advance or revive on reload',()=>{
   const w=newCampaignWorld('dugu-xin',undefined,'sandbox');w.day=900;
+  for(const heir of heirs(w))die(w,heir.id,'illness');
   die(w,'dugu-xin','illness');expect(w.campaign!.status).toBe('lost');
   const b=parseWorld(serializeWorld(w));advance(b,5);expect(b.day).toBe(900);expect(isAlive(b,'dugu-xin')).toBe(false);
   expect(()=>act(b,{type:'provision'})).toThrow();
@@ -47,8 +48,8 @@ describe('人物年龄、健康与身后事',()=>{
   const w=newCampaignWorld('gao-huan',undefined,'sandbox');die(w,'gao-cheng','age');
   expect(heirs(w).map(c=>c.id)).not.toContain('gao-cheng');expect(interactionQuote(w,'gao-cheng','gift').reason).toContain('去世');
   expect(relationshipQuote(w,{type:'relationship',action:'befriend',target:'gao-cheng'}).reason).toContain('去世');
-  die(w,'gao-yang','age');
-  expect(governmentReason(w,{type:'government',action:'succession',stage:'east-regency'})).toContain('去世');
+  die(w,'gao-yang','age');w.day=1096;
+  expect(governmentReason(w,{type:'government',action:'succession',stage:'east-regency'})).toContain('已故');
   expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('charges once for finite care, prevents sick travel, and resolves recovery deterministically',()=>{

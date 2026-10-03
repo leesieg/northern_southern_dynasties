@@ -1,6 +1,7 @@
+import {allPeople} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {isMonthStart} from './calendar';
-import {relationshipPeople} from '../data/relationships';
+
 import {territoryNodes} from '../data/territorialHierarchy';
 import {actCourt,courtEnabled,courtReason} from './court';
 import {ministryIds} from '../data/court';
@@ -26,7 +27,7 @@ function idleCandidates(w:World,r:RealmId){
   ...w.realm!.local!.requests.filter(q=>q.status==='pending').map(q=>q.candidate),
   ...worldRealms(w).flatMap(realm=>{const q=w.realm!.local!.cycle?.rounds[realm];return q?.status==='pending'?q.rows.flatMap(row=>row.candidate?[row.candidate]:[]):[];}),
  ]);
- return relationshipPeople.filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&!isAdventurer(w,p.id)&&!publicOfficeReason(w,p.id)&&lifeOf(w,p.id)?.illness?.severity!==3&&!personResidence(w,p.id).traveling&&!w.mobility?.appointments[p.id]&&!reserved.has(p.id)&&p.id!==g.ruler&&!governingExecutives(w,r).includes(p.id)&&!Object.values(g.court?.ministries??{}).includes(p.id)&&!localOfficeLoad(w,p.id));
+ return allPeople(w).filter(p=>p.id!==w.characterId&&allegianceRealm(w,p.id)===r&&!isAdventurer(w,p.id)&&!publicOfficeReason(w,p.id)&&lifeOf(w,p.id)?.illness?.severity!==3&&!personResidence(w,p.id).traveling&&!w.mobility?.appointments[p.id]&&!reserved.has(p.id)&&p.id!==g.ruler&&!governingExecutives(w,r).includes(p.id)&&!Object.values(g.court?.ministries??{}).includes(p.id)&&!localOfficeLoad(w,p.id));
 }
 
 /** A monthly decision, paid by the actual appointing person. It never replaces a

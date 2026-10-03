@@ -1,5 +1,6 @@
+import {getCharacter} from './personRegistry';
 import {isMonthStart,monthStart} from './calendar';
-import { characterById } from '../data/characters';
+
 import { lifestyleBranches,lifestyleFocuses,lifestylePerks,emptyLifestyleBonus,branchPerks,LIFESTYLE_XP_PER_POINT,LIFESTYLE_SWITCH_DAYS,type LifestyleBranch,type LifestyleBonus } from '../data/lifestyles';
 import type { World } from './types';
 export interface LifestyleProgress {focus:string|null;changed:number;xp:Record<LifestyleBranch,number>;perks:string[];lastStudy:number;study:{branch:LifestyleBranch;day:number}|null}
@@ -72,7 +73,7 @@ export function validLifestyles(w:World):boolean {
  if(w.campaign&&!Object.hasOwn(state.people,lifestylePerson(w)))return false;
  const allowed=new Set(w.characterId?(w.social?.lineage.map(p=>p.id)??[w.characterId]):['fictional']);
  for(const [id,p] of Object.entries(state.people)){
-  if(!allowed.has(id)||id!=='fictional'&&!Object.hasOwn(characterById,id)||!object(p)||!integer(p.changed,0,w.day)||!integer(p.lastStudy,0,w.day))return false;
+  if(!allowed.has(id)||id!=='fictional'&&!getCharacter(w,id)||!object(p)||!integer(p.changed,0,w.day)||!integer(p.lastStudy,0,w.day))return false;
   if(p.focus!==null&&(typeof p.focus!=='string'||!Object.hasOwn(lifestyleFocuses,p.focus)))return false;
   if(!object(p.xp)||Object.keys(p.xp).length!==3||Object.keys(lifestyleBranches).some(b=>!integer(p.xp[b as LifestyleBranch],0,600)))return false;
   if(!Array.isArray(p.perks)||p.perks.length>15||new Set(p.perks).size!==p.perks.length)return false;

@@ -1,7 +1,8 @@
+import {getCharacter,getPerson} from '../core/personRegistry';
 import {RealmFlag} from './RealmFlag';
 import type {Polity,World} from '../core/types';
 import {familyById} from '../data/families';
-import {relationshipPersonById} from '../data/relationships';
+
 import {useEffect,useRef,useState} from 'react';
 import type {FeatureCollection,Geometry,Position} from 'geojson';
 import {ageLabel} from '../core/lifeState';
@@ -9,7 +10,7 @@ import {regimeName,politicalTitle} from '../core/government';
 import {Resource,ArtIcon} from './ArtIcon';
 import {CharacterPortrait} from './CharacterPortrait';
 import {getScript} from '../data/scripts';
-import {characterById,relationsFor,roleNames,startRules,familyName} from '../data/characters';
+import {relationsFor,roleNames,startRules,familyName} from '../data/characters';
 import {siteById} from '../data/scenario';
 import {territories} from '../map/territories';
 import './characters.css';
@@ -20,11 +21,11 @@ const regions=territories.features.map(f=>({id:String(f.properties?.id),polity:f
 const realmColors:Record<Polity,string>={liang:'#71986c',east:'#cb9a57',west:'#b56d59',frontier:'#b8b9ad'};
 export function CharacterPicker({selected,onSelect,allowFictional=true,scriptId,sandbox=false,world,pending=false}:{selected:string;onSelect:(id:string)=>void;allowFictional?:boolean;scriptId?:string;sandbox?:boolean;world?:World;pending?:boolean;onPerson?:(id:string)=>void}){
  const listRef=useRef<HTMLDivElement>(null);
- const script=getScript(scriptId),roster=script.characterIds.map(id=>characterById[id]).filter(Boolean);
+ const script=getScript(scriptId),roster=script.characterIds.map(id=>getCharacter(world,id)!).filter(Boolean);
  const [realm,setRealm]=useState('all'),[query,setQuery]=useState(''),[city,setCity]=useState(''),[profile,setProfile]=useState<'realm'|'person'>('realm'),[geography,setGeography]=useState<{land:string;rivers:string}|null>(null),[mapError,setMapError]=useState(false);
  useEffect(()=>{const controller=new AbortController();Promise.all(['land','rivers'].map(async name=>{const response=await fetch(import.meta.env.BASE_URL+'data/'+name+'.geojson',{signal:controller.signal});if(!response.ok)throw new Error('map');const data=await response.json() as FeatureCollection;return data.features.map(f=>path(f.geometry)).join(' ');})).then(([land,rivers])=>setGeography({land,rivers})).catch(()=>{if(!controller.signal.aborted)setMapError(true);});return()=>controller.abort();},[]);
  const points=roster.map(p=>project([siteById[p.home].lon,siteById[p.home].lat])),left=Math.min(-65,...points.map(p=>p[0]-35)),top=Math.min(-12,...points.map(p=>p[1]-35)),right=Math.max(710,...points.map(p=>p[0]+65)),bottom=Math.max(638,...points.map(p=>p[1]+35));
- const c=characterById[selected],rules=c?startRules(c):null;
+ const c=getCharacter(world,selected)!,rules=c?startRules(c):null;
  const visible=roster.filter(p=>(realm==='all'||p.polity===realm)&&(p.name+p.title+siteById[p.home].name+(familyById[p.family]?.name??familyName(p.family))).includes(query.trim()));
  const cities=[...new Set(visible.map(p=>p.home))],activeCity=cities.includes(city)?city:'',listed=activeCity?visible.filter(p=>p.home===activeCity):visible;
  useEffect(()=>{listRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({block:'nearest'});},[selected,realm,query,activeCity]);
@@ -52,9 +53,9 @@ export function CharacterPicker({selected,onSelect,allowFictional=true,scriptId,
    {!geography&&!mapError&&<p className="cast-map-status" role="status">载入山河…</p>}{mapError&&<p className="cast-map-status" role="status">陆地与河流底图未能加载；仍可通过人物标记或名单选择。</p>}
    <div className="cast-map-caption"><span>{c?siteById[c.home].name+' · '+regimeName(world,c.polity):'建康 · 江左行旅'}</span><small>开局控制区示意 · 沿用游戏区划，非考据县界</small></div>
   </div>
-  <article className="cast-profile" aria-label="所选人物"><header className="cast-identity">{c&&<RealmFlag realm={c.polity} showLabel={false}/>}<h2>{c?.name??'沈行舟'}</h2><p>{c?politicalTitle(world,c.id):'江左行旅'}</p><small>{c?roleNames[c.role]:'营建教学'} · {ageLabel(world,selected)}{relationshipPersonById[selected]?.status==='fictional'||selected==='fictional'?' · 架空人物':''}</small></header>
+  <article className="cast-profile" aria-label="所选人物"><header className="cast-identity">{c&&<RealmFlag realm={c.polity} showLabel={false}/>}<h2>{c?.name??'沈行舟'}</h2><p>{c?politicalTitle(world,c.id):'江左行旅'}</p><small>{c?roleNames[c.role]:'营建教学'} · {ageLabel(world,selected)}{getPerson(world,selected)?.status==='fictional'||selected==='fictional'?' · 架空人物':''}</small></header>
    <nav className="cast-profile-tabs" aria-label="开局详情">{(['realm','person'] as const).map(tab=><button type="button" key={tab} aria-pressed={profile===tab} onClick={()=>setProfile(tab)}>{tab==='realm'?'开局':'人物'}</button>)}</nav>
-   <div className="cast-profile-body" key={selected+'|'+profile}>{c&&rules?<>{profile==='realm'?<><h3>{familyById[c.family]?.name??familyName(c.family)}</h3><p>{regimeName(world,c.polity)} · {siteById[c.home].name} · {siteById[c.home].terrain}</p><h4>开局身份</h4><div className="cast-start-icons"><RealmFlag realm={c.polity} compact showLabel={false}/><ArtIcon name={c.role==='ruler'?'renown':c.role==='commander'?'army':'influence'} size={42}/><ArtIcon name="estate" size={42}/></div><p>{c.title}</p><div className="cast-resources"><Resource caption name="coins" value={rules.coins} label="起始盘缠" unit="钱"/><Resource caption name="grain" value={rules.food} label="起始行粮" unit="日"/></div><p className="cast-objective">{sandbox?'经营家族与辖地，争取官职，延续家业。':`120 日内：${siteById[c.home].name}市肆 ${rules.market} 级、${rules.granary?'城仓 '+rules.granary+' 级':'驿舍 1 级'}、田庄 1 级，经营满 30 日。`}</p></>:<><div className="cast-biography"><CharacterPortrait characterId={c.id} world={world}/><p>{c.biography}</p></div><h4>亲族与同道</h4><div className="cast-kin">{relationsFor(c.id).filter(r=>roster.some(p=>p.id===r.id)).map(r=><button type="button" key={r.id} onClick={()=>{reset();choose(r.id);}}><CharacterPortrait characterId={r.id} compact/><span>{characterById[r.id].name}<small>{r.label}</small></span></button>)}</div></>}</>:<p>从建康赴京口领取营建委任，建成市肆与田庄后返回建康。120 日期限，180 钱、90 日行粮。</p>}</div>
+   <div className="cast-profile-body" key={selected+'|'+profile}>{c&&rules?<>{profile==='realm'?<><h3>{familyById[c.family]?.name??familyName(c.family)}</h3><p>{regimeName(world,c.polity)} · {siteById[c.home].name} · {siteById[c.home].terrain}</p><h4>开局身份</h4><div className="cast-start-icons"><RealmFlag realm={c.polity} compact showLabel={false}/><ArtIcon name={c.role==='ruler'?'renown':c.role==='commander'?'army':'influence'} size={42}/><ArtIcon name="estate" size={42}/></div><p>{c.title}</p><div className="cast-resources"><Resource caption name="coins" value={rules.coins} label="起始盘缠" unit="钱"/><Resource caption name="grain" value={rules.food} label="起始行粮" unit="日"/></div><p className="cast-objective">{sandbox?'经营家族与辖地，争取官职，延续家业。':`120 日内：${siteById[c.home].name}市肆 ${rules.market} 级、${rules.granary?'城仓 '+rules.granary+' 级':'驿舍 1 级'}、田庄 1 级，经营满 30 日。`}</p></>:<><div className="cast-biography"><CharacterPortrait characterId={c.id} world={world}/><p>{c.biography}</p></div><h4>亲族与同道</h4><div className="cast-kin">{relationsFor(c.id).filter(r=>roster.some(p=>p.id===r.id)).map(r=><button type="button" key={r.id} onClick={()=>{reset();choose(r.id);}}><CharacterPortrait characterId={r.id} compact/><span>{getCharacter(world,r.id)!.name}<small>{r.label}</small></span></button>)}</div></>}</>:<p>从建康赴京口领取营建委任，建成市肆与田庄后返回建康。120 日期限，180 钱、90 日行粮。</p>}</div>
   </article>
  </fieldset>;
 }

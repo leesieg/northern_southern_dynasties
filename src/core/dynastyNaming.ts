@@ -1,7 +1,8 @@
+import {getPerson,getCharacter} from './personRegistry';
 import {administration} from '../data/administration';
-import {characterById} from '../data/characters';
+
 import {canonicalDynastyName,dynastyNames,successionDefinitions} from '../data/governments';
-import {relationshipPersonById} from '../data/relationships';
+
 import {siteById} from '../data/scenario';
 import {validDynastyName} from './courtSave';
 import {governmentOf,regimeName} from './government';
@@ -16,7 +17,7 @@ const nameIdentity=(name:string)=>canonicalDynastyName(name).replace(/^[东西]�
 
 /** Read-only suggestions: recorded family precedent, recorded title, then held territory. */
 export function dynastyNameOptions(w:World,r:RealmId,founder:string):DynastyNameOption[]{
- const person=relationshipPersonById[founder];
+ const person= getPerson(w,founder)!;
  if(!person||!w.realm?.governments?.realms[r])return [];
  const unavailable=new Set([
   ...worldRealms(w).filter(id=>!w.realm!.annexed?.[id]).map(id=>regimeName(w,id)),
@@ -28,15 +29,15 @@ export function dynastyNameOptions(w:World,r:RealmId,founder:string):DynastyName
   unavailable.add(nameIdentity(name));options.push({name,reason});
  };
  // Resolve references at call time: data/core imports already contain cycles.
- for(const d of Object.values(successionDefinitions))if(d.nextDynasty&&person.family===relationshipPersonById[d.ruler]?.family){
+ for(const d of Object.values(successionDefinitions))if(d.nextDynasty&&person.family=== getPerson(w,d.ruler)?.family){
   add(dynastyNames[d.nextDynasty],person.name+'家系的历史国号参照；仅择号，不触发历史更替。');
  }
- for(const title of (characterById[founder]?.title??'').split(/[·，、]/u)){
+ for(const title of ( getCharacter(w,founder)?.title??'').split(/[·，、]/u)){
   const seal=title.trim().match(/^(\p{Script=Han}{1,4}?)(?:国|郡|县)?(?:王|公|侯)$/u)?.[1];
   add(seal,'剧本已录封号「'+title.trim()+'」的名称参照，不代表新增封地。');
  }
  const held=Object.keys(w.realm.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r).sort();
- const home=characterById[founder]?.home??person.home;
+ const home= getCharacter(w,founder)?.home??person.home;
  const sites=[...new Set([capital(r,w),...(home?[home]:[]),...held])].filter(id=>held.includes(id));
  for(const id of sites){
   const a=administration[id],place=siteById[id]?.name??id;

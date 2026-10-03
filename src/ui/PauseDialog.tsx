@@ -1,3 +1,4 @@
+import {FamilyMomentChoice} from './HouseholdLifePanel';
 import {BattleResult} from './BattleResult';
 import {CustodyPerson} from './CustodyPanel';
 import {EconomyCases} from './GovernmentAudit';
@@ -53,6 +54,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  <div className={audience?'pause-dialog-scroll':undefined}>
  <header>{!audience&&<span className="eyebrow">时光暂停{count>1?` · 尚有 ${count} 件消息`:''}</span>}<h2 id="pause-title">{event.title}</h2></header>
  {!audience&&<p id="pause-body">{body}</p>}
+ {event.kind==='family'&&actionable&&world.householdLife?.moments.filter(e=>e.id===event.familyId).map(e=><FamilyMomentChoice key={e.id} world={world} event={e} pending={pending} send={send}/>)}
  {event.kind==='battle'&&event.battle&&<BattleResult world={world} battle={event.battle}/>}
  {!actionable&&event.id.startsWith('unrest:')&&<button disabled={pending} onClick={()=>onNavigate(event)}>前往当地治理 ›</button>}
  {!actionable&&event.kind==='situation'&&<button disabled={pending} onClick={()=>onNavigate(event)}>查看原因与应对 ›</button>}
@@ -70,7 +72,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  {event.kind==='diplomacy'&&world.diplomacy?.missions.filter(m=>m.status==='audience'&&m.to===playerRealm(world)).map(m=><section className="pause-decision" key={m.id}><h3><RealmBadge realm={m.from} world={world}/>使团 · {diplomacyActions[m.action]}</h3><p>答复期限尚余 {Math.max(0,m.expires-world.day)} 日</p><div className="realm-actions">{(['accept','reject'] as const).map(action=>{const command={type:'diplomacy',action,mission:m.id} as const,reason=diplomaticQuote(world,command).reason;return <div key={action}><button disabled={pending||!!reason} onClick={()=>send(command)}>{action==='accept'?'接纳议案':'拒绝议案'}</button>{reason&&<small>{reason}</small>}</div>;})}</div></section>)}
  {event.kind==='realm'&&!realmEvent&&<p role="status">此项政务已处理。</p>}
  {error&&<p className="pause-error" role="alert">{error}</p>}
- {!audience&&<footer>{actionable&&(event.kind==='appointments'||event.kind==='economy')?null:actionable&&(event.kind==='service'&&!!event.assignmentId||event.kind==='arrival'&&!!event.assignmentId||event.kind==='duties')?<button disabled={pending} onClick={onClose}>稍后处理</button>:actionable?<button disabled={pending} className="primary" onClick={()=>onNavigate(event)}>{label} →</button>:<button disabled={pending} onClick={onClose}>知道了</button>}</footer>}
+ {!audience&&<footer>{actionable&&(event.kind==='family'||event.kind==='appointments'||event.kind==='economy')?null:actionable&&(event.kind==='service'&&!!event.assignmentId||event.kind==='arrival'&&!!event.assignmentId||event.kind==='duties')?<button disabled={pending} onClick={onClose}>稍后处理</button>:actionable?<button disabled={pending} className="primary" onClick={()=>onNavigate(event)}>{label} →</button>:<button disabled={pending} onClick={onClose}>知道了</button>}</footer>}
  </div>
  </AudienceDeferContext.Provider>
  </AudienceDecorHostContext.Provider>

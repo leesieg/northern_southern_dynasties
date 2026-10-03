@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act} from './world';
 import {die} from './life';
-import {publicSuccessor} from './publicSuccession';
+import {publicSuccessor,successionCandidates} from './publicSuccession';
 import {governmentReason} from './government';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 const command=(office:'ruler'|'executive',candidate:string|null,name?:string)=>({type:'government',action:'nominate',office,candidate,name} as const);
@@ -25,8 +25,20 @@ describe('public succession relationships',()=>{
  });
  it('rejects unauthorized, foreign, underage and dead claimants; expires a deceased nominee',()=>{
   const w=newCampaignWorld('xiao-yi',undefined,'sandbox');expect(governmentReason(w,command('ruler','xiao-gang'))).toContain('仅君主');
-  const emperor=newCampaignWorld('xiao-yan',undefined,'sandbox');for(const id of ['gao-yang','xiao-fangzhi'])expect(governmentReason(emperor,command('ruler',id))).toContain('本国在世成年');
-  act(emperor,command('ruler','xiao-yi'));die(emperor,'xiao-yi','age');expect(emperor.realm!.governments!.realms.liang.heirs!.ruler).toBeNull();expect(governmentReason(emperor,command('ruler','xiao-yi'))).toContain('本国在世成年');expect(parseWorld(serializeWorld(emperor))).toEqual(emperor);
+  const emperor=newCampaignWorld('xiao-yan',undefined,'sandbox');expect(governmentReason(emperor,command('ruler','gao-yang'))).toContain('本国在世');expect(governmentReason(emperor,command('executive','xiao-fangzhi'))).toContain('成年');
+  act(emperor,command('ruler','xiao-yi'));die(emperor,'xiao-yi','age');expect(emperor.realm!.governments!.realms.liang.heirs!.ruler).toBeNull();expect(governmentReason(emperor,command('ruler','xiao-yi'))).toContain('本国在世');expect(parseWorld(serializeWorld(emperor))).toEqual(emperor);
+ });
+ it('permits a child ruler while keeping executive authority adult and preview consistent',()=>{
+  const w=newCampaignWorld('xiao-yan',undefined,'sandbox');
+  expect(successionCandidates(w,'liang','ruler')).toContain('xiao-fangzhi');
+  expect(successionCandidates(w,'liang','executive')).not.toContain('xiao-fangzhi');
+  act(w,command('ruler','xiao-fangzhi'));
+  expect(publicSuccessor(w,'liang','ruler')).toBe('xiao-fangzhi');
+  expect(parseWorld(serializeWorld(w))).toEqual(w);
+  die(w,'xiao-yan','age');
+  expect(w.realm!.governments!.realms.liang.ruler).toBe('xiao-fangzhi');
+  expect(w.realm!.governments!.realms.liang.executives).not.toContain('xiao-fangzhi');
+  expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('rejects malformed nominations in imports and restores the fallback on withdrawal',()=>{
   const w=newCampaignWorld('xiao-yan',undefined,'sandbox');act(w,command('ruler','xiao-yi'));act(w,command('ruler',null));expect(publicSuccessor(w,'liang','ruler')).toBe('xiao-gang');expect(parseWorld(serializeWorld(w))).toEqual(w);

@@ -1,3 +1,6 @@
+import {actFamilyMarriage} from './familyMarriage';
+import {actFamily,advanceHouseholdLife,resting} from './householdLife';
+import {ageAt} from './lifeState';
 import {actPolity,advanceSeparations} from './politySeparation';
 import {actPact,advancePacts} from './allegiancePacts';
 import {actPower,advancePowerPolitics} from './powerPolitics';
@@ -136,6 +139,9 @@ import {actDefection} from './defections';
 import {actMilitaryCareer} from './militaryCareer';
 import {executeRecruitmentPlan} from './recruitmentPlans';
 export function act(world: World, command: GameCommand): void {
+ const age=world.characterId?ageAt(world,world.characterId):null;
+ if(age!==null&&age<16&&!['familyLife','health','heir','legacy'].includes(command.type)&&!(command.type==='household'&&(command.action==='educate'&&command.target===world.characterId||command.action==='cancel')))throw new Error('未满十六岁：保有家业与身份，暂不能亲办公务、军务或成人交往。');
+ if(resting(world,world.characterId??'')&&!['familyLife','health','heir','legacy','handover'].includes(command.type))throw new Error('正在休养或守丧；结束后才能亲自出行或办理事务。');
  if(command.type==='armyDeployment'){executeArmyDeployment(world,command,act);return;}
  if(command.type==='recruitmentPlan'){executeRecruitmentPlan(world,command,act);return;}
  if(command.type==='armyBatch'){
@@ -167,6 +173,8 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
  if(command.type==='local'){actLocal(world,command);return;}
   if(command.type==='coordinate'){actCoordinated(world,command);return;}
   if(command.type==='commerce'){actCommerce(world,command);return;}
+  if(command.type==='familyMarriage'){actFamilyMarriage(world,command);return;}
+  if(command.type==='familyLife'){actFamily(world,command);return;}
   if(command.type==='household'){actHousehold(world,command);return;}
   if(command.type==='siegeDecision'){actSiegeDecision(world,command);return;}
   if(command.type==='separatePeace'){actSeparatePeace(world,command);return;}
@@ -272,6 +280,7 @@ export function advance(world: World, days = 1): void {
     advanceSeparations(world);
     syncDiplomacy(world);
     advanceLife(world);
+    advanceHouseholdLife(world);
     advanceRetinue(world);
     advanceMobility(world);
     advanceCustody(world);

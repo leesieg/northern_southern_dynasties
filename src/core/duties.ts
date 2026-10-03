@@ -1,9 +1,10 @@
+import {getCharacter} from './personRegistry';
 import {awardDeed} from './deeds';
 import {grainCapacity} from './population';
 import {fundAssignment,fiscalRecord,centralAccount} from './treasury';
 import {presentAt} from './residence';
 import {serviceBusy} from './assignments';
-import {characterById,historicalCharacters} from '../data/characters';
+import {historicalCharacters} from '../data/characters';
 import {governingExecutives,politicalName} from './government';
 import {ageAt,isAlive,lifeOf} from './lifeState';
 import {changeRelationOpinion} from './relationships';
@@ -52,7 +53,7 @@ export function dutyAttention(w:World){const t=w.duties?.task;if(!t||t.phase==='
 function log(w:World,t:Duty,text:string){t.history.push({day:w.day,text});t.history=t.history.slice(-40);w.chronicle.push({day:w.day,person:'player',text:'天水粮务：'+text});w.chronicle=w.chronicle.slice(-100);}
 function phase(w:World,t:Duty,next:DutyPhase){t.phase=next;t.changed=w.day;}
 export function dutyReason(w:World,c:DutyCommand,actor=w.characterId):string{
- if(w.mode!=='sandbox'||!w.realm||w.campaign?.status!=='active'||!actor||characterById[actor]?.polity!=='west'||!isAlive(w,actor))return '仅西魏在世人物可参与此项差事';
+ if(w.mode!=='sandbox'||!w.realm||w.campaign?.status!=='active'||!actor|| getCharacter(w,actor)?.polity!=='west'||!isAlive(w,actor))return '仅西魏在世人物可参与此项差事';
  const chief=actor===chiefOfDuty(w),t=w.duties?.task;
  if(c.action==='open'&&w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer==='dugu-xin'||t.helper==='dugu-xin')))return '独孤信正在办理另一项差事';
  if(c.action==='open')return t?'此项差事已受理':!chief&&actor!=='dugu-xin'?'须由执政者或独孤信受理':!!dutyUnavailable(w,'dugu-xin')||!chiefOfDuty(w)?'受理人已不在任':w.realm.cities.tianshui.controller!=='west'?'天水不在本国控制下':'';
@@ -88,16 +89,16 @@ export function actDuty(w:World,c:DutyCommand,actor=w.characterId){
  if(c.action==='open'){s.task={id:'tianshui-relief',created:w.day,changed:w.day,deadline:w.day+120,officer:'dugu-xin',phase:'proposal',plan:null,progress:0,required:0,started:false,incidentDone:false,aidRequested:false,funds:{coins:0,grain:0},result:null,history:[]};log(w,s.task,'天水请求筹措军民口粮，限一百二十日办结，由独孤信拟议。');return;}
  const t=s.task!,treasury=w.realm!.treasuries.west;
  switch(c.action){
- case 'propose':t.plan=c.plan;phase(w,t,'approval');log(w,t,politicalName(actor!)+'呈请「'+dutyPlans[c.plan].name+'」，请核拨预算。');break;
- case 'approve':{const p=dutyPlans[t.plan!];fundAssignment(w,'tianshui','west',p.coins,0,'天水粮务预算');treasury.grain-=p.grain;t.funds={coins:p.coins,grain:p.grain};phase(w,t,'ready');log(w,t,politicalName(actor!)+'核准方案，专拨公款 '+p.coins+'、公粮 '+p.grain+'。');break;}
+ case 'propose':t.plan=c.plan;phase(w,t,'approval');log(w,t,politicalName(actor!,w)+'呈请「'+dutyPlans[c.plan].name+'」，请核拨预算。');break;
+ case 'approve':{const p=dutyPlans[t.plan!];fundAssignment(w,'tianshui','west',p.coins,0,'天水粮务预算');treasury.grain-=p.grain;t.funds={coins:p.coins,grain:p.grain};phase(w,t,'ready');log(w,t,politicalName(actor!,w)+'核准方案，专拨公款 '+p.coins+'、公粮 '+p.grain+'。');break;}
  case 'revise':t.plan=null;phase(w,t,'proposal');log(w,t,'方案退回重拟，尚未拨款。');break;
- case 'start':t.started=true;t.required=t.plan==='convoy'?dutyRoute(w)!.days+12:20;phase(w,t,'working');if(t.plan==='purchase')w.realm!.cities.tianshui.prosperity=Math.max(0,w.realm!.cities.tianshui.prosperity-3);log(w,t,politicalName(actor!)+'启办粮务，预计 '+t.required+' 个有效办理日。');break;
+ case 'start':t.started=true;t.required=t.plan==='convoy'?dutyRoute(w)!.days+12:20;phase(w,t,'working');if(t.plan==='purchase')w.realm!.cities.tianshui.prosperity=Math.max(0,w.realm!.cities.tianshui.prosperity-3);log(w,t,politicalName(actor!,w)+'启办粮务，预计 '+t.required+' 个有效办理日。');break;
  case 'request-aid':t.aidRequested=true;phase(w,t,'aid');log(w,t,'承办人求援：请追加公款 20，增派护送。');break;
  case 'grant':fundAssignment(w,'tianshui','west',20,0,'天水粮务追加');t.funds.coins+=20;phase(w,t,'incident');log(w,t,'追加公款 20 已拨付，可增派护送。');break;
  case 'deny':phase(w,t,'incident');log(w,t,'公库暂不追加，承办人须另择路线。');break;
  case 'escort':t.incidentDone=true;phase(w,t,'working');log(w,t,'增派护送，保持原定工期。');break;
  case 'detour':t.incidentDone=true;t.required+=5;phase(w,t,'working');log(w,t,'改走迂回路段，增加五个办理日，不追加预算。');break;
- case 'replace':log(w,t,politicalName(t.officer)+'所办粮务移交'+politicalName(c.candidate)+'，原预算和进度保留。');t.officer=c.candidate;t.changed=w.day;break;
+ case 'replace':log(w,t,politicalName(t.officer,w)+'所办粮务移交'+politicalName(c.candidate,w)+'，原预算和进度保留。');t.officer=c.candidate;t.changed=w.day;break;
  case 'close':if(dutyPause(w))throw new Error(dutyPause(w));finish(w,t,true,'粮务办结，军民口粮已经接济');break;
  case 'cancel':finish(w,t,false,'朝廷撤回粮务');break;
  }

@@ -1,3 +1,4 @@
+import {getPerson} from './personRegistry';
 import {culturalMilitarySupport} from './culture';
 import {pactBreachRisk} from './allegiancePacts';
 import type {World} from './types';
@@ -14,7 +15,7 @@ import {territoryAccount,ensureFiscal,fiscalRecord} from './treasury';
 import {activeWars} from './wars';
 import {ensureArmyOrganization,troopKinds,type TroopKind} from './armyOrganization';
 import {mobilizedTransportLabor} from './armyLogistics';
-import {relationshipPersonById} from '../data/relationships';
+
 import {isMonthStart} from './calendar';
 export interface MilitaryCareer {lastDay:number;xp:Record<string,number>;studies:Record<string,{started:number;due:number;progress?:number}>}
 export type MilitaryCareerCommand={type:'militaryCareer';action:'study'}|{type:'militaryCareer';action:'privateRaise';site:string;kind:TroopKind}|{type:'militaryCareer';action:'pacify'|'integrate';army:number}|{type:'militaryCareer';action:'automation';army:number;control:'direct'|'delegated'}|{type:'militaryCareer';action:'priority';army:number;priority:number}|{type:'militaryCareer';action:'supplyPolicy';policy:'civilian'|'normal'|'emergency'};
@@ -50,4 +51,4 @@ export function actMilitaryCareer(w:World,c:MilitaryCareerCommand){const why=mil
 export function advanceMilitaryCareer(w:World){const s=w.militaryCareer??={lastDay:Math.max(0,w.day-1),xp:{},studies:{}};if(s.lastDay>=w.day)return;s.lastDay=w.day;for(const [id,q] of Object.entries(s.studies)){if(!isAlive(w,id)){delete s.studies[id];continue;}q.progress??=Math.max(0,Math.min(29,w.day-q.started-1));if(studyAvailable(w,id))q.progress++;q.due=w.day+30-q.progress;if(q.progress>=30){awardMilitaryExperience(w,id,Math.max(2,20-Math.floor((s.xp[id]??0)/40)));log(w,'兵法研习完成，军事历练已计入能力来源。');delete s.studies[id];}}
  if(isMonthStart(w.day,w.scriptId))for(const a of w.realm?.armies??[]){const leader=armyCommander(w,a);for(const u of a.regiments??[]){u.institution=Math.max(0,Math.min(100,(u.institution??60)+(a.arrears?-5:a.starvationDays?-3:2)));u.cohesion=Math.max(0,Math.min(100,(u.cohesion??60)+(a.starvationDays?-3:1)));if(leader){if(u.loyalTo!==leader){u.loyalTo=leader;u.commanderLoyalty=Math.max(0,(u.commanderLoyalty??0)-20);}u.commanderLoyalty=Math.min(100,(u.commanderLoyalty??0)+2);}}}
 }
-export function validMilitaryCareer(w:World){const s=w.militaryCareer;if(!s)return s===undefined;const n=(v:unknown,max:number)=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;return n(s.lastDay,w.day)&&!!s.xp&&!Array.isArray(s.xp)&&Object.entries(s.xp).every(([id,xp])=>!!relationshipPersonById[id]&&n(xp,240))&&!!s.studies&&!Array.isArray(s.studies)&&Object.entries(s.studies).every(([id,q])=>!!relationshipPersonById[id]&&!!q&&n(q.started,w.day)&&(q.progress===undefined?q.due===q.started+30:q.progress>=0&&n(q.progress,29)&&q.due>=q.started+30)&&q.due>w.day);}
+export function validMilitaryCareer(w:World){const s=w.militaryCareer;if(!s)return s===undefined;const n=(v:unknown,max:number)=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;return n(s.lastDay,w.day)&&!!s.xp&&!Array.isArray(s.xp)&&Object.entries(s.xp).every(([id,xp])=>!! getPerson(w,id)!&&n(xp,240))&&!!s.studies&&!Array.isArray(s.studies)&&Object.entries(s.studies).every(([id,q])=>!! getPerson(w,id)!&&!!q&&n(q.started,w.day)&&(q.progress===undefined?q.due===q.started+30:q.progress>=0&&n(q.progress,29)&&q.due>=q.started+30)&&q.due>w.day);}

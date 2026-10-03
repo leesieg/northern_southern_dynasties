@@ -5,7 +5,7 @@ import {serviceApprover,serviceException} from './serviceMandates';
 import {localTitle} from './localAdministration';
 import type {World,Journey} from './types';
 import {siteById} from '../data/scenario';
-import {relationshipPersonById} from '../data/relationships';
+import {getPerson} from './personRegistry';
 import {assignmentTemplates,assignmentPhases} from '../data/assignments';
 import {assignmentPause} from './assignments';
 import {dutyPause,dutyPhaseNames,chiefOfDuty} from './duties';
@@ -22,7 +22,7 @@ export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'co
 export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'|'governance'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'};
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;
-const name=(id:string)=>relationshipPersonById[id]?.name??id;
+const name=(id:string,w?:World)=>getPerson(w,id)?.name??id;
 function journeyProgress(j:Journey){const total=j.durations.reduce((n,d)=>n+d,0),done=j.durations.slice(0,j.leg).reduce((n,d)=>n+d,0)+j.elapsed;return {progress:ratio(done,total),days:Math.max(0,total-done)};}
 /** Read-only projection of actual world state; no extra task timers or saved copies. */
 export function ongoingItems(w:World):OngoingItem[]{
@@ -66,7 +66,7 @@ export function ongoingItems(w:World):OngoingItem[]{
  }
  for(const [site,h] of Object.entries(w.holdings.cities)){const p=h.project;if(p&&w.holdings.governedCities.includes(site))timed('city:'+site+':'+p.started,'construction',siteById[site].name+' · '+cityBuildings[p.building as keyof typeof cityBuildings].name,p.started,p.due,{page:'city',site,tab:'build'});}
  const p=w.holdings.estate.project;if(p)timed('estate:'+p.started,'construction',estateBuildings[p.building as keyof typeof estateBuildings].name,p.started,p.due,{page:'estate'});
- for(const [key,s] of [['social',w.social?.scheme],['relationship',w.relationships?.scheme]] as const)if(s)timed('scheme:'+key+':'+s.started+':'+s.target,'scheme',('kind'in s&&s.kind==='control'?'挟制':'交好')+' · '+name(s.target),s.started,s.due,{page:'person',person:s.target});
- for(const [id,m] of Object.entries(w.retinue?.members??{})){const j=w.mobility?.residences[id]?.journey;if(m.host===actor&&j)add({id:'retinue:'+id+':'+j.started,kind:'retinue',title:name(id)+'赴任',started:j.started,...journeyProgress(j),clock:'remaining',status:'赴任途中',target:{page:'retinue'}});}
+ for(const [key,s] of [['social',w.social?.scheme],['relationship',w.relationships?.scheme]] as const)if(s)timed('scheme:'+key+':'+s.started+':'+s.target,'scheme',('kind'in s&&s.kind==='control'?'挟制':'交好')+' · '+name(s.target,w),s.started,s.due,{page:'person',person:s.target});
+ for(const [id,m] of Object.entries(w.retinue?.members??{})){const j=w.mobility?.residences[id]?.journey;if(m.host===actor&&j)add({id:'retinue:'+id+':'+j.started,kind:'retinue',title:name(id,w)+'赴任',started:j.started,...journeyProgress(j),clock:'remaining',status:'赴任途中',target:{page:'retinue'}});}
  return items.sort((a,b)=>a.started-b.started||a.id.localeCompare(b.id));
 }

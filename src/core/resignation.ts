@@ -1,7 +1,8 @@
+import {getPerson} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {detained} from './custodyState';
 import {scenarioOffices} from '../data/offices';
-import {relationshipPersonById} from '../data/relationships';
+
 import {ministryIds} from '../data/court';
 import {officeHierarchy} from './offices';
 import {governmentOf,governingExecutives} from './government';
@@ -60,7 +61,7 @@ export function actResignation(w:World,c:ResignationCommand){
  }
  w.chronicle.push({day:w.day,person:'player',text:`辞去${post.name}，公库与属地留归官署。${isAdventurer(w,id)?'现为冒险者，可自由跨境行旅；私财与家产保留。':''}`});w.chronicle=w.chronicle.slice(-100);
 }
-export function validResignations(value:unknown){
+export function validResignations(value:unknown,w?:World){
  if(!value||typeof value!=='object')return false;const s=value as Resignations;
- return Array.isArray(s.persons)&&s.persons.every(p=>typeof p==='string'&&Object.hasOwn(relationshipPersonById,p))&&new Set(s.persons).size===s.persons.length&&Array.isArray(s.titles)&&s.titles.every(t=>scenarioOffices.some(o=>'office:546:'+o.id===t))&&new Set(s.titles).size===s.titles.length;
+ return Array.isArray(s.persons)&&s.persons.every(p=>typeof p==='string'&&!!getPerson(w,p))&&new Set(s.persons).size===s.persons.length&&Array.isArray(s.titles)&&s.titles.every(t=>scenarioOffices.some(o=>'office:546:'+o.id===t))&&new Set(s.titles).size===s.titles.length;
 }

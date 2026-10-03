@@ -1,8 +1,8 @@
 import type {CSSProperties} from 'react';
 import type {Site,World} from '../core/types';
 import {siteById} from '../data/scenario';
-import {characterById} from '../data/characters';
-import {relationshipPersonById} from '../data/relationships';
+import {getCharacter,getPerson} from '../core/personRegistry';
+
 import {personResidence} from '../core/residence';
 
 export const terrainImages:Record<Site['terrain'],string>={
@@ -14,6 +14,6 @@ export function terrainSceneStyle(site:string|undefined):CSSProperties{
 }
 export function personTerrainSite(world:World,person:string){
  // A genealogy-only record has no simulated residence: do not borrow the player's home.
- const known=person===world.characterId||person==='player'||person==='fictional'&&!world.characterId||world.people.some(p=>p.id===person)||world.mobility?.residences[person]||characterById[person]||relationshipPersonById[person];
+ const known=person===world.characterId||person==='player'||person==='fictional'&&!world.characterId||world.people.some(p=>p.id===person)||world.mobility?.residences[person]||getCharacter(world,person)||getPerson(world,person);
  return known?personResidence(world,person).site:undefined;
 }

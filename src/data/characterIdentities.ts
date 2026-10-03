@@ -20,11 +20,11 @@ export function initialIdentity(id:string):CharacterIdentity {
  if(!Object.hasOwn(initial.people,id))throw new Error('没有此人物的形象配置');
  return structuredClone(initial.people[id]);
 }
-export function validIdentities(value:unknown):value is IdentityState {
+export function validIdentities(value:unknown,w?:import('../core/types').World):value is IdentityState {
  if(!value||typeof value!=='object'||Array.isArray(value))return false;
  const s=value as IdentityState;
  if(s.version!==1||!s.people||typeof s.people!=='object'||Array.isArray(s.people))return false;
  const required=[...historicalCharacters.map(p=>p.id),'fictional'];
  if(!required.every(id=>Object.hasOwn(s.people,id)))return false;
- return Object.entries(s.people).every(([id,p])=>Object.hasOwn(initial.people,id)&&!!p&&!Array.isArray(p)&&['male','female'].includes(p.sex)&&Object.hasOwn(cultureNames,p.culture)&&(p.cultureId===undefined||validCulture(p.cultureId))&&validGenome(p.genome));
+ return Object.entries(s.people).every(([id,p])=>(Object.hasOwn(initial.people,id)||!!w?.generatedPeople&&Object.hasOwn(w.generatedPeople,id))&&!!p&&!Array.isArray(p)&&['male','female'].includes(p.sex)&&Object.hasOwn(cultureNames,p.culture)&&(p.cultureId===undefined||validCulture(p.cultureId))&&validGenome(p.genome));
 }
