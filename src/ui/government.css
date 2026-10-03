@@ -14,3 +14,6 @@
 .government-records{max-height:180px;overflow:auto;scrollbar-width:thin}
 .government-section .government-cards{max-height:340px;overflow:auto;scrollbar-width:thin}
 @media(max-width:600px){.government-section .government-cards{grid-template-columns:1fr}.government-contracts{grid-template-columns:1fr}}
+
+.government-cards.reform-ledger{display:flex;flex-direction:column;gap:8px}.reform-ledger>article{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;padding:12px 14px;border-radius:0;border-left:3px solid #ab8c58}.reform-ledger>article>h4,.reform-ledger>article>p,.reform-ledger>article>small{grid-column:1}.reform-ledger>article>.government-action{grid-column:2;grid-row:1/5;align-self:center;max-width:210px}.reform-costs{display:flex;gap:16px;margin:2px 0;flex-wrap:wrap}.reform-costs dt{font-size:11px;opacity:.8}.reform-costs dd{font:17px var(--serif);margin:3px 0 0}
+@media(max-width:650px){.reform-ledger>article{display:block}.reform-costs{margin:10px 0}.reform-ledger>article>.government-action{max-width:none}}

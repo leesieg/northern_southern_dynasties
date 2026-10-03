@@ -295,3 +295,16 @@
  .court-footer-actions{gap:4px}.court-jurisdiction select{max-width:125px}.court-foreign-finance dl{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(prefers-reduced-motion:reduce){.court-audience .dynasty-disc{transition:none}}
+
+/* Policy strips expose current effects; groups expose comparable power and satisfaction. */
+.court-policy-desk{grid-template-columns:minmax(210px,.8fr) minmax(340px,1.4fr) minmax(210px,.85fr)}
+.court-policy-rules{overflow:auto;scrollbar-width:thin}.court-policy-rules .court-rule{align-items:flex-start;min-height:80px;background:linear-gradient(90deg,#34453255,transparent);border:1px solid #b5945a44;border-left:3px solid #b5945a;padding:10px}
+.court-rule .court-rule-effect{font:12px/1.6 var(--sans);color:#c3c7ae;margin:6px 0 0}.court-rule>.art-icon{margin-top:4px}.court-rule>.hover-hint:last-child{align-self:center}
+.court-group-select.court-group-ledger{display:flex;flex-direction:column;gap:5px;max-height:250px;overflow:auto;scrollbar-width:thin}
+.court-group-ledger>button{display:flex;flex-direction:row;justify-content:flex-start;min-height:52px;text-align:left;padding:7px 8px;gap:9px;border-left:3px solid #86714c}
+.court-group-ledger>button>span:not(.court-group-numbers){flex:1;min-width:0}.court-group-ledger strong{font:15px var(--serif);color:#e7d1a1}.court-group-ledger small{display:block;font:11px/1.5 var(--sans);color:#b9c3a8}
+.court-group-numbers{flex:none;min-width:66px;text-align:right}.court-group-numbers b{font:17px var(--serif);color:#ead196}.court-group-numbers meter{display:block;width:66px;height:6px;accent-color:#a1b077}
+@media(max-width:1050px){.court-policy-desk{grid-template-columns:1fr;overflow:auto;height:auto}.court-policy-desk>section{max-height:none}.court-group-select.court-group-ledger{max-height:225px}}
+
+.court-situation-desk{grid-template-columns:minmax(0,1.25fr) minmax(0,.9fr) minmax(0,.85fr)}
+@media(max-width:900px){.court-situation-desk{grid-template-columns:1fr;height:auto}.court-group-select.court-group-ledger{max-height:290px}}

@@ -239,7 +239,7 @@ export function WorldMap(props:Props){
             const flag=document.createElement('img');flag.className='atlas-army-flag';flag.alt='';flag.setAttribute('aria-hidden','true');flag.draggable=false;
             const body=document.createElement('span');body.className='atlas-army-card-body';
             const label=document.createElement('small');label.className='atlas-army-label';
-            const strength=document.createElement('span');strength.className='atlas-army-strength';body.append(label,strength);button.append(flag,body);
+            const strength=document.createElement('span');strength.className='atlas-army-strength';const morale=document.createElement('span');morale.className='atlas-army-morale';morale.setAttribute('aria-hidden','true');body.append(label,strength,morale);button.append(flag,body);
             button.onmousedown=event=>{if(event.shiftKey)event.stopPropagation();};
             button.ondblclick=event=>event.stopPropagation();
             button.onclick=event=>{event.stopPropagation();const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(!army)return;if(army.id&&militaryArmyView(current.current.world,army).command)current.current.onSelectArmy(army.id,event.shiftKey);else current.current.onSelect(army.location);};
@@ -248,8 +248,9 @@ export function WorldMap(props:Props){
           const {lon,lat}=armyMapPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
           item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyVisualState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
+          item.button.style.setProperty('--army-morale',view.exact?Math.max(0,Math.min(100,a.morale))+'%':'0%');
           item.button.title=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
-          item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人':''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
+          item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人，士气 '+a.morale:''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
           if(view.command)item.button.setAttribute('aria-pressed','false');else item.button.removeAttribute('aria-pressed');
         }
 
@@ -257,6 +258,10 @@ export function WorldMap(props:Props){
         for(const [key,item] of combatMarkers)if(!combats.some(c=>c.key===key)){item.marker.remove();combatMarkers.delete(key);}
         for(const combat of combats){let item=combatMarkers.get(combat.key);if(!item){const button=document.createElement('button');button.type='button';button.className='atlas-combat-marker';const marker=new Marker({element:button,anchor:'bottom',offset:[-44,-38]}).setLngLat([combat.lon,combat.lat]).addTo(map);item={marker,button};combatMarkers.set(combat.key,item);}
          const kind=combat.items.some(i=>i.ref.kind==='battle')?'battle':'siege';item.button.textContent='';const icon=document.createElement('span');icon.className='art-icon';icon.style.backgroundPosition=kind==='battle'?'100% 66.6667%':'33.3333% 100%';item.button.append(icon);
+         const primary=combat.items.find(i=>i.ref.kind===kind)!;
+         if(kind==='siege'){const progress=document.createElement('span');progress.className='atlas-siege-progress';const values=combat.items.flatMap(i=>i.progress===undefined?[]:[i.progress]);progress.textContent=values.length>1?Math.min(...values)+'–'+Math.max(...values)+'%':primary.progress+'%';item.button.style.setProperty('--siege-progress',Math.min(...values)+'%');item.button.append(progress);}
+         else if(primary.sides){primary.sides.forEach((side,index)=>{const row=document.createElement('span');row.className='atlas-combat-side';row.dataset.side=index===0?'attack':'defend';const flag=document.createElement('img');flag.src=armyHeraldry(side.realm,regimeName(p.world,side.realm),p.world);flag.alt=regimeName(p.world,side.realm);const strength=document.createElement('b');strength.textContent=side.strength;row.append(flag,strength);if(index===0)item!.button.prepend(row);else item!.button.append(row);});}
+         if(kind==='battle'&&combat.items.some(i=>i.progress!==undefined)){const progress=document.createElement('span');progress.className='atlas-combat-siege-mini';const values=combat.items.flatMap(i=>i.progress===undefined?[]:[i.progress]);progress.textContent='围 '+(values.length===1?values[0]:Math.min(...values)+'–'+Math.max(...values))+'%';item.button.append(progress);}
          if(combat.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(combat.items.length);item.button.append(count);}
          item.marker.setLngLat([combat.lon,combat.lat]);item.button.dataset.kind=kind;item.button.title=combat.items.map(i=>i.label).join('\n');item.button.setAttribute('aria-label',combat.items.length>1?'查看此地 '+combat.items.length+' 场战事':'查看'+combat.items[0].label);item.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=engagementGroups(current.current.world).find(c=>c.key===combat.key);if(!latest)return;if(latest.items.length===1)current.current.onEngagement(latest.items[0].ref);else{current.current.onBrowseActivities();setCombatGroupKey(combat.key);}};
         }

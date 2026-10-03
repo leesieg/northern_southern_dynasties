@@ -28,3 +28,17 @@
 /* Flat jurisdiction tabs remain compact as more actions become direct entries. */
 .focused-shell .location-development .city-icon-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:480px){.focused-shell .location-development .city-icon-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Jurisdiction ledger: keep identity, accounts and tabs in view. */
+.focused-shell .place-panel:has(.location-development){overflow:hidden;display:flex;flex-direction:column;padding-bottom:10px}
+.place-panel>.territory-navigation{flex:none;padding-block:6px}.territory-navigation .territory-peers{max-height:56px;overflow:auto;scrollbar-width:thin}
+.focused-shell .place-panel .location-development{display:flex;flex-direction:column;min-height:0;flex:1;overflow:hidden;padding-top:8px}
+.location-development>.city-summary,.location-development>.city-icon-tabs{flex:none}
+.location-development>.territory-page-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:0 3px 16px}
+.city-summary{margin-bottom:0}.city-summary-identity{gap:8px}.city-summary-identity h2{font-size:25px}
+.city-summary-resources{gap:7px 10px;margin-top:8px;padding:8px 0}.city-summary-resource{min-height:42px}.city-summary-resource strong{font-size:19px;font-variant-numeric:tabular-nums}
+.focused-shell .location-development .city-icon-tabs{margin:0 0 8px;padding:7px 0;gap:3px}
+.focused-shell .city-icon-tabs button{min-height:34px;padding:4px;font-size:12px;border-radius:0}
+.local-territory .district-counties{display:flex;flex-direction:column}.local-territory .district-counties button{text-align:left;min-height:52px;gap:9px;border-radius:0;background:#1d3329;border-left:3px solid #a48b5c}
+.local-territory .district-counties button>span:nth-child(2){flex:1}.local-territory .district-counties strong{font:15px var(--serif)}.local-territory .district-counties small{display:block;font-size:11px;color:#bdc5ae;margin-top:3px}.district-row-metrics{text-align:right}.district-row-metrics b{font:13px var(--serif);color:#e2ce9f}
+@media(max-height:680px){.focused-shell .place-panel:has(.location-development){overflow:auto}.focused-shell .place-panel .location-development{overflow:visible;flex:none}.location-development>.territory-page-content{overflow:visible;flex:none}.territory-navigation .territory-peers{max-height:40px}}

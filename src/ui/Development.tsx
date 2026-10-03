@@ -42,10 +42,12 @@ export function LocationDevelopment({world,selected,onSelect,onPerson,onRetinue,
   return <section className="location-development">
     <CitySummary key={selected} world={world} site={selected} pending={pending} send={send} onPerson={onPerson} onDiplomacy={onDiplomacy} onDistrict={()=>onTab('history')}/>
     <TerritoryTabs tab={tab} onTab={onTab} peopleCount={peopleCount} governance={!!world.realm}/>
+    <div key={selected+'|'+tab} className="territory-page-content">
     {tab==='model'&&<Suspense fallback={<div className="city-model-loading">正在载入城市模型…</div>}><CityViewport key={selected} holding={world.holdings.cities[selected]??emptyCity()} day={world.day} name={siteById[selected].name} capital={!!siteById[selected].capital} selected={cityBuilding} onSelect={id=>{setCityBuilding(id);onTab('build');}}/></Suspense>}
     {(['governance','service','military','finance','population'].includes(tab))&&<CityManagement onTransport={()=>onTab('population')} section={tab} localTasks={localTasks} onPerson={onPerson} key={selected} world={world} selected={selected} pending={pending} send={send}/>}
     {tab==='governance'&&world.realm?.local?.requests.some(q=>q.status==='pending'&&q.territory===countyTerritory(selected)&&(q.actor===world.characterId||q.approver===world.characterId))&&<LocalRequests world={world} pending={pending} send={send} territory={countyTerritory(selected)} pendingOnly/>}
     {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}</>:tab==='history'?<><CityDistrict world={world} site={selected} onTerritory={onTerritory} onCity={onSelect}/>{overview}</>:tab==='build'?<ConstructionPanel key={selected} world={world} scope="city" site={selected} send={send} onPerson={onPerson} onService={onService} onRetinue={onRetinue} pending={pending} selectedCityBuilding={cityBuilding}/>:null}
+    </div>
   </section>;
 }
 export function ConstructionPanel({world,scope,site,send,onPerson,onService,onRetinue,pending=false,selectedCityBuilding=null}:{onPerson?:(id:string)=>void;onService?:()=>void;onRetinue?:()=>void;pending?:boolean;selectedCityBuilding?:CityBuilding|null;world:World;scope:'city'|'estate';site:string;send:(command:GameCommand)=>void}){

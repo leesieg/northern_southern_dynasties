@@ -1,0 +1,11 @@
+.pause-dialog.battle-result-dialog{width:min(880px,calc(100vw - 32px));max-height:88dvh;overflow:auto;background:#182c24;color:#e9dfc6;--dialog-ink:#e9dfc6;--dialog-muted:#c3bea8;border:2px solid #b29865}
+.battle-result-dialog>div>header{text-align:center}.battle-result-dialog #pause-body{display:none}
+.battle-result-ribbon{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px;background:#344832;border-block:1px solid #b29865}.battle-result-ribbon strong{font:24px var(--serif)}.battle-result-ribbon>span{font-size:12px}
+.battle-result-sides{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}.battle-result-side{min-width:0;border:1px solid #997058;background:#352b25}.battle-result-side[data-winner=true]{background:#203c2c;border-color:#9eaa73}
+.battle-result-side>header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #b2986555}.battle-result-side h3{margin:0;font:20px var(--serif)}.battle-result-side>header>b{margin-right:auto;color:#f3d697}
+.battle-result-commanders{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;padding:12px}.battle-result-commanders figure{display:flex;align-items:center;gap:8px;margin:0}.battle-result-commanders .painted-portrait{width:48px;height:48px;aspect-ratio:1;flex:none}.battle-result-commanders small{display:block;font-size:11px;color:#c6bfa3}
+.battle-result-loss{display:flex;gap:10px;align-items:center;justify-content:center;padding:12px;border-block:1px solid #b2986544}.battle-result-loss strong{display:block;font:28px var(--serif);color:#f1c3a7}.battle-result-loss small{font-size:12px}
+.battle-result-armies{max-height:180px;overflow:auto;padding:8px 14px}.battle-result-armies>div{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:8px 0;border-bottom:1px solid #b2986533}
+.battle-result-score{text-align:center}.battle-result-score strong{font:22px var(--serif);color:#efd49a}.battle-result-score small{display:block;margin-top:6px;font-size:11px}
+.battle-result-dialog footer{position:sticky;bottom:-24px;background:#182c24;padding:12px;border-top:1px solid #b29865;text-align:center}
+@media(max-width:600px){.battle-result-sides{grid-template-columns:1fr}.battle-result-ribbon{flex-wrap:wrap}}

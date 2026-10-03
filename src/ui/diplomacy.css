@@ -18,3 +18,33 @@
 .diplomacy-fact-wars h3 small{margin-left:auto;font:11px var(--sans)}
 .diplomacy-panel .diplomacy-fact-wars p{display:flex;justify-content:space-between;gap:6px 12px;flex-wrap:wrap;margin:0;padding-top:6px;border-top:1px solid #b69c6325}
 .diplomacy-fact-wars p b{font-weight:500}
+
+/* Country folio: identity stays above one independently scrolling page. */
+.focused-shell .modal.left-utility-drawer[data-detail=diplomacy]{display:flex;flex-direction:column;overflow:hidden;padding:0 12px 12px}
+.left-utility-drawer[data-detail=diplomacy]>header{flex:none;margin:0;padding:12px 0}
+.diplomacy-panel{display:flex;flex-direction:column;min-height:0;flex:1;gap:8px;overflow:hidden}
+.diplomacy-panel>.diplomacy-banner,.diplomacy-panel>.diplomacy-leaders,.diplomacy-panel>.detail-tabs,.diplomacy-summary-strip{flex:none}
+.diplomacy-banner{padding:8px 0}.diplomacy-banner .diplomacy-court-entry{min-height:36px;padding:4px 8px}
+.diplomacy-panel .diplomacy-leaders{display:flex;gap:6px;overflow:auto;max-height:106px}
+.diplomacy-panel .diplomacy-leaders>button{display:flex;flex-direction:row;flex:1;min-width:125px;padding:5px;text-align:left;border-radius:0}
+.diplomacy-panel .diplomacy-leaders .painted-portrait{flex:0 0 48px;width:48px;height:72px;aspect-ratio:2/3}
+.diplomacy-summary-strip{display:flex;justify-content:space-between;gap:8px;border-block:1px solid #b2986555;padding:6px 2px}
+.diplomacy-summary-strip .hover-hint>span{display:flex;align-items:center;gap:4px;font:13px var(--serif);color:#e6d5b0}
+.diplomacy-page-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:3px}
+.diplomacy-page-content>.diplomacy-realm-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.diplomacy-overview-identities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:3px 0 12px}
+.diplomacy-overview-identities>article{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border-radius:0;padding:10px 4px}
+.diplomacy-overview-identities strong{font:15px var(--serif);color:#ebd2a0}
+.diplomacy-panel .diplomacy-fact{padding:9px;border-radius:0}.diplomacy-panel .diplomacy-fact>strong{font-size:21px}
+.diplomacy-relation-row{display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:10px;padding:9px;border:1px solid #b2986544;border-left:3px solid #a88c59;background:#1c3027;margin-bottom:7px}
+.diplomacy-relation-row>span{display:flex;align-items:center;gap:5px;font:14px var(--serif)}.diplomacy-relation-row>div{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.diplomacy-bilateral-columns{display:grid;grid-template-columns:minmax(100px,.72fr) minmax(0,1.28fr);gap:12px;align-items:start}
+.diplomacy-bilateral-columns>section{min-width:0}.diplomacy-bilateral-columns .diplomacy-treaties{grid-template-columns:1fr}
+.diplomacy-bilateral-columns h3{font-size:15px}.diplomacy-bilateral-columns h4{font-size:13px;margin-bottom:7px}
+.diplomacy-bilateral-columns .diplomacy-action-grid{grid-template-columns:1fr;gap:4px}
+.diplomacy-bilateral-columns .diplomacy-action-card{min-height:36px;padding:5px 7px;border-radius:1px}
+.diplomacy-bilateral-columns .diplomacy-action-group{margin:0 0 12px}.diplomacy-bilateral-columns article{padding:7px;border-radius:0}
+.diplomacy-panel .diplomacy-status>span:not(.hover-hint){padding:5px 7px;border-radius:0}.diplomacy-score{font-size:19px;min-width:40px}
+@media(max-width:420px){.diplomacy-bilateral-columns{grid-template-columns:1fr}.diplomacy-summary-strip{flex-wrap:wrap}.diplomacy-banner .diplomacy-court-entry{width:auto}}
+
+.diplomacy-panel .diplomacy-leaders:has(>button:nth-child(3))>button{flex-direction:row;text-align:left}

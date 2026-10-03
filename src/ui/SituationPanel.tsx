@@ -36,6 +36,34 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
  const portrait=(id:string)=><button className="faction-person" key={id} onClick={()=>onPerson(id)} aria-label={'查看'+politicalName(id)}><CharacterPortrait characterId={id} world={w} compact/><span>{politicalName(id)}</span></button>;
  const cancelCommand={type:'court',action:'cancel'} as const;
  return <div className="court-situation-desk">
+  <section className="court-factions court-desk-column">
+   <header className="court-desk-heading"><h3>政治集团</h3><small>{ownRealm?'你的归属 · '+movements[own].name:'他国集团'}</small></header>
+   <div className="court-group-select court-group-ledger" aria-label="政治集团势力与满意度">{movementIds.map(group=>{const mood=movementMood(w,r,group);return <button key={group} aria-label={'查看'+movements[group].name+'，势力 '+mood.share+'%，满意度 '+mood.satisfaction} aria-pressed={selected===group} onClick={()=>setSelected(group)}>{mood.leader?<CharacterPortrait characterId={mood.leader} world={w} compact/>:<ArtIcon name={icons[group]} size={32}/>}<span><strong>{movements[group].name}</strong><small>{mood.leader?politicalName(mood.leader):'无领袖'} · {movements[group].goal}</small></span><span className="court-group-numbers"><b>{mood.share}%</b><small>满意 {mood.satisfaction}</small><meter min={0} max={100} value={mood.satisfaction} aria-label={movements[group].name+'满意度'}/></span></button>;})}</div>
+   <div className="court-scroll-list court-faction-detail">
+    <header><ArtIcon name={icons[selected]} size={28}/><h4>{movements[selected].name}</h4><b>{m.share}%</b></header>
+    <p>{movements[selected].goal}</p>
+    {c.favored===selected&&<small className="court-favored">朝廷眷顾</small>}
+    <div className="court-faction-metrics">
+     <HoverHint label="集团势力来源" content={<>{m.members.map(id=><div key={id}><strong>{politicalName(id)}</strong>{movementPowerParts(w,r,id).filter(p=>p.value).map(p=><p key={p.label}>{p.label} +{p.value}</p>)}</div>)}</>}><span tabIndex={0}>势力 <b>{m.power}</b></span></HoverHint>
+     <HoverHint label="满意度来源" content={<>{m.factors.map(f=><p key={f.label}>{f.label} {f.value>0?'+':''}{f.value}</p>)}{!m.factors.length&&'未结党或无成员不施加集团影响。'}</>}><span tabIndex={0}>满意 <b>{m.satisfaction}</b></span></HoverHint>
+     <span>月紧张 <b>{m.tension>0?'+':''}{m.tension}</b></span><span>月支持 <b>{m.support>0?'+':''}{m.support}</b></span>
+    </div>
+    <div className="court-faction-positions">{([['appointment','任官'],['reform','改革'],['tax','征税'],['military','军务'],['migration','迁民'],['welfare','赈济'],['commerce','商贸']] as [PolicyDomain,string][]).map(([domain,label])=>{const part=politicalAction(w,r,domain).parts.find(p=>p.id===selected);return part?.value?<HoverHint key={domain} label={label+'立场'} content={'本集团影响 '+part.value+'；汇合其他集团后影响朝野支持、局势紧张及相关差事办理效率。'}><span tabIndex={0}>{label} <b>{part.value>0?'支持':'反对'}</b></span></HoverHint>:null;})}</div>
+    {m.leader&&<div className="court-faction-leader">{portrait(m.leader)}<span>集团领袖<small>{m.members.length} 位成员</small></span></div>}
+    <div className="faction-members">{m.members.filter(id=>id!==m.leader).map(portrait)}</div>
+   </div>
+   <div className="court-faction-actions">
+    {g.ruler!==w.characterId&&action({type:'court',action:'join',group:selected},'加入'+movements[selected].name,'person','10 影响力，换党冷却 90 日。')}
+    {selected!=='unaligned'&&action({type:'court',action:'favor',group:selected},'眷顾'+movements[selected].name,'renown','20 影响力，冷却 90 日；本派满意 +20，他派 −10。')}
+    {ownRealm&&own===selected&&g.ruler!==w.characterId&&<>
+     {action({type:'court',action:'debate'},'主持清议','diligent','30 私人钱；个人势力 +25，持续及冷却 180 日。')}
+     {action({type:'court',action:'petition'},'集团奏议','influence','领袖消耗 15 影响力；15 日待决。批准由执政者支付 20 影响力与公款 80；缺额最多续候 60 日，冷却 90 日。')}
+     <HoverHint label="游说同道" content="个人钱 30、影响力 10；选择目标比较接受度与条件，确认后才执行。"><button className="court-icon-button" aria-label="游说同道" disabled={pending} onClick={()=>{setCandidate('');setRecruit(true);}}><ArtIcon name="gregarious" size={25}/></button></HoverHint>
+    </>}
+    {ownRealm&&g.ruler!==w.characterId&&<HoverHint label="起兵与另立" content="查看起兵的集团支持、条件与实际后果。"><button className="court-icon-button" aria-label="查看起兵与另立条件" onClick={()=>setRevoltOpen(true)}><ArtIcon name="army" size={25}/></button></HoverHint>}
+   </div>
+   {ownRealm&&c.petition&&<div className="court-petition-pending"><span>{movements[c.petition.group].name}奏议<small>{c.petition.due<=w.day?'候裁决':'余 '+(c.petition.due-w.day)+' 日'}</small></span><HoverHint label="查看集团奏议" content={'由 '+politicalName(c.petition.sponsor)+' 呈奏；批复仍受实际权限、钱粮与日期限制。'}><button className="court-icon-button" aria-label="查看集团奏议" onClick={()=>setPetitionOpen(true)}><ArtIcon name="influence" size={25}/></button></HoverHint></div>}
+  </section>
   <section className="court-outlook court-desk-column">
    <header className="court-desk-heading"><h3>朝局</h3><HoverHint label="阶段画像预览" content="比较安定、动荡与危局的画像及规则，不改变实际局势。"><button className="court-icon-button" aria-label="打开阶段画像预览" onClick={()=>setPreviewOpen(true)}><ArtIcon name="renown" size={25}/></button></HoverHint></header>
    <SituationWheel phase={c.phase} tension={c.tension} realm={<RealmBadge realm={r} world={w}/>} interactive={false}/>
@@ -61,34 +89,6 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
     </article>)}
     {!local.affected.length&&<p className="court-empty">当前没有已录承压地区</p>}
    </div>
-  </section>
-  <section className="court-factions court-desk-column">
-   <header className="court-desk-heading"><h3>政治集团</h3><small>{ownRealm?'你的归属 · '+movements[own].name:'他国集团'}</small></header>
-   <div className="court-group-select" aria-label="选择政治集团">{movementIds.map(group=>{const mood=movementMood(w,r,group);return <HoverHint key={group} label={movements[group].name} content={movements[group].name+' · 势力占比 '+mood.share+'% · 满意度 '+mood.satisfaction}><button aria-label={'选择'+movements[group].name} aria-pressed={selected===group} onClick={()=>setSelected(group)}>{mood.leader?<CharacterPortrait characterId={mood.leader} world={w} compact/>:<ArtIcon name={icons[group]} size={32}/>}<small>{mood.share}%</small></button></HoverHint>;})}</div>
-   <div className="court-scroll-list court-faction-detail">
-    <header><ArtIcon name={icons[selected]} size={28}/><h4>{movements[selected].name}</h4><b>{m.share}%</b></header>
-    <p>{movements[selected].goal}</p>
-    {c.favored===selected&&<small className="court-favored">朝廷眷顾</small>}
-    <div className="court-faction-metrics">
-     <HoverHint label="集团势力来源" content={<>{m.members.map(id=><div key={id}><strong>{politicalName(id)}</strong>{movementPowerParts(w,r,id).filter(p=>p.value).map(p=><p key={p.label}>{p.label} +{p.value}</p>)}</div>)}</>}><span tabIndex={0}>势力 <b>{m.power}</b></span></HoverHint>
-     <HoverHint label="满意度来源" content={<>{m.factors.map(f=><p key={f.label}>{f.label} {f.value>0?'+':''}{f.value}</p>)}{!m.factors.length&&'未结党或无成员不施加集团影响。'}</>}><span tabIndex={0}>满意 <b>{m.satisfaction}</b></span></HoverHint>
-     <span>月紧张 <b>{m.tension>0?'+':''}{m.tension}</b></span><span>月支持 <b>{m.support>0?'+':''}{m.support}</b></span>
-    </div>
-    <div className="court-faction-positions">{([['appointment','任官'],['reform','改革'],['tax','征税'],['military','军务'],['migration','迁民'],['welfare','赈济'],['commerce','商贸']] as [PolicyDomain,string][]).map(([domain,label])=>{const part=politicalAction(w,r,domain).parts.find(p=>p.id===selected);return part?.value?<HoverHint key={domain} label={label+'立场'} content={'本集团影响 '+part.value+'；汇合其他集团后影响朝野支持、局势紧张及相关差事办理效率。'}><span tabIndex={0}>{label} <b>{part.value>0?'支持':'反对'}</b></span></HoverHint>:null;})}</div>
-    {m.leader&&<div className="court-faction-leader">{portrait(m.leader)}<span>集团领袖<small>{m.members.length} 位成员</small></span></div>}
-    <div className="faction-members">{m.members.filter(id=>id!==m.leader).map(portrait)}</div>
-   </div>
-   <div className="court-faction-actions">
-    {g.ruler!==w.characterId&&action({type:'court',action:'join',group:selected},'加入'+movements[selected].name,'person','10 影响力，换党冷却 90 日。')}
-    {selected!=='unaligned'&&action({type:'court',action:'favor',group:selected},'眷顾'+movements[selected].name,'renown','20 影响力，冷却 90 日；本派满意 +20，他派 −10。')}
-    {ownRealm&&own===selected&&g.ruler!==w.characterId&&<>
-     {action({type:'court',action:'debate'},'主持清议','diligent','30 私人钱；个人势力 +25，持续及冷却 180 日。')}
-     {action({type:'court',action:'petition'},'集团奏议','influence','领袖消耗 15 影响力；15 日待决。批准由执政者支付 20 影响力与公款 80；缺额最多续候 60 日，冷却 90 日。')}
-     <HoverHint label="游说同道" content="个人钱 30、影响力 10；选择目标比较接受度与条件，确认后才执行。"><button className="court-icon-button" aria-label="游说同道" disabled={pending} onClick={()=>{setCandidate('');setRecruit(true);}}><ArtIcon name="gregarious" size={25}/></button></HoverHint>
-    </>}
-    {ownRealm&&g.ruler!==w.characterId&&<HoverHint label="起兵与另立" content="查看起兵的集团支持、条件与实际后果。"><button className="court-icon-button" aria-label="查看起兵与另立条件" onClick={()=>setRevoltOpen(true)}><ArtIcon name="army" size={25}/></button></HoverHint>}
-   </div>
-   {ownRealm&&c.petition&&<div className="court-petition-pending"><span>{movements[c.petition.group].name}奏议<small>{c.petition.due<=w.day?'候裁决':'余 '+(c.petition.due-w.day)+' 日'}</small></span><HoverHint label="查看集团奏议" content={'由 '+politicalName(c.petition.sponsor)+' 呈奏；批复仍受实际权限、钱粮与日期限制。'}><button className="court-icon-button" aria-label="查看集团奏议" onClick={()=>setPetitionOpen(true)}><ArtIcon name="influence" size={25}/></button></HoverHint></div>}
   </section>
   {previewOpen&&<ActionDialog title="朝局阶段画像 · 仅供预览" onClose={()=>setPreviewOpen(false)} actions={<button onClick={()=>setPreviewOpen(false)}>返回朝局</button>}><SituationWheel phase={c.phase} tension={c.tension} realm={<RealmBadge realm={r} world={w}/>} /></ActionDialog>}
   {petitionOpen&&ownRealm&&c.petition&&<ActionDialog title="集团奏议" onClose={()=>setPetitionOpen(false)} actions={<button onClick={()=>setPetitionOpen(false)}>返回朝局</button>}><CourtPetitionAudience world={w} pending={pending} send={command=>{send(command);setPetitionOpen(false);}} onPerson={onPerson}/></ActionDialog>}
