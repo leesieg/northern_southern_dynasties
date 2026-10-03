@@ -1,11 +1,28 @@
 import { describe,expect,it } from 'vitest';
-import { act,advance,newWorld } from './world';
-import { buildQuote, emptyCity, provisionCost, estateYield, advanceConstruction } from './construction';
+import { act,advance,newWorld,newCampaignWorld } from './world';
+import { buildQuote, emptyCity, provisionCost, estateYield, estateName, beginConstruction, advanceConstruction } from './construction';
 import { parseWorld,serializeWorld,validateWorld } from './save';
 import type { GameCommand } from './types';
+import {familyById} from '../data/families';
 const estate=(building:'fields'|'hall'|'workshop'|'storehouse')=>({type:'build' as const,scope:'estate' as const,site:'jiankang',building});
 function legacyEnvelope(payload:string){let hash=2166136261;for(let i=0;i<payload.length;i++)hash=Math.imul(hash^payload.charCodeAt(i),16777619);return JSON.stringify({format:'fynbc-save',version:1,payload,checksum:(hash>>>0).toString(16)});}
 describe('city and family construction rules',()=>{
+  it('derives estate names from every registered family, including compound and generated surnames',()=>{
+    for(const [id,family] of Object.entries(familyById))expect(estateName(id)).toBe(family.surname+'氏庄园');
+    expect(estateName('cui-qinghe')).toBe('崔氏庄园');expect(estateName('chen-yingchuan')).toBe('陈氏庄园');
+    expect(estateName('fictional-house-liang')).toBe('顾氏庄园');expect(estateName('yuwen')).toBe('宇文氏庄园');
+    expect(estateName('missing-family')).toBe('家族庄园');
+  });
+  it('uses the actual estate family in existing saves and construction records without changing assets',()=>{
+    for(const id of ['cui-ling','chen-baxian','guest-liang','yuwen-tai']){
+      const w=parseWorld(serializeWorld(newCampaignWorld(id,undefined,'sandbox'))),family=w.holdings.estate.family,name=estateName(family),before=structuredClone(w.holdings);
+      expect(name).not.toBe('家族氏庄园');expect(w.holdings).toEqual(before);
+      w.people[0].coins=1000;const command={type:'build',scope:'estate',site:w.holdings.estate.location,building:'fields'} as const,q=buildQuote(w,command);expect(q.reason).toBe('');
+      beginConstruction(w,command);expect(w.people[0].coins).toBe(1000-q.cost);expect(w.chronicle.at(-1)?.text).toContain(name+'开建');
+      w.day=w.holdings.estate.project!.due;advanceConstruction(w);expect(w.chronicle.some(e=>e.text.startsWith(name+'的田庄竣工'))).toBe(true);
+      expect(w.holdings.estate.family).toBe(family);expect(parseWorld(serializeWorld(w)).holdings.estate).toEqual(w.holdings.estate);
+    }
+  });
   it('uses the same estate income forecast and actual private payment without an office',()=>{
     const w=newWorld();w.holdings.estate.levels.workshop=1;w.holdings.governedCities=[];
     expect(estateYield(w)).toEqual({coins:10,food:0});

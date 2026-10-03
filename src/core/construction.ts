@@ -4,7 +4,7 @@ import {postStatus} from './retinue';
 import { awardPrestige,memberId } from './family';
 import {localBalance,spendLocal} from './treasury';
 import { buildingModifiers, traitsFor } from './social';
-import { familyName } from '../data/characters';
+import { familyById } from '../data/families';
 import { siteById } from '../data/scenario';
 import type { World } from './types';
 export type CityBuilding='market'|'granary'|'hostel';
@@ -29,6 +29,7 @@ export const estateBuildings:Record<EstateBuilding,{name:string;cost:number;days
 };
 export const emptyCity=():CityHolding=>({levels:{market:0,granary:0,hostel:0},project:null});
 export const newHoldings=():Holdings=>({governedCities:[],cities:{},estate:{family:'shen',location:'jiankang',levels:{hall:1,fields:0,workshop:0,storehouse:0},project:null}});
+export const estateName=(family:string)=>familyById[family]?.surname?familyById[family].surname+'氏庄园':'家族庄园';
 export type BuildCommand={type:'build';scope:'city'|'estate';site:string;building:Building};
 export function constructionModifiers(world:World,scope:'city'|'estate',site:string){
  const m=buildingModifiers(world);
@@ -63,7 +64,7 @@ export function beginConstruction(world:World,command:BuildCommand){
   holding.project={building:command.building,level:quote.level,started:world.day,due:world.day+quote.days,cost:quote.cost};
   if(world.social||world.lifestyles?.people.fictional?.focus){holding.project.modifiers=buildingModifiers(world);if(command.scope==='city'&&world.retinue){const engineer=postStatus(world,'engineer',command.site);if(!engineer.reason&&engineer.member){holding.project.engineerBonus=Math.floor(engineer.aptitude/10);holding.project.supervisor=engineer.member.id;}}if(world.social&&traitsFor(world).includes('diligent'))world.social.stress=Math.min(100,world.social.stress+6);}
   const name=command.scope==='city'?cityBuildings[command.building as CityBuilding].name:estateBuildings[command.building as EstateBuilding].name;
-  log(world,`${command.scope==='estate'?familyName(world.holdings.estate.family)+'氏庄园':siteById[command.site].name}开建${name}，支出 ${quote.cost} 钱，需 ${quote.days} 日。`);
+  log(world,`${command.scope==='estate'?estateName(world.holdings.estate.family):siteById[command.site].name}开建${name}，支出 ${quote.cost} 钱，需 ${quote.days} 日。`);
 }
 function log(world:World,text:string){world.chronicle.push({day:world.day,person:'player',text});world.chronicle=world.chronicle.slice(-100);}
 /** Recurring family production; this is private income, never public tax revenue. */
@@ -73,9 +74,9 @@ export function estateYield(world:World){
 }
 export function advanceConstruction(world:World){
   const h=world.holdings;
-  const entries:[string,CityHolding|Holdings['estate']][]=[[familyName(h.estate.family)+'氏庄园',h.estate],...Object.entries(h.cities).map(([id,c])=>[siteById[id].name,c] as [string,CityHolding])];
+  const entries:[string,CityHolding|Holdings['estate']][]=[[estateName(h.estate.family),h.estate],...Object.entries(h.cities).map(([id,c])=>[siteById[id].name,c] as [string,CityHolding])];
   for(const [name,holding] of entries){
-    const p=holding.project;if(p&&world.realm&&name!==familyName(h.estate.family)+'氏庄园'){const id=Object.keys(h.cities).find(id=>h.cities[id]===holding);if(id&&world.realm.cities[id].owner!==world.realm.cities[id].controller){p.due++;p.started++;continue;}}if(p&&p.due<=world.day){
+    const p=holding.project;if(p&&world.realm&&name!==estateName(h.estate.family)){const id=Object.keys(h.cities).find(id=>h.cities[id]===holding);if(id&&world.realm.cities[id].owner!==world.realm.cities[id].controller){p.due++;p.started++;continue;}}if(p&&p.due<=world.day){
       (holding.levels as Record<string,number>)[p.building]=p.level;holding.project=null;awardPrestige(world,memberId(world),'construction');if(world.social)world.social.renown=Math.min(999,world.social.renown+5);
       const definition={...cityBuildings,...estateBuildings}[p.building];
       log(world,`${name}的${definition.name}竣工，现为 ${p.level} 级。`);

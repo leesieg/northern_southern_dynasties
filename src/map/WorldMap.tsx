@@ -18,7 +18,7 @@ import type { ExpressionSpecification } from 'maplibre-gl';
 import { regimeName } from '../core/government';
 import { ArtIcon } from '../ui/ArtIcon';
 import {OngoingItemsDialog} from '../ui/OngoingFlags';
-import { familyName } from '../data/characters';
+import {estateName} from '../core/construction';
 import { territoryNodes,descendantSites,nodeForSite,levelNames,controlEvents,type TerritoryLevel } from '../data/territorialHierarchy';
 import { useEffect, useRef, useState } from 'react';
 import { Map as AtlasMap, Marker, setWorkerUrl, setWorkerCount, type GeoJSONSource } from 'maplibre-gl';
@@ -212,8 +212,8 @@ export function WorldMap(props:Props){
         const estate=p.world.holdings.estate,estateSite=siteById[estate.location];
         if(estateButton&&estateSite){
           places.find(item=>item.id===estate.location)?.marker.getElement().append(estateButton);
-          estateButton.setAttribute('aria-label','查看'+familyName(estate.family)+'氏庄园，位于'+estateSite.name);
-          estateButton.title=estateSite.name+' · '+familyName(estate.family)+'氏庄园';
+          estateButton.setAttribute('aria-label','查看'+estateName(estate.family)+'，位于'+estateSite.name);
+          estateButton.title=estateSite.name+' · '+estateName(estate.family);
         }
         const travelers=mapTravelers(p.world);travelingIds=new Set(travelers.filter(person=>person.journey).map(person=>person.id));
         for(const person of travelers){
