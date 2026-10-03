@@ -42,3 +42,21 @@
 .local-territory .district-counties{display:flex;flex-direction:column}.local-territory .district-counties button{text-align:left;min-height:52px;gap:9px;border-radius:0;background:#1d3329;border-left:3px solid #a48b5c}
 .local-territory .district-counties button>span:nth-child(2){flex:1}.local-territory .district-counties strong{font:15px var(--serif)}.local-territory .district-counties small{display:block;font-size:11px;color:#bdc5ae;margin-top:3px}.district-row-metrics{text-align:right}.district-row-metrics b{font:13px var(--serif);color:#e2ce9f}
 @media(max-height:680px){.focused-shell .place-panel:has(.location-development){overflow:auto}.focused-shell .place-panel .location-development{overflow:visible;flex:none}.location-development>.territory-page-content{overflow:visible;flex:none}.territory-navigation .territory-peers{max-height:40px}}
+
+/* Local service cards include HoverHint wrappers: size the wrapper as well as the button. */
+.city-service-page .journey-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.city-service-page .journey-options>.hover-hint{display:flex;min-width:0;width:100%}
+.city-management .city-service-page .journey-options button{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-width:0;min-height:62px;height:auto;padding:10px;text-align:left;white-space:normal;line-height:1.5;border-radius:3px}
+.city-service-page .journey-options button>.art-icon{flex:0 0 28px;width:28px!important;height:28px!important}
+.city-service-page .journey-options button>span{min-width:0;overflow-wrap:anywhere}
+.city-service-page .journey-options small{margin-top:3px;font-size:11px;color:#b8c5ad}
+.city-service-page .journey-options button[data-unavailable=true]{opacity:.65}
+.city-service-page .mobility-panel{margin:10px 0}
+.city-service-page .official-duty-button,.city-service-page .city-local-tasks>button{display:inline-flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;min-height:40px;padding:8px 12px;white-space:normal;line-height:1.4;border:1px solid #bba47166;border-radius:3px;background:#20392c;font-size:12px}
+.city-service-page .official-duty-button>.art-icon{flex:none}
+.city-service-page button:focus-visible{outline:2px solid #edd79d;outline-offset:3px}
+@media(max-width:360px){.city-service-page .journey-options{grid-template-columns:1fr}}
+
+.city-management .city-service-page>.hover-hint{display:block;width:calc((100% - 8px)/2);margin-top:8px}
+.city-management .city-service-page .official-duty-button{width:100%;margin:0}
+@media(max-width:360px){.city-management .city-service-page>.hover-hint{width:100%}}

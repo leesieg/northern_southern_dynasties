@@ -53,3 +53,5 @@
 .detail-landscape.detail-landscape .art-resource-value>b{color:#f1e6c8}
 .retinue-chamber-master.detail-landscape{background-position:45% center}
 .court-ribbon.detail-landscape,.military-hub-identity.detail-landscape,.diplomacy-banner.detail-landscape{flex-shrink:0}
+
+.realm-panel .detail-landscape.detail-landscape button.realm-person-link{background:none;border-color:transparent;box-shadow:none}
