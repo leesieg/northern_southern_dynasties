@@ -25,6 +25,7 @@ import {armyCampaign} from './militaryCampaigns';
 import {roadEncounters,fieldBattles} from './battlefield';
 import {realmAtWar,activeWars,ensureWars,bilateralWar,selectedWar,peaceQuote,advanceReparations,warRealmSide,type PeaceTerms,type War} from './wars';
 import {snapshotWarValues,updateWarScore} from './warScoring';
+import {regionalWarTerritory,warTerritorySites,warObjectiveSites,warTargetName,warDeclarationCost} from './warTerritories';
 import {ensureArmyOrganization,reconcileRegiments,readyTroops,armyPayFactor,armyCombatFactor,armyMatchupFactor,consumeArmyFood,projectArmyFood} from './armyOrganization';
 import {completeLocalAppointment,advanceLocal,localEfficiency,countyTerritory,localReason,actLocal} from './localAdministration';
 import {canCommission} from './serviceMandates';
@@ -71,7 +72,7 @@ export interface RealmState {
  truces:Record<string,number>;event:{kind:EventKind;site:string;day:number}|null;lastEvent:number;
  ledger:{day:number;realm:RealmId;income:number;expense:number;food:number}[];
 }
-export type RealmCommand={type:'realm';action:'tax';site:string;tax:Tax}|{type:'realm';action:'relief'|'fortify';site:string}|{type:'realm';action:'appoint';site:string;candidate:string}|{type:'realm';action:'petition';site:string}|{type:'realm';action:'mandate'}|{type:'realm';action:'muster'|'disband'|'peace';army?:number;war?:number;terms?:PeaceTerms;claims?:string[];extraCoins?:number;landRecipient?:RealmId}|{type:'realm';action:'march'|'war';site:string;army?:number;goal?:War['goal']}|{type:'realm';action:'event';choice:'fund'|'decline'};
+export type RealmCommand={type:'realm';action:'tax';site:string;tax:Tax}|{type:'realm';action:'relief'|'fortify';site:string}|{type:'realm';action:'appoint';site:string;candidate:string}|{type:'realm';action:'petition';site:string}|{type:'realm';action:'mandate'}|{type:'realm';action:'muster'|'disband'|'peace';army?:number;war?:number;terms?:PeaceTerms;claims?:string[];extraCoins?:number;landRecipient?:RealmId}|{type:'realm';action:'march'|'war';site:string;army?:number;goal?:War['goal'];territory?:string}|{type:'realm';action:'event';choice:'fund'|'decline'};
 export const eventDefinitions={
  flood:{title:'水患来报',body:'治下水渠受损，地方请求拨粮赈济。',cost:'公粮 60',effect:'赈济：秩序 +12；搁置：秩序 -10'},
  market:{title:'商旅请修道路',body:'商旅愿留驻集市，请求公款修补通路。',cost:'公款 50',effect:'资助：繁荣 +10；搁置：繁荣 -4'},
@@ -138,7 +139,7 @@ export function realmReason(w:World,c:RealmCommand):string {
  case 'mandate':return s.mandate?'已有军务授权':s.influence<40?'需影响力 40':!executive(w)&&!meritAccess(w,'military')&&acceptance(w,governingAuthority(w,r)).reduce((n,v)=>n+v.value,0)+(clanStanding(w,w.characterId!)?.petition??0)+recommendationBonus(w,w.characterId!)<60?'需执政者接受度 60 或官僚功绩 40':'';
  case 'muster':{if(civilWar(w,r))return '内战期间请通过驻地军队编制征募';const home=s.cities[w.people[0].home]?.controller===r?w.people[0].home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;return !s.mandate?'需要军务授权':s.armies.filter(a=>a.realm===r).length>=16?'本国军队编制已满':!Object.values(s.cities).some(c=>c.controller===r)?'已无控制城市':!executive(w)&&s.cities[home].governor!==w.characterId?'地方动员须有本城治理权，或由朝廷委派征募':s.cities[home].population-mobilizedTransportLabor(w,home)<700?'本城可用人口不足以动员 600 人':(executive(w)?t.coins:localBalance(w,home))<120||(home===capital(r,w)?t.grain:s.cities[home].grain)<120?'动员需要'+(executive(w)?'中央':'本城')+'公款 120、公粮 120':governmentMusterReason(w);}
  case 'disband':if(a&&!playerCommandsArmy(w,a))return '不能指挥内战对方军队';if(a&&armyCampaign(w,a))return '须先撤销战役委任';return !a?'尚未动员':a.owner&&a.owner!==w.characterId&&relationOpinion(w,a.owner,w.characterId!)<20?'部曲主人尚未同意遣散':!authorityGrant(w,w.characterId,'command',{realm:r,site:a.location,army:a}).allowed?'没有本军指挥权':(a.arrears??0)>0?'须结清军饷后遣散':a.journey?'抵达后方可遣散':s.cities[a.location].controller!==r?'请回到己方控制城市':demobilizationPlan(w,a).reason;
- case 'war':return !s.mandate?'需要军务授权':declareRealmWarReason(w,w.characterId!,r,c.site,c.goal);
+ case 'war':return !s.mandate?'需要军务授权':declareRealmWarReason(w,w.characterId!,r,c.site,c.goal,true,c.territory);
  case 'march':{if(a&&!playerCommandsArmy(w,a))return '不能指挥内战对方军队';if(a&&armyCampaign(w,a))return '请先撤销战役委任，避免改写统帅目标';if(!a)return '请先动员';if(!authorityGrant(w,w.characterId,'command',{realm:r,site:a.location,army:a}).allowed)return '没有本军指挥权';if(a.withdrawalUntil)return '军队正在依和约撤离';if(readyTroops(a,w.day)<100)return '可出征兵员不足 100，新兵仍在集训';const from=a.journey?.route[a.journey.leg+1]??a.location;if(!a.journey&&a.location===c.site||a.journey?.route.at(-1)===c.site)return '军队已前往此地';const p=from===c.site?true:planRoute(from,c.site,id=>canMarchThrough(w,r,id,c.site,a));return p?'':planRoute(from,c.site,id=>canEnter(w,r,s.cities[id].controller,undefined,true))?'敌方城防封锁道路，须先攻取沿线要塞':'道路经过未获通行权的第三方';}
  case 'peace':if(selectedWar(w,r,c.war)?.civil)return peaceQuote(w,selectedWar(w,r,c.war)!,r,c.terms??'white',c.claims,c.extraCoins,c.landRecipient).reason;return !executive(w)?'须由实际执政者议定国家和约':!s.mandate?'需要军务授权':!selectedWar(w,r,c.war)?'请在对应战事中议和':peaceQuote(w,selectedWar(w,r,c.war)!,r,c.terms??'white',c.claims,c.extraCoins,c.landRecipient).reason;
  default:return '无效政务行动';
@@ -154,7 +155,7 @@ export function actRealm(w:World,c:RealmCommand){
  case 'mandate':s.influence-=40;s.mandate=true;log(w,'获得本局军务授权，可以动员与发动边境争夺。');break;
  case 'muster':{spendGovernmentMuster(w);const home=w.people[0].home,location=s.cities[home].controller===r?home:Object.keys(s.cities).find(id=>s.cities[id].controller===r)!;enactPoliticalAction(w,r,'military',{source:'muster:'+location+':'+w.day,site:location,actor:w.characterId,authorizer:w.characterId,stage:'execution',scale:2,burden:1});if(executive(w))t.coins-=120;else spendLocal(w,location,120,'地方动员');if(location===capital(r,w))t.grain-=120;else s.cities[location].grain-=120;s.cities[location].population-=600;s.armies.push({realm:r,location,troops:600,morale:100,supply:120,journey:null,siege:0});const army=s.armies.at(-1)!;log(w,regimeName(w,r)+`动员 600 人，每月 1 日军饷 ${armyMonthlyPay(w,army)} 钱，每日消耗军粮 ${armyDailyFood(w,army)}。`);break;}
  case 'disband':{const refusing=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;if(!attemptCompliance(w,refusing,'disband'))break;if(w.mobility&&(!c.army||s.armies.find(a=>a.realm===r)?.id===c.army)){const leader=w.mobility.commanders[r];if(leader===w.characterId)w.people[0].journey=null;else if(leader&&w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.commanders[r];}const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;const returned=demobilizeArmy(w,a);delete w.mobility?.pendingCommanders?.[a.id!];const leader=w.mobility?.armyCommanders?.[a.id!];if(leader&&w.mobility){if(leader===w.characterId)w.people[0].journey=null;else if(w.mobility.residences[leader])w.mobility.residences[leader].journey=null;delete w.mobility.armyCommanders![a.id!];}s.cities[a.location].grain=Math.min(grainCapacity(w,a.location),s.cities[a.location].grain+a.supply);returnArmyConvoy(w,a);s.armies=s.armies.filter(other=>other!==a);log(w,`军队遣散：${returned.traveling} 人按兵团原籍返乡，${returned.settled} 人因原籍失守、道路不通或本地籍而于驻地安置；随军余粮返仓，超仓部分损耗。`);break;}
- case 'war':declareRealmWar(w,w.characterId!,r,c.site,c.goal);break;
+ case 'war':declareRealmWar(w,w.characterId!,r,c.site,c.goal,c.territory);break;
  case 'march':{const a=s.armies.find(a=>a.realm===r&&(c.army===undefined||a.id===c.army))!;delete a.rally;a.automation='direct';march(a,c.site,w.day,w);log(w,regimeName(w,r)+'军前往'+siteById[c.site].name+'，依道路逐日行军。');break;}
  case 'peace':settleWar(w,selectedWar(w,r,c.war)!,c.terms??'white',r,c.claims,c.extraCoins,c.landRecipient);break;
  case 'event':resolveEvent(w,c.choice);break;
@@ -273,22 +274,25 @@ export function advanceRealm(w:World){
   }
  for(const siege of s.sieges!.filter(v=>v.war===war.id)){const activeBesiegers=s.armies.filter(a=>a.location===siege.site&&!a.journey&&!a.withdrawalUntil&&warArmySide(w,war,a)===siege.side&&a.troops>=100);siege.blockade=siegePhaseQuote(w,siege,activeBesiegers).blockade;if(!activeBesiegers.length)delete siege.playerDecision;const opposite=siege.side==='attack'?'defend':'attack';if(warCitySide(w,war,siege.site)!==opposite){s.sieges=s.sieges!.filter(v=>v!==siege);continue;}if(siege.last!==w.day&&!s.armies.some(a=>a.location===siege.site&&!a.journey&&warArmySide(w,war,a)===siege.side&&a.troops>=100)){siege.progress=Math.max(0,siege.progress-1);if(!siege.progress)s.sieges=s.sieges!.filter(v=>v!==siege);}}
  if(war.civil){war.score=clamp((war.civil.cities.includes(war.target)?40:0)+(war.civil.cities.includes(war.civil.base)?0:-40)+(war.battles??0),-100,100);continue;}
- const target=s.cities[war.target];updateWarScore(w,war);
- if(target.owner==='frontier'||!warRealmSide(war,target.owner))settleWar(w,war);
+ updateWarScore(w,war);
+ if(warObjectiveSites(war).every(id=>s.cities[id].owner==='frontier'||!warRealmSide(war,s.cities[id].owner as RealmId)))settleWar(w,war);
  }
  for(const a of s.armies){reconcileRegiments(a);if(a.troops<100){takeCasualties(w,a,a.troops,undefined,true);returnArmyConvoy(w,a);if(a.arrears){const debts=s.armyDebts??=[],account=a.payer??'central:'+a.realm,old=debts.find(d=>d.realm===a.realm&&d.account===account);if(old)old.coins+=a.arrears;else debts.push({realm:a.realm,account,coins:a.arrears});}}}s.armies=s.armies.filter(a=>a.troops>=100);advanceCivilPolitics(w);advanceUnrest(w);
  if(!s.event&&w.day-s.lastEvent>=90&&w.holdings.governedCities.length){const kinds=Object.keys(eventDefinitions) as EventKind[];s.event={kind:kinds[(Math.floor(w.day/90)-1)%kinds.length],site:w.holdings.governedCities[0],day:w.day};s.lastEvent=w.day;log(w,'收到待决事务：'+eventDefinitions[s.event.kind].title+'。');}
 }
 export function handoverOffice(w:World){if(w.realm){w.realm.mandate=executive(w)||(!(governmentOf(w)?.stages.length)&& getCharacter(w,w.characterId!)!.role==='commander');w.realm.event=null;syncGovernance(w);}}
 
-export function declareRealmWarReason(w:World,actor:string,r:RealmId,site:string,goal:War['goal']='territory',checkCost=true){
+export function declareRealmWarReason(w:World,actor:string,r:RealmId,site:string,goal:War['goal']='territory',checkCost=true,territory?:string){
  const s=w.realm,c=s?.cities[site];if(!s||!c)return '目标城市不存在';
  if(!['territory','reparations','tributary','annexation'].includes(goal))return '无效战争目标';
  const grant=authorityGrant(w,actor,'declareWar',{realm:r});if(!grant.allowed)return grant.reason;
  if(c.owner==='frontier'||c.owner===r)return '请选择其他政权的城市';
- return foreignWarReason(w,c.owner,actor,r)|| (activeWars(w).filter(v=>!v.civil).length>=6?'战事已达上限':bilateralWar(w,r,c.owner)?'已与该国交战':c.owner!==c.controller?'目标处于占领中':!warApproach(w,site,r,c.owner)?'两国须有相邻边境，且目标须可沿道路抵达':(s.truces[[r,c.owner].sort().join('|')]??0)>w.day?'停战协议仍有效':checkCost&&personInfluence(w,actor)<(goal==='annexation'?120:40)?'个人影响力不足':'');
+ const targets=territory===undefined?[site]:warTerritorySites(w,territory,c.owner);
+ if(territory!==undefined&&(typeof territory!=='string'||!regionalWarTerritory(territory)||goal!=='territory'||!targets.includes(site)))return '州郡目标须为目标国真实辖区，且仅用于割地战争';
+ return foreignWarReason(w,c.owner,actor,r)|| (activeWars(w).filter(v=>!v.civil).length>=6?'战事已达上限':bilateralWar(w,r,c.owner)?'已与该国交战':targets.some(id=>s.cities[id].owner!==s.cities[id].controller)?'目标处于占领中':targets.some(id=>!warApproach(w,id,r,c.owner as RealmId))?'两国须有相邻边境，且目标须可沿道路抵达':(s.truces[[r,c.owner].sort().join('|')]??0)>w.day?'停战协议仍有效':checkCost&&personInfluence(w,actor)<warDeclarationCost(goal,territory)?'个人影响力不足':'');
 }
-export function declareRealmWar(w:World,actor:string,r:RealmId,site:string,goal:War['goal']='territory'){
- const reason=declareRealmWarReason(w,actor,r,site,goal);if(reason)throw new Error(reason);ensureWars(w);const s=w.realm!;
- awardInfluence(w,actor,-(goal==='annexation'?120:40));const war:War={id:s.nextWarId!++,goal,demand:300,battles:0,attacker:r,defender:s.cities[site].owner as RealmId,target:site,started:w.day,score:0,disputes:[]};snapshotWarValues(w,war);s.wars!.push(war);s.war=s.wars![0];diplomaticWar(w,r,war.defender);log(w,regimeName(w,r)+'发起对'+siteById[site].name+'的有限战争。');return war;
+export function declareRealmWar(w:World,actor:string,r:RealmId,site:string,goal:War['goal']='territory',territory?:string){
+ const reason=declareRealmWarReason(w,actor,r,site,goal,true,territory);if(reason)throw new Error(reason);ensureWars(w);const s=w.realm!;
+ const defender=s.cities[site].owner as RealmId;
+ awardInfluence(w,actor,-warDeclarationCost(goal,territory));const war:War={id:s.nextWarId!++,goal,demand:300,battles:0,attacker:r,defender,target:site,...(territory?{territory:{id:territory,sites:warTerritorySites(w,territory,defender)}}:{}),started:w.day,score:0,disputes:[]};snapshotWarValues(w,war);s.wars!.push(war);s.war=s.wars![0];diplomaticWar(w,r,war.defender);log(w,regimeName(w,r)+'发起对'+warTargetName(war)+'的有限战争。');return war;
 }

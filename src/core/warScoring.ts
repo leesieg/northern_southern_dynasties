@@ -1,3 +1,4 @@
+import {warObjectiveSites} from './warTerritories';
 import {warCaptives} from './warCaptives';
 import {armyDailyFood} from './realm';
 import {siteById} from '../data/scenario';
@@ -27,6 +28,9 @@ export function includeParticipantValues(w:World,war:War){const current=snapshot
 
 function values(w:World,war:War){return war.values&&Object.keys(war.values).length?war.values:snapshotWarValues(w,war,false);}
 
+export function warObjectiveControl(w:World,war:War){const sides=warObjectiveSites(war).map(id=>side(war,w.realm!.cities[id].controller as RealmId));return sides.every(s=>s==='attack')?'attack':sides.every(s=>s==='defend')?'defend':null;}
+function objectiveSince(w:World,war:War){return Math.max(...warObjectiveSites(war).map(id=>w.realm!.cities[id].occupiedSince??w.day));}
+
 export function warScoreBreakdown(w:World,war:War){
  const fixed=values(w,war),cities=w.realm!.cities;
  let attackTaken=0,defendTaken=0,attackTotal=0,defendTotal=0;
@@ -36,14 +40,14 @@ export function warScoreBreakdown(w:World,war:War){
   if(owner==='defend'){defendTotal+=value;if(controller==='attack')attackTaken+=value;}
  }
  const occupation=clamp(Math.round(attackTaken/Math.max(1,defendTotal)*60-defendTaken/Math.max(1,attackTotal)*60),-60,60);
- const battles=clamp(war.battles??0,-25,25),target=cities[war.target],elapsed=Math.max(0,w.day-war.started);
- const targetSide=side(war,target.controller as RealmId),attackHolds=targetSide==='attack';
- const objective=targetSide===null?0:attackHolds?Math.min(25,5+Math.floor(Math.max(0,w.day-(war.objective?.side==='attack'?war.objective.since:target.occupiedSince??w.day))/10)):Math.max(-25,-Math.floor(Math.max(0,(war.objective?.side==='defend'?w.day-war.objective.since:elapsed)-30)/10));
+ const battles=clamp(war.battles??0,-25,25),elapsed=Math.max(0,w.day-war.started);
+ const targetSide=warObjectiveControl(w,war),attackHolds=targetSide==='attack';
+ const objective=targetSide===null?0:attackHolds?Math.min(25,5+Math.floor(Math.max(0,w.day-(war.objective?.side==='attack'?war.objective.since:objectiveSince(w,war)))/10)):Math.max(-25,-Math.floor(Math.max(0,(war.objective?.side==='defend'?w.day-war.objective.since:elapsed)-30)/10));
  const parts:WarScorePart[]=[
   {key:'occupation',label:'领土占领',value:occupation},
   {key:'battles',label:'野战成果',value:battles},
   {key:'captives',label:'关键人物被俘',value:clamp(warCaptives(w,war).reduce((n,p)=>n+p.score,0),-60,60)},
-  {key:'objective',label:attackHolds?'战争目标持续控制':'守方阻止战争目标',value:objective},
+  {key:'objective',label:attackHolds?'战争目标持续控制':targetSide===null?'目标未完整控制':'守方阻止战争目标',value:objective},
  ];
  const attackAlive=w.realm!.armies.some(a=>side(war,a.realm)==='attack'&&a.troops>=100);
  const defendAlive=w.realm!.armies.some(a=>side(war,a.realm)==='defend'&&a.troops>=100);
@@ -53,7 +57,7 @@ export function warScoreBreakdown(w:World,war:War){
  return {parts,total:decisive??clamp(parts.reduce((sum,part)=>sum+part.value,0),-99,99),decisive:decisive!==null};
 }
 
-export function updateWarScore(w:World,war:War){const current=side(war,w.realm!.cities[war.target].controller as RealmId);if(!war.objective||war.objective.side!==current)war.objective={side:current,since:war.objective?w.day:current==='attack'?(w.realm!.cities[war.target].occupiedSince??w.day):war.started};war.score=warScoreBreakdown(w,war).total;return war.score;}
+export function updateWarScore(w:World,war:War){const current=warObjectiveControl(w,war);if(!war.objective||war.objective.side!==current)war.objective={side:current,since:war.objective?w.day:current==='attack'?(objectiveSince(w,war)):war.started};war.score=warScoreBreakdown(w,war).total;return war.score;}
 
 export function warScoreFor(w:World,war:War,realm:RealmId){const score=warScoreBreakdown(w,war).total;return side(war,realm)==='attack'?score:side(war,realm)==='defend'?-score:0;}
 
@@ -70,7 +74,7 @@ export function warWillToContinue(w:World,war:War,realm:RealmId){
  // Current operations provide a bounded opportunity to finish, never a permanent war lock.
  const recentWin=w.militaryAftermath?.battles.some(b=>b.war===war.id&&b.ended!==undefined&&w.day-b.ended<=30&&b.winner===ownSide);
  const siege=w.realm!.sieges?.some(v=>v.war===war.id&&v.side===ownSide&&(v.blockade??0)>=100&&v.progress>0&&w.day-(v.started??war.started)<=120&&own.some(a=>a.location===v.site&&!a.journey&&a.supply>0&&a.troops>=100));
- const advance=own.some(a=>a.journey?.route.at(-1)===war.target&&w.day-a.journey.started<=60&&a.supply>=armyDailyFood(w,a)*5&&a.morale>=40&&!a.withdrawalUntil);
+ const advance=own.some(a=>a.journey&&warObjectiveSites(war).includes(a.journey.route.at(-1)??'')&&w.day-a.journey.started<=60&&a.supply>=armyDailyFood(w,a)*5&&a.morale>=40&&!a.withdrawalUntil);
  const parts:WarWillPart[]=[
   {label:'有力维持战争目标',value:ownStrength>=600&&treasury.coins>=200&&arrears===0&&lowSupply===0?10:0},
   {label:'近期战役胜利',value:recentWin?8:0},

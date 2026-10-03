@@ -8,7 +8,7 @@ import {roads,siteById} from '../data/scenario';
 import {isMonthStart,monthIndex} from './calendar';
 import {capital,playerRealm,realmForecast,armyDailyFood,armyMonthlyPay,warApproach,declareRealmWar,declareRealmWarReason,settleWar,type RealmId} from './realm';
 import {activeWars,realmAtWar,peaceQuote,warRealmSide} from './wars';
-import {warWillToContinue,warScoreFor} from './warScoring';
+import {warWillToContinue,warScoreFor,warObjectiveControl} from './warScoring';
 import {governingAuthority,governingExecutives,governmentOf} from './government';
 import {diplomaticPair} from './diplomacy';
 import {readyTroops} from './armyOrganization';
@@ -52,7 +52,7 @@ export function advanceRealmStrategy(w:World){
   if(wars.length){
    appointAICommanders(w,r);
    for(const war of wars){const enemy=r===war.attacker?war.defender:war.attacker,other=governingAuthority(w,enemy);if(!other||w.day-war.started<30)continue;
-    const ownWill=warWillToContinue(w,war,r).total,score=warScoreFor(w,war,r),demand=peaceQuote(w,war,r,'demand'),white=peaceQuote(w,war,r,'white'),hasDemand=demand.takesLand||demand.coins>0||demand.tributary||demand.annexes,enemyWill=warWillToContinue(w,war,enemy).total,repelled=r===war.defender&&score>=20&&enemyWill<=-15&&warRealmSide(war,s.cities[war.target].controller as RealmId)==='defend'&&!s.armies.some(a=>warRealmSide(war,a.realm)==='attack'&&readyTroops(a,w.day)>=100&&a.morale>=25&&a.supply>=armyDailyFood(w,a)*2);
+    const ownWill=warWillToContinue(w,war,r).total,score=warScoreFor(w,war,r),demand=peaceQuote(w,war,r,'demand'),white=peaceQuote(w,war,r,'white'),hasDemand=demand.takesLand||demand.coins>0||demand.tributary||demand.annexes,enemyWill=warWillToContinue(w,war,enemy).total,repelled=r===war.defender&&score>=20&&enemyWill<=-15&&warObjectiveControl(w,war)==='defend'&&!s.armies.some(a=>warRealmSide(war,a.realm)==='attack'&&readyTroops(a,w.day)>=100&&a.morale>=25&&a.supply>=armyDailyFood(w,a)*2);
     if(other===w.characterId){if(w.day-(war.peaceReviewed??-90)>=90){const terms=hasDemand&&!demand.reason&&(score>=demand.cost+10||ownWill<=0)?'demand':!white.reason&&(ownWill<=0||repelled)?'white':undefined;if(terms){war.peaceOffer={from:r,to:enemy,terms,created:w.day,until:w.day+15};war.peaceReviewed=w.day;log(w,r,'向玩家朝廷提出议和，等待裁定');}}continue;}
     if(hasDemand&&!demand.reason&&(score>=demand.cost+10||ownWill<=0)){settleWar(w,war,'demand',r);set(w,r,'recover',null,'有限战争目标达成，转入战后休整');}
     else if(!white.reason&&(ownWill<=0&&enemyWill<=5||repelled)){settleWar(w,war,'white',r);set(w,r,'recover',null,repelled?'来犯军队已失去进攻能力，守住目标后议定停战':'继续交战收益不足，双方议定停战');}
