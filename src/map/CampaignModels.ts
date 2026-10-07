@@ -1,36 +1,56 @@
 import {BoxGeometry,BufferGeometry,Color,CylinderGeometry,Float32BufferAttribute,Mesh,MeshLambertMaterial,Group,DoubleSide} from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {cityRoofGeometry} from '../city/architecture';
-import {MAX_CITY_GEOMETRIES,campaignCityKey,type CampaignCityAppearance} from './campaignScenery';
+import {cityRoofGeometry,cityRoofTiles,cityWindowGeometry} from '../city/architecture';
+import {MAX_CITY_GEOMETRIES,campaignCityKey,type CampaignCityAppearance,type CityDetail} from './campaignScenery';
+import {campaignTexture} from './campaignTexture';
 
 const colors={earth:'#a49b77',stone:'#8c8e7a',wall:'#c4baa0',plaster:'#e1d5b6',wood:'#615544',roof:'#4b605b',road:'#cebd97',tile:'#758075'};
 /** Original strategic miniatures, using the same curved roof as the city construction view.
  * Every city is merged to one colored mesh; no per-house draw calls or copied game assets. */
-export function campaignCityGeometry(a:CampaignCityAppearance){
+export function campaignCityGeometry(a:CampaignCityAppearance,detail:CityDetail='regional'){
  const pieces:BufferGeometry[]=[];
- function add(g:BufferGeometry,color:string,x:number,y:number,z:number){
-  g.translate(x,y,z);g.deleteAttribute('uv');const c=new Color(color),values:number[]=[],normals=g.getAttribute('normal');
+ function add(g:BufferGeometry,color:string,x:number,y:number,z:number,skin=false){
+  g.translate(x,y,z);const c=new Color(color),values:number[]=[],plots:number[]=[],normals=g.getAttribute('normal'),positions=g.getAttribute('position');
   for(let i=0;i<g.getAttribute('position').count;i++){const shade=.83+.17*Math.max(0,normals.getY(i));values.push(c.r*shade,c.g*shade,c.b*shade);}
+  for(let i=0;i<positions.count;i++)plots.push(skin?positions.getX(i):x,skin?positions.getZ(i):z);
+  g.setAttribute('ground',new Float32BufferAttribute(plots,2));
+  const uv=g.getAttribute('uv'),tile=color===colors.roof||color==='#646b60'||color==='#566b52'||color==='#917c58'?0:color===colors.wall||color===colors.stone?1:color===colors.wood?2:3;
+  for(let i=0;i<uv.count;i++)uv.setX(i,(tile+.02+uv.getX(i)*.96)/4);
   g.setAttribute('color',new Float32BufferAttribute(values,3));pieces.push(g);
  }
  function box(x:number,y:number,z:number,w:number,h:number,d:number,color:string){add(new BoxGeometry(w,h,d),color,x,y,z);}
  function roof(x:number,y:number,z:number,w:number,d:number,h:number){
-  add(cityRoofGeometry(w,d,h,6,3),a.south?colors.roof:'#646b60',x,y,z);
+  add(cityRoofGeometry(w,d,h,6,3),a.style==='jiangnan'?colors.roof:a.style==='basin'?'#566b52':a.style==='oasis'?'#917c58':'#646b60',x,y,z);
   box(x,y+h+.04,z,w*.58,.08,.10,colors.tile);
   box(x,y-.04,z,w*.84,.10,d*.84,colors.wood);
+  if(detail==='close'&&w>2)add(cityRoofTiles(w,d,h),colors.tile,x,y+.015,z);
  }
  function house(x:number,z:number,w=1.5,d=1.1,h=1){
+  add(new BoxGeometry(w+.55,.012,d+.55),'#817e5e',x,.005,z,true);
   box(x,.1,z,w+.18,.2,d+.18,colors.stone);box(x,.2+h/2,z,w,h,d,colors.plaster);
   box(x,.65,z+d/2+.01,.30,.70,.035,colors.wood);
-  for(const sign of [-1,1])box(x+sign*w*.32,.82,z+d/2+.03,.22,.3,.04,colors.wood);
+  for(const sign of [-1,1]){
+   box(x+sign*w*.32,.82,z+d/2+.03,.22,.3,.04,colors.wood);
+   if(detail==='close')add(cityWindowGeometry(.22,.3),'#ab9d79',x+sign*w*.32,.82,z+d/2+.06);
+  }
+  if(detail==='close'){
+   for(const dx of [-w*.44,0,w*.44])box(x+dx,.2+h/2,z+d/2+.09,.055,h,.07,colors.wood);
+   box(x,.04,z+d/2+.3,.7,.1,.45,colors.stone);
+  }
   roof(x,h+.24,z,w+.4,d+.4,.46);
  }
- box(0,-.08,0,16.7,.22,15.9,colors.earth);
- box(0,.045,0,1.1,.05,15.3,colors.road);box(0,.05,0,15.5,.06,.75,colors.road);
+ // Thin subdivided ground, not a raised plinth. Streets follow the same sampled ground.
+ for(let x=-8;x<8;x++)for(let z=-8;z<8;z++)add(new BoxGeometry(1,.035,1),colors.earth,x+.5,-.025,z+.5,true);
+ for(let i=-7;i<=7;i++){
+  add(new BoxGeometry(1.1,.025,1),colors.road,0,.015,i,true);
+  add(new BoxGeometry(1,.025,.75),colors.road,i,.02,0,true);
+ }
  const wallHeight=.7+a.fort*.35,wallColor=a.fort?colors.wall:'#a79879';
- for(const x of [-7.65,7.65])box(x,wallHeight/2,0,.38,wallHeight,15.2,wallColor);
- box(0,wallHeight/2,-7.5,15.5,wallHeight,.38,wallColor);
- for(const x of [-4.7,4.7])box(x,wallHeight/2,7.5,6.1,wallHeight,.38,wallColor);
+ for(let i=-7;i<=7;i++){
+  for(const x of [-7.65,7.65])box(x,wallHeight/2,i,.38,wallHeight,1.03,wallColor);
+  box(i,wallHeight/2,-7.5,1.03,wallHeight,.38,wallColor);
+  if(Math.abs(i)>=2)box(i,wallHeight/2,7.5,1.03,wallHeight,.38,wallColor);
+ }
  for(const x of [-7.65,7.65])for(const z of [-7.5,7.5]){
   box(x,wallHeight*.65,z,.85,wallHeight*1.3,.85,colors.stone);roof(x,wallHeight*1.3,z,1.35,1.35,.38);
  }
@@ -40,7 +60,7 @@ export function campaignCityGeometry(a:CampaignCityAppearance){
   box(i,wallHeight+.10,-7.5,.55,.22,.43,wallColor);
   if(Math.abs(i)>2)box(i,wallHeight+.10,7.5,.55,.22,.43,wallColor);
  }
- for(const x of [-4.8,-2.6,2.6,4.8])for(const z of [-4.8,-2.5,2.2])house(x,z,1.55,1.15,a.south?.95:1.1);
+ for(const x of [-4.8,-2.6,2.6,4.8])for(const z of a.county?[-2.5,2.2]:[-4.8,-2.5,2.2])house(x,z,1.55,1.15,a.south?.95:1.1);
  // Administrative hall, with an inner courtyard only at the actual current capital.
  house(0,-4.1,a.capital?3.8:2.6,a.capital?2.6:1.7,a.capital?1.7:1.25);
  if(a.capital){roof(0,2.58,-4.1,3.35,2.25,.6);for(const x of [-2.65,2.65])house(x,-5.9,1.5,1.2);box(0,.055,-1.6,4.9,.055,2.2,colors.road);}
@@ -64,22 +84,23 @@ export function campaignCityGeometry(a:CampaignCityAppearance){
 }
 
 export function campaignModelAssets(){
- const material=new MeshLambertMaterial({vertexColors:true,side:DoubleSide});
+ const texture=campaignTexture(),material=new MeshLambertMaterial({vertexColors:true,map:texture,side:DoubleSide});
  const geometries=new Map<string,BufferGeometry>();
  const poleGeometry=new CylinderGeometry(.035,.035,3.5,5).translate(0,1.75,0);
  const bannerGeometry=new BoxGeometry(1.1,.7,.03).translate(.55,3.15,0);
  const poleMaterial=new MeshLambertMaterial({color:'#6c6048'}),bannerMaterials=new Map<string,MeshLambertMaterial>();
- function city(a:CampaignCityAppearance){
-  const key=campaignCityKey(a);let geometry=geometries.get(key);
-  if(!geometry){geometry=campaignCityGeometry(a);geometries.set(key,geometry);}
+ function city(a:CampaignCityAppearance,detail:CityDetail='regional'){
+  const key=campaignCityKey(a)+':'+detail;let geometry=geometries.get(key);
+  if(!geometry){geometry=campaignCityGeometry(a,detail);geometries.set(key,geometry);}
   const root=new Group(),body=new Mesh(geometry,material);root.add(body);
   root.add(new Mesh(poleGeometry,poleMaterial));
   let bannerMaterial=bannerMaterials.get(a.color);if(!bannerMaterial){bannerMaterial=new MeshLambertMaterial({color:a.color});bannerMaterials.set(a.color,bannerMaterial);}
   const banner=new Mesh(bannerGeometry,bannerMaterial);root.add(banner);return root;
  }
- function prune(active:Set<string>){
+ function prune(active:Set<string>,activeColors:Set<string>=new Set()){
   for(const [key,g] of geometries){if(geometries.size<=MAX_CITY_GEOMETRIES)break;if(!active.has(key)){g.dispose();geometries.delete(key);}}
+  for(const [color,m] of bannerMaterials){if(bannerMaterials.size<=MAX_CITY_GEOMETRIES)break;if(!activeColors.has(color)){m.dispose();bannerMaterials.delete(color);}}
  }
- function dispose(){for(const g of geometries.values())g.dispose();geometries.clear();material.dispose();poleGeometry.dispose();bannerGeometry.dispose();poleMaterial.dispose();for(const m of bannerMaterials.values())m.dispose();bannerMaterials.clear();}
+ function dispose(){for(const g of geometries.values())g.dispose();geometries.clear();material.dispose();texture.dispose();poleGeometry.dispose();bannerGeometry.dispose();poleMaterial.dispose();for(const m of bannerMaterials.values())m.dispose();bannerMaterials.clear();}
  return {city,prune,dispose};
 }

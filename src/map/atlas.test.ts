@@ -1,7 +1,7 @@
 import { describe,expect,it } from 'vitest';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import { atlasStyle, DEM_TILES, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
-import { activeRoute, previewArmyRoute, roadFeatures, siteFeatures } from './geography';
+import { activeRoute, previewArmyRoute, roadFeatures, siteFeatures,routeCoordinates } from './geography';
 import { territories, territoryRealms } from './territories';
 import { settlements } from './settlements';
 import { sites, roads } from '../data/scenario';
@@ -36,7 +36,7 @@ describe('atlas data and style contracts (no UI)',()=>{
   });
   it('preserves the same journey position and destination in rendered route data',()=>{
     const world=newWorld(),preview=planRoute('jiankang','changan')!;
-    expect(activeRoute(world,preview.route).features[0].geometry.coordinates).toHaveLength(preview.route.length);
+    expect(activeRoute(world,preview.route).features[0].geometry.coordinates).toEqual(routeCoordinates(preview.route));
     act(world,{type:'travel',destination:'changan'});advance(world,3);
     const pos=position(world.people[0]),route=activeRoute(world,[]).features[0].geometry.coordinates;
     expect(route[0]).toEqual([pos.lon,pos.lat]);expect(route.at(-1)).toEqual([108.94,34.27]);

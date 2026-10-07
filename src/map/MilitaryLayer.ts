@@ -4,7 +4,8 @@ import {MercatorCoordinate,type Map,type CustomLayerInterface} from 'maplibre-gl
 import {armyVisualState} from '../core/armyPresentation';
 import {regimeName} from '../core/government';
 import type {World} from '../core/types';
-import {siteById} from '../data/scenario';
+import {roadHeading} from '../core/routeGeometry';
+import {CAMPAIGN_EXPOSURE} from './campaignTerrain';
 import {ARMY_MODEL_PIXELS,armyShowsModel,armyMapPosition,type ArmyMarkerPlacement} from './armyMapPresentation';
 import {militaryModelAssets,animateMilitaryModel,type MilitaryModel,type ArmyModelKind} from './MilitaryModels';
 import {addMilitaryLighting,militaryModelScale,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
@@ -16,7 +17,7 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
  function failure(e:unknown){failed=true;onFailure('军队 3D 图层无法显示，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));}
  return {id:'military-models',type:'custom',renderingMode:'3d',onAdd(m,gl){
   map=m;try{
-   renderer=new WebGLRenderer({canvas:m.getCanvas(),context:gl,antialias:true});renderer.autoClear=false;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+   renderer=new WebGLRenderer({canvas:m.getCanvas(),context:gl,antialias:true});renderer.autoClear=false;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=CAMPAIGN_EXPOSURE;
    addMilitaryLighting(scene);
    assets=militaryModelAssets(()=>map?.triggerRepaint(),message=>failure(new Error(message)));onReady();
   }catch(e){failure(e);}
@@ -32,7 +33,7 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
     const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};
     const elevation=map.queryTerrainElevation(modelAnchor)??0,coord=MercatorCoordinate.fromLngLat(modelAnchor,elevation),scale=militaryModelScale(args.defaultProjectionData.mainMatrix,coord,map.getCanvas().clientWidth,ARMY_MODEL_PIXELS);
     positionMilitaryModel(m.root.matrix,coord,origin,scale);
-    const visual=visualStates.get(a.id)??'garrison';let heading=-.18;if(a.journey){const j=a.journey,from=siteById[j.route[j.leg]],to=siteById[j.route[j.leg+1]];heading=Math.atan2(to.lon-from.lon,from.lat-to.lat);}m.body.rotation.y=heading;
+    const visual=visualStates.get(a.id)??'garrison',heading=a.journey?roadHeading(a.journey):-.18;m.body.rotation.y=heading;
     m.detail.visible=zoom>=7.4;m.camp.visible=zoom>=7.4&&(visual==='garrison'||visual==='siege');animating=animateMilitaryModel(m,visual,performance.now()/210+a.id,state.armyMotion)||animating;m.banner.rotation.y-=heading;
    }
    assets.pruneBanners(new Set([...models.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));

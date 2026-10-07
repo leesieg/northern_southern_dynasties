@@ -1,4 +1,5 @@
 import {actFamilyMarriage} from './familyMarriage';
+import {journeyPosition} from './routeGeometry';
 import {actFamily,advanceHouseholdLife,resting} from './householdLife';
 import {ageAt} from './lifeState';
 import {actPolity,advanceSeparations} from './politySeparation';
@@ -314,9 +315,7 @@ export function advance(world: World, days = 1): void {
 export function position(person: Person): { lon: number; lat: number } {
   const j = person.journey;
   if (!j) return siteById[person.location];
-  const from = siteById[j.route[j.leg]], to = siteById[j.route[j.leg + 1]];
-  const t = j.elapsed / j.durations[j.leg];
-  return { lon:from.lon+(to.lon-from.lon)*t, lat:from.lat+(to.lat-from.lat)*t };
+  return journeyPosition(j);
 }
 export function remainingDays(person: Person): number {
   const j = person.journey;

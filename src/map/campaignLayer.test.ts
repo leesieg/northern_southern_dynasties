@@ -14,15 +14,27 @@ vi.mock('three',async importOriginal=>{
 afterEach(()=>{draws.frames=[];draws.fail=false;});
 
 describe('campaign custom layer (CPU only)',()=>{
+ it('keeps missing DEM cities on the fallback and recovers without a zero-height intermediate model',()=>{
+  const world=newCampaignWorld('xiao-yan'),setFilter=vi.fn(),onFailure=vi.fn();let loaded=false;
+  const map={getCanvas:()=>({clientWidth:1200,clientHeight:800}),getZoom:()=>7,isSourceLoaded:()=>loaded,queryTerrainElevation:()=>200,
+   project:()=>({x:600,y:400}),queryRenderedFeatures:()=>[],on:vi.fn(),off:vi.fn(),getLayer:()=>true,setFilter,triggerRepaint:vi.fn()};
+  const layer=campaignLayer(()=>({world,selected:'jiankang',tilted:true}),onFailure,()=>{}),args={projectionMatrix:new Matrix4().elements,defaultProjectionData:{mainMatrix:new Matrix4().elements}} as unknown as CustomRenderMethodInput;
+  layer.onAdd!(map as unknown as AtlasMap,{} as WebGL2RenderingContext);
+  try{
+   layer.render({} as WebGL2RenderingContext,args);expect(layer.showsSite('jiankang')).toBe(false);expect(setFilter).not.toHaveBeenCalled();
+   loaded=true;layer.render({} as WebGL2RenderingContext,args);expect(layer.showsSite('jiankang')).toBe(true);
+   loaded=false;layer.render({} as WebGL2RenderingContext,args);expect(layer.showsSite('jiankang')).toBe(false);expect(setFilter).toHaveBeenLastCalledWith('settlement-buildings',null);expect(onFailure).not.toHaveBeenCalled();
+  }finally{layer.onRemove!(map as unknown as AtlasMap,{} as WebGL2RenderingContext);}
+ });
  it('keeps the settlement at its actual geographic anchor and makes the rendered model clickable across cameras',()=>{
   const world=newCampaignWorld('xiao-yan'),site=siteById.jiankang,origin=MercatorCoordinate.fromLngLat([110,32]);
   const boundary=new Matrix4().makeTranslation(origin.x,origin.y,0).scale(new Vector3(1,-1,1));
-  const canvas={clientWidth:1200,clientHeight:800},onFailure=vi.fn(),onChange=vi.fn(),setLayoutProperty=vi.fn(),off=vi.fn();
+  const canvas={clientWidth:1200,clientHeight:800},onFailure=vi.fn(),onChange=vi.fn(),setFilter=vi.fn(),off=vi.fn();
   let zoom=7,elevation=200,main=new Matrix4();
-  const map={getCanvas:()=>canvas,getZoom:()=>zoom,isMoving:()=>false,queryTerrainElevation:()=>elevation,
+  const map={getCanvas:()=>canvas,getZoom:()=>zoom,isSourceLoaded:()=>true,isMoving:()=>false,queryTerrainElevation:()=>elevation,
    project:([lon,lat]:[number,number])=>{const at=MercatorCoordinate.fromLngLat([lon,lat],elevation),p=new Vector3(at.x,at.y,at.z).applyMatrix4(main);return {x:(p.x+1)*canvas.clientWidth/2,y:(1-p.y)*canvas.clientHeight/2};},
    queryRenderedFeatures:()=>[],getBounds:()=>({getWest:()=>117,getEast:()=>120,getSouth:()=>31,getNorth:()=>33}),
-   triggerRepaint:vi.fn(),getLayer:()=>true,setLayoutProperty,on:vi.fn(),off};
+   triggerRepaint:vi.fn(),getLayer:()=>true,setFilter,on:vi.fn(),off};
   const layer=campaignLayer(()=>({world,selected:site.id,tilted:true}),onFailure,onChange);
   layer.onAdd!(map as unknown as AtlasMap,{} as WebGL2RenderingContext);
   const render=(pitch:number)=>{
@@ -40,25 +52,25 @@ describe('campaign custom layer (CPU only)',()=>{
     expect(foot.distanceTo(new Vector3(at.x,at.y,at.z))).toBeLessThan(1e-12);
     expect(layer.siteAt({x:600,y:400})).toBe(site.id);expect(layer.showsSite(site.id)).toBe(true);
    }
-   expect(onFailure).not.toHaveBeenCalled();expect(setLayoutProperty).toHaveBeenCalledTimes(1);
+   expect(onFailure).not.toHaveBeenCalled();expect(setFilter).toHaveBeenCalledTimes(1);
    zoom=4;render(0);expect(layer.showsSite(site.id)).toBe(false);expect(layer.siteAt({x:600,y:400})).toBeNull();
-   expect(setLayoutProperty).toHaveBeenLastCalledWith('settlement-buildings','visibility','visible');
+   expect(setFilter).toHaveBeenLastCalledWith('settlement-buildings',null);
   }finally{layer.onRemove!(map as unknown as AtlasMap,{} as WebGL2RenderingContext);}
   expect(off).toHaveBeenCalledTimes(2);
  });
  it('restores the base city layer when an actual render fails and stops exposing stale model targets',()=>{
-  const world=newCampaignWorld('xiao-yan'),setLayoutProperty=vi.fn(),onFailure=vi.fn();
+  const world=newCampaignWorld('xiao-yan'),setFilter=vi.fn(),onFailure=vi.fn();
   const map={getCanvas:()=>({clientWidth:1200,clientHeight:800}),getZoom:()=>7,isMoving:()=>false,queryTerrainElevation:()=>0,
    project:()=>({x:600,y:400}),getBounds:()=>({getWest:()=>117,getEast:()=>120,getSouth:()=>31,getNorth:()=>33}),queryRenderedFeatures:()=>[],
-   on:vi.fn(),off:vi.fn(),getLayer:()=>true,setLayoutProperty,triggerRepaint:vi.fn()};
+   on:vi.fn(),off:vi.fn(),getLayer:()=>true,setFilter,triggerRepaint:vi.fn()};
   const layer=campaignLayer(()=>({world,selected:'jiankang',tilted:false}),onFailure,()=>{});
   const args={projectionMatrix:new Matrix4().elements,defaultProjectionData:{mainMatrix:new Matrix4().elements}} as unknown as CustomRenderMethodInput;
   layer.onAdd!(map as unknown as AtlasMap,{} as WebGL2RenderingContext);
   try{
-   layer.render({} as WebGL2RenderingContext,args);expect(setLayoutProperty).toHaveBeenLastCalledWith('settlement-buildings','visibility','none');
+   layer.render({} as WebGL2RenderingContext,args);expect(setFilter.mock.calls.at(-1)?.[1]).toEqual(['!', ['in',['get','site'],['literal',['jiankang']]]]);
    draws.fail=true;layer.render({} as WebGL2RenderingContext,args);
    expect(onFailure).toHaveBeenCalledOnce();expect(layer.showsSite('jiankang')).toBe(false);expect(layer.siteAt({x:600,y:400})).toBeNull();
-   expect(setLayoutProperty).toHaveBeenLastCalledWith('settlement-buildings','visibility','visible');
+   expect(setFilter).toHaveBeenLastCalledWith('settlement-buildings',null);
   }finally{layer.onRemove!(map as unknown as AtlasMap,{} as WebGL2RenderingContext);}
  });
 });

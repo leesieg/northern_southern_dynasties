@@ -8,9 +8,10 @@ describe('campaign atlas scale (non-UI)',()=>{
  it('restores relief only when requested and interpolates a bounded transition',()=>{
   const mid=atlasPresentation((PAPER_ZOOM+LANDSCAPE_ZOOM)/2,true);
   expect(mid.paper).toBeCloseTo(.5);expect(mid.pitch).toBeCloseTo(22);expect(mid.terrain).toBe(true);
-  for(const zoom of [LANDSCAPE_ZOOM,8,11]){
+  for(const zoom of [LANDSCAPE_ZOOM,8]){
    expect(atlasPresentation(zoom,true)).toEqual({paper:0,strategic:false,terrain:true,pitch:44});
    expect(atlasPresentation(zoom,false)).toEqual({paper:0,strategic:false,terrain:false,pitch:0});
   }
+  expect(atlasPresentation(11,true).pitch).toBe(52);expect(atlasPresentation(11,false).pitch).toBe(0);
  });
 });

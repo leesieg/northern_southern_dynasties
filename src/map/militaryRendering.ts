@@ -1,4 +1,5 @@
-import {AmbientLight,Camera,DirectionalLight,DoubleSide,HemisphereLight,Matrix4,MeshStandardMaterial,Scene,Vector3,type Texture} from 'three';
+import {AmbientLight,Camera,DirectionalLight,DoubleSide,FogExp2,HemisphereLight,Matrix4,MeshStandardMaterial,Scene,Vector3,type Texture} from 'three';
+import {CAMPAIGN_SUN,CAMPAIGN_FOG_COLOR} from './campaignTerrain';
 
 /** Keep the map's view transform out of the projection: PBR needs the actual eye and view normals. */
 export function updateMilitaryCamera(camera:Camera,projection:ArrayLike<number>,mercatorProjection:ArrayLike<number>,anchor:Matrix4){
@@ -9,10 +10,11 @@ export function updateMilitaryCamera(camera:Camera,projection:ArrayLike<number>,
 }
 
 export function addMilitaryLighting(scene:Scene){
- const sky=new HemisphereLight('#f5f7ff','#b9b2a9',1.65);sky.position.set(0,0,1); // Mercator Z is up, not Three's default Y.
- const key=new DirectionalLight('#fff4e7',2.0);key.position.set(-.7,-1,1.8);
- const fill=new DirectionalLight('#edf2ff',1.45);fill.position.set(.8,1,.8);
- scene.add(new AmbientLight('#f3f1ee',.85),sky,key,fill);
+ scene.fog=new FogExp2(CAMPAIGN_FOG_COLOR,60);
+ const sky=new HemisphereLight('#fff2cf','#526253',1.6);sky.position.set(0,0,1); // Mercator Z is up, not Three's default Y.
+ const key=new DirectionalLight(CAMPAIGN_SUN.color,CAMPAIGN_SUN.intensity);key.position.set(CAMPAIGN_SUN.x,CAMPAIGN_SUN.y,CAMPAIGN_SUN.z);
+ const fill=new DirectionalLight('#dbe3cf',1.1);fill.position.set(.8,-1,.8);
+ scene.add(new AmbientLight('#f3ebd3',.35),sky,key,fill);
 }
 
 export function militarySurfaceMaterial(color:string,map?:Texture,metalness=0){

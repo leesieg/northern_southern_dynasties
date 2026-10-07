@@ -34,12 +34,12 @@ describe('campaign scenery projection and budgets (CPU only)',()=>{
   const spread=Array.from({length:100},(_,i)=>({site:{...siteById.jingkou,id:String(i)},capital:false,point:{x:i*200,y:0}}));
   expect(campaignCityPlacements(spread,'99',8)).toHaveLength(MAX_SCENERY_CITIES);
   expect(campaignCityPlacements(spread,'99',8)[0].site.id).toBe('99');
-  expect(campaignCityPixels(siteById.jiankang,true,11)).toBe(160);
+  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeGreaterThan(1000);
  });
  it('produces finite outward normals and merges houses into one city mesh',()=>{
   const a=campaignCityAppearance(newWorld(),siteById.jiankang),g=campaignCityGeometry({...a,fort:3,levels:[3,3,3],project:0,progress:2,besieged:true});
   const positions=g.getAttribute('position'),normals=g.getAttribute('normal');
-  expect(positions.count).toBeLessThan(18000);expect(g.groups).toHaveLength(0);
+  expect(positions.count).toBeLessThan(32000);expect(g.groups).toHaveLength(0);
   expect(g.getAttribute('color').count).toBe(positions.count);
   for(let i=0;i<positions.count;i++){expect(Number.isFinite(positions.getX(i)+positions.getY(i)+positions.getZ(i))).toBe(true);expect(Number.isFinite(normals.getX(i)+normals.getY(i)+normals.getZ(i))).toBe(true);}
   g.dispose();

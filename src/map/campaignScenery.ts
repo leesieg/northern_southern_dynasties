@@ -6,8 +6,11 @@ import type {World,Site} from '../core/types';
 export const SCENERY_MIN_ZOOM=6.2;
 export const MAX_SCENERY_CITIES=36;
 export const MAX_CITY_GEOMETRIES=48;
+export const CITY_DETAIL_ZOOM=8.2;
+export const MAX_DETAILED_CITIES=4;
+export type CityDetail='regional'|'close';
 export interface CampaignCityAppearance {
- capital:boolean;south:boolean;fort:number;levels:[number,number,number];
+ capital:boolean;south:boolean;style:ReturnType<typeof cityRegionalStyle>;county:boolean;fort:number;levels:[number,number,number];
  project:number;progress:number;besieged:boolean;color:string;
 }
 export function campaignCityAppearance(world:World,site:Site):CampaignCityAppearance {
@@ -15,15 +18,24 @@ export function campaignCityAppearance(world:World,site:Site):CampaignCityAppear
  const capitals=worldRealms(world).filter(r=>!world.realm?.annexed?.[r]).map(r=>capital(r,world));
  const project=holding?.project,projectIndex=project?['market','granary','hostel'].indexOf(project.building):-1;
  const progress=project&&projectIndex>=0?Math.floor(Math.max(0,Math.min(1,(world.day-project.started)/Math.max(1,project.due-project.started)))*4):0;
- return {capital:capitals.includes(site.id),south:site.lat<33,fort:Math.max(0,Math.min(3,city?fortificationLevel(world,site.id):0)),
+ return {capital:capitals.includes(site.id),south:cityRegionalStyle(site)==='jiangnan',style:cityRegionalStyle(site),county:site.rank==='county',fort:Math.max(0,Math.min(3,city?fortificationLevel(world,site.id):0)),
   levels:['market','granary','hostel'].map(id=>Math.max(0,Math.min(3,holding?.levels[id as keyof typeof holding.levels]??0))) as [number,number,number],
   project:projectIndex,progress,besieged:!!world.realm?.sieges?.some(s=>s.site===site.id),
   color:polityStyle(world,city?.controller??site.polity).color};
 }
-export function campaignCityKey(a:CampaignCityAppearance){return [a.capital,a.south,a.fort,...a.levels,a.project,a.progress,a.besieged].join(':');}
+export function campaignCityKey(a:CampaignCityAppearance){return [a.capital,a.style,a.county,a.fort,...a.levels,a.project,a.progress,a.besieged].join(':');}
 export function campaignCityPixels(site:Site,capital:boolean,zoom:number){
  const detail=Math.max(0,Math.min(1,(zoom-SCENERY_MIN_ZOOM)/2));
- return capital?78+detail*82:site.rank==='county'?28+detail*40:48+detail*64;
+ const regional=capital?78+detail*82:site.rank==='county'?28+detail*40:48+detail*64;
+ return regional*2**Math.max(0,zoom-CITY_DETAIL_ZOOM);
+}
+/** Geographic visual footprint calibrated at the regional/close transition, not historical city area. */
+export function campaignCityMeters(site:Site,capital:boolean){return campaignCityPixels(site,capital,CITY_DETAIL_ZOOM)*40075016.686*Math.cos(site.lat*Math.PI/180)/(512*2**CITY_DETAIL_ZOOM);}
+/** Static landscape style, independent of conquest and today's polity. Visual design zones, not cultural census. */
+export function cityRegionalStyle(site:Site){
+ if(site.terrain==='绿洲')return 'oasis';
+ if(site.lon<106&&site.lat<34)return 'basin';
+ return site.lat<33&&site.lon>=106?'jiangnan':'northern';
 }
 export function campaignCityPlacements<T extends {site:Site;point:{x:number;y:number};capital:boolean}>(items:T[],selected:string,zoom:number){
  const result:T[]=[];

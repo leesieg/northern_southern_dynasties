@@ -3,7 +3,9 @@ import {engagementGroups,type EngagementRef} from '../ui/warPresentation';
 import {polityStyle,worldRealms} from '../core/polityRuntime';
 import {updateMarkerPortrait} from './markerPortrait';
 import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
-import {atlasPresentation} from './atlasPresentation';
+import {atlasPresentation,CITY_VIEW_ZOOM,type CameraAction} from './atlasPresentation';
+import {CITY_DETAIL_ZOOM} from './campaignScenery';
+import {getPerson} from '../core/personRegistry';
 import {armyHeraldry} from './ArmyHeraldry';
 import {armyVisualState} from '../core/armyPresentation';
 import {militaryArmyView} from '../core/militaryView';
@@ -41,7 +43,7 @@ setWorkerCount(2);
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
-  militaryModels:boolean;armyMotion:boolean;
+  militaryModels:boolean;armyMotion:boolean;sceneryDetail:boolean;
   onActivity:(item:OngoingItem)=>void;
   onEngagement:(selected:EngagementRef)=>void;
   onBrowseActivities:()=>void;
@@ -52,7 +54,7 @@ interface Props {
   onInspectPeople:(ids:string[])=>void;
   territory:string;territoryLevel:TerritoryLevel;historyEvent:string|null;onSelectTerritory:(id:string)=>void;
   world:World; selected:string; route:string[]; mode:MapMode; showTravelers:boolean; tilted:boolean;
-  cameraAction:{type:'home'|'player'|'selected'|'in'|'out';seq:number}; onSelect:(id:string)=>void; onPreviewRoute:(id:string)=>void;
+  cameraAction:{type:CameraAction;seq:number}; onSelect:(id:string)=>void; onPreviewRoute:(id:string)=>void;
 }
 interface MapAPI {update:()=>void;camera:(type:Props['cameraAction']['type'])=>void}
 function armyOrderPreview(w:World,a:Army,id:string){const reason=realmReason(w,{type:'realm',action:'march',army:a.id,site:id}),j=a.journey,from=j?.route[j.leg+1]??a.location,path=from===id?{route:[id],days:0}:planRoute(from,id,node=>canMarchThrough(w,a.realm,node,id));return {reason,route:path?.route??[],days:path?path.days+(j?j.durations[j.leg]-j.elapsed:0):null};}
@@ -63,7 +65,7 @@ export function WorldMap(props:Props){
   const [combatGroupKey,setCombatGroupKey]=useState<string|null>(null);
   const [activitySite,setActivitySite]=useState<string|null>(null);
   const [error,setError]=useState(''),[warning,setWarning]=useState(''),[ready,setReady]=useState(false),[retry,setRetry]=useState(0);
-  const [hover,setHover]=useState<{id:string;x:number;y:number}|null>(null);
+  const [hover,setHover]=useState<{id:string;x:number;y:number;city:boolean}|null>(null);
   const [menu,setMenu]=useState<{id:string;x:number;y:number}|null>(null);
   const menuButton=useRef<HTMLButtonElement>(null);
   useEffect(()=>{if(menu)menuButton.current?.focus();},[menu]);
@@ -109,7 +111,7 @@ export function WorldMap(props:Props){
       const zoom=map.getZoom(),w=container.clientWidth,h=container.clientHeight;
       const presentation=atlasPresentation(zoom,current.current.tilted);
       container.parentElement?.style.setProperty('--atlas-paper-strength',String(presentation.paper));
-      container.parentElement?.setAttribute('data-scale',presentation.strategic?'strategic':'landscape');
+      container.parentElement?.setAttribute('data-scale',presentation.strategic?'strategic':zoom>=CITY_DETAIL_ZOOM?'close':'landscape');
       const occupied:{x:number;y:number;width:number}[]=[];
       const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===current.current.world.holdings.estate.location)-Number(a.id===current.current.world.holdings.estate.location)||Number(b.capital)-Number(a.capital));
       for(const item of list){
@@ -176,7 +178,7 @@ export function WorldMap(props:Props){
     }
     function focusSite(id:string){
       const site=siteById[id];
-      map?.easeTo({center:[site.lon,site.lat],zoom:6.8,pitch:atlasPresentation(6.8,current.current.tilted).pitch,duration:reduced?0:500});
+      map?.easeTo({center:[site.lon,site.lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,current.current.tilted).pitch,duration:reduced?0:500});
     }
     function openMenu(id:string,x:number,y:number){
       if(current.current.selectedArmies.length&&current.current.onCommandArmy(id)){setMenu(null);setHover(null);return;}
@@ -362,14 +364,14 @@ export function WorldMap(props:Props){
       };
       map.on('mousemove',event=>{
         if(map?.isMoving())return;
-        const id=hit(event.point);
+        const model=sceneryLayer?.siteAt(event.point),id=model??hit(event.point);
         if(id!==hoveredId){clearHover();if(id){map?.setFeatureState({source:'territories',id},{hover:true});const p=current.current,a=p.world.realm?.armies.find(a=>p.selectedArmies.includes(a.id!));if(a){const order=armyOrderPreview(p.world,a,id);if(map&&!order.reason&&order.route.length)(map.getSource('route') as GeoJSONSource).setData(previewArmyRoute(a,order.route));}}hoveredId=id;}
         if(map)map.getCanvas().style.cursor=id?'pointer':'';
-        setHover(id?{id,x:Math.max(8,Math.min(event.point.x+18,container.clientWidth-240)),y:Math.max(8,Math.min(event.point.y+18,container.clientHeight-(current.current.selectedArmies.length?260:165)))}:null);
+        setHover(id?{id,city:!!model,x:Math.max(8,Math.min(event.point.x+18,container.clientWidth-240)),y:Math.max(8,Math.min(event.point.y+18,container.clientHeight-(current.current.selectedArmies.length?310:235)))}:null);
       });
       map.getCanvas().addEventListener('mouseleave',clearHover);
       map.on('movestart',()=>{clearHover();setMenu(null);});
-      map.on('click',event=>{const id=hit(event.point);if(id)current.current.onSelectTerritory(nodeForSite(id,current.current.territoryLevel).id);setMenu(null);});
+      map.on('click',event=>{const model=sceneryLayer?.siteAt(event.point),id=model??hit(event.point);if(id){if(model)current.current.onSelect(id);else current.current.onSelectTerritory(nodeForSite(id,current.current.territoryLevel).id);}setMenu(null);});
       map.on('dblclick',event=>{const id=hit(event.point);if(id){current.current.onSelect(id);focusSite(id);}});
       map.on('contextmenu',event=>{event.preventDefault();event.originalEvent.preventDefault();const id=hit(event.point);if(id)openMenu(id,event.point.x,event.point.y);});
       map.on('error',event=>{
@@ -398,7 +400,9 @@ export function WorldMap(props:Props){
         else if(type==='player'){
           const p=position(current.current.world.people[0]);
           map.easeTo({center:[p.lon,p.lat],zoom:7,pitch:atlasPresentation(7,current.current.tilted).pitch,duration});
-        }else if(type==='in')map.zoomIn({duration});else map.zoomOut({duration});
+        }else if(type==='left'||type==='right')map.easeTo({bearing:map.getBearing()+(type==='left'?-30:30),duration});
+        else if(type==='north')map.easeTo({bearing:0,duration});
+        else if(type==='in')map.zoomIn({duration});else map.zoomOut({duration});
       }};
     }catch(e){setError(e instanceof Error?e.message:'无法启动 WebGL 2 地图。');}
     return()=>{
@@ -408,8 +412,11 @@ export function WorldMap(props:Props){
   },[retry]);
 
   const shownEvent=controlEvents.find(e=>e.id===props.historyEvent);
-  const hoverNode=hover?nodeForSite(hover.id,props.territoryLevel):null;
+  const hoverNode=hover?nodeForSite(hover.id,hover.city?'city':props.territoryLevel):null;
   const hoverSite=hover?siteById[hover.id]:null;
+  const hoverCity=hoverSite?props.world.realm?.cities[hoverSite.id]:undefined;
+  const hoverGovernor=hoverCity?.owner===hoverCity?.controller?hoverCity?.governor:null;
+  const hoverController=hoverCity?.controller??hoverSite?.polity;
   const player=props.world.people[0];
   const hoverPlan=hoverSite&&!player.journey?personalRoute(props.world,hoverSite.id):null;
   const hoverArmy=props.world.realm?.armies.find(a=>props.selectedArmies.includes(a.id!));
@@ -424,7 +431,8 @@ export function WorldMap(props:Props){
     {shownEvent&&<div className="history-map-notice"><strong>{shownEvent.year} 年 · {shownEvent.label}</strong><span>标记为城市攻取记录；底图仍是 546 行政基底，未重建当年疆界。</span></div>}
     {hover&&hoverSite&&!menu&&<div className="territory-tooltip" style={{left:hover.x,top:hover.y}}>
       <span className="territory-kicker">{regimeName(props.world,props.world.realm?.cities[hoverSite.id]?.controller??hoverSite.polity)} · {administration[hoverSite.id]?.prefecture??'区划待核'}</span><strong>{hoverNode?.name??hoverSite.name}</strong><p>{hoverNode?levelNames[hoverNode.level]:'城市'} · 单击选择此层级</p>
-      <p>{administrationPath(hoverSite.id)}</p><p>{hoverSite.terrain}{hoverSite.capital?' · 都城':''}</p>
+      <p>{administrationPath(hoverSite.id)}</p><p>{hoverSite.terrain}{hoverController&&hoverController!=='frontier'&&capital(hoverController,props.world)===hoverSite.id?' · 都城':''}</p>
+      {hover.city&&hoverCity&&<><p>治理者：{hoverGovernor?getPerson(props.world,hoverGovernor)?.name??'未录姓名':'空席'}{hoverCity.owner!==hoverCity.controller?' · 法理属'+regimeName(props.world,hoverCity.owner):''}</p><p>居民 {hoverCity.population.toLocaleString()} · 秩序 {hoverCity.order} · 繁荣 {hoverCity.prosperity}</p></>}
       <p>{hoverArmy&&hoverOrder?hoverOrder.reason?'第 '+hoverArmy.id+' 军：'+hoverOrder.reason:'第 '+hoverArmy.id+' 军预计 '+hoverOrder.days+' 日 · '+hoverOrder.route.slice(0,6).map(id=>siteById[id].name).join(' → ')+(hoverOrder.route.length>6?' 等 '+hoverOrder.route.length+' 站':''):player.journey?'行旅途中 · 可查看目的地':hoverSite.id===player.location?'你正驻足于此':hoverPlan?('预计 '+hoverPlan.days+' 日 · 行粮 '+hoverPlan.food+' 日份'):'暂无可用路线'}</p>
       <small>单击查看 · 双击拉近 · 右键操作</small>
     </div>}
