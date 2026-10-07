@@ -1,12 +1,12 @@
 .political-identity{display:grid;gap:9px;min-width:0;color:#e6d6b4}
 .political-identity h3{display:flex;align-items:center;gap:7px;margin:7px 0;font:16px/1.5 var(--serif);color:#dbc083}
-.political-note{color:#b8c0a7;font:12px/1.65 var(--sans);margin:0}
+.political-note{color:#c9cbb9;font:12px/1.65 var(--sans);margin:0}
 .political-person-list,.political-history{display:grid;gap:7px}
 .political-person-list>article{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:9px;border:1px solid #b69c6340;padding:8px;background:#182a23}
 .political-person{display:flex;align-items:center;gap:10px;min-width:0;width:100%;border:0;background:transparent;color:#e6d6b4;text-align:left;padding:3px}
 .political-person>.painted-portrait{width:44px;height:44px;flex:0 0 44px;aspect-ratio:1}
 .political-person>span{display:grid;gap:3px;min-width:0}
-.political-person small{font:11px/1.5 var(--sans);color:#b8c0a7;overflow-wrap:anywhere}
+.political-person small{font:11px/1.5 var(--sans);color:#c9cbb9;overflow-wrap:anywhere}
 .political-person strong{font:14px/1.5 var(--serif);overflow-wrap:anywhere}
 .political-history>article{border-left:2px solid #b69c63;padding:7px;background:#182a23}
 .political-history{max-height:400px;overflow-y:auto}
@@ -16,7 +16,7 @@
 .political-options label{display:flex;gap:7px;align-items:center;border:1px solid #b69c6355;padding:8px;background:#1d3027}
 .political-options label:has(input:checked){border-color:#ccb078;background:#34432e;box-shadow:inset 3px 0 #c6a96f}
 .political-options span{display:grid;gap:4px;min-width:0}
-.political-options small{font:11px/1.5 var(--sans);color:#b8c0a7}
+.political-options small{font:11px/1.5 var(--sans);color:#c9cbb9}
 .political-input{display:grid;grid-template-columns:50px minmax(0,1fr);align-items:center;gap:8px;margin:8px 0}
 .political-check{display:flex;align-items:center;gap:7px;font-size:12px;margin:8px 0}
 .political-suggestions{display:flex;gap:6px;flex-wrap:wrap}

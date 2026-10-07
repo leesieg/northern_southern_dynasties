@@ -2,7 +2,7 @@
 .intrigue-desk{display:grid;gap:10px;min-width:0;color:#e6d6b4}
 .intrigue-identity{display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #b69c6355}
 .intrigue-identity>span{display:grid;gap:4px;min-width:0}
-.intrigue-identity small,.scheme-record small,.intrigue-empty,.intrigue-boundary{color:#b8c0a7;font-size:12px;line-height:1.6}
+.intrigue-identity small,.scheme-record small,.intrigue-empty,.intrigue-boundary{color:#c9cbb9;font-size:12px;line-height:1.6}
 .intrigue-person-link{display:flex;align-items:center;gap:8px;min-width:0;background:transparent;border:0;color:inherit;text-align:left}
 .intrigue-person-link>.painted-portrait{width:40px;height:40px;flex:0 0 40px;aspect-ratio:1}
 .intrigue-person-link>span{min-width:0;overflow-wrap:anywhere}
@@ -13,7 +13,7 @@
 .intrigue-action-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
 .scheme-record{display:grid;gap:8px;padding:10px;background:#182a23;border:1px solid #b69c6340;border-left:2px solid #b69c63}
 .scheme-record>header{display:flex;align-items:center;gap:7px}
-.scheme-record>header>span{margin-left:auto;font-size:11px;color:#b8c0a7}
+.scheme-record>header>span{margin-left:auto;font-size:11px;color:#c9cbb9}
 .scheme-record p{margin:0;font-size:12px;line-height:1.6}
 .scheme-targets,.scheme-odds{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px}
 .scheme-record progress{width:100%;height:7px;accent-color:#bca567}
@@ -26,7 +26,7 @@
 .intrigue-options label{display:flex;align-items:center;gap:7px;padding:9px;background:#1d3027;border:1px solid #b69c6355;cursor:pointer}
 .intrigue-options label:has(input:checked){background:#34432e;border-color:#ccb078;box-shadow:inset 3px 0 #c6a96f}
 .intrigue-preview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px;background:#15271f;border:1px solid #b69c6355}
-.intrigue-preview span{display:grid;gap:5px;font-size:12px;color:#b8c0a7}
+.intrigue-preview span{display:grid;gap:5px;font-size:12px;color:#c9cbb9}
 .intrigue-preview strong{font:16px/1.4 var(--serif);color:#e6d6b4}
 .intrigue-confirm-reason{flex:1;min-width:0;font-size:12px;color:#dbc083}
 .scheme-warning{color:#edb298!important}

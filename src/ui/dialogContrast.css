@@ -54,3 +54,17 @@ dialog.paper-dialog.paper-dialog :is(.person-option,.power-person,.lifestyle-tre
 dialog.paper-dialog.paper-dialog :is(.custody-subject>button,.custody-roster-portrait,.war-leader,.engagement-portrait,.career-portrait-link){padding:0;line-height:0}
 dialog.paper-dialog.paper-dialog .appointment-candidate{padding:4px;min-width:0}
 dialog.paper-dialog.paper-dialog :is(.audit-person,.court-audit-inspector){padding:0}
+
+/* Political insets own their ink instead of inheriting the surrounding paper. */
+dialog.paper-dialog.paper-dialog :is(
+ .intrigue-options label,.intrigue-preview,.scheme-record,
+ .political-options label,.political-person-list>article,.political-history>article,
+ .war-details-claimant
+){--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .war-details-claimant{background:#182a23}
+dialog.paper-dialog.paper-dialog :is(.intrigue-preview span,.scheme-record small,.political-options small,.war-details-claimant p){color:var(--dialog-muted)}
+dialog.paper-dialog.paper-dialog :is(.intrigue-preview strong,.intrigue-options label:has(input:checked),.political-options label:has(input:checked)){--dialog-ink:#f2dcaa;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(.political-person,.intrigue-person-link){--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9;color:var(--dialog-ink);background-color:#182a23}
+dialog.paper-dialog.paper-dialog :is(.political-suggestions>button,.war-details-claimant button){--dialog-ink:#f2dcaa;--dialog-muted:#d0c7ac;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .scheme-warning{--dialog-ink:#893c2b;--dialog-muted:#893c2b;color:var(--dialog-ink)!important;background:#f0dfd1;padding:6px 9px}
+dialog.paper-dialog.paper-dialog :is(.scheme-record,.intrigue-preview) .scheme-warning{--dialog-ink:#ffccad;--dialog-muted:#ffccad;background:#523b2e}
