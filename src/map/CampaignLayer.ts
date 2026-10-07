@@ -21,7 +21,7 @@ export function campaignLayer(getState:()=>{world:World;selected:string;tilted:b
  const environment=campaignEnvironment(origin);scene.add(environment.root);
  const ray=new Raycaster(),far=new Vector3();
  let map:Map|undefined,renderer:WebGLRenderer|undefined,assets:ReturnType<typeof campaignModelAssets>|undefined;
- let failed=false,dirty=true,fallbackKey='',environmentKey='',displayedWorld:World|undefined,lastSelected='',lastTilt:boolean|undefined,lastDetail:boolean|undefined;
+ let failed=false,dirty=true,baseVisible:boolean|undefined,environmentKey='',displayedWorld:World|undefined,lastSelected='',lastTilt:boolean|undefined,lastDetail:boolean|undefined;
  let refreshTimer:ReturnType<typeof setTimeout>|undefined;
  const markView=()=>{dirty=true;map?.triggerRepaint();};
  const markSource=(event:{sourceId?:string})=>{
@@ -29,9 +29,9 @@ export function campaignLayer(getState:()=>{world:World;selected:string;tilted:b
   if(refreshTimer)return;
   refreshTimer=setTimeout(()=>{refreshTimer=undefined;markView();},400);
  };
- function fallback(rendered:string[]=[]){
-  const key=[...rendered].sort().join(':');if(key===fallbackKey||!map?.getLayer('settlement-buildings'))return;
-  map.setFilter('settlement-buildings',rendered.length?['!', ['in',['get','site'],['literal',rendered]]]:null);fallbackKey=key;
+ function fallback(visible=true){
+  if(baseVisible===visible||!map?.getLayer('settlement-buildings'))return;
+  map.setLayoutProperty('settlement-buildings','visibility',visible?'visible':'none');baseVisible=visible;
  }
  function failure(e:unknown){
   failed=true;renderer?.resetState();fallback();onChange();onFailure('城池图层无法显示，已保留基础城邑与地图操作：'+(e instanceof Error?e.message:'WebGL 不可用'));
@@ -102,6 +102,9 @@ export function campaignLayer(getState:()=>{world:World;selected:string;tilted:b
  },onAdd(m,gl){
   map=m;
   try{
+   // Remove any stale per-city exclusion before managing the entire base layer as one fallback.
+   if(m.getLayer('settlement-buildings'))m.setFilter('settlement-buildings',null);
+   fallback();
    renderer=new WebGLRenderer({canvas:m.getCanvas(),context:gl,antialias:true});renderer.autoClear=false;
    renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=CAMPAIGN_EXPOSURE;
    addMilitaryLighting(scene);
@@ -121,12 +124,14 @@ export function campaignLayer(getState:()=>{world:World;selected:string;tilted:b
    positionCities(args.defaultProjectionData.mainMatrix);
    displayedWorld=state.world;lastSelected=state.selected;lastTilt=state.tilted;lastDetail=state.sceneryDetail;
    updateMilitaryCamera(camera,args.projectionMatrix,args.defaultProjectionData.mainMatrix,anchor);
+   // One city representation per view. Hide extrusion before drawing the replacement models;
+   // cities outside the model budget retain their existing labels and actions.
+   fallback(![...cities.values()].some(c=>c.root.visible));
    renderer.resetState();renderer.render(scene,camera);renderer.resetState();
-   // Keep the extrusion fallback until the first successful actual render.
-   fallback([...cities].filter(([,c])=>c.root.visible).map(([id])=>id));
   }catch(e){failure(e);}
  },onRemove(){
   if(refreshTimer)clearTimeout(refreshTimer);map?.off('moveend',markView);map?.off('sourcedata',markSource);
+  fallback();
   clearCities();environment.dispose();assets?.dispose();renderer?.dispose();
   renderer=undefined;assets=undefined;map=undefined;
  }};
