@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {Box3,Camera,Color,DirectionalLight,HemisphereLight,Matrix4,MeshStandardMaterial,PerspectiveCamera,Scene,Texture,TextureLoader,Vector3} from 'three';
+import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,MeshStandardMaterial,PerspectiveCamera,Scene,Texture,TextureLoader,Vector3} from 'three';
 import {ARMY_MODEL_PIXELS,anchoredArmyModels,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,armyShowsModel,dockMapMarker,layoutArmyCards,screenOverlap,type ScreenRect} from './armyMapPresentation';
 import {addMilitaryLighting,militaryModelScale,militarySurfaceMaterial,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
@@ -101,6 +101,14 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
   expect(sky.position).toEqual(new Vector3(0,0,1));expect(new Color(sky.groundColor).getHex()).not.toBe(0);
   const lights=scene.children.filter(light=>light instanceof DirectionalLight) as DirectionalLight[];
   for(const normal of [new Vector3(1,0,0),new Vector3(-1,0,0),new Vector3(0,1,0),new Vector3(0,-1,0),new Vector3(0,0,1)])expect(lights.reduce((sum,light)=>sum+Math.max(0,normal.dot(light.position.clone().normalize()))*light.intensity,0)).toBeGreaterThan(.35);
+ });
+ it('keeps building color visible when the real map view reports camera depth in pixels',()=>{
+  const scene=new Scene();addMilitaryLighting(scene);const fog=scene.fog as FogExp2;
+  const view=new PerspectiveCamera(37,1.5,1,10000);view.position.set(0,-800,1000);view.lookAt(0,0,0);view.updateMatrixWorld();
+  const pixels=new Matrix4().makeScale(512*2**11,512*2**11,512*2**11),anchor=new Matrix4(),main=view.projectionMatrix.clone().multiply(view.matrixWorldInverse).multiply(pixels),camera=new Camera();
+  updateMilitaryCamera(camera,view.projectionMatrix.elements,main.elements,anchor);
+  const depth=-new Vector3(0,0,0).applyMatrix4(camera.matrixWorldInverse).z,factor=1-Math.exp(-(fog.density**2*depth**2));
+  expect(depth).toBeGreaterThan(1000);expect(factor).toBeGreaterThan(0);expect(factor).toBeLessThan(.1);
  });
  it.each(['foot','horse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',kind=>{
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());

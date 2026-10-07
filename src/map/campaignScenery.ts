@@ -25,12 +25,11 @@ export function campaignCityAppearance(world:World,site:Site):CampaignCityAppear
 }
 export function campaignCityKey(a:CampaignCityAppearance){return [a.capital,a.style,a.county,a.fort,...a.levels,a.project,a.progress,a.besieged].join(':');}
 export function campaignCityPixels(site:Site,capital:boolean,zoom:number){
- const detail=Math.max(0,Math.min(1,(zoom-SCENERY_MIN_ZOOM)/2));
- const regional=capital?78+detail*82:site.rank==='county'?28+detail*40:48+detail*64;
- return regional*2**Math.max(0,zoom-CITY_DETAIL_ZOOM);
+ const metersPerPixel=40075016.686*Math.cos(site.lat*Math.PI/180)/(512*2**zoom);
+ return Math.max(capital?30:site.rank==='county'?14:22,campaignCityMeters(site,capital)/metersPerPixel);
 }
-/** Geographic visual footprint calibrated at the regional/close transition, not historical city area. */
-export function campaignCityMeters(site:Site,capital:boolean){return campaignCityPixels(site,capital,CITY_DETAIL_ZOOM)*40075016.686*Math.cos(site.lat*Math.PI/180)/(512*2**CITY_DETAIL_ZOOM);}
+/** Bounded symbolic footprint, independent of zoom, latitude and viewport. Not measured historical city area. */
+export function campaignCityMeters(site:Site,capital:boolean){return capital?8000:site.rank==='county'?2400:5000;}
 /** Static landscape style, independent of conquest and today's polity. Visual design zones, not cultural census. */
 export function cityRegionalStyle(site:Site){
  if(site.terrain==='绿洲')return 'oasis';

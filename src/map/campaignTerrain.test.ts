@@ -14,6 +14,8 @@ describe('campaign terrain and assets (CPU only)',()=>{
   const site=siteById.jiankang;
   expect(campaignCityPixels(site,true,10)).toBeCloseTo(campaignCityPixels(site,true,9)*2);
   expect(campaignCityMeters(site,true)).toBeGreaterThan(0);
+  expect(campaignCityMeters(site,true)).toBeLessThanOrEqual(8000);
+  expect(campaignCityMeters({...site,lat:50},true)).toBe(campaignCityMeters(site,true));
  });
  it('samples and interpolates real elevations without inventing missing terrain',()=>{
   expect(sampleCityGround((x)=>x>0?null:100)).toBeNull();

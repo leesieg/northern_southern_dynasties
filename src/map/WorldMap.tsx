@@ -300,7 +300,7 @@ export function WorldMap(props:Props){
     try{
       map=new AtlasMap({
         container,style:atlasStyle(),center:[105.5,34.5],zoom:3.7,pitch:24,bearing:0,
-        minZoom:2.2,maxZoom:11,maxPitch:60,renderWorldCopies:false,
+        minZoom:2.2,maxZoom:12,maxPitch:60,renderWorldCopies:false,
         maxBounds:[[64,8],[148,61]],dragRotate:false,pitchWithRotate:false,
         canvasContextAttributes:{antialias:true,powerPreference:'high-performance'},
         attributionControl:{compact:false},

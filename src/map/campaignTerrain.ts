@@ -3,6 +3,8 @@ import type {Geometry,Position} from 'geojson';
 
 export const CAMPAIGN_EXPOSURE=1.05;
 export const CAMPAIGN_FOG_COLOR='#d0cdb3';
+// MapLibre's separated view matrix outputs camera pixels, not normalized Mercator units.
+export const CAMPAIGN_FOG_DENSITY=.00015;
 export const CAMPAIGN_SUN={color:'#fff0cc',intensity:2.1,x:-1,y:1,z:1.8};
 export type GroundSample=(x:number,z:number)=>number|null;
 function inRing(point:Position,ring:Position[]){
