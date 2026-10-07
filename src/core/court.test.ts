@@ -1,3 +1,5 @@
+import {awardDeed} from './deeds';
+import {syncRulerHistory} from './rulerHistory';
 import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
 import {nextMonthStart} from './calendar';
 import {newGovernedCampaignWorld as newCampaignWorld} from './governedTestWorld';
@@ -13,11 +15,11 @@ import { cityYield,realmForecast,armyMonthlyPay } from './realm';
 import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
 // Isolate these court-mechanism fixtures from demographic roster size; expanded politics has dedicated coverage.
-const start=(id='xiao-yan')=>{const w=newCampaignWorld(id,undefined,'sandbox');for(const city of Object.values(w.realm!.cities))if(city.governor?.startsWith('county-official-'))city.governor=null;for(const g of Object.values(w.realm!.governments!.realms))for(const id of Object.keys(g.court!.members))if(!historicalCharacters.some(p=>p.id===id))delete g.court!.members[id];return w;};
+const start=(id='xiao-yan')=>{const w=newCampaignWorld(id,undefined,'sandbox');for(const city of Object.values(w.realm!.cities))if(city.governor?.startsWith('county-official-'))city.governor=null;for(const g of Object.values(w.realm!.governments!.realms))for(const id of Object.keys(g.court!.members))if(!historicalCharacters.some(p=>p.id===id))delete g.court!.members[id];syncRulerHistory(w);return w;};
 function pass(w:World,days:number){for(let i=0;i<days;i++){if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});advance(w,1);}if(w.realm!.event)act(w,{type:'realm',action:'event',choice:'decline'});}
 function resources(w:World){w.realm!.influence=600;for(const t of Object.values(w.realm!.treasuries)){t.coins=10000;t.grain=10000;}}
 function claimant(){const w=start('xiao-yi');resources(w);const g=governmentOf(w)!,c=courtOf(w)!;g.merit['xiao-yi']=80;g.legitimacy=35;g.support=90;c.members['xiao-gang']='conservative';act(w,{type:'court',action:'debate'});return w;}
-function prepareUnification(){const w=start();resources(w);const g=governmentOf(w)!;g.legitimacy=95;g.support=90;g.merit['xiao-yan']=80;for(const city of Object.values(w.realm!.cities))if(city.owner!=='frontier'){city.owner='liang';city.controller='liang';city.governor=null;}w.holdings.governedCities=[];return w;}
+function prepareUnification(){const w=start();resources(w);const g=governmentOf(w)!;g.legitimacy=95;g.support=90;g.merit['xiao-yan']=80;for(const city of Object.values(w.realm!.cities))if(city.owner!=='frontier'){city.owner='liang';city.controller='liang';city.governor=null;}w.holdings.governedCities=[];for(let i=0;i<3;i++)awardDeed(w,'liang','xiao-yan','battle:'+i,5,'本局统一战胜成果');syncRulerHistory(w);return w;}
 describe('天朝朝廷、利益集团与王朝循环',()=>{
  it('旧档迁移空缺中央席位，不发明历史任官，教学局不加朝廷',()=>{const w=start();delete governmentOf(w)!.court;const loaded=parseWorld(serializeWorld(w));expect(Object.values(courtOf(loaded)!.ministries).every(v=>v===null)).toBe(true);expect(loaded.people).toEqual(w.people);expect(loaded.holdings).toEqual(w.holdings);expect(parseWorld(serializeWorld(newCampaignWorld())).realm).toBeUndefined();});
  it('功绩、官职、家族威望与特质参与集团势力，任免刷新科层与财政',()=>{

@@ -23,7 +23,7 @@ import {battleKey,warBattles,warOccupations,type EngagementRef} from './warPrese
 import './warDetails.css';
 
 type Props={world:World;war:War;pending:boolean;send:(c:GameCommand)=>void;onPerson?:(id:string)=>void;onRealm?:(id:War['attacker'])=>void};
-const goalNames={territory:'割让目标地',reparations:'索取战争赔款',tributary:'确立宗属',annexation:'吞并政权',defection:'接纳归附领地'};
+const goalNames={claimant:'扶立宣称者',territory:'割让目标地',reparations:'索取战争赔款',tributary:'确立宗属',annexation:'吞并政权',defection:'接纳归附领地'};
 const stageNames={skirmish:'前哨交锋',clash:'主力交战',pursuit:'追击溃军'};
 const signed=(n:number)=>(n>0?'+':'')+n;
 export function WarDetails({world:w,war,pending,send,onPerson,onRealm}:Props){
@@ -32,6 +32,7 @@ export function WarDetails({world:w,war,pending,send,onPerson,onRealm}:Props){
  const own=playerRealm(w),side=warRealmSide(war,own),enemy=side==='attack'?war.defender:war.attacker,will=!war.civil&&side&&governingExecutives(w,own).includes(w.characterId!)?warWillToContinue(w,war,enemy):null;
  return <section className="war-details">
   <div className="war-details-objective detail-landscape" style={terrainSceneStyle(war.target)}><ArtIcon name="army" size={30}/><div><h3>{war.civil?war.civil.name:warTargetName(war,w)+'之战'}</h3><p>{war.civil?'争夺朝廷控制权':goalNames[war.goal??'territory']} · {warTargetName(war,w)} · 已持续 {Math.max(0,w.day-war.started)} 日</p></div><HoverHint label="攻方战分" content={score?score.parts.map(p=>p.label+' '+signed(p.value)).join('；'):'内战当前战分'}><strong>攻方战分 {signed(score?.total??war.score)}</strong></HoverHint></div>
+  {war.claimant&&<div className="war-details-claimant"><span>受益君主 <button onClick={()=>onPerson?.(war.claimant!.person)} disabled={!onPerson}>{politicalName(war.claimant.person,w)}</button></span><span>扶立发起者 <button onClick={()=>onPerson?.(war.claimant!.patron)} disabled={!onPerson}>{politicalName(war.claimant.patron,w)}</button></span><p>军事统帅逐军任命；援助国不默认接掌目标国朝廷。</p></div>}
   <div className="war-details-parties">{(['attack','defend'] as const).map(side=>{const realm=side==='attack'?war.attacker:war.defender,leader=war.civil?(side==='attack'?war.civil.claimant:war.civil.loyalist):null,armies=w.realm!.armies.filter(a=>warArmySide(w,war,a)===side),known=armies.every(a=>militaryArmyView(w,a).exact);return <article key={side}><RealmBadge realm={realm} world={w} onOpen={onRealm}/><div><small>{side==='attack'?'进攻方':'防御方'}</small>{leader&&<button onClick={()=>onPerson?.(leader)} disabled={!onPerson}>{politicalName(leader,w)}</button>}<strong>{known?armies.reduce((n,a)=>n+a.troops,0)+' 人':'现役兵力未详'}</strong><small>累计野战损失 {war.casualties?.[side]??0} 人</small></div><div className="war-allies">{Object.entries(war.allies??{}).filter(([,s])=>s===side).map(([r])=><RealmBadge key={r} realm={r as War['attacker']} world={w} onOpen={onRealm}/>)}</div></article>;})}</div>
 
   {will&&<HoverHint label="对方续战意愿" content={will.parts.map(p=>p.label+' '+signed(p.value)).join('；')}><span>对方续战意愿 {will.total} · 正值表示仍愿继续</span></HoverHint>}

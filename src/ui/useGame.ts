@@ -1,3 +1,4 @@
+import {pauseHasActions} from '../core/pauseEvents';
 import type {PauseEvent} from '../core/pauseEvents';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { openGameSession } from './gameSession';
@@ -24,7 +25,7 @@ export function useGame() {
       instance.onmessage=(event:MessageEvent<Reply>)=>{
         if(stopped)return;const message=event.data;
         if(message.type==='screen'){nextPage.current=message.page;setPauses([]);}
-        else if(message.type==='world'){if(nextPage.current){setPage(nextPage.current);nextPage.current=null;setEntry(n=>n+1);}setPending(false);setWorld(message.world);setSpeed(message.speed);setSlots(message.slots);setLastSaved(message.lastSaved);}
+        else if(message.type==='world'){if(nextPage.current){setPage(nextPage.current);nextPage.current=null;setEntry(n=>n+1);}setPending(false);setWorld(message.world);setPauses(items=>items.filter(e=>!['succession','allegiance'].includes(e.kind)||pauseHasActions(message.world,e)));setSpeed(message.speed);setSlots(message.slots);setLastSaved(message.lastSaved);}
         else if(message.type==='paused')setPauses(items=>[...items,...message.events.filter(e=>!items.some(p=>p.id===e.id))]);
         else if(message.type==='notice')setNotice({text:message.text,error:message.error});
         else {

@@ -8,12 +8,12 @@ import {isMonthStart,monthStart} from './calendar';
 import { lifestyleBranches,lifestyleFocuses,lifestylePerks,emptyLifestyleBonus,branchPerks,LIFESTYLE_XP_PER_POINT,LIFESTYLE_SWITCH_DAYS,type LifestyleBranch,type LifestyleBonus } from '../data/lifestyles';
 import type { World } from './types';
 export interface LifestyleProgress {focus:string|null;changed:number;xp:Record<LifestyleBranch,number>;perks:string[];lastStudy:number;study:{branch:LifestyleBranch;day:number}|null;lastAdvanced?:number}
-export interface LifestyleState {version:1|2;people:Record<string,LifestyleProgress>}
+export interface LifestyleState {version:1|2|3;people:Record<string,LifestyleProgress>}
 export type LifestyleCommand={type:'lifestyle';action:'focus';focus:string}|{type:'lifestyle';action:'unlock';perk:string}|{type:'lifestyle';action:'study';choice:'practice'|'rest'};
 export const lifestylePerson=(w:World)=>w.characterId??'fictional';
-export const freshLifestyle=(day:number):LifestyleProgress=>({focus:null,changed:day,xp:{martial:0,stewardship:0,diplomacy:0},perks:[],lastStudy:day,study:null,lastAdvanced:day});
-export function migrateLifestyles(w:World){const s=w.lifestyles;if(s?.version!==1)return;for(const p of Object.values(s.people)){for(const branch of Object.keys(lifestyleBranches) as LifestyleBranch[])p.xp[branch]*=LIFESTYLE_XP_PER_POINT/120;p.lastAdvanced=w.day;}s.version=2;}
-export function ensureLifestyle(w:World,id=lifestylePerson(w)){migrateLifestyles(w);w.lifestyles??={version:2,people:{}};return w.lifestyles.people[id]??=freshLifestyle(w.day);}
+export const freshLifestyle=(day:number):LifestyleProgress=>({focus:null,changed:day,xp:{martial:0,stewardship:0,diplomacy:0,intrigue:0},perks:[],lastStudy:day,study:null,lastAdvanced:day});
+export function migrateLifestyles(w:World){const s=w.lifestyles;if(!s)return;for(const p of Object.values(s.people)){if(s.version===1){for(const branch of ['martial','stewardship','diplomacy'] as const)p.xp[branch]*=LIFESTYLE_XP_PER_POINT/120;p.lastAdvanced=w.day;}p.xp.intrigue??=0;}s.version=3;}
+export function ensureLifestyle(w:World,id=lifestylePerson(w)){migrateLifestyles(w);w.lifestyles??={version:3,people:{}};return w.lifestyles.people[id]??=freshLifestyle(w.day);}
 export const lifestyleProgress=(w:World,id=lifestylePerson(w))=>w.lifestyles?.people[id];
 export function lifestyleBonuses(w:World,id=lifestylePerson(w)):LifestyleBonus {
  const result=emptyLifestyleBonus(),p=lifestyleProgress(w,id);if(!p)return result;
@@ -74,7 +74,7 @@ function advancePersonLifestyle(w:World,id:string){
 function npcFocus(w:World,id:string){
  const p=lifestyleProgress(w,id),a=attributes(w,id),t=traitsFor(w,id),military=w.realm?.armies.some(army=>armyCommander(w,army)===id),governor=Object.values(w.realm?.cities??{}).some(c=>c.governor===id);
  const branches=(Object.keys(lifestyleBranches) as LifestyleBranch[]).filter(b=>!p||p.perks.filter(k=>lifestylePerks[k].branch===b).length<branchPerks(b).length).sort((x,y)=>{const score=(b:LifestyleBranch)=>a[b]+(b==='martial'&&military||b==='stewardship'&&governor?8:0)+(lifestyleBranches[b].affinity.some(k=>t.includes(k))?3:0);return score(y)-score(x)||x.localeCompare(y);});
- const branch=branches[0];return branch==='martial'?'strategy':branch==='stewardship'?governor?'domain':'architecture':branch==='diplomacy'?'etiquette':null;
+ const branch=branches[0];return branch==='martial'?'strategy':branch==='stewardship'?governor?'domain':'architecture':branch==='diplomacy'?'etiquette':branch==='intrigue'?'intelligence':null;
 }
 export function advanceLifestyle(w:World){
  if(w.campaign?.status!=='active')return;migrateLifestyles(w);advancePersonLifestyle(w,lifestylePerson(w));
@@ -91,17 +91,18 @@ const object=(x:unknown):x is Record<string,unknown>=>!!x&&typeof x==='object'&&
 const integer=(x:unknown,min:number,max:number)=>Number.isSafeInteger(x)&&Number(x)>=min&&Number(x)<=max;
 export function validLifestyles(w:World):boolean {
  const state=w.lifestyles;if(state===undefined)return true;
- if(!object(state)||![1,2].includes(state.version)||!object(state.people))return false;
+ if(!object(state)||![1,2,3].includes(state.version)||!object(state.people))return false;
  if(w.campaign&&!Object.hasOwn(state.people,lifestylePerson(w)))return false;
  const allowed=new Set(state.version===1?w.characterId?(w.social?.lineage.map(p=>p.id)??[w.characterId]):['fictional']:allPeople(w).filter(p=>lifeOf(w,p.id)).map(p=>p.id).concat(w.characterId?[]:['fictional'])),cost=state.version===1?120:LIFESTYLE_XP_PER_POINT;
  if(Object.keys(state.people).length>allowed.size)return false;
  for(const [id,p] of Object.entries(state.people)){
-  if(!allowed.has(id)||id!=='fictional'&&!getCharacter(w,id)||!object(p)||!integer(p.changed,0,w.day)||!integer(p.lastStudy,0,w.day)||state.version===2&&!integer(p.lastAdvanced,0,w.day)||p.lastAdvanced!==undefined&&!integer(p.lastAdvanced,0,w.day))return false;
-  if(p.focus!==null&&(typeof p.focus!=='string'||!Object.hasOwn(lifestyleFocuses,p.focus)))return false;
-  if(!object(p.xp)||Object.keys(p.xp).length!==3||Object.keys(lifestyleBranches).some(b=>!integer(p.xp[b as LifestyleBranch],0,branchPerks(b as LifestyleBranch).length*cost)))return false;
-  if(!Array.isArray(p.perks)||p.perks.length>15||new Set(p.perks).size!==p.perks.length)return false;
-  const learned=new Set<string>();for(const perk of p.perks){if(typeof perk!=='string'||!Object.hasOwn(lifestylePerks,perk)||lifestylePerks[perk].requires.some(r=>!learned.has(r)))return false;learned.add(perk);}
-  if((Object.keys(lifestyleBranches) as LifestyleBranch[]).some(b=>Math.floor(Number((p.xp as Record<string,number>)[b])/cost)-(p.perks as string[]).filter(id=>lifestylePerks[id].branch===b).length<0))return false;
+  if(!allowed.has(id)||id!=='fictional'&&!getCharacter(w,id)||!object(p)||!integer(p.changed,0,w.day)||!integer(p.lastStudy,0,w.day)||state.version>=2&&!integer(p.lastAdvanced,0,w.day)||p.lastAdvanced!==undefined&&!integer(p.lastAdvanced,0,w.day))return false;
+  if(p.focus!==null&&(typeof p.focus!=='string'||!Object.hasOwn(lifestyleFocuses,p.focus)||state.version<3&&lifestyleFocuses[p.focus].branch==='intrigue'))return false;
+  const branches=(Object.keys(lifestyleBranches) as LifestyleBranch[]).filter(b=>state.version===3||b!=='intrigue');
+  if(!object(p.xp)||Object.keys(p.xp).length!==branches.length||branches.some(b=>!integer(p.xp[b],0,branchPerks(b).length*cost)))return false;
+  if(!Array.isArray(p.perks)||p.perks.length>(state.version===3?20:15)||new Set(p.perks).size!==p.perks.length)return false;
+  const learned=new Set<string>();for(const perk of p.perks){if(typeof perk!=='string'||!Object.hasOwn(lifestylePerks,perk)||state.version<3&&lifestylePerks[perk].branch==='intrigue'||lifestylePerks[perk].requires.some(r=>!learned.has(r)))return false;learned.add(perk);}
+  if(branches.some(b=>Math.floor(Number((p.xp as Record<string,number>)[b])/cost)-(p.perks as string[]).filter(id=>lifestylePerks[id].branch===b).length<0))return false;
   if(Object.values(p.xp).reduce((sum,n)=>sum+Number(n),0)>cost+w.day*(state.version===1?7:7*LIFESTYLE_XP_PER_POINT/120))return false;
   if(p.focus===null&&(Object.values(p.xp).some(n=>n!==0)||p.perks.length||p.study!==null))return false;
   if(p.study!==null&&(!object(p.study)||typeof p.study.branch!=='string'||!Object.hasOwn(lifestyleBranches,p.study.branch)||!integer(p.study.day,0,w.day)||p.study.day!==p.lastStudy))return false;

@@ -2,6 +2,7 @@ import {familyMembersOf,familyPersonOf} from './personRegistry';
 import {isMonthStart,monthStart} from './calendar';
 import {clanStanding} from './clans';
 import {isAlive} from './lifeState';
+import {nobilityStanding} from './nobility';
 import {familyPeople} from '../data/families';
 import type { World } from './types';
 export interface FamilyState {version:1;since:number;lastMonthly:number;prestige:Record<string,number>;ledger:{day:number;member:string;amount:number;reason:'monthly'|'construction'|'friendship'|'service'|'marriage'}[]}
@@ -10,7 +11,7 @@ export const familyRanks=[{name:'初立门户',threshold:0},{name:'乡里知名'
 export const prestigeMembers=familyPeople.filter(p=>p.status==='roster'||p.status==='fictional');
 export function newFamilyState(day=0,scriptId?:string):FamilyState{return {version:1,since:day,lastMonthly:monthStart(day,scriptId),prestige:Object.fromEntries(prestigeMembers.map(p=>[p.id,0])),ledger:[]};}
 export const memberId=(w:World)=>w.characterId??'fictional';
-export function familyPrestige(w:World,family:string){return familyMembersOf(w,family).reduce((sum,p)=>sum+(w.families?.prestige[p.id]??0),0);}
+export function familyPrestige(w:World,family:string){return familyMembersOf(w,family).reduce((sum,p)=>sum+(w.families?.prestige[p.id]??0)+nobilityStanding(w,p.id),0);}
 export function familyStanding(w:World,id=memberId(w)){
  const family= familyPersonOf(w,id)?.family,total=family?familyPrestige(w,family):0;
  const tier=familyRanks.reduce((rank,r,i)=>total>=r.threshold?i:rank,0);

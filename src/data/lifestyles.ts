@@ -2,13 +2,17 @@
 export const lifestyleBranches={
  martial:{name:'军事',icon:'army',description:'练兵、筹粮、攻守之道',affinity:['diligent','steadfast'],mastery:'兵略家'},
  stewardship:{name:'管理',icon:'city',description:'营建、理财、劝课农桑',affinity:['frugal','diligent'],mastery:'经世者'},
+ intrigue:{name:'谋略',icon:'wary',description:'探察、隐谋、争取政治支持',affinity:['wary','ambitious'],mastery:'谋略家'},
  diplomacy:{name:'交游',icon:'gregarious',description:'礼仪、馈赠、经营人脉',affinity:['gregarious','generous'],mastery:'纵横家'},
 } as const;
 export type LifestyleBranch=keyof typeof lifestyleBranches;
-export interface LifestyleBonus {attack:number;supply:number;armyExpense:number;siege:number;buildCost:number;buildTime:number;tax:number;grain:number;acceptance:number;giftCost:number;giftOpinion:number;scheme:number;calm:number}
-export const emptyLifestyleBonus=():LifestyleBonus=>({attack:0,supply:0,armyExpense:0,siege:0,buildCost:0,buildTime:0,tax:0,grain:0,acceptance:0,giftCost:0,giftOpinion:0,scheme:0,calm:0});
+export interface LifestyleBonus {attack:number;supply:number;armyExpense:number;siege:number;buildCost:number;buildTime:number;tax:number;grain:number;acceptance:number;giftCost:number;giftOpinion:number;scheme:number;calm:number;intrigueSuccess:number;intrigueSecrecy:number;hostileSuccess:number;personalSuccess:number}
+export const emptyLifestyleBonus=():LifestyleBonus=>({attack:0,supply:0,armyExpense:0,siege:0,buildCost:0,buildTime:0,tax:0,grain:0,acceptance:0,giftCost:0,giftOpinion:0,scheme:0,calm:0,intrigueSuccess:0,intrigueSecrecy:0,hostileSuccess:0,personalSuccess:0});
 interface Focus {branch:LifestyleBranch;name:string;effect:string;bonus:Partial<LifestyleBonus>}
 export const lifestyleFocuses:Record<string,Focus>={
+ intelligence:{branch:'intrigue',name:'察情',effect:'计谋成功率 +5 个百分点',bonus:{intrigueSuccess:5}},
+ subterfuge:{branch:'intrigue',name:'隐谋',effect:'计谋暴露率 -5 个百分点',bonus:{intrigueSecrecy:5}},
+ coercion:{branch:'intrigue',name:'权术',effect:'敌对计谋成功率 +5 个百分点',bonus:{hostileSuccess:5}},
  strategy:{branch:'martial',name:'兵法',effect:'野战伤害 +5%',bonus:{attack:5}},
  supply:{branch:'martial',name:'军需',effect:'每日军粮消耗 -5%',bonus:{supply:5}},
  command:{branch:'martial',name:'军纪',effect:'每月 1 日军饷 -5%',bonus:{armyExpense:5}},
@@ -21,6 +25,11 @@ export const lifestyleFocuses:Record<string,Focus>={
 };
 export interface LifestylePerk {branch:LifestyleBranch;name:string;effect:string;requires:string[];bonus:Partial<LifestyleBonus>;tier:number;side:0|1;mastery?:boolean}
 export const lifestylePerks:Record<string,LifestylePerk>={
+ observers:{branch:'intrigue',name:'察言观色',effect:'个人计谋成功率 +8 个百分点',requires:[],bonus:{personalSuccess:8},tier:0,side:0},
+ cover:{branch:'intrigue',name:'掩迹藏锋',effect:'计谋暴露率 -10 个百分点',requires:['observers'],bonus:{intrigueSecrecy:10},tier:1,side:0},
+ persuasion:{branch:'intrigue',name:'揣摩游说',effect:'计谋成功率 +8 个百分点',requires:['observers'],bonus:{intrigueSuccess:8},tier:1,side:1},
+ leverage:{branch:'intrigue',name:'因势制人',effect:'敌对计谋成功率 +10 个百分点',requires:['cover'],bonus:{hostileSuccess:10},tier:2,side:0},
+ schemer:{branch:'intrigue',name:'谋略家',effect:'计谋成功率 +5；暴露率 -5 个百分点',requires:['leverage','persuasion'],bonus:{intrigueSuccess:5,intrigueSecrecy:5},tier:3,side:0,mastery:true},
  drill:{branch:'martial',name:'整训部伍',effect:'野战伤害 +10%',requires:[],bonus:{attack:10},tier:0,side:0},
  logistics:{branch:'martial',name:'粮道筹算',effect:'每日军粮消耗 -15%',requires:['drill'],bonus:{supply:15},tier:1,side:0},
  siegecraft:{branch:'martial',name:'攻城法度',effect:'围城所需日数 -15%',requires:['drill'],bonus:{siege:15},tier:1,side:1},

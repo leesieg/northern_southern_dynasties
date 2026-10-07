@@ -13,6 +13,7 @@ import {ensureFiscal,fiscalPath} from './treasury';
 import {changeRelationOpinion,syncRelationships} from './relationships';
 import {awardDeed} from './deeds';
 import {successionDefinitions} from '../data/governments';
+import {syncRulerHistory} from './rulerHistory';
 
 const start=()=>newCampaignWorld('guest-west',undefined,'sandbox');
 function found(w:ReturnType<typeof start>,r:'west'|'east'='west',founder='yuwen-tai',name='新西魏'){
@@ -71,6 +72,7 @@ describe('dynasty naming from recorded people and actual territory',()=>{
   w.mobility!.armyCommanders??={};w.mobility!.armyCommanders[a.id!]=actor;w.mobility!.residences[actor]={site,journey:null};
   g.support=10;g.legitimacy=20;changeRelationOpinion(w,actor,'yuwen-tai',-200);w.day=90;
   advanceCivilPolitics(w);const war=civilWar(w,'west');
+  syncRulerHistory(w);
   expect(war?.civil).toMatchObject({claimant:actor,name:'雍'});
   const legacy=structuredClone(w),expected=structuredClone(w);
   for(const state of [legacy,expected])for(const v of [...state.realm!.wars??[],...(state.realm!.war?[state.realm!.war]:[])])if(v.civil){
@@ -136,7 +138,7 @@ describe('authorized legacy 新西魏 correction on load',()=>{
  });
  it('uses the founding record after a later ruler arrangement and preserves the current arrangement',()=>{
   const w=start();found(w);
-  applyPowerArrangement(w,'west',{goal:'ruler',sponsor:'yuwen-tai',beneficiary:'dugu-xin',executive:'dugu-xin',name:''});
+  applyPowerArrangement(w,'west',{goal:'ruler',sponsor:'yuwen-tai',beneficiary:'yuwen-yu',executive:'dugu-xin',name:''});
   const loaded=parseWorld(serializeWorld(w));
   expect(regimeName(loaded,'west')).toBe('周');
   expect(governmentOf(loaded,'west')!.arrangement).toEqual(governmentOf(w,'west')!.arrangement);

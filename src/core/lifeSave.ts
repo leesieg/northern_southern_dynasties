@@ -13,7 +13,7 @@ export function validLife(w:World){
  for(const id of ids){
   const p=s.people[id];if(!obj(p)||!int(p.health,0,100)||!int(p.careUntil,0,w.day+90)||(p.injuryUntil!==undefined&&!int(p.injuryUntil,0,w.day+60)))return false;
   if(p.illness!==null&&(!obj(p.illness)||!['fever','wasting','cold','flux'].includes(String(p.illness.kind))||!int(p.illness.since,s.since,w.day)||!int(p.illness.severity,1,3)))return false;
-  if(p.death!==null&&(!obj(p.death)||!int(p.death.day,s.since,w.day)||!['illness','age','battle','execution'].includes(String(p.death.cause))||p.health!==0||p.injuryUntil!==undefined||p.careUntil!==0||p.illness!==null&&Number(p.illness.since)>p.death.day))return false;
+  if(p.death!==null&&(!obj(p.death)||!int(p.death.day,s.since,w.day)||!['illness','age','battle','execution','murder'].includes(String(p.death.cause))||p.health!==0||p.injuryUntil!==undefined||p.careUntil!==0||p.illness!==null&&Number(p.illness.since)>p.death.day))return false;
  }
  if(s.autoCare!==undefined&&(!obj(s.autoCare)||s.autoCare.payer!==(w.characterId??'fictional')||typeof s.autoCare.payer!=='string'||!isAlive(w,s.autoCare.payer)||!int(s.autoCare.remaining,30,90)||s.autoCare.remaining%30!==0))return false;
  if(!Array.isArray(s.successions)||s.successions.length>ids.length)return false;

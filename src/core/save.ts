@@ -1,5 +1,11 @@
+import {cancelInvalidClaimantWars} from './realm';
+import {syncRulerHistory} from './rulerHistory';
 import {ensureFortifications} from './fortifications';
 import {migrateCaptureLosses} from './warOccupation';
+import {validIntrigue,ensureIntrigue} from './intrigue';
+import {validClaims,ensureClaims} from './claims';
+import {validNobility,ensureNobility} from './nobility';
+import {validRulerHistory,ensureRulerHistory} from './rulerHistory';
 import {validGeneratedPeople,validHouseholdLife} from './householdLifeSave';
 import {getCharacter,getPerson} from './personRegistry';
 import {validUnrest,ensureUnrest} from './unrest';
@@ -151,6 +157,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(!validRelationships(value as unknown as World)||!validLife(value as unknown as World))return fail();
   if(!validLocalAdministration(value as unknown as World)||!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
   if(!validPowerPolitics(value as unknown as World)||!validPacts(value as unknown as World))return fail();
+  {const w=value as unknown as World;if(!validIntrigue(w)||w.claims!==undefined&&!validClaims(w.claims,w)||w.nobility!==undefined&&!validNobility(w.nobility,w)||w.rulerHistory!==undefined&&!validRulerHistory(w.rulerHistory,w))return fail();}
   if(!validCustody(value as unknown as World))return fail();
   if(!validCoordinated(value as unknown as World)||!validCommerce(value as unknown as World)||!validHousehold(value as unknown as World)||!validMilitaryNominations(value as unknown as World)||!validDefections(value as unknown as World)||!validMilitaryCareer(value as unknown as World)||!validAftermath(value as unknown as World)||!validObligations(value as unknown as World)||!validRequestReceipts(value as unknown as World)||!validEnterprises(value as unknown as World)||!validMilitaryCampaigns(value as unknown as World))return fail();
   if(!validEconomyWorld(value as unknown as World)||!validDeeds(value as unknown as World))return fail();
@@ -199,8 +206,10 @@ export function parseWorld(source: string): World {
   migrateLifestyles(world);if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
   ensureMobility(world);ensureCustody(world);migrateArmyFood(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
+  if(world.realm){ensureClaims(world);ensureNobility(world);ensureRulerHistory(world);ensureIntrigue(world);cancelInvalidClaimantWars(world);syncRulerHistory(world);}
   const renamed=normalizeLegacyDynastyNames(world);
   if(repairLegacyWestDynastyName(world)||renamed)validateWorld(world);
   if(!validLifestyles(world))throw new Error('生活重心存档迁移失败。');
+  validateWorld(world);
   return world;
 }

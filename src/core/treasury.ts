@@ -24,7 +24,13 @@ export const grantPurposes={construction:'营建储备',relief:'地方赈济',mi
 export function ensureFiscal(w:World){if(!w.realm)return;return w.realm.fiscal??=( {version:1,balances:{},entries:[],requests:[],nextId:1,nextRequest:1,net:{liang:0,east:0,west:0}} );}
 export const centralAccount=(r:RealmId)=>'central:'+r;
 export function fiscalPath(w:World,site:string,r=w.realm!.cities[site].controller as RealmId){return ancestorsOf('city:'+site).filter(n=>n.level!=='realm'&&n.level!=='county').reverse().map(n=>r+'|'+n.id).concat(centralAccount(r));}
-export function accountName(key:string){if(key==='tax')return '地方税收';if(key.startsWith('custody:'))return '司法担保押金';if(key==='expense')return '公共支出';if(key==='external')return '其他收支';if(key.startsWith('central:'))return '中央国库';if(key.startsWith('task:'))return '差事专款';return territoryNodes[key.split('|')[1]]?.name+'公库';}
+export function accountName(key:string){if(key==='person:unknown')return '未知私人账户';if(key.startsWith('person:'))return '私人财产';if(key==='tax')return '地方税收';if(key.startsWith('custody:'))return '司法担保押金';if(key==='expense')return '公共支出';if(key==='external')return '其他收支';if(key.startsWith('central:'))return '中央国库';if(key.startsWith('task:'))return '差事专款';return territoryNodes[key.split('|')[1]]?.name+'公库';}
+/** Public bookkeeping excludes private preparation and gifts; secret holders remain anonymous. */
+export function publicFiscalEntries(w:World,r:RealmId){
+ const hidden=new Set(Object.values(w.custody?.records??{}).filter(c=>c.cause==='abduction'&&c.captorPerson!==w.characterId&&!w.intrigue?.schemes.find(s=>'scheme:'+s.id===c.source)?.exposed).map(c=>'person:'+c.captorPerson));
+ const publicAccount=(key:string)=>!key.startsWith('person:')&&!['expense','income','external'].includes(key);
+ return (w.realm?.fiscal?.entries??[]).filter(e=>e.realm===r&&(publicAccount(e.from)||publicAccount(e.to))).map(e=>hidden.has(e.from)||hidden.has(e.to)?{...e,from:hidden.has(e.from)?'person:unknown':e.from,to:hidden.has(e.to)?'person:unknown':e.to}:e);
+}
 export function localBalance(w:World,site:string){return w.realm?.fiscal?.balances[fiscalPath(w,site)[0]]??0;}
 export function publicBalance(w:World,key:string){return key.startsWith('central:')?w.realm!.treasuries[key.slice(8) as RealmId].coins:w.realm!.fiscal?.balances[key]??0;}
 function setBalance(w:World,key:string,n:number){if(key.startsWith('central:'))w.realm!.treasuries[key.slice(8) as RealmId].coins=n;else ensureFiscal(w)!.balances[key]=n;}

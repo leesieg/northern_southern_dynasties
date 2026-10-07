@@ -2,10 +2,10 @@ import {useEffect,useState} from 'react';
 import {countyTerritory} from '../core/localAdministration';
 import {nextMonthStart} from '../core/calendar';
 import {politicalAction,type PolicyDomain} from '../core/politicalActions';
-import {courtOf,courtEnabled,courtLocalPressures,courtMonthPreview,courtBonus,movementMood,movementPower,movementPowerParts,courtReason,foundingPause,type CourtCommand} from '../core/court';
+import {courtOf,courtPolicyPressure,courtEnabled,courtLocalPressures,courtMonthPreview,courtBonus,movementMood,movementPower,movementPowerParts,courtReason,foundingPause,type CourtCommand} from '../core/court';
 import {currentRealm,governmentOf,politicalName} from '../core/government';
 import {siteById} from '../data/scenario';
-import {phases,movements,movementIds,policies,type MovementId} from '../data/court';
+import {phases,movements,movementIds,policies,type CourtPolicy,type MovementId} from '../data/court';
 import type {RealmId} from '../core/realm';
 import type {World,GameCommand} from '../core/types';
 import {RealmBadge} from './RealmBadge';
@@ -22,10 +22,12 @@ import './situation.css';
 
 const icons:Record<MovementId,ArtName>={dynastic:'renown',expansion:'army',reform:'diligent',conservative:'frugal',unaligned:'person'};
 export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,onService}:{world:World;realm?:RealmId;pending:boolean;send:(c:GameCommand)=>void;onPerson:(id:string)=>void;onTerritory?:(id:string)=>void;onService?:(id?:number,site?:string)=>void;embedded?:boolean}){
+ const [policyDraft,setPolicyDraft]=useState<CourtPolicy|null>(null);
  const [selected,setSelected]=useState<MovementId>('dynastic'),[cancel,setCancel]=useState(false),[recruit,setRecruit]=useState(false),[candidate,setCandidate]=useState('');
  const [petitionOpen,setPetitionOpen]=useState(false),[revoltOpen,setRevoltOpen]=useState(false),[previewOpen,setPreviewOpen]=useState(false);
  const r=realm??currentRealm(w),ownRealm=r===currentRealm(w),c=courtOf(w,r),g=governmentOf(w,r)!;
- useEffect(()=>{setCancel(false);setRecruit(false);setPetitionOpen(false);setRevoltOpen(false);setPreviewOpen(false);},[r]);
+ useEffect(()=>{setPolicyDraft(null);setCancel(false);setRecruit(false);setPetitionOpen(false);setRevoltOpen(false);setPreviewOpen(false);},[r]);
+ useEffect(()=>{if(c?.phase!=='stable')setPolicyDraft(null);},[c?.phase,w.characterId]);
  if(!c)return null;
  const own=c.members[w.characterId!]??'unaligned',m=movementMood(w,r,selected),bonus=courtBonus(w,r),projection=courtMonthPreview(w,r),local=courtLocalPressures(w,r),enabled=courtEnabled(w,r);
  const action=(cmd:CourtCommand,label:string,icon:ArtName,detail:string)=>{
@@ -35,7 +37,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
  };
  const portrait=(id:string)=><button className="faction-person" key={id} onClick={()=>onPerson(id)} aria-label={'查看'+politicalName(id,w)}><CharacterPortrait characterId={id} world={w} compact/><span>{politicalName(id,w)}</span></button>;
  const cancelCommand={type:'court',action:'cancel'} as const;
- return <div className="court-situation-desk">
+ return <div className="court-situation-desk">{policyDraft&&<ActionDialog title="议定安定国策" onClose={()=>setPolicyDraft(null)} actions={<><small role="status">{courtReason(w,{type:'court',action:'policy',policy:policyDraft})||'需实际执政者影响力 20；三十日内不能再改。'}</small><button className="primary" disabled={pending||!!courtReason(w,{type:'court',action:'policy',policy:policyDraft})} onClick={()=>{const cmd={type:'court',action:'policy',policy:policyDraft} as const;if(pending||courtReason(w,cmd))return;send(cmd);setPolicyDraft(null);}}>确认国策</button></>}><fieldset className="intrigue-options"><legend>安定时的施政方向</legend>{(Object.keys(policies) as CourtPolicy[]).map(policy=><label key={policy}><input type="radio" name="court-policy" checked={policyDraft===policy} onChange={()=>setPolicyDraft(policy)}/><span>{policies[policy].name}<small>{policies[policy].effect}</small></span></label>)}</fieldset><p className="political-note">顺应主导集团有利于施政；违背集团诉求会增加朝局压力。动荡和危局期间暂停安定国策增益。</p></ActionDialog>}
   <section className="court-factions court-desk-column">
    <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>政治集团</h3><small>{ownRealm?'你的归属 · '+movements[own].name:'他国集团'}</small></header>
    <div className="court-group-select court-group-ledger" aria-label="政治集团势力与满意度">{movementIds.map(group=>{const mood=movementMood(w,r,group);return <button key={group} aria-label={'查看'+movements[group].name+'，势力 '+mood.share+'%，满意度 '+mood.satisfaction} aria-pressed={selected===group} onClick={()=>setSelected(group)}>{mood.leader?<CharacterPortrait characterId={mood.leader} world={w} compact/>:<ArtIcon name={icons[group]} size={32}/>}<span><strong>{movements[group].name}</strong><small>{mood.leader?politicalName(mood.leader,w):'无领袖'} · {movements[group].goal}</small></span><span className="court-group-numbers"><b>{mood.share}%</b><small>满意 {mood.satisfaction}</small><meter min={0} max={100} value={mood.satisfaction} aria-label={movements[group].name+'满意度'}/></span></button>;})}</div>
@@ -67,7 +69,8 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
   <section className="court-outlook court-desk-column">
    <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>朝局</h3><HoverHint label="阶段画像预览" content="比较安定、动荡与危局的画像及规则，不改变实际局势。"><button className="court-icon-button" aria-label="打开阶段画像预览" onClick={()=>setPreviewOpen(true)}><ArtIcon name="renown" size={25}/></button></HoverHint></header>
    <SituationWheel phase={c.phase} tension={c.tension} realm={<RealmBadge realm={r} world={w}/>} interactive={false}/>
-   <HoverHint label="局势阈值与增益" content={<>每月 1 日结算；紧张 40 转入动荡、80 转入危局，合法性低于 15 也会进入危局。动荡须降至 35 以下恢复；危局须降至 70 以下且合法性至少 20 才缓解。税收 {bonus.tax}% · 军饷 {bonus.pay}% · 攻击 {bonus.attack}%。</>}><div className="court-outlook-forecast" tabIndex={0}><strong>{policies[c.policy].name}</strong><span>{enabled?(nextMonthStart(w.day,w.scriptId)-w.day)+' 日后月结':'暂停结算'}</span><b>{enabled?(projection.delta>=0?'+':'')+projection.delta:'—'}</b><small>{enabled?'条件预估 '+phases[projection.phase].name:'当前政体暂停集团与局势结算'}</small></div></HoverHint>
+   <HoverHint label="局势阈值与增益" content={<>每月 1 日结算；紧张 40 转入动荡、80 转入危局，合法性低于 15 也会进入危局。动荡须降至 35 以下恢复；危局须降至 70 以下且合法性至少 20 才缓解。税收 {bonus.tax}% · 军饷 {bonus.pay}% · 攻击 {bonus.attack}%。</>}><div className="court-outlook-forecast" tabIndex={0}><strong>{c.phase==='stable'?'安定 · '+policies[c.policy].name:'前国策 · '+policies[c.policy].name}</strong><span>{enabled?(nextMonthStart(w.day,w.scriptId)-w.day)+' 日后月结':'暂停结算'}</span><b>{enabled?(projection.delta>=0?'+':'')+projection.delta:'—'}</b><small>{enabled?'条件预估 '+phases[projection.phase].name:'当前政体暂停集团与局势结算'}</small></div></HoverHint>
+   {c.phase==='stable'&&<><p className="political-note">{courtPolicyPressure(w,r)[0]?movements[courtPolicyPressure(w,r)[0].group].name+'正推动'+policies[courtPolicyPressure(w,r)[0].policy].name:'各集团尚无主导方向'}</p>{ownRealm&&<button className="court-icon-button" aria-label="议定安定国策" onClick={()=>setPolicyDraft(c.policy)}><ArtIcon name="estate" size={25}/></button>}</>}
    <div className="court-scroll-list court-catalysts">
     {projection.causes.map(v=><div className="court-catalyst" key={v.label}><span>{v.label}</span><b>{v.value>0?'+':''}{v.value}</b></div>)}
     <HoverHint label="月结预估口径" content="依次结算官署、积弊、集团支持与局势；假设当前战争、任职和地方财赋条件保持，月结前的新变化会影响结果。"><span className="court-calculation-note" tabIndex={0}><ArtIcon name="diligent" size={20}/>条件预估</span></HoverHint>

@@ -4,7 +4,7 @@ import {armyDailyFood,fortificationLevel} from './realm';
 import {isCapitalSite} from './fortifications';
 import type {World} from './types';
 import type {RealmId} from './realm';
-import type {War} from './wars';
+import {claimantWarReason,warOccupationSites,type War} from './wars';
 
 export interface WarScorePart {key:'occupation'|'battles'|'objective'|'captives';label:string;value:number}
 export interface WarWillPart {label:string;value:number}
@@ -28,16 +28,16 @@ export function includeParticipantValues(w:World,war:War){const current=snapshot
 
 function values(w:World,war:War){return war.values&&Object.keys(war.values).length?war.values:snapshotWarValues(w,war,false);}
 
-export function warObjectiveControl(w:World,war:War){const sides=warObjectiveSites(war,w).map(id=>side(war,w.realm!.cities[id].controller as RealmId));return !sides.length?null:sides.every(s=>s==='attack')?'attack':sides.every(s=>s==='defend')?'defend':null;}
+export function warObjectiveControl(w:World,war:War){if(war.goal==='claimant'&&claimantWarReason(w,war.defender,war.claimant?.patron??'',war.claimant?.person,war.claimant))return null;const occupied=new Set(warOccupationSites(w,war)),sides=warObjectiveSites(war,w).map(id=>{const city=w.realm!.cities[id],owner=side(war,city.owner as RealmId),controller=side(war,city.controller as RealmId);return !owner||!controller||war.goal==='claimant'&&city.owner!==war.defender||owner!==controller&&!occupied.has(id)?null:controller;});return !sides.length?null:sides.every(s=>s==='attack')?'attack':sides.every(s=>s==='defend')?'defend':null;}
 function objectiveSince(w:World,war:War){return Math.max(...warObjectiveSites(war,w).map(id=>w.realm!.cities[id].occupiedSince??w.day));}
 
 export function warScoreBreakdown(w:World,war:War){
- const fixed=values(w,war),cities=w.realm!.cities;
+ const fixed=values(w,war),cities=w.realm!.cities,occupied=new Set(warOccupationSites(w,war));
  let attackTaken=0,defendTaken=0,attackTotal=0,defendTotal=0;
  for(const [id,value] of Object.entries(fixed)){
   const owner=side(war,cities[id].owner as RealmId),controller=side(war,cities[id].controller as RealmId);
-  if(owner==='attack'){attackTotal+=value;if(controller==='defend')defendTaken+=value;}
-  if(owner==='defend'){defendTotal+=value;if(controller==='attack')attackTaken+=value;}
+  if(owner==='attack'){attackTotal+=value;if(controller==='defend'&&occupied.has(id))defendTaken+=value;}
+  if(owner==='defend'){defendTotal+=value;if(controller==='attack'&&occupied.has(id))attackTaken+=value;}
  }
  const occupation=clamp(Math.round(attackTaken/Math.max(1,defendTotal)*60-defendTaken/Math.max(1,attackTotal)*60),-60,60);
  const battles=clamp(war.battles??0,-25,25),elapsed=Math.max(0,w.day-war.started);
@@ -51,8 +51,8 @@ export function warScoreBreakdown(w:World,war:War){
  ];
  const attackAlive=w.realm!.armies.some(a=>side(war,a.realm)==='attack'&&a.troops>=100);
  const defendAlive=w.realm!.armies.some(a=>side(war,a.realm)==='defend'&&a.troops>=100);
- const allAttackLost=Object.entries(cities).filter(([,c])=>side(war,c.owner as RealmId)==='attack').every(([,c])=>side(war,c.controller as RealmId)==='defend');
- const allDefendLost=Object.entries(cities).filter(([,c])=>side(war,c.owner as RealmId)==='defend').every(([,c])=>side(war,c.controller as RealmId)==='attack');
+ const allAttackLost=Object.entries(cities).filter(([,c])=>side(war,c.owner as RealmId)==='attack').every(([id,c])=>side(war,c.controller as RealmId)==='defend'&&occupied.has(id));
+ const allDefendLost=Object.entries(cities).filter(([,c])=>side(war,c.owner as RealmId)==='defend').every(([id,c])=>side(war,c.controller as RealmId)==='attack'&&occupied.has(id));
  const decisive=defendTotal>0&&allDefendLost&&!defendAlive?100:attackTotal>0&&allAttackLost&&!attackAlive?-100:null;
  return {parts,total:decisive??clamp(parts.reduce((sum,part)=>sum+part.value,0),-99,99),decisive:decisive!==null};
 }

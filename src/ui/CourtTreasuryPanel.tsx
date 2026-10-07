@@ -6,7 +6,7 @@ import {FiscalPetitionAudience} from './PetitionCases';
 import {HoverHint} from './HoverHint';
 import {canCommission} from '../core/serviceMandates';
 import {countyTerritory,localHasJurisdiction,localTitle} from '../core/localAdministration';
-import {accountName,fiscalPath,localBalance,grantFactors,grantPurposes,fiscalReason,type FiscalCommand,type GrantRequest} from '../core/treasury';
+import {accountName,publicFiscalEntries,fiscalPath,localBalance,grantFactors,grantPurposes,fiscalReason,type FiscalCommand,type GrantRequest} from '../core/treasury';
 import {executive,playerRealm,cityYield} from '../core/realm';
 import {politicalName} from '../core/government';
 import {siteById} from '../data/scenario';
@@ -23,7 +23,7 @@ export function CourtTreasuryPanel({world:w,pending,send,onPerson,initialTab='bu
  const waiting=requests.filter(q=>q.status==='pending').reverse(),history=requests.filter(q=>q.status!=='pending').reverse();
  const selectedRequest=waiting.find(q=>q.id===requestId&&q.approver===w.characterId);
  useEffect(()=>{if(requestId!==null&&!selectedRequest)setRequestId(null);},[requestId,selectedRequest]);
- const ledger=(fiscal?.entries??[]).filter(e=>e.realm===realm).slice().reverse();
+ const ledger=publicFiscalEntries(w,realm).slice().reverse();
  const target=cities.some(([id])=>id===site)?site:cities[0]?.[0]??'';
  const canAllocate=target&&(chief||localHasJurisdiction(w,w.characterId!,countyTerritory(target),realm));
  const grant: FiscalCommand=canAllocate?{type:'fiscal',action:'allocate',site:target,amount}:{type:'fiscal',action:'request',site:target,amount,purpose};

@@ -5,7 +5,7 @@ import {lifestyleReason,type LifestyleCommand} from '../core/lifestyle';
 import type {World} from '../core/types';
 
 // Node coordinates are presentation only. Every connection comes from the actual prerequisite graph.
-const perkIcon=(p:typeof lifestylePerks[string]):ArtName=>p.bonus.grain||p.bonus.supply?'grain':p.bonus.buildCost||p.bonus.tax||p.bonus.armyExpense||p.bonus.giftCost?'coins':p.bonus.buildTime?'diligent':p.bonus.siege?'city':p.bonus.attack?'army':p.bonus.calm?'steadfast':'gregarious';
+const perkIcon=(p:typeof lifestylePerks[string]):ArtName=>p.branch==='intrigue'?'wary':p.bonus.grain||p.bonus.supply?'grain':p.bonus.buildCost||p.bonus.tax||p.bonus.armyExpense||p.bonus.giftCost?'coins':p.bonus.buildTime?'diligent':p.bonus.siege?'city':p.bonus.attack?'army':p.bonus.calm?'steadfast':'gregarious';
 const places=[{x:19,y:68},{x:40,y:38},{x:47,y:64},{x:65,y:18},{x:82,y:52}];
 export function LifestyleTree({world,branch,owned,pending,send}:{world:World;branch:LifestyleBranch;owned:string[];pending:boolean;send:(c:LifestyleCommand)=>void}){
  const perks=branchPerks(branch),[selection,setSelection]=useState(''),selected=perks.find(([id])=>id===selection)??perks[0];

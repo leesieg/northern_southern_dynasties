@@ -1,3 +1,4 @@
+import {getPerson} from './personRegistry';
 import {regimeName} from './government';
 import {descendantSites,nodesAtLevel,territoryNodes} from '../data/territorialHierarchy';
 import {siteById} from '../data/scenario';
@@ -11,8 +12,8 @@ export function regionalWarTerritory(id:string){const n=territoryNodes[id];retur
 export function warTerritorySites(w:World,id:string,owner:RealmId){return regionalWarTerritory(id)?descendantSites(id).filter(site=>w.realm?.cities[site]?.owner===owner):[];}
 export function warTerritoryOptions(w:World,owner:RealmId,level:RegionalWarLevel){return nodesAtLevel(level).map(n=>({...n,sites:warTerritorySites(w,n.id,owner)})).filter(n=>n.sites.length);}
 export function warObjectiveSites(war:War,w?:World){return war.goal==='annexation'&&w?.realm?Object.keys(w.realm.cities).filter(id=>w.realm!.cities[id].owner===war.defender):war.territory?.sites??[war.target];}
-export function warTargetName(war:War,w?:World){return war.goal==='annexation'&&w?regimeName(w,war.defender):war.territory?territoryNodes[war.territory.id]?.name??siteById[war.target].name:siteById[war.target].name;}
-export function warDeclarationCost(goal:War['goal']='territory',territory?:string){return goal==='annexation'?180:territory?regionalWarTerritory(territory)?.level==='province'?120:80:40;}
+export function warTargetName(war:War,w?:World){return war.goal==='claimant'&&w?'扶立'+(getPerson(w,war.claimant?.person??'')?.name??'宣称者')+'承统'+regimeName(w,war.defender):war.goal==='annexation'&&w?regimeName(w,war.defender):war.territory?territoryNodes[war.territory.id]?.name??siteById[war.target].name:siteById[war.target].name;}
+export function warDeclarationCost(goal:War['goal']='territory',territory?:string){return goal==='claimant'?100:goal==='annexation'?180:territory?regionalWarTerritory(territory)?.level==='province'?120:80:40;}
 /** A broader region replaces a fully contained goal instead of pricing the same counties twice. */
 export function supersedesWarTarget(war:War,id:string,sites:string[],targetSites:string[]){const rank=(t?:string)=>t?regionalWarTerritory(t)?.level==='province'?2:1:0;return !!regionalWarTerritory(id)&&rank(id)>rank(war.territory?.id)&&targetSites.length>0&&targetSites.every(site=>sites.includes(site));}
 export function validWarTerritory(war:War){

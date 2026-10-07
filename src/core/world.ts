@@ -3,6 +3,11 @@ import {actFamily,advanceHouseholdLife,resting} from './householdLife';
 import {ageAt} from './lifeState';
 import {actPolity,advanceSeparations} from './politySeparation';
 import {actPact,advancePacts} from './allegiancePacts';
+import {actIntrigue,advanceIntrigue,ensureIntrigue} from './intrigue';
+import {actClaim,ensureClaims} from './claims';
+import {actNobility,ensureNobility} from './nobility';
+import {actHonor,ensureRulerHistory,syncRulerHistory} from './rulerHistory';
+import {cancelInvalidClaimantWars} from './realm';
 import {actPower,advancePowerPolitics} from './powerPolitics';
 import {actPeaceOffer} from './realmStrategy';
 import {ensureCustody,actCustody,advanceCustody} from './custody';
@@ -125,6 +130,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   ensureLifestyle(w);
   ensureLife(w);
   ensureMobility(w);ensureCustody(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);ensurePopulation(w);ensureLocalAdministration(w,true);
+  if(w.realm){ensureClaims(w);ensureNobility(w);ensureRulerHistory(w);ensureIntrigue(w);}
   return w;
 }
 function record(world: World, person: Person, text: string) {
@@ -140,8 +146,8 @@ import {actMilitaryCareer} from './militaryCareer';
 import {executeRecruitmentPlan} from './recruitmentPlans';
 export function act(world: World, command: GameCommand): void {
  const age=world.characterId?ageAt(world,world.characterId):null;
- if(age!==null&&age<16&&!['familyLife','health','heir','legacy'].includes(command.type)&&!(command.type==='household'&&(command.action==='educate'&&command.target===world.characterId||command.action==='cancel')))throw new Error('未满十六岁：保有家业与身份，暂不能亲办公务、军务或成人交往。');
- if(resting(world,world.characterId??'')&&!['familyLife','health','heir','legacy','handover'].includes(command.type))throw new Error('正在休养或守丧；结束后才能亲自出行或办理事务。');
+ if(age!==null&&age<16&&!['familyLife','health','heir','legacy','honor'].includes(command.type)&&!(command.type==='household'&&(command.action==='educate'&&command.target===world.characterId||command.action==='cancel')))throw new Error('未满十六岁：保有家业与身份，暂不能亲办公务、军务或成人交往。');
+ if(resting(world,world.characterId??'')&&!['familyLife','health','heir','legacy','handover','honor'].includes(command.type))throw new Error('正在休养或守丧；结束后才能亲自出行或办理事务。');
  if(command.type==='armyDeployment'){executeArmyDeployment(world,command,act);return;}
  if(command.type==='recruitmentPlan'){executeRecruitmentPlan(world,command,act);return;}
  if(command.type==='armyBatch'){
@@ -154,14 +160,16 @@ export function act(world: World, command: GameCommand): void {
   Object.assign(world,next);
   return;
  }
- const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);reconcileFiscal(world,before,publicActionName(command));
+ const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}reconcileFiscal(world,before,publicActionName(command));
 }
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
 function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
   const person = world.people[0];
   ensureLife(world);ensureCustody(world);
   if(!isAlive(world,world.characterId??'fictional'))throw new Error('人物已经去世。');
-  if(world.mobility?.captivity&&command.type!=='health'&&command.type!=='custody'&&!(command.type==='mobility'&&command.action==='ransom'))throw new Error('被拘押期间须先筹赎返。');
+  if(world.mobility?.captivity&&command.type!=='honor'&&command.type!=='health'&&command.type!=='custody'&&!(command.type==='mobility'&&command.action==='ransom'))throw new Error('被拘押期间须先筹赎返。');
+  if(command.type==='interact'&&command.action==='befriend'&&world.realm){actIntrigue(world,{type:'intrigue',action:'start',kind:'befriend',target:command.target});return;}
+  if(command.type==='relationship'&&['befriend','control'].includes(command.action)&&'target'in command&&world.realm){actIntrigue(world,{type:'intrigue',action:'start',kind:command.action as 'befriend'|'control',target:command.target});return;}
   if(command.type==='peaceOffer'){actPeaceOffer(world,command);return;}
   if(command.type==='custody'){actCustody(world,command);return;}
   if(command.type==='health'){actLife(world,command);return;}
@@ -186,6 +194,10 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   if(command.type==='polity'){actPolity(world,command);return;}
   if(command.type==='pact'){actPact(world,command);return;}
   if(command.type==='power'){actPower(world,command);return;}
+  if(command.type==='intrigue'){actIntrigue(world,command);return;}
+  if(command.type==='claim'){actClaim(world,command);return;}
+  if(command.type==='nobility'){actNobility(world,command);return;}
+  if(command.type==='honor'){actHonor(world,command);return;}
   if(command.type==='unrest'){actUnrest(world,command);return;}
   if(command.type==='civilWar'){actCivilWar(world,command);return;}
   if(command.type==='enterprise'){actEnterprise(world,command);return;}
@@ -274,12 +286,14 @@ export function advance(world: World, days = 1): void {
     syncArmyTravel(world);
     syncRelationships(world);
     advanceRelationships(world);
+    advanceIntrigue(world);
     advanceCourts(world);
     advancePowerPolitics(world);
     advancePacts(world);
     advanceSeparations(world);
     syncDiplomacy(world);
     advanceLife(world);
+    if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}
     advanceHouseholdLife(world);
     advanceRetinue(world);
     advanceMobility(world);
@@ -292,6 +306,7 @@ export function advance(world: World, days = 1): void {
     advanceMilitaryCampaigns(world);
     ensureArmyOrganization(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);advanceNPCOfficeRecruitment(world);
+    if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}
     evaluateCampaign(world);
     reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');
   }

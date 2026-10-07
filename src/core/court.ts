@@ -4,7 +4,7 @@ import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
 import {constitutionalExecutives} from './government';
 import {isMonthStart,monthStart,nextMonthStart} from './calendar';
 import {commandArmy} from './mobility';
-import {realmAtWar} from './wars';
+import {realmAtWar,activeWars,warRealmSide} from './wars';
 import {clearLocalPerson,localActive,localSites,localOfficeLoad} from './localAdministration';
 
 import {allegianceRealm,publicOfficeReason} from './officeEligibility';
@@ -12,7 +12,7 @@ import {isAlive,ageAt,lifeOf} from './lifeState';
 import { creditPersonalCoins } from './relationships';
 import {expandedPersonById} from '../data/expandedPeople';
 
-import { movements,movementIds,ministries,ministryIds,type MovementId,type MinistryId,type CourtPhase,type CourtPolicy } from '../data/court';
+import { movements,movementIds,ministries,ministryIds,policyIds,type MovementId,type MinistryId,type CourtPhase,type CourtPolicy } from '../data/court';
 import { governmentOf,governingExecutives,governingAuthority,currentRealm,governmentExecutive,politicalName } from './government';
 import { type RealmId } from './realm';
 import { familyStanding } from './family';
@@ -41,7 +41,7 @@ export interface CourtState {
  founding:{name:string;mode:'usurp'|'unify';sponsor:string;started:number;progress:number;required:120}|null;
  history:{day:number;text:string}[];
 }
-export type CourtCommand={type:'court';action:'seek-office';ministry:MinistryId}|{type:'court';action:'join';group:MovementId}|{type:'court';action:'convince';target:string}|{type:'court';action:'debate'|'petition'|'audit'|'cancel'}|{type:'court';action:'favor';group:MovementId}|{type:'court';action:'appoint';ministry:MinistryId;candidate:string|null}|{type:'court';action:'resolve';accept:boolean}|{type:'court';action:'found';name:string;mode:'usurp'|'unify'};
+export type CourtCommand={type:'court';action:'policy';policy:CourtPolicy}|{type:'court';action:'seek-office';ministry:MinistryId}|{type:'court';action:'join';group:MovementId}|{type:'court';action:'convince';target:string}|{type:'court';action:'debate'|'petition'|'audit'|'cancel'}|{type:'court';action:'favor';group:MovementId}|{type:'court';action:'appoint';ministry:MinistryId;candidate:string|null}|{type:'court';action:'resolve';accept:boolean}|{type:'court';action:'found';name:string;mode:'usurp'|'unify'};
 const cap=(v:number,max=100)=>Math.max(0,Math.min(max,Math.round(v)));
 const roster=(w:World,r:RealmId)=> allPeople(w).filter(p=>p.realm===r||allegianceRealm(w,p.id)===r).map(p=>({...p,role: getCharacter(w,p.id)?.role??expandedPersonById[p.id]?.role??'scholar'}));
 export const courtOf=(w:World,r=currentRealm(w))=>governmentOf(w,r)?.court;
@@ -75,7 +75,7 @@ export function movementMood(w:World,r:RealmId,group:MovementId,powers?:ReturnTy
  add('基本认同',50);
  if(c.favored===group)add('朝廷眷顾',20);else if(c.favored)add('他派受眷顾',-10);
  const aligned=group==='reform'?c.policy==='reform':group==='expansion'?c.policy==='expansion':group==='conservative'?c.policy==='consolidation':null;
- if(aligned!==null)add(aligned?'国策符合诉求':'国策背离诉求',aligned?20:-15);
+ if(aligned!==null){if(c.phase==='stable')add(aligned?'国策符合诉求':'国策背离诉求',aligned?20:-15);else add('安定方略暂停',0);}
  const occupied=Object.values(c.ministries).filter((id):id is string=>!!id&&isAlive(w,id));
  if(occupied.length){const seats=occupied.filter(id=>c.members[id]===group).length;add('中央任职份额',Math.max(-15,Math.min(15,Math.round((seats/occupied.length-m.share/100)*30))));}
  if(group==='dynastic')add('君主合法性',Math.round((g.legitimacy-50)/3));
@@ -86,6 +86,12 @@ export function movementMood(w:World,r:RealmId,group:MovementId,powers?:ReturnTy
  const support=satisfaction<30?-m.share/25:satisfaction>=70?m.share/25:0;
  return {...m,satisfaction,factors,tension,support};
 }
+/** Derived pressure: actual office, army, family and tax power weighted by unmet demands. */
+export function courtPolicyPressure(w:World,r:RealmId){
+ const powers=movementPowers(w,r);
+ return movementIds.filter(group=>group!=='unaligned').map(group=>{const mood=movementMood(w,r,group,powers),policy:CourtPolicy=group==='reform'?'reform':group==='expansion'?'expansion':'consolidation';return {group,policy,...mood,pressure:Math.round(mood.power*(150-mood.satisfaction)/100)};}).filter(v=>v.power>0).sort((a,b)=>b.pressure-a.pressure||b.power-a.power||a.group.localeCompare(b.group));
+}
+export function courtPolicyActive(w:World,r:RealmId){const c=courtOf(w,r);return c&&courtEnabled(w,r)&&c.phase==='stable'?c.policy:null;}
 export function courtBonus(w:World,r:RealmId){
  const c=courtOf(w,r);if(!c||!courtEnabled(w,r))return {tax:0,pay:0,attack:0};
  return {tax:(c.phase==='strained'?-10:c.phase==='chaos'?-25:0)+(ministryCompetent(w,r,'finance')?8:0)+(c.phase==='stable'&&c.policy==='reform'?8:0),pay:(ministryCompetent(w,r,'military')?-8:0)+(c.phase==='chaos'?15:c.phase==='stable'&&c.policy==='expansion'?5:0),attack:c.phase==='stable'?(c.policy==='expansion'?10:c.policy==='reform'?-5:0):0};
@@ -107,7 +113,15 @@ function centralAppointmentReason(w:World,cmd:Extract<CourtCommand,{action:'appo
  if(cmd.candidate!==null&&allegianceRealm(w,cmd.candidate)!==r)return '需当前效忠本国的人物';if(cmd.candidate&&publicOfficeReason(w,cmd.candidate))return publicOfficeReason(w,cmd.candidate);if(cmd.candidate&&!npcRoute(w,cmd.candidate,capital(r!,w)))return '赴任道路不通，需先恢复通行';
  if(cmd.candidate&&(g.laws.includes('west-offices')||g.laws.includes('east-assessment'))&&(g.merit[cmd.candidate]??0)<20)return '现行考课法令要求功绩至少 20';if(cmd.candidate&&Object.values(c.ministries).includes(cmd.candidate))return '一人只可担任一个中央职掌，请先免职';if(c.ministries[cmd.ministry]===cmd.candidate)return '职位未变化';const cost=centralAppointmentCost(w,r!,cmd.ministry,cmd.candidate);return personInfluence(w,actor)<cost?'任免需影响力 '+cost:'';
 }
+export function courtPolicyReason(w:World,cmd:Extract<CourtCommand,{action:'policy'}>,actor=w.characterId!){
+ if(!w.realm||!actor||!getPerson(w,actor)||!isAlive(w,actor)||w.campaign?.status!=='active')return '当前无法议定安定方略';
+ const r=allegianceRealm(w,actor),c=r&&courtOf(w,r);if(!r||!c||w.realm.annexed?.[r])return '须有本国朝廷';
+ if(!courtEnabled(w,r))return '需贤能、天朝或宫帐政体';if(!governingExecutives(w,r).includes(actor))return '需要实际执政权';
+ if(actor===w.characterId&&w.realm.event)return '先处理待决事务';if((c.cooldowns.policy??0)>w.day)return '行动冷却中，余 '+(c.cooldowns.policy-w.day)+' 日';
+ return !policyIds.includes(cmd.policy)?'未知安定方略':c.phase!=='stable'?'须先恢复安定，方略加成在动荡与混乱时暂停':cmd.policy===c.policy?'已采用此方略':personInfluence(w,actor)<20?'调整方略需影响力 20':'';
+}
 export function courtReason(w:World,cmd:CourtCommand,actor=w.characterId!):string{
+ if(cmd.action==='policy')return courtPolicyReason(w,cmd,actor);
  if(cmd.action==='appoint')return centralAppointmentReason(w,cmd,actor);if(actor!==w.characterId)return '须由本人办理朝廷行动';
  if(!w.realm||!w.characterId||w.campaign?.status!=='active')return '仅历史沙盒可用';const r=currentRealm(w),g=governmentOf(w)!,c=courtOf(w);if(!c)return '请重新读取以初始化朝廷';if(!courtEnabled(w,r))return '需贤能、天朝或宫帐政体';if(w.realm.event)return '先处理待决事务';
  if(cmd.action==='convince'&&!isAlive(w,cmd.target))return '人物已经去世';
@@ -129,6 +143,7 @@ export function courtReason(w:World,cmd:CourtCommand,actor=w.characterId!):strin
 }
 function resolvePetition(w:World,r:RealmId,accept:boolean,actor:string){const c=courtOf(w,r)!,g=governmentOf(w,r)!,p=c.petition!;if(accept){if(!governingExecutives(w,r).includes(actor)||personInfluence(w,actor)<20||w.realm!.treasuries[r].coins<80)throw new Error('批准需执政者本人影响力 20、公款 80');w.realm!.treasuries[r].coins-=80;awardInfluence(w,actor,-20);c.favored=p.group;if(p.group==='reform'||p.group==='expansion')c.policy=p.group;else if(p.group==='conservative')c.policy='consolidation';else g.legitimacy=cap(g.legitimacy+8);g.support=cap(g.support+5);c.tension=cap(c.tension-8);}else {g.support=cap(g.support-5);c.tension=cap(c.tension+8);}log(w,r,movements[p.group].name+'奏议'+(accept?'获准，施政方向／天命已调整。':'遭否决，朝野支持 −5、紧张 +8。'));c.petition=null;}
 export function actCourt(w:World,cmd:CourtCommand,actor=w.characterId!){const reason=courtReason(w,cmd,actor);if(reason)throw new Error(reason);
+ if(cmd.action==='policy'){const r=allegianceRealm(w,actor)!,c=courtOf(w,r)!;awardInfluence(w,actor,-20);c.policy=cmd.policy;c.cooldowns.policy=w.day+30;log(w,r,politicalName(actor,w)+'议定安定方略：'+({reform:'变革',expansion:'拓境',consolidation:'固本'})[cmd.policy]+'；集团态度依实际诉求重新计算。');return;}
  if(cmd.action==='appoint'){
   const r=allegianceRealm(w,actor)!,g=governmentOf(w,r)!,c=courtOf(w,r)!;
   const cost=centralAppointmentCost(w,r,cmd.ministry,cmd.candidate);
@@ -165,6 +180,7 @@ export function courtCatalysts(w:World,r:RealmId,powers=movementPowers(w,r)){con
  const promised=w.service?.tasks.filter(q=>q.realm===r&&q.phase==='approval'&&servicePayer(w,q).account==='central:'+r).reduce((n,q)=>n+Math.ceil(assignmentTemplates[q.kind].coins*assignmentPlans[q.plan??'balanced'].cost/100),0)??0;
  const gap=Math.max(0,forecast.expense+promised-forecast.income-t.coins);
  const rows:{label:string;value:number}[]=[];const add=(label:string,value:number)=>rows.push({label,value});
+ const ongoing=activeWars(w).filter(v=>warRealmSide(v,r));if(ongoing.length)add('实际战线与续战负担',Math.min(6,ongoing.length*2));const disputed=(w.claims?.records??[]).filter(q=>q.realm===r&&q.until===null&&q.person!==g.ruler&&isAlive(w,q.person)&&isAlive(w,q.patron)&&allegianceRealm(w,q.patron)!==r);if(disputed.length)add('境外支持的君位宣称',Math.min(6,disputed.length*2));
  if(gap)add('拟拨预算与月支出缺口 '+gap+' 钱',Math.min(10,Math.max(1,Math.ceil(gap/Math.max(1,forecast.expense+promised)*10))));
  if(capitalCity.owner!==r||capitalCity.controller!==r)add('都城失守冲击',c.capitalLost?0:8);const unpaid=s.armies.filter(a=>a.realm===r&&(a.arrears??0)>0);if(unpaid.length)add('军队实际欠饷',Math.min(8,unpaid.length*2));if(local.pressure)add('地方失序与民食缺口',local.pressure);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
  const incapable=ministryIds.filter(m=>c.ministries[m]&&!ministryCompetent(w,r,m));if(incapable.length)add('官署履职受阻',Math.min(5,incapable.length));
@@ -195,6 +211,7 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
  if(c.founding&&!foundingPause(w,r)){c.founding.progress++;if(c.founding.progress>=c.founding.required)foundDynasty(w,r);}
  if(!isMonthStart(w.day,w.scriptId)||c.lastMonthly>=w.day)continue;c.lastMonthly=w.day;
  for(const [id,b] of Object.entries(c.boosts))if(b.until<=w.day)delete c.boosts[id];
+ if(c.phase==='stable'&&(c.cooldowns.policy??0)<=w.day&&!governingExecutives(w,r).includes(w.characterId!)){const dominant=courtPolicyPressure(w,r)[0];if(dominant&&dominant.policy!==c.policy){c.policy=dominant.policy;log(w,r,movements[dominant.group].name+'依实际势力与未满诉求推动'+({reform:'变革',expansion:'拓境',consolidation:'固本'})[c.policy]+'方略。');}}
  const projection=courtMonthPreview(w,r,w.day),supportDelta=projection.support-g.support,corruptionDelta=projection.corruption-c.corruption,moods=projection.moods;
  g.support=projection.support;c.corruption=projection.corruption;
  if(supportDelta)log(w,r,'集团态度：朝野支持 '+(supportDelta>0?'+':'')+supportDelta+'。');

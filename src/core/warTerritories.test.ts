@@ -1,3 +1,4 @@
+import {syncRulerHistory} from './rulerHistory';
 import {describe,it,expect} from 'vitest';
 import {act,newCampaignWorld,planRoute} from './world';
 import {declareRealmWar,declareRealmWarReason,realmReason,settleWar,type Army} from './realm';
@@ -61,7 +62,7 @@ describe('州郡战争目标与割地',()=>{
   const settled=serializeWorld(w);settleRegionalPeace(w,war,'demand');expect(serializeWorld(w)).toBe(settled);expect(parseWorld(settled)).toEqual(w);
  });
  it('rejects a changed owner or reclaimed county before any partial cession',()=>{
-  for(const change of ['owner','controller'] as const){const {w,war}=regional();victory(w);const city=w.realm!.cities.yuci;if(change==='owner'){city.owner='west';city.controller='west';city.governor=null;}else city.controller='east';delete city.occupiedSince;const before=serializeWorld(w);expect(()=>settleRegionalPeace(w,war,'demand')).toThrow('全部');expect(serializeWorld(w)).toBe(before);}
+  for(const change of ['owner','controller'] as const){const {w,war}=regional();victory(w);const city=w.realm!.cities.yuci;if(change==='owner'){city.owner='west';city.controller='west';city.governor=null;}else city.controller='east';delete city.occupiedSince;syncRulerHistory(w);const before=serializeWorld(w);expect(()=>settleRegionalPeace(w,war,'demand')).toThrow('全部');expect(serializeWorld(w)).toBe(before);}
  });
  it('adds a whole prefecture or province as a peace clause with increased cost and conserved reparations',()=>{
   for(const id of ['prefecture:nanjun','province:liang:荆州']){

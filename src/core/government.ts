@@ -2,6 +2,7 @@ import {getCharacter,allPeople} from './personRegistry';
 import {worldRealms,polityStyle} from './polityRuntime';
 import {capital as realmCapital} from './realm';
 import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
+import {supportClaim,claimantProvenance} from './claims';
 import {detained} from './custodyState';
 
 import {isMonthStart,monthStart,monthIndex,calendarDate} from './calendar';
@@ -118,7 +119,7 @@ export function actGovernment(w:World,c:GovernmentCommand){
  const reason=governmentReason(w,c);if(reason)throw new Error(reason);const s=w.realm!,r=currentRealm(w),g=governmentOf(w)!,t=s.treasuries[r],id=w.characterId!;
  if(c.action==='succession'){const d=successionDefinitions[c.stage];actPower(w,{type:'power',action:'propose',goal:d.nextDynasty?'dynasty':d.ruler!==g.ruler?'ruler':'executive',beneficiary:d.ruler,executive:d.executives[0],name:d.nextDynasty?dynastyNames[d.nextDynasty]:undefined,sourceStage:c.stage});return;}
  if(c.action==='adopt'||c.action==='law')enactPoliticalAction(w,r,'reform');if(c.action==='policy')enactPoliticalAction(w,r,c.dimension==='registration'?'tax':'appointment',{source:g.regimeId+':policy:'+w.day+':'+c.dimension+':'+c.policy+':commitment',actor:id,authorizer:id,dimension:c.dimension,rule:c.policy,policyRevision:governanceRules(w,r).revision,stage:'commitment'});
- if(c.action==='nominate'){const heirs=g.heirs??={ruler:null,executive:null,dynasty:null};heirs[c.office]=c.candidate;if(c.office==='ruler')heirs.dynasty=c.candidate?c.name?.trim()||null:null;if(c.candidate)s.influence-=20;log(w,r,'council',c.office,c.candidate?politicalName(c.candidate,w)+'被定为'+(c.office==='ruler'?'君位继承人':'执政继任人')+'。':'撤销指定继承，依亲属关系承继。');return;}
+ if(c.action==='nominate'){const heirs=g.heirs??={ruler:null,executive:null,dynasty:null};if(c.office==='ruler')for(const q of w.claims?.records??[])if(q.realm===r&&q.kind==='designated'&&q.until===null)q.until=w.day;heirs[c.office]=c.candidate;if(c.office==='ruler'){heirs.dynasty=c.candidate?c.name?.trim()||null:null;if(c.candidate&&claimantProvenance(w,r,c.candidate))supportClaim(w,r,c.candidate,w.characterId!,'designated');}if(c.candidate)s.influence-=20;log(w,r,'council',c.office,c.candidate?politicalName(c.candidate,w)+'被定为'+(c.office==='ruler'?'君位继承人':'执政继任人')+'。':'撤销指定继承，依亲属关系承继。');return;}
 
  if(c.action==='council'){s.influence-=15;t.coins-=40;g.support=cap(g.support+12);g.legitimacy=cap(g.legitimacy+5);g.cooldowns.council=w.day+30;log(w,r,'council',g.type,'议政争取支持：支持 +12、合法性 +5。');return;}
  if(c.action==='cancel'){log(w,r,'cancel',g.task!.target,'撤回议程，已付成本不退；此前阻力和支持变化保留。');g.task=null;return;}

@@ -136,7 +136,7 @@ export function relationshipQuote(w:World,command:RelationshipCommand){
  };
  return {reason:reason(),cost,influence:power,score,chance,days};
 }
-function resetAuthority(w:World,r:RealmId){const g=governmentOf(w,r)!;g.task=null;w.realm!.offices=w.realm!.offices.filter(o=>allegianceRealm(w,o.candidate)!==r);if(currentRealm(w)===r)w.realm!.mandate=governmentExecutive(w);syncCourt(w,r);}
+export function resetAuthority(w:World,r:RealmId){const g=governmentOf(w,r)!;g.task=null;w.realm!.offices=w.realm!.offices.filter(o=>allegianceRealm(w,o.candidate)!==r);if(currentRealm(w)===r)w.realm!.mandate=governmentExecutive(w);syncCourt(w,r);}
 function restoreRule(w:World,r:RealmId){const c=validRegency(w,r)!;c.controller=c.ruler;c.origin='restored';c.grip=0;resetAuthority(w,r);log(w,c.ruler,null,relationName(c.ruler,w)+'恢复亲政；任命、军务与改革权限重新核定。');}
 export function actRelationship(w:World,command:RelationshipCommand){const q=relationshipQuote(w,command);if(q.reason)throw new Error(q.reason);const s=w.relationships!,a=w.characterId!;
  if(command.action==='cancel'){s.scheme=null;log(w,a,null,'撤回关系计谋，已付成本不退。');return;}

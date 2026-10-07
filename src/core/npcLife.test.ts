@@ -49,8 +49,8 @@ describe('NPC 自主生活与成长节奏',()=>{
   expect(p.focus).not.toBe(oldFocus);expect(p.xp[branch]).toBe(1800);expect(p.xp[lifestyleFocuses[p.focus!].branch]).toBeLessThan(360);expect(p.perks).toHaveLength(5);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('migrates legacy XP units once while retaining learned skills, available points, fractional progress and private balances',()=>{
-  const w=newCampaignWorld('gao-huan',undefined,'sandbox');w.day=200;const p=ensureLifestyle(w);p.focus='strategy';p.xp.martial=270;p.perks=['drill'];delete p.lastAdvanced;w.lifestyles!.version=1;const reserves=structuredClone(w.relationships!.reserves),coins=w.people[0].coins;
-  const loaded=parseWorld(serializeWorld(w)),q=ensureLifestyle(loaded);expect(loaded.lifestyles!.version).toBe(2);expect(q.xp.martial).toBe(810);expect(q.perks).toEqual(['drill']);expect(lifestylePoints(q,'martial')).toBe(1);expect(q.xp.martial%360).toBe(90);expect(loaded.relationships!.reserves).toEqual(reserves);expect(loaded.people[0].coins).toBe(coins);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
+  const w=newCampaignWorld('gao-huan',undefined,'sandbox');w.day=200;const p=ensureLifestyle(w);p.focus='strategy';p.xp.martial=270;p.perks=['drill'];delete p.lastAdvanced;delete (p.xp as Partial<Record<string,number>>).intrigue;w.lifestyles!.version=1;const reserves=structuredClone(w.relationships!.reserves),coins=w.people[0].coins;
+  const loaded=parseWorld(serializeWorld(w)),q=ensureLifestyle(loaded);expect(loaded.lifestyles!.version).toBe(3);expect(q.xp.martial).toBe(810);expect(q.perks).toEqual(['drill']);expect(lifestylePoints(q,'martial')).toBe(1);expect(q.xp.martial%360).toBe(90);expect(loaded.relationships!.reserves).toEqual(reserves);expect(loaded.people[0].coins).toBe(coins);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
   p.xp.martial=601;expect(()=>serializeWorld(w)).toThrow('存档');
  });
  it('rejects invalid NPC growth records and preserves the successor’s own NPC learning on handover',()=>{

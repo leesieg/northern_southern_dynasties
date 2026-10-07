@@ -1,3 +1,4 @@
+import {RulerHistoryPanel} from './PoliticalIdentity';
 import {nextMonthStart} from '../core/calendar';
 import {TerritoryTabs} from './TerritoryNavigation';
 import {EstateWorkshop} from './EstateWorkshop';
@@ -34,7 +35,7 @@ const CityViewport=lazy(()=>import('../city/CityViewport'));
 
 export type CityTab='model'|'build'|'governance'|'military'|'coordination'|'service'|'finance'|'population'|'offices'|'people'|'travel'|'history';
 export function LocationDevelopment({world,selected,onPerson,onRetinue,onService,send,pending=false,tab:requestedTab,onTab,localTasks,overview,travel,people,peopleCount,onDiplomacy}:{onDiplomacy:(r:RealmId)=>void;onTerritory:(id:string)=>void;onPerson?:(id:string)=>void;onRetinue?:()=>void;onService?:()=>void;pending?:boolean;tab:CityTab;onTab:(tab:CityTab)=>void;people:ReactNode;localTasks:ReactNode;peopleCount:number;overview:ReactNode;travel:ReactNode;world:World;selected:string;onSelect:(id:string)=>void;send:(command:GameCommand)=>void}){
-  const tab:CityTab=!world.realm&&['governance','service','military','finance','population','coordination','offices'].includes(requestedTab)?'build':requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab==='model'?'build':requestedTab==='history'?'travel':requestedTab;
+  const tab:CityTab=!world.realm&&['governance','service','military','finance','population','coordination','offices'].includes(requestedTab)?'build':requestedTab==='coordination'?'service':requestedTab==='offices'?'governance':requestedTab==='model'?'build':requestedTab;
 
   return <section className="location-development">
     <CitySummary key={selected} world={world} site={selected} pending={pending} send={send} onPerson={onPerson} onDiplomacy={onDiplomacy}/>
@@ -43,6 +44,7 @@ export function LocationDevelopment({world,selected,onPerson,onRetinue,onService
     {(['governance','service','military','finance','population'].includes(tab))&&<CityManagement onTransport={()=>onTab('population')} section={tab} localTasks={localTasks} onPerson={onPerson} key={selected} world={world} selected={selected} pending={pending} send={send}/>}
     {tab==='governance'&&world.realm?.local?.requests.some(q=>q.status==='pending'&&q.territory===countyTerritory(selected)&&(q.actor===world.characterId||q.approver===world.characterId))&&<LocalRequests world={world} pending={pending} send={send} territory={countyTerritory(selected)} pendingOnly/>}
     {tab==='people'?people:tab==='travel'?<><TravelStatus world={world}/>{travel}{overview}</>:tab==='build'?<ConstructionPanel key={selected} world={world} scope="city" site={selected} send={send} onPerson={onPerson} onService={onService} onRetinue={onRetinue} pending={pending}/>:null}
+    {tab==='history'&&world.realm&&<RulerHistoryPanel world={world} territory={countyTerritory(selected)} onPerson={onPerson??(()=>{})}/>}
     </div>
   </section>;
 }

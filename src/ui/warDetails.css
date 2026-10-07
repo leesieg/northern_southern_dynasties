@@ -26,3 +26,7 @@ dialog.paper-dialog.engagement-dialog .engagement-dispatch{--dialog-ink:#29382e;
 .war-participant-columns [data-side=defend] article{background:#47302a;border-color:#ac796166}.war-participant-columns article>span{flex:1;min-width:0}.war-participant-columns article strong{font:15px var(--serif)}.war-participant-columns article>b{font:14px var(--serif);white-space:nowrap}
 .war-participant-columns .war-leader{border:0;padding:0;background:none;flex:none;width:34px;height:34px}.war-leader .painted-portrait{width:34px;height:34px;aspect-ratio:1}
 @media(max-width:650px){.war-participant-columns{grid-template-columns:1fr}}
+
+.war-details-claimant{display:flex;flex-wrap:wrap;gap:8px 16px;padding:9px;border:1px solid #b69c6340;color:#e6d6b4;font:12px/1.6 var(--sans)}
+.war-details-claimant p{flex-basis:100%;margin:0;color:#b8c0a7}
+.war-details-claimant button{padding:2px 5px;border:0;background:transparent;color:#dbc083}

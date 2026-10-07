@@ -1,7 +1,7 @@
 import type {World} from './types';
 import type {RealmId} from './realm';
 export type CustodyTreatment='guarded'|'honored'|'house';
-export interface Detention {war?:number;side?:'attack'|'defend';person:string;captor:RealmId;captorPerson:string|null;army:number|null;site:string;since:number;origin:RealmId;cause:'battle'|'city'|'arrest';source:string;treatment:CustodyTreatment;talked:number|null;terms:string;escapeAfter:number;ransom:number;offer:'stipend'|'office'|null}
+export interface Detention {war?:number;side?:'attack'|'defend';person:string;captor:RealmId;captorPerson:string|null;army:number|null;site:string;since:number;origin:RealmId;cause:'battle'|'city'|'arrest'|'abduction';source:string;treatment:CustodyTreatment;talked:number|null;terms:string;escapeAfter:number;ransom:number;offer:'stipend'|'office'|null}
 export interface ArrestWarrant {id:number;person:string;issuer:string;realm:RealmId;site:string;issued:number;due:number;evidence:string;status:'pending'|'detained'|'refused'|'cancelled'}
 export interface CustodyEvent {day:number;person:string;captor:RealmId;source:string;result:string}
 export interface CustodyState {version:1;nextId:number;records:Record<string,Detention>;history:CustodyEvent[];warrants:ArrestWarrant[];promises:{person:string;lord:string;realm:RealmId;due:number;kind:'office';status:'pending'|'honored'|'broken'}[];guarantees:{person:string;payer:string;realm:RealmId;coins:number;due:number;status:'held'|'refunded'|'forfeited'}[];lastDay:number;lastMonth:number}

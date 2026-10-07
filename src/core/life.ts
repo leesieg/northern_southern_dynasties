@@ -6,7 +6,9 @@ import {getPerson} from './personRegistry';
 import {finishCampaign} from './militaryCampaigns';
 import {characterById} from '../data/characters';
 import {relationshipPersonById} from '../data/relationships';
-import {publicSuccessor,publicFamily} from './publicSuccession';
+import {publicSuccessor} from './publicSuccession';
+import {dynasticKin} from './claims';
+import {ensureRulerHistory,syncRulerHistory,announceSuccession} from './rulerHistory';
 import {heirs,applySocial} from './social';
 import {expressGenome} from './genetics';
 import {syncCourt} from './court';
@@ -51,16 +53,19 @@ export function actLife(w:World,c:LifeCommand,actor=w.characterId??'fictional'){
  if(c.action!=='care')throw new Error('未知养护行动');const reason=careReason(w,c.target,actor);if(reason)throw new Error(reason);const wallet=accountWallet(w,'person:'+actor)!;wallet.write(wallet.read()-30);s.people[c.target].careUntil=w.day+90;if(c.target!==actor)changeRelationOpinion(w,actor,c.target,5);if(actor===(w.characterId??'fictional'))log(w,'为'+personName(w,c.target)+'延医照料九十日，支出 30 钱。');
 }
 /** One-way transition. All live appointments are reconciled before control can pass. */
-export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'){
+export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'|'murder'){
  const s=ensureLife(w),p=s.people[id];if(!p||p.death)return;
  const wasPlayer=id===(w.characterId??'fictional'),next=wasPlayer?heirs(w).find(c=>c.id===w.social?.heir)??heirs(w)[0]:undefined;
+ if(w.realm?.governments)ensureRulerHistory(w);
  if(w.custody){delete w.custody.records[id];for(const q of w.custody.warrants)if(q.person===id&&q.status==='pending')q.status='cancelled';}if(id===w.characterId&&w.mobility)w.mobility.captivity=null;
  p.health=0;p.death={day:w.day,cause};p.careUntil=0;delete p.injuryUntil;
+ for(const title of w.nobility?.titles??[])if(title.person===id&&title.until===null)title.until=w.day;
+ for(const claim of w.claims?.records??[])if(claim.person===id&&claim.until===null)claim.until=w.day;
  if(s.autoCare?.payer===id)delete s.autoCare;
  for(const t of w.householdPlans?.tuition??[])if(t.status==='active'&&[t.payer,t.student,t.teacher].includes(id)){t.status='cancelled';t.reason='师生或出资人离世，停止后续扣费；已付学资不退';}
  if(w.mobility){for(const r of worldRealms(w))if(w.mobility.commanders[r]===id)delete w.mobility.commanders[r];for(const [key,leader] of Object.entries(w.mobility.armyCommanders??{}))if(leader===id)delete w.mobility.armyCommanders![Number(key)];for(const [key,q] of Object.entries(w.mobility.pendingCommanders??{}))if(q.person===id)delete w.mobility.pendingCommanders![Number(key)];if(w.mobility.residences[id])w.mobility.residences[id].journey=null;}
  for(const q of w.militaryCampaigns?.items??[])if(q.status==='active'&&q.commander===id)finishCampaign(w,q,'failed','统帅离世，战役委任结束');
- log(w,`${personName(w,id)}${{illness:'病逝',age:'寿终',battle:'战死',execution:'被处决'}[cause]}，享年 ${ageAt(w,id)} 岁。`);
+ log(w,`${personName(w,id)}${{illness:'病逝',age:'寿终',battle:'战死',execution:'被处决',murder:'遇害'}[cause]}，享年 ${ageAt(w,id)} 岁。`);
  if(w.social){if(w.social.heir===id)w.social.heir=null;if(w.social.advisor===id)w.social.advisor=null;if(w.social.scheme?.target===id||wasPlayer)w.social.scheme=null;}
  const rs=w.relationships;
  if(rs){
@@ -78,9 +83,9 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
    if(g.task?.sponsor===id)g.task=null;
    if(g.court){for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])if(g.court.ministries[m]===id)g.court.ministries[m]=null;if(g.court.founding?.sponsor===id)g.court.founding=null;if(g.court.petition?.sponsor===id)g.court.petition=null;}
    if(g.ruler===id||g.executives.includes(id)){
-    const wasRuler=g.ruler===id,rulerHeir=wasRuler?publicSuccessor(w,r,'ruler',id):null,executiveHeir=g.executives[0]===id?publicSuccessor(w,r,'executive',id):null;
+    const wasRuler=g.ruler===id,rulerHeir=wasRuler?publicSuccessor(w,r,'ruler',id):null,executiveHeir=g.executives[0]===id?publicSuccessor(w,r,'executive',id):null,designated=!!rulerHeir&&g.heirs?.ruler===rulerHeir;
     if(wasRuler&&rulerHeir){
-     const name=g.heirs?.dynasty,changedHouse=publicFamily(id,w)!==publicFamily(rulerHeir,w);
+     const name=g.heirs?.dynasty,changedHouse=!dynasticKin(w,id,rulerHeir);
      if(changedHouse&&name&&w.realm.governments!.regimes.filter(v=>v.realm===r).length<12){
       const state=w.realm.governments!,old=state.regimes.find(v=>v.id===g.regimeId)!;
       old.until=w.day;g.regimeId=`${r}-inheritance-${w.day}-${state.regimes.filter(v=>v.realm===r).length}`;g.dynasty=g.regimeId;
@@ -94,6 +99,7 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
     else if(!g.executives.length&&executiveHeir)g.executives=[executiveHeir];
     g.task=null;g.legitimacy=Math.max(0,g.legitimacy-10);g.support=Math.max(0,g.support-5);
     delete g.resignedExecutives;
+    syncRulerHistory(w,designated?'designation':'succession');if(wasRuler)announceSuccession(w,r,id);
     s.successions.push({realm:r,regimeId:g.regimeId,stage:g.stages.at(-1)??null,day:w.day,deceased:id,ruler:g.ruler,executives:[...g.executives]});
     log(w,`${personName(w,id)}身后，${isAlive(w,g.ruler)?personName(w,g.ruler)+'居君位':'君位虚悬'}${g.executives.length?'，'+g.executives.map(id=>personName(w,id)).join('、')+'主持朝政':'，朝廷无人主持'}。`);
    }
@@ -104,7 +110,7 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
   if(next&&w.social){w.social.heir=next.id;applySocial(w,{type:'handover'});if(!w.mobility)w.people[0].location=next.home;log(w,'家业由'+next.name+'承继，继续这一族的故事。');}
   else if(w.campaign){w.campaign.status='lost';w.campaign.finishedDay=w.day;log(w,'没有在世且合格的家业继任者，本局结束。');}
  }
- if(w.realm){syncRelationships(w);for(const r of worldRealms(w))syncCourt(w,r);if(wasPlayer)handoverOffice(w);syncGovernance(w);syncDiplomacy(w);}
+ if(w.realm){syncRelationships(w);for(const r of worldRealms(w))syncCourt(w,r);if(wasPlayer)handoverOffice(w);syncGovernance(w);syncDiplomacy(w);syncRulerHistory(w,'succession');}
 }
 export function advanceLife(w:World){
  const s=ensureLife(w);if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;

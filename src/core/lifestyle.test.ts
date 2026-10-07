@@ -11,7 +11,7 @@ import { parseWorld,serializeWorld } from './save';
 import type { World } from './types';
 const focus=(w:World,id:string)=>act(w,{type:'lifestyle',action:'focus',focus:id});
 const unlock=(w:World,id:string)=>act(w,{type:'lifestyle',action:'unlock',perk:id});
-function trained(branch:LifestyleBranch,id='xiao-yan'){const w=newCampaignWorld(id,undefined,'sandbox');w.day=300;focus(w,branch==='martial'?'strategy':branch==='stewardship'?'architecture':'etiquette');const p=ensureLifestyle(w);p.xp[branch]=branchPerks(branch).length*LIFESTYLE_XP_PER_POINT;for(const [id] of branchPerks(branch))unlock(w,id);return w;}
+function trained(branch:LifestyleBranch,id='xiao-yan'){const w=newCampaignWorld(id,undefined,'sandbox');w.day=300;focus(w,branch==='martial'?'strategy':branch==='stewardship'?'architecture':branch==='intrigue'?'intelligence':'etiquette');const p=ensureLifestyle(w);p.xp[branch]=branchPerks(branch).length*LIFESTYLE_XP_PER_POINT;for(const [id] of branchPerks(branch))unlock(w,id);return w;}
 const army=(realm:'liang'|'east',location='jiankang'):Army=>({realm,location,troops:600,morale:100,supply:120,journey:null,siege:0});
 describe('生活重心',()=>{
  it('初选一技能点，前置／重复／错路线均拒绝且不改变状态',()=>{
@@ -34,7 +34,7 @@ describe('生活重心',()=>{
   expect(()=>act(restored,{type:'lifestyle',action:'study',choice:'practice'})).toThrow('暂无');expect(ensureLifestyle(restored).study).toBeNull();
  });
  it('全部技能形成有效依赖树，并授予独立的后天专长',()=>{
-  for(const branch of ['martial','stewardship','diplomacy'] as const){const w=trained(branch);expect(lifestylePoints(ensureLifestyle(w),branch)).toBe(0);expect(lifestyleMasteries(w)).toHaveLength(1);expect(parseWorld(serializeWorld(w))).toEqual(w);for(const [id,p] of branchPerks(branch))expect(p.requires.every(req=>lifestylePerks[req].branch===p.branch&&req!==id)).toBe(true);}
+  for(const branch of ['martial','stewardship','diplomacy','intrigue'] as const){const w=trained(branch);expect(lifestylePoints(ensureLifestyle(w),branch)).toBe(0);expect(lifestyleMasteries(w)).toHaveLength(1);expect(parseWorld(serializeWorld(w))).toEqual(w);for(const [id,p] of branchPerks(branch))expect(p.requires.every(req=>lifestylePerks[req].branch===p.branch&&req!==id)).toBe(true);}
  });
  it('营建效果真实扣费和锁定工期，换重心不追改在建项目',()=>{
   const w=trained('stewardship','xiao-gang');w.social!.legacies.stewardship=2;expect(buildingModifiers(w).costRate).toBe(67);
@@ -65,7 +65,7 @@ describe('生活重心',()=>{
   expect(lifestyleProgress(w)?.focus).toBeNull();expect(lifestyleMasteries(w)).toHaveLength(0);expect(w.lifestyles!.people['xiao-yan']).toEqual(before);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('旧档补齐无经验记录，伪造点数／前置／未知重心被拒绝',()=>{
-  const old=newCampaignWorld('xiao-yi');delete old.lifestyles;const migrated=parseWorld(serializeWorld(old));expect(lifestyleProgress(migrated)?.xp).toEqual({martial:0,stewardship:0,diplomacy:0});
+  const old=newCampaignWorld('xiao-yi');delete old.lifestyles;const migrated=parseWorld(serializeWorld(old));expect(lifestyleProgress(migrated)?.xp).toEqual({martial:0,stewardship:0,diplomacy:0,intrigue:0});
   for(const mutate of [(w:World)=>{ensureLifestyle(w).focus='__proto__';},(w:World)=>{ensureLifestyle(w).xp.martial=5*LIFESTYLE_XP_PER_POINT+1;},(w:World)=>{ensureLifestyle(w).perks=['strategist'];},(w:World)=>{ensureLifestyle(w).perks=['drill','drill'];}]){const w=newCampaignWorld('gao-huan');focus(w,'strategy');mutate(w);expect(()=>serializeWorld(w)).toThrow('存档');}
  });
  it('虚构人物也能学习管理，工程修正随存档保存',()=>{

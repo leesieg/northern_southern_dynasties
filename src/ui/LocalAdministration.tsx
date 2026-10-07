@@ -1,3 +1,4 @@
+import {RulerHistoryPanel} from './PoliticalIdentity';
 import {CommandButton} from './CommandButton';
 import {terrainSceneStyle} from './terrainScene';
 import {worldRealms} from '../core/polityRuntime';
@@ -57,6 +58,7 @@ export function LocalTerritoryPanel({world:w,territory,send,pending,onPerson,onS
  {tab==='offices'&&<section><h3><ArtIcon name="influence" size={24}/>授官与考课</h3>{superior&&<button onClick={()=>onPerson?.(superior.holder)}>上级 · {officeName(superior.holder,w)} ›</button>}{state?.assessment&&<p>{state.assessment}</p>}<div className="local-seats-grid">{child.map(n=><article key={n.id}><LocalOfficeSeat key={n.id+r} world={w} territory={n.id} realm={r} pending={pending} send={send} onPerson={onPerson}/><button onClick={()=>onSelect(n.id)}><ArtIcon name="city" size={22}/>{n.name} ›</button></article>)}</div><LocalRequests world={w} send={send} pending={pending} territory={territory}/></section>}
  {tab==='military'&&<CityManagement section="military" world={w} selected={site} pending={pending} send={send} onPerson={onPerson}/>}
  {tab==='people'&&<PlacePeople world={w} sites={ids} onPerson={id=>onPerson?.(id)} onEstate={onEstate}/>}
+ {tab==='history'&&<RulerHistoryPanel world={w} territory={territory} onPerson={onPerson??(()=>{})}/>}
  {tab==='history'&&<section className="city-district"><h3>直属辖区</h3><div className="district-counties">{child.map(n=><button key={n.id} onClick={()=>onSelect(n.id)}><ArtIcon name="city" size={26}/><span><strong>{n.name}</strong><small>{localHolder(w,n.id,r)?officeName(localHolder(w,n.id,r)!,w):'主官空缺'}</small></span><span className="district-row-metrics"><b>{localSites(w,n.id,r,true).reduce((sum,id)=>sum+w.realm!.cities[id].population,0).toLocaleString()} 人</b><small>实控 {localSites(w,n.id,r,true).length} / 法理 {localSites(w,n.id,r).length} 县</small></span><span>›</span></button>)}</div><p className="district-evidence">546 年区划基底 · 边界为辖区示意，非精确历史疆域。</p></section>}
  {['build','travel'].includes(tab)&&<section className="city-district"><h3>{tab==='build'?'县域营建':'前往县域'}</h3><div className="district-counties">{localSites(w,territory,r).map(id=><button key={id} onClick={()=>onSelect('city:'+id)}><ArtIcon name={tab==='build'?'estate':tab==='travel'?'world':'city'} size={26}/><span>{siteById[id].name}{id===site&&<small>治所</small>}{w.realm!.cities[id].controller!==r&&<small>失守</small>}{tab==='build'&&w.holdings.cities[id]?.project&&<small>营建中 · 余 {Math.max(0,w.holdings.cities[id].project!.due-w.day)} 日</small>}</span><span>›</span></button>)}</div></section>}
  </div>

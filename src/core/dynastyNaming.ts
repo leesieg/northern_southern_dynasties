@@ -9,6 +9,7 @@ import {governmentOf,regimeName} from './government';
 import {worldRealms} from './polityRuntime';
 import {capital,type RealmId} from './realm';
 import type {World} from './types';
+import {nobleTitle} from './nobility';
 
 export interface DynastyNameOption {name:string;reason:string}
 // Display qualifiers distinguish historical regimes, but do not make a reused
@@ -29,7 +30,8 @@ export function dynastyNameOptions(w:World,r:RealmId,founder:string):DynastyName
   unavailable.add(nameIdentity(name));options.push({name,reason});
  };
  // Resolve references at call time: data/core imports already contain cycles.
- for(const d of Object.values(successionDefinitions))if(d.nextDynasty&&person.family=== getPerson(w,d.ruler)?.family){
+ const noble=nobleTitle(w,founder,r);if(noble&&['king','stateDuke','commanderyDuke'].includes(noble.rank))add(noble.name,'本局实际王公封号择取；爵位不代表领土。');
+ for(const d of Object.values(successionDefinitions))if(d.nextDynasty&&person.family===getPerson(w,d.ruler)?.family){
   add(dynastyNames[d.nextDynasty],person.name+'家系的历史国号参照；仅择号，不触发历史更替。');
  }
  for(const title of ( getCharacter(w,founder)?.title??'').split(/[·，、]/u)){
