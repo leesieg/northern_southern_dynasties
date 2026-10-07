@@ -5,7 +5,6 @@ import { emptyCollection, roadFeatures, siteFeatures } from './geography';
 import prefectures from '../data/prefectures.json';
 import type { FeatureCollection } from 'geojson';
 import { territories, territoryRealms } from './territories';
-import { settlements } from './settlements';
 
 // Palette/layering adapted from MapStage's antique preset (MIT).
 // See public/licenses/MapStage-LICENSE.txt and THIRD_PARTY_NOTICES.md.
@@ -33,7 +32,6 @@ export function atlasStyle():StyleSpecification {
       territories:{type:'geojson',data:territories,promoteId:'id'},
       roads:{type:'geojson',data:roadFeatures},sites:{type:'geojson',data:siteFeatures},
       route:{type:'geojson',data:emptyCollection()},selection:{type:'geojson',data:emptyCollection()},
-      settlements:{type:'geojson',data:settlements()},
     },
     layers:[
       {id:'background',type:'background',paint:{'background-color':['interpolate',['linear'],['zoom'],PAPER_ZOOM,'#b9b19a',LANDSCAPE_ZOOM,'#527e80']}},
@@ -76,7 +74,6 @@ export function atlasStyle():StyleSpecification {
       {id:'road-ink',type:'line',source:'roads',layout:{visibility:'none','line-cap':'round','line-join':'round'},paint:{'line-color':'#796346','line-opacity':.75,'line-width':1,'line-dasharray':[4,3]}},
       {id:'route-shadow',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#493d2e','line-opacity':.6,'line-width':5,'line-blur':1}},
       {id:'route-gold',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fae5a4','line-width':2.4}},
-      {id:'settlement-buildings',type:'fill-extrusion',source:'settlements',minzoom:6.4,paint:{'fill-extrusion-color':['get','color'],'fill-extrusion-base':['get','base'],'fill-extrusion-height':['get','height'],'fill-extrusion-opacity':.98,'fill-extrusion-vertical-gradient':true}},
       {id:'site-halo',type:'circle',source:'sites',paint:{'circle-radius':['case',['get','capital'],5,3.5],'circle-color':'#f2e5c5','circle-stroke-color':'#746748','circle-stroke-width':1}},
       {id:'site-heart',type:'circle',source:'sites',paint:{'circle-radius':['case',['get','capital'],2,1.3],'circle-color':'#63523b'}},
       {id:'history-event-ring',type:'circle',source:'history-event',paint:{'circle-radius':22,'circle-color':'#a73c2f','circle-opacity':.25,'circle-stroke-width':3,'circle-stroke-color':'#a73c2f'}},

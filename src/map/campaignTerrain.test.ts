@@ -62,7 +62,7 @@ describe('campaign terrain and assets (CPU only)',()=>{
  it('keeps instance placement stable and removes scenery on missing masks, water, steep slopes or low detail',()=>{
   const environment=campaignEnvironment(MercatorCoordinate.fromLngLat([110,32]));
   let water=false,steep=false,loaded=true;
-  const map={getZoom:()=>9,getCenter:()=>({lng:118.8,lat:32}),getBounds:()=>({getWest:()=>118.5,getEast:()=>119.1,getSouth:()=>31.7,getNorth:()=>32.3}),getCanvas:()=>({clientWidth:1000,clientHeight:800}),isSourceLoaded:()=>loaded,getLayer:()=>true,project:()=>({x:500,y:400}),queryRenderedFeatures:()=>['land-fallback','woodland',...(water?['inland-water']:[])].map(id=>({layer:{id}})),queryTerrainElevation:({lng}:{lng:number})=>steep?lng*50000:100};
+  const map={getZoom:()=>9,getCenter:()=>({lng:118.8,lat:32}),getBounds:()=>({getWest:()=>118.5,getEast:()=>119.1,getSouth:()=>31.7,getNorth:()=>32.3}),getCanvas:()=>({clientWidth:1000,clientHeight:800}),isSourceLoaded:()=>loaded,getLayer:()=>true,project:()=>({x:500,y:400}),queryRenderedFeatures:()=>loaded?['land-fallback','woodland',...(water?['inland-water']:[])].map(id=>({layer:{id}})):[],queryTerrainElevation:({lng}:{lng:number})=>steep?lng*50000:100};
   const trees=environment.root.children[0] as InstancedMesh,fields=environment.root.children[1] as InstancedMesh;
   try{
    environment.refresh(map as unknown as Map,[],true,true);expect(trees.count).toBeGreaterThan(0);expect(trees.count).toBeLessThanOrEqual(MAX_ENVIRONMENT_INSTANCES);
@@ -73,5 +73,11 @@ describe('campaign terrain and assets (CPU only)',()=>{
    environment.refresh(map as unknown as Map,[],true,false);expect(trees.count).toBe(0);
    expect(nearCampaignRoad(siteById.jiankang.lon,siteById.jiankang.lat)).toBe(true);
   }finally{environment.dispose();}
+ });
+ it('keeps locally loaded woodland visible during tile loading and starts vegetation in regional view',()=>{
+  const environment=campaignEnvironment(MercatorCoordinate.fromLngLat([110,32]));let masks=true;
+  const map={getZoom:()=>7.4,getCenter:()=>({lng:118.8,lat:32}),getBounds:()=>({getWest:()=>118.5,getEast:()=>119.1,getSouth:()=>31.7,getNorth:()=>32.3}),getCanvas:()=>({clientWidth:1000,clientHeight:800}),isSourceLoaded:()=>false,getLayer:()=>true,project:()=>({x:500,y:400}),queryRenderedFeatures:()=>masks?[{layer:{id:'land-fallback'}},{layer:{id:'woodland'}}]:[],queryTerrainElevation:()=>100};
+  try{environment.refresh(map as unknown as Map,[],true,true);const trees=environment.root.children[0] as InstancedMesh;expect(trees.count).toBeGreaterThan(0);expect(trees.count).toBeLessThanOrEqual(MAX_ENVIRONMENT_INSTANCES);masks=false;environment.refresh(map as unknown as Map,[],true,true);expect(trees.count).toBe(0);}
+  finally{environment.dispose();}
  });
 });

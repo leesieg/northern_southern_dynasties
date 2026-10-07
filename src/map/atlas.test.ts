@@ -3,7 +3,6 @@ import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import { atlasStyle, DEM_TILES, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { activeRoute, previewArmyRoute, roadFeatures, siteFeatures,routeCoordinates } from './geography';
 import { territories, territoryRealms } from './territories';
-import { settlements } from './settlements';
 import { sites, roads } from '../data/scenario';
 import { act,advance,newWorld,planRoute,position } from '../core/world';
 import { mapResourceUrl } from './mapResources';
@@ -47,10 +46,8 @@ describe('atlas data and style contracts (no UI)',()=>{
     const coordinates=[...territories.features,...territoryRealms.features].flatMap(f=>f.geometry.coordinates.flat(2));
     for(const [lon,lat] of coordinates){expect(Number.isFinite(lon)&&Number.isFinite(lat)).toBe(true);expect(lon).toBeGreaterThan(70);expect(lon).toBeLessThan(138);expect(lat).toBeGreaterThan(15);expect(lat).toBeLessThan(55);}
   });
-  it('builds valid symbolic city footprints at all game locations',()=>{
-    const features=settlements().features;
-    expect(new Set(features.map(f=>f.properties?.site)).size).toBe(sites.length);
-    for(const f of features){const p=f.properties!;expect(p.height).toBeGreaterThan(p.base);expect(f.geometry.coordinates[0][0]).toEqual(f.geometry.coordinates[0].at(-1));}
+  it('retires legacy extrusion so zoom and loading cannot reactivate a second city representation',()=>{
+    const style=atlasStyle();expect(style.sources).not.toHaveProperty('settlements');expect(style.layers.some(layer=>layer.id==='settlement-buildings')).toBe(false);
   });
 });
 

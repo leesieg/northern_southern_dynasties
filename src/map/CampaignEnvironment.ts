@@ -6,7 +6,7 @@ import {roadCoordinates} from '../core/routeGeometry';
 import {campaignCityMeters} from './campaignScenery';
 import {cityRoofGeometry} from '../city/architecture';
 
-export const ENVIRONMENT_CHUNK_SIZE=.125,MAX_ENVIRONMENT_CHUNKS=48,MAX_ENVIRONMENT_INSTANCES=768;
+export const ENVIRONMENT_CHUNK_SIZE=.04,MAX_ENVIRONMENT_CHUNKS=48,MAX_ENVIRONMENT_INSTANCES=768;
 const roadSegments=roads.filter(r=>!r.legacyOnly).flatMap(r=>{const points=roadCoordinates(r.from,r.to);return points.slice(1).map((to,i)=>({from:points[i],to}));});
 export function nearCampaignRoad(lon:number,lat:number){
  const cos=Math.cos(lat*Math.PI/180);
@@ -38,7 +38,8 @@ export function campaignEnvironment(origin:{x:number;y:number}){
  function position(at:ReturnType<typeof MercatorCoordinate.fromLngLat>,w:number,h:number,d:number){const u=at.meterInMercatorCoordinateUnits();return matrix.makeTranslation(at.x-origin.x,origin.y-at.y,at.z).multiply(rotation).scale(new Vector3(w*u,h*u,d*u));}
  function refresh(map:Map,urban:{id:string;capital:boolean}[],tilted:boolean,enabled:boolean){
   trees.count=0;fields.count=0;villages.count=0;
-  if(!enabled||map.getZoom()<8.2||!map.isSourceLoaded('natural'))return;
+  if(!enabled||map.getZoom()<7.2)return;
+  const completeNatural=map.isSourceLoaded('natural');
   const bounds=map.getBounds(),center=map.getCenter(),size=ENVIRONMENT_CHUNK_SIZE,chunks:{x:number;y:number}[]=[];
   // A fixed grid and deterministic candidates: refreshing/reading a save never reseeds the scene.
   const cx=Math.floor(center.lng/size),cy=Math.floor(center.lat/size);
@@ -46,6 +47,7 @@ export function campaignEnvironment(origin:{x:number;y:number}){
   chunks.sort((a,b)=>(a.x-cx)**2+(a.y-cy)**2-(b.x-cx)**2-(b.y-cy)**2);
   const masks=['land-fallback','ocean','inland-water','rivers-major','rivers-minor','woodland'].filter(id=>!!map.getLayer(id));
   function land(lon:number,lat:number,forest:boolean){
+   if(!forest&&!completeNatural)return null;
    const p=map.project([lon,lat]);if(p.x<0||p.y<0||p.x>map.getCanvas().clientWidth||p.y>map.getCanvas().clientHeight)return null;
    const hits=map.queryRenderedFeatures([[p.x-2,p.y-2],[p.x+2,p.y+2]],{layers:masks});
    if(!hits.some(f=>f.layer.id==='land-fallback')||hits.some(f=>!['woodland','land-fallback'].includes(f.layer.id))||forest&&!hits.some(f=>f.layer.id==='woodland')||nearCampaignRoad(lon,lat))return null;
