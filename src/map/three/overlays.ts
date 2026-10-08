@@ -1,3 +1,4 @@
+import {smoothGroundPath,pathSections} from './landscapePaths';
 import clipping from 'polygon-clipping';
 import {BufferGeometry,CanvasTexture,Color,DoubleSide,Float32BufferAttribute,Group,Mesh,MeshBasicMaterial,ShapeUtils,Vector2} from 'three';
 import {createExpression} from '@maplibre/maplibre-gl-style-spec';
@@ -15,7 +16,7 @@ export function coverageTexture(features:FeatureCollection,width=1024){
 }
 export class CampaignOverlays{
  readonly root=new Group();
- constructor(private height:(lon:number,lat:number)=>number|null){}
+ constructor(private height:(lon:number,lat:number)=>number|null,private roadAnchor:(lon:number,lat:number)=>[number,number]=(lon,lat)=>[lon,lat]){}
  clear(){for(const o of [...this.root.children]){const m=o as Mesh;this.root.remove(m);m.geometry.dispose();(m.material as MeshBasicMaterial).dispose();}}
  rebuild(layers:OverlayLayer[],sources:Map<string,FeatureCollection>,zoom:number,unitsPerPixel:number,states:Map<string,Record<string,unknown>>,bounds?:[number,number,number,number],flat=false,terrainFills=false){
   this.clear();let order=1;
@@ -39,6 +40,19 @@ export class CampaignOverlays{
     }
     else if(layer.type==='line'){
      const g=f.geometry,paths=g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:polygonRings(g).flat();const width=Number(evaluate(paint['line-width']??1,f,zoom,state))*unitsPerPixel;
+     if(layer.source==='roads'){
+      for(const path of paths){
+       if(bounds&&(Math.max(...path.map(p=>p[0]))<bounds[0]-1||Math.min(...path.map(p=>p[0]))>bounds[2]+1||Math.max(...path.map(p=>p[1]))<bounds[1]-1||Math.min(...path.map(p=>p[1]))>bounds[3]+1))continue;
+       let ground=path.map((p,i)=>{const ll=i===0||i===path.length-1?this.roadAnchor(p[0],p[1]):p;return projectGround(ll[0],ll[1]);});
+       // Two-node corridors are illustrative, not surveyed roads. Give their display route a gentle bend.
+       if(ground.length===2){const [a,b]=ground,dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,offset=Math.min(2,len*.07);ground=[a,...[.33,.67].map(t=>({x:a.x+dx*t-dz/len*offset*Math.sin(t*Math.PI),z:a.z+dz*t+dx/len*offset*Math.sin(t*Math.PI)})),b];}
+       const sections=pathSections(smoothGroundPath(ground,.65,5));
+       // Fixed world width, pale worn centre and soft shoulders; shared cross-sections close bends.
+       const roadWidth=Math.min(width, .34),rows=sections.map(p=>[-.75,-.5,.5,.75].map((band,j)=>{const x=p.x+p.nx*roadWidth*band,z=p.z+p.nz*roadWidth*band;return {ll:[(x/WORLD_KM+ORIGIN.x)*360-180,Math.atan(Math.sinh(Math.PI*(1-2*(z/WORLD_KM+ORIGIN.y))))*180/Math.PI],alpha:j===0||j===3?0:opacity};}));
+       for(let i=1;i<rows.length;i++)for(let j=0;j<3;j++)for(const p of [rows[i-1][j],rows[i][j],rows[i-1][j+1],rows[i-1][j+1],rows[i][j],rows[i][j+1]])vertex(p.ll,color,p.alpha);
+      }
+      continue;
+     }
      for(const path of paths)for(let i=1;i<path.length;i++){const a=projectGround(path[i-1][0],path[i-1][1]),b=projectGround(path[i][0],path[i][1]),dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,steps=Math.min(128,Math.max(1,Math.ceil(len/Math.max(2,unitsPerPixel*8))));
       for(let j=0;j<steps;j++){const points=[];for(const t of [j/steps,(j+1)/steps])for(const sign of [-1,1])points.push([a.x+dx*t-dz/len*width*.5*sign,a.z+dz*t+dx/len*width*.5*sign]);for(const idx of [0,2,1,1,2,3]){const [x,z]=points[idx],lon=(x/WORLD_KM+ORIGIN.x)*360-180,lat=Math.atan(Math.sinh(Math.PI*(1-2*(z/WORLD_KM+ORIGIN.y))))*180/Math.PI;vertex([lon,lat],color,opacity);}}
      }

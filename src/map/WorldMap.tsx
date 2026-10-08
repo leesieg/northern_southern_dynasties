@@ -116,10 +116,10 @@ export function WorldMap(props:Props){
       container.parentElement?.setAttribute('data-scale',strategicView?'strategic':zoom>=CITY_DETAIL_ZOOM?'close':'landscape');
       const occupied:{x:number;y:number;width:number}[]=[];
       const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===current.current.world.holdings.estate.location)-Number(a.id===current.current.world.holdings.estate.location)||Number(b.capital)-Number(a.capital));
-      const cityIds=annotationDensity(list.filter(i=>controlledSite(current.current.world,i.id)).map(i=>({key:i.id,point:map!.project([siteById[i.id].lon,siteById[i.id].lat]),priority:i.capital?2:siteById[i.id].rank==='county'?0:1,required:i.id===current.current.selected||i.id===current.current.world.holdings.estate.location})),{width:w,height:h},zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
+      const cityIds=annotationDensity(list.filter(i=>controlledSite(current.current.world,i.id)).map(i=>({key:i.id,point:map!.project(map!.cityCoordinate(i.id,[siteById[i.id].lon,siteById[i.id].lat])),priority:i.capital?2:siteById[i.id].rank==='county'?0:1,required:i.id===current.current.selected||i.id===current.current.world.holdings.estate.location})),{width:w,height:h},zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
       const widths=new Map(list.map(item=>[item.id,item.marker.getElement().offsetWidth]));
       for(const item of list){
-        const s=siteById[item.id],p=map.project([s.lon,s.lat]);
+        const s=siteById[item.id],coordinate=map.cityCoordinate(s.id,[s.lon,s.lat]),p=map.project(coordinate);item.marker.setLngLat(coordinate);
         const selected=item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
         const width=Math.max(widths.get(item.id)??0,s.name.length*14+38+(selected||item.capital&&zoom>=9?28:0)+(estate?34:0));
         const visible=!strategicView&&cityIds.has(item.id)&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);

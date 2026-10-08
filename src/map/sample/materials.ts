@@ -84,14 +84,14 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  return Object.assign(m,{setRegionalStyle(value:number){regionalStyle.value=value;},setFarms(next:FarmFields){farmUniforms.farmAtlas.value=next.map;farmUniforms.hasFarms.value=1;farmUniforms.farmCount.value=Math.min(36,next.centers.length);farmUniforms.farmGrid.value.set(next.columns??2,next.rows??1);farmUniforms.farmCenters.value.forEach((c,i)=>c.set(next.centers[i]?.x??1e8,next.centers[i]?.z??1e8));}});
 }
 export function waterMaterial(){
- const m=new MeshStandardMaterial({color:'#357d95',roughness:.34,metalness:.10,side:DoubleSide});m.name='Campaign river';
+ const m=new MeshStandardMaterial({color:'#285d6b',roughness:.48,metalness:.06,side:DoubleSide});m.name='Campaign river';
  m.onBeforeCompile=s=>{
   s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <begin_vertex>','#include <begin_vertex>\nriverUV=uv;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <color_fragment>',`#include <color_fragment>
    float shore=pow(abs(riverUV.x-.5)*2.,7.);
    float ripplePhase=riverUV.y*17.+sin(riverUV.x*23.);
    float ripple=.96+.04*sin(ripplePhase)*(1.-smoothstep(.4,2.,fwidth(ripplePhase)));
-   diffuseColor.rgb=mix(diffuseColor.rgb*ripple,vec3(.55,.51,.36),shore*.66);
+   diffuseColor.rgb=mix(diffuseColor.rgb*ripple,vec3(.27,.35,.25),shore*.5);
   `);
  };
  return m;

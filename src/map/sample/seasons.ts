@@ -1,9 +1,9 @@
 import {Color,Mesh,MeshStandardMaterial,type Scene} from 'three';
 
 export const seasons={
- spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.24,.34,.07],high:[.48,.55,.19],forest:[.07,.14,.035],field:[.32,.40,.09],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#cbd0ce',sun:'#fff0cf',sky:'#c5d6e5',intensity:2.8,water:'#43899d'},
- summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.26,.34,.065],high:[.49,.53,.18],forest:[.055,.115,.035],field:[.34,.39,.12],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#ccd1d2',sun:'#ffedc4',sky:'#c5d5e6',intensity:2.9,water:'#367f99'},
- autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.32,.25,.08],high:[.56,.43,.19],forest:[.21,.15,.045],field:[.48,.37,.14],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#cfc9c2',sun:'#ffe0ac',sky:'#c8d4e4',intensity:2.7,water:'#477d8d'},
+ spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.24,.34,.07],high:[.48,.55,.19],forest:[.07,.14,.035],field:[.32,.40,.09],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#cbd0ce',sun:'#fff0cf',sky:'#c5d6e5',intensity:2.8,water:'#326c75'},
+ summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.26,.34,.065],high:[.49,.53,.18],forest:[.055,.115,.035],field:[.34,.39,.12],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#ccd1d2',sun:'#ffedc4',sky:'#c5d5e6',intensity:2.9,water:'#285d6b'},
+ autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.32,.25,.08],high:[.56,.43,.19],forest:[.21,.15,.045],field:[.48,.37,.14],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#cfc9c2',sun:'#ffe0ac',sky:'#c8d4e4',intensity:2.7,water:'#355e68'},
  winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:[.20,.22,.16],high:[.34,.35,.26],forest:[.09,.13,.11],field:[.29,.27,.20],leaf:'#777a64',pine:'#50655b',snow:.92,fog:'#ced8dc',sun:'#e4edff',sky:'#d5e5f3',intensity:2.15,water:'#678b9c'},
 } as const;
 export type Season=keyof typeof seasons;
@@ -16,7 +16,7 @@ export function createSeasonState(up:'y'|'z'='y'){
  function sync(scene:Scene){
   const p=seasons[current];
   scene.traverse(o=>{if(!(o instanceof Mesh))return;for(const m of Array.isArray(o.material)?o.material:[o.material]){
-   if(!(m instanceof MeshStandardMaterial)||! /^(Leaf |Pine |Slate tile|Ridge pottery|Warm limestone|Courtyard earth|Lime plaster|Campaign city)/.test(m.name))continue;
+   if(!(m instanceof MeshStandardMaterial)||! /^(Leaf |Pine |Slate tile|Ridge pottery|Warm limestone|Courtyard earth|Lime plaster|Campaign city|River silt)/.test(m.name))continue;
    if(!tracked.has(m)){
     tracked.set(m,m.color.clone());
     const compile=m.onBeforeCompile,programKey=m.customProgramCacheKey();

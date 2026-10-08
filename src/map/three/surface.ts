@@ -1,3 +1,4 @@
+import {smoothGroundPath,pathSections,riverSafeCity} from './landscapePaths';
 import {coarseSurfaceHeight} from './terrainSeam';
 import {elevationTiles,decodeElevation,type ElevationManifest} from './elevationTiles';
 import {parchmentTexture,strategicReliefTexture} from './parchment';
@@ -6,7 +7,7 @@ import {campaignCityRadius} from '../campaignScenery';
 import {sites} from '../../data/scenario';
 import {campaignFarmAtlas} from '../sample/farmAtlas';
 import {coverageTexture} from './overlays';
-import {BufferGeometry,Float32BufferAttribute,Mesh,Group,Vector3,Vector4,type Texture,type Material} from 'three';
+import {BufferGeometry,Float32BufferAttribute,Mesh,MeshStandardMaterial,DoubleSide,Group,Vector3,Vector4,type Texture,type Material} from 'three';
 import type {FeatureCollection} from 'geojson';
 import {terrainMaterial,waterMaterial} from '../sample/materials';
 import type {SeasonState} from '../sample/seasons';
@@ -15,7 +16,7 @@ import {WORLD_KM,ORIGIN,mercator,geographic,gridHeight,campaignHeight,projectGro
 async function local(path:string){const r=await fetch(import.meta.env.BASE_URL+path,{signal:AbortSignal.timeout(25000)});if(!r.ok)throw new Error(`地图资源 ${path}：${r.status}`);return r;}
 export async function countrySurface(season:SeasonState){
  const metadata=local('art/campaign/national-terrain.json').then(r=>r.json()) as Promise<DEMGrid>;
- const [meta,buffer,land,rivers,detailManifest,parchment,strategicRelief,hiddenPaper]=await Promise.all([metadata,local('art/campaign/national-elevation.bin').then(r=>r.arrayBuffer()),local('data/land.geojson').then(r=>r.json()) as Promise<FeatureCollection>,local('data/rivers.geojson').then(r=>r.json()) as Promise<FeatureCollection>,local('art/campaign/elevation/manifest.json').then(r=>r.json()) as Promise<ElevationManifest>,metadata.then(meta=>parchmentTexture(meta)),strategicReliefTexture(),metadata.then(meta=>parchmentTexture(meta,true))]);
+ const [meta,buffer,land,rivers,detailManifest,parchment,strategicRelief,hiddenPaper]=await Promise.all([metadata,local('art/campaign/national-elevation.bin').then(r=>r.arrayBuffer()),local('data/land.geojson').then(r=>r.json()) as Promise<FeatureCollection>,local('art/campaign/river-corridors.geojson').then(r=>r.json()) as Promise<FeatureCollection>,local('art/campaign/elevation/manifest.json').then(r=>r.json()) as Promise<ElevationManifest>,metadata.then(meta=>parchmentTexture(meta)),strategicReliefTexture(),metadata.then(meta=>parchmentTexture(meta,true))]);
  const values=new Float32Array(buffer);if(values.length!==meta.columns*meta.rows)throw new Error('全国高程数据不完整');
  const root=new Group(),meshes:Mesh[]=[],water=waterMaterial(),riverGroup=new Group();let surface=terrainMaterial(undefined,season,{fade:false});root.add(riverGroup);
  const tintMap={value:null as Texture|null},tintExtent={value:new Vector4()},tintEnabled={value:0};
@@ -29,33 +30,60 @@ export async function countrySurface(season:SeasonState){
  let detail:{meta:DEMGrid;values:Float32Array}|undefined,flat=false,closed=false;
  const sampledHeight=(lon:number,lat:number)=>{const p=mercator(lon,lat);let raw=gridHeight(values,meta,p.x,p.y);if(raw===null)return null;if(detail){const fine=gridHeight(detail.values,detail.meta,p.x,p.y);if(fine!==null){const d=detail.meta,edge=Math.min((p.x-d.west)/d.width,(d.west+d.width-p.x)/d.width,(p.y-d.north)/d.height,(d.north+d.height-p.y)/d.height);raw=raw+(fine-raw)*Math.min(1,Math.max(0,edge*24));}}return campaignHeight(raw,lat);};
  const cityCells=new Map<string,{lon:number;lat:number;x:number;z:number;radius:number}[]>();
- for(const site of sites){const p=projectGround(site.lon,site.lat),cell=Math.floor(p.x/48)+':'+Math.floor(p.z/48),items=cityCells.get(cell)??[];items.push({lon:site.lon,lat:site.lat,...p,radius:campaignCityRadius(site,!!site.capital)});cityCells.set(cell,items);}
+ const cityLayouts=new Map<string,ReturnType<typeof riverSafeCity>>();
  // The same display-only city-footprint leveling as the accepted sample.
- const landHeight=(lon:number,lat:number)=>{let h=sampledHeight(lon,lat);if(h===null)return h;const p=projectGround(lon,lat),cx=Math.floor(p.x/48),cz=Math.floor(p.z/48);
+ const landHeight=(lon:number,lat:number)=>{let h=sampledHeight(lon,lat);if(h===null)return h;const p=projectGround(lon,lat);if(nearSegments(p.x,p.z).some(s=>segmentDistance(p.x,p.z,s.a,s.b)<2))return h;const cx=Math.floor(p.x/48),cz=Math.floor(p.z/48);
   for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)for(const c of cityCells.get(x+':'+z)??[]){const d=Math.max(Math.abs(p.x-c.x),Math.abs(p.z-c.z))/c.radius;if(d>=1.5)continue;const center=sampledHeight(c.lon,c.lat);if(center===null)continue;const t=Math.min(1,Math.max(0,(d-1)/.5)),blend=t*t*(3-2*t);h=center+(h-center)*blend;}return h;
  };
  type RiverSegment={a:Vector3;b:Vector3};
  const riverCells=new Map<string,RiverSegment[]>();let riverPaths:Vector3[][]=[];
  const nearSegments=(x:number,z:number)=>riverCells.get(Math.floor(x/8)+':'+Math.floor(z/8))??[];
  const height=(lon:number,lat:number)=>{let h=landHeight(lon,lat);if(h===null)return h;const p=projectGround(lon,lat);for(const seg of nearSegments(p.x,p.z)){const distance=segmentDistance(p.x,p.z,seg.a,seg.b);if(distance>1.1)continue;const dx=seg.b.x-seg.a.x,dz=seg.b.z-seg.a.z,t=Math.max(0,Math.min(1,((p.x-seg.a.x)*dx+(p.z-seg.a.z)*dz)/(dx*dx+dz*dz||1))),water=seg.a.y+(seg.b.y-seg.a.y)*t;h=Math.min(h,water-.12*Math.max(0,1-distance/1.1));}return h;};
- function prepareRivers(){riverCells.clear();riverPaths=[];for(const f of rivers.features){const g=f.geometry;if(g.type!=='LineString'&&g.type!=='MultiLineString')continue;for(const path of g.type==='LineString'?[g.coordinates]:g.coordinates){const points:Vector3[]=[];
-  for(let i=1;i<path.length;i++){const a=projectGround(path[i-1][0],path[i-1][1]),b=projectGround(path[i][0],path[i][1]),dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz)||1,steps=Math.max(1,Math.ceil(length/1.5));if(Math.max(a.x,b.x)<(meta.west-ORIGIN.x)*WORLD_KM||Math.min(a.x,b.x)>(meta.west+meta.width-ORIGIN.x)*WORLD_KM||Math.max(a.z,b.z)<(meta.north-ORIGIN.y)*WORLD_KM||Math.min(a.z,b.z)>(meta.north+meta.height-ORIGIN.y)*WORLD_KM)continue;for(let j=0;j<steps;j++){const x=a.x+dx*j/steps,z=a.z+dz*j/steps;let best:Vector3|undefined;for(let k=-4;k<=4;k++){const xx=x-dz/length*k*.3,zz=z+dx/length*k*.3,ll=geographic(xx/WORLD_KM+ORIGIN.x,zz/WORLD_KM+ORIGIN.y),h=landHeight(ll.lng,ll.lat);if(h!==null&&(!best||h<best.y))best=new Vector3(xx,h,zz);}if(best)points.push(best);}}
-  if(points.length<2)continue;riverPaths.push(points);for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],segment={a,b};for(let x=Math.floor((Math.min(a.x,b.x)-1.1)/8);x<=Math.floor((Math.max(a.x,b.x)+1.1)/8);x++)for(let z=Math.floor((Math.min(a.z,b.z)-1.1)/8);z<=Math.floor((Math.max(a.z,b.z)+1.1)/8);z++){const key=x+':'+z,cell=riverCells.get(key)??[];cell.push(segment);riverCells.set(key,cell);}}
- }}}
+ function prepareRivers(){riverCells.clear();riverPaths=[];
+  for(const f of rivers.features){const g=f.geometry;if(g.type!=='LineString'&&g.type!=='MultiLineString')continue;
+   for(const path of g.type==='LineString'?[g.coordinates]:g.coordinates){
+    const raw=path.map(p=>projectGround(p[0],p[1]));
+    if(!raw.some(p=>p.x>(meta.west-ORIGIN.x)*WORLD_KM&&p.x<(meta.west+meta.width-ORIGIN.x)*WORLD_KM&&p.z>(meta.north-ORIGIN.y)*WORLD_KM&&p.z<(meta.north+meta.height-ORIGIN.y)*WORLD_KM))continue;
+    // Round within the source corridor; no per-vertex random valley snapping or invented meanders.
+    const points=smoothGroundPath(raw,.6,6).map(p=>{const ll=geographic(p.x/WORLD_KM+ORIGIN.x,p.z/WORLD_KM+ORIGIN.y),h=sampledHeight(ll.lng,ll.lat);return h===null?null:new Vector3(p.x,h,p.z);});
+    let run:Vector3[]=[];for(const p of [...points,null]){if(p){run.push(p);continue;}if(run.length>1)riverPaths.push(run);run=[];}
+   }
+  }
+  for(const points of riverPaths)for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],segment={a,b};for(let x=Math.floor((Math.min(a.x,b.x)-1.4)/8);x<=Math.floor((Math.max(a.x,b.x)+1.4)/8);x++)for(let z=Math.floor((Math.min(a.z,b.z)-1.4)/8);z<=Math.floor((Math.max(a.z,b.z)+1.4)/8);z++){const key=x+':'+z,cell=riverCells.get(key)??[];cell.push(segment);riverCells.set(key,cell);}}
+  const segments=riverPaths.flatMap(path=>path.slice(1).map((b,i)=>({a:path[i],b})));
+  for(const site of sites){const layout=riverSafeCity(projectGround(site.lon,site.lat),campaignCityRadius(site,true)*1.12,segments,site.id==='jiankang');cityLayouts.set(site.id,layout);if(!layout.scale)continue;const ll=geographic(layout.x/WORLD_KM+ORIGIN.x,layout.z/WORLD_KM+ORIGIN.y),cell=Math.floor(layout.x/48)+':'+Math.floor(layout.z/48),items=cityCells.get(cell)??[];items.push({lon:ll.lng,lat:ll.lat,x:layout.x,z:layout.z,radius:campaignCityRadius(site,!!site.capital)*layout.scale});cityCells.set(cell,items);}
+ }
  function geometry(m:DEMGrid,step:number,cut?:DEMGrid){
   const columns=Math.ceil(m.columns/step),rows=Math.ceil(m.rows/step),vertices:number[]=[],elevations:number[]=[],indices:number[]=[];
   for(let j=0;j<=rows;j++)for(let i=0;i<=columns;i++){const x=m.west+i/columns*m.width,y=m.north+j/rows*m.height,ll=geographic(x,y);let h=height(ll.lng,ll.lat)??0;if(m!==meta&&(i===0||j===0||i===columns||j===rows))h=coarseSurfaceHeight(x,y,meta,8,(x,y)=>{const p=geographic(x,y);return height(p.lng,p.lat)??0;});vertices.push((x-ORIGIN.x)*WORLD_KM,h,(y-ORIGIN.y)*WORLD_KM);elevations.push(h);}
   for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){const x=m.west+(i+.5)/columns*m.width,y=m.north+(j+.5)/rows*m.height;if(cut&&x>cut.west&&x<cut.west+cut.width&&y>cut.north&&y<cut.north+cut.height)continue;const a=j*(columns+1)+i;indices.push(a,a+columns+1,a+1,a+1,a+columns+1,a+columns+2);}
   const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(vertices,3));g.setIndex(indices);g.setAttribute('campaignElevation',new Float32BufferAttribute(elevations,1));g.computeVertexNormals();g.computeBoundingSphere();return g;
  }
+ // Sample the triangles actually on screen, including coarse/fine stitched edge vertices.
+ // Sampling the raw DEM under a ribbon can put water and roads below an interpolated terrain face.
+ function renderedHeight(lon:number,lat:number){
+  const p=mercator(lon,lat),d=detail?.meta,useDetail=!!d&&p.x>d.west&&p.x<d.west+d.width&&p.y>d.north&&p.y<d.north+d.height;
+  const grid=useDetail?d!:meta,step=useDetail?2:8,mesh=meshes[useDetail?1:0];if(!mesh)return height(lon,lat);
+  const columns=Math.ceil(grid.columns/step),rows=Math.ceil(grid.rows/step),positions=mesh.geometry.getAttribute('position');
+  return coarseSurfaceHeight(p.x,p.y,grid,step,(x,y)=>{const i=Math.round((x-grid.west)/grid.width*columns),j=Math.round((y-grid.north)/grid.height*rows);return positions.getY(j*(columns+1)+i);});
+ }
  function rebuild(){farmKey="";for(const mesh of meshes){root.remove(mesh);mesh.geometry.dispose();}meshes.length=0;for(const [m,step,cut] of [[meta,8,detail?.meta],...(detail?[[detail.meta,2,undefined]]:[])] as [DEMGrid,number,DEMGrid|undefined][]){const mesh=new Mesh(geometry(m,step,cut),surface);mesh.castShadow=m!==meta;mesh.receiveShadow=true;root.add(mesh);meshes.push(mesh);}rebuildRivers();}
+ const bankMaterial=new MeshStandardMaterial({name:'River silt and reed edge',vertexColors:true,roughness:1,side:DoubleSide,transparent:true});
+ water.transparent=true;
  function rebuildRivers(){for(const o of [...riverGroup.children]){riverGroup.remove(o);(o as Mesh).geometry.dispose();}
-  const pos:number[]=[],uv:number[]=[],indices:number[]=[];
-  for(const points of riverPaths){
-   const offset=pos.length/3;
-   for(let i=0;i<points.length;i++){const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],length=Math.hypot(b.x-a.x,b.z-a.z)||1,dx=(b.x-a.x)/length,dz=(b.z-a.z)/length;for(const sign of [-1,1]){pos.push(p.x-dz*.48*sign,p.y+.085,p.z+dx*.48*sign);uv.push(sign===-1?0:1,i*.2);}if(i){const n=offset+i*2;indices.push(n-2,n,n-1,n-1,n,n+1);}}
-  }
+  // Independently culled river reaches: a close view must not submit the entire national network.
+  for(const path of riverPaths){const sections=pathSections(path);for(let start=0;start<path.length-1;start+=512){
+   const pos:number[]=[],uv:number[]=[],indices:number[]=[],banks:number[]=[],bankColors:number[]=[],bankIndices:number[]=[];
+   const points=sections.slice(start,start+513),offset=0,bo=0;
+   for(const [i,p] of points.entries()){
+    let y=path[start+i].y;for(const offset of [-.55,0,.55]){const ll=geographic((p.x+p.nx*offset)/WORLD_KM+ORIGIN.x,(p.z+p.nz*offset)/WORLD_KM+ORIGIN.y);y=Math.max(y,renderedHeight(ll.lng,ll.lat)??y);}for(const sign of [-1,1]){pos.push(p.x+p.nx*.48*sign,y+.09,p.z+p.nz*.48*sign);uv.push(sign===-1?0:1,p.distance);}
+    for(const side of [-1,1])for(const [j,width] of [.46,.68,1.05].entries()){const x=p.x+p.nx*width*side,z=p.z+p.nz*width*side,ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y),h=renderedHeight(ll.lng,ll.lat)??y;
+     banks.push(x,j===0?y+.075:Math.max(y+.065,Math.min(y+.24,h+.03)),z);bankColors.push(...(j===0?[.38,.40,.22]:j===1?[.34,.36,.18]:[.24,.30,.065]));}
+    if(i){const n=offset+i*2;indices.push(n-2,n-1,n,n-1,n+1,n);for(const side of [0,3])for(let j=0;j<2;j++){const k=bo+i*6+side+j;if(side===0)bankIndices.push(k-6,k,k-5,k-5,k,k+1);else bankIndices.push(k-6,k-5,k,k-5,k+1,k);}}
+   }
   const geo=new BufferGeometry();geo.setAttribute('position',new Float32BufferAttribute(pos,3));geo.setAttribute('uv',new Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();riverGroup.add(new Mesh(geo,water));
+  const bank=new BufferGeometry();bank.setAttribute('position',new Float32BufferAttribute(banks,3));bank.setAttribute('color',new Float32BufferAttribute(bankColors,3));bank.setIndex(bankIndices);bank.computeVertexNormals();const mesh=new Mesh(bank,bankMaterial);mesh.receiveShadow=true;riverGroup.add(mesh);
+  }}
  }
  prepareRivers();rebuild();
  let detailKey='',pendingKey='';
@@ -66,9 +94,9 @@ export async function countrySurface(season:SeasonState){
    if(closed||pendingKey!==key)return false;
    detail=next;detailKey=key;
    // Keep river XY stable; refresh elevations without nine valley searches per point.
-   for(const path of riverPaths)for(const point of path){const ll=geographic(point.x/WORLD_KM+ORIGIN.x,point.z/WORLD_KM+ORIGIN.y);point.y=landHeight(ll.lng,ll.lat)??point.y;}
+   for(const path of riverPaths)for(const point of path){const ll=geographic(point.x/WORLD_KM+ORIGIN.x,point.z/WORLD_KM+ORIGIN.y);point.y=sampledHeight(ll.lng,ll.lat)??point.y;}
    rebuild();return true;
   }finally{if(pendingKey===key)pendingKey='';}
  }
- return {root,meshes,land,rivers,parchment,hiddenPaper,height:(lon:number,lat:number)=>{const h=height(lon,lat);return h===null?null:h*root.scale.y;},baseHeight:height,refine,water,setTint(map:Texture,extent:[number,number,number,number],enabled:boolean){tintMap.value=map;tintExtent.value.fromArray(extent);tintEnabled.value=enabled?1:0;},setPaperStrength(value:number){paperStrength.value=flat?1:value;root.scale.y=Math.max(.00001,1-paperStrength.value);strategic.value=paperStrength.value;},setRegionalStyle(value:number){surface.setRegionalStyle(value);},isLand(lon:number,lat:number){const p=mercator(lon,lat),x=Math.floor(p.x*2048),y=Math.floor(p.y*2048);return x>=0&&x<2048&&y>=0&&y<2048&&landPixels[(y*2048+x)*4]>127;},isRiver(lon:number,lat:number){const p=projectGround(lon,lat);return nearSegments(p.x,p.z).some(s=>segmentDistance(p.x,p.z,s.a,s.b)<.65);},setFarms(centers:{x:number;z:number;radius?:number}[]){const key=centers.map(c=>c.x+':'+c.z+':'+c.radius).join('|');if(key===farmKey)return;farmKey=key;farms?.dispose();farms=campaignFarmAtlas(centers,(x,z)=>{const ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y);return height(ll.lng,ll.lat);});surface.setFarms({map:farms,centers,columns:6,rows:6});},setFlat(value:boolean){flat=value;if(flat)tintEnabled.value=0;},dispose(){closed=true;strategicRelief.dispose();hiddenPaper.dispose();tileStore.clear();parchment.dispose();landMask.dispose();farms?.dispose();root.traverse(o=>{if(o instanceof Mesh)o.geometry.dispose();});for(const material of [surface,water])material.dispose();},fogMaterialMeshes(material:Material){return meshes.map(m=>new Mesh(m.geometry,material));}};
+ return {renderedHeight,cityLayout:(id:string)=>cityLayouts.get(id),root,meshes,land,rivers,parchment,hiddenPaper,height:(lon:number,lat:number)=>{const h=height(lon,lat);return h===null?null:h*root.scale.y;},baseHeight:height,refine,water,setTint(map:Texture,extent:[number,number,number,number],enabled:boolean){tintMap.value=map;tintExtent.value.fromArray(extent);tintEnabled.value=enabled?1:0;},setPaperStrength(value:number){paperStrength.value=flat?1:value;root.scale.y=Math.max(.00001,1-paperStrength.value);strategic.value=paperStrength.value;riverGroup.visible=paperStrength.value<.999;water.opacity=bankMaterial.opacity=1-paperStrength.value;},setRegionalStyle(value:number){surface.setRegionalStyle(value);},isLand(lon:number,lat:number){const p=mercator(lon,lat),x=Math.floor(p.x*2048),y=Math.floor(p.y*2048);return x>=0&&x<2048&&y>=0&&y<2048&&landPixels[(y*2048+x)*4]>127;},isRiver(lon:number,lat:number){const p=projectGround(lon,lat);return nearSegments(p.x,p.z).some(s=>segmentDistance(p.x,p.z,s.a,s.b)<.65);},setFarms(centers:{x:number;z:number;radius?:number}[]){const key=centers.map(c=>c.x+':'+c.z+':'+c.radius).join('|');if(key===farmKey)return;farmKey=key;farms?.dispose();farms=campaignFarmAtlas(centers,(x,z)=>{const ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y);return height(ll.lng,ll.lat);});surface.setFarms({map:farms,centers,columns:6,rows:6});},setFlat(value:boolean){flat=value;if(flat)tintEnabled.value=0;},dispose(){closed=true;strategicRelief.dispose();hiddenPaper.dispose();tileStore.clear();parchment.dispose();landMask.dispose();farms?.dispose();root.traverse(o=>{if(o instanceof Mesh)o.geometry.dispose();});for(const material of [surface,water,bankMaterial])material.dispose();},fogMaterialMeshes(material:Material){return meshes.map(m=>new Mesh(m.geometry,material));}};
 }
