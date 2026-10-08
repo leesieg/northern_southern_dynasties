@@ -11,16 +11,16 @@ async function resource(path:string){const r=await fetch(BASE+path,{signal:Abort
 export async function mountCampaign(container:HTMLElement,report:(s:string)=>void){
  const renderer=new WebGLRenderer({antialias:true,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(container.clientWidth,container.clientHeight);
- renderer.outputColorSpace=SRGBColorSpace;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+ renderer.outputColorSpace=SRGBColorSpace;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.10;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
  container.append(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','三维地图，方向键平移，Q E 旋转，加减号缩放');
- const scene=new Scene();scene.background=new Color('#b9c4b1');scene.fog=new Fog('#b9c4b1',140,440);
+ const scene=new Scene();scene.background=new Color('#bdc6c1');scene.fog=new Fog('#bdc6c1',140,440);
  const camera=new PerspectiveCamera(39,container.clientWidth/container.clientHeight,1,1500);
  const controls=new MapControls(camera,renderer.domElement);controls.enableDamping=false;controls.screenSpacePanning=false;
  controls.minDistance=24;controls.maxDistance=360;controls.minPolarAngle=.22;controls.maxPolarAngle=1.12;controls.zoomSpeed=.85;controls.panSpeed=.8;
  controls.mouseButtons={LEFT:MOUSE.PAN,MIDDLE:MOUSE.DOLLY,RIGHT:MOUSE.ROTATE};
- const sky=new HemisphereLight('#d1e3df','#5c5a37',1.1);scene.add(sky);
- const sun=new DirectionalLight('#ffe5b5',2.3);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);sun.shadow.bias=-.00025;sun.shadow.normalBias=.13;sun.shadow.camera.near=1;sun.shadow.camera.far=600;sun.shadow.radius=2;
+ const sky=new HemisphereLight('#cadcde','#393d2d',.85);scene.add(sky);
+ const sun=new DirectionalLight('#ffe1ad',2.7);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);sun.shadow.bias=-.00025;sun.shadow.normalBias=.13;sun.shadow.camera.near=1;sun.shadow.camera.far=600;sun.shadow.radius=2;
  scene.add(sun,sun.target);
  const loader=new GLTFLoader();loader.setCrossOrigin('anonymous');
  let disposed=false,dirty=true,frame=0;const auxiliaryTextures:CanvasTexture[]=[];
@@ -90,7 +90,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   }
   const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(positions,3));g.setAttribute('uv',new Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const mesh=new Mesh(g,material);mesh.receiveShadow=true;scene.add(mesh);return mesh;
  }
- const water=waterMaterial(),bank=new MeshStandardMaterial({color:'#9e9e73',roughness:1,side:DoubleSide});
+ const water=waterMaterial(),bank=new MeshStandardMaterial({color:'#a5a084',roughness:1,side:DoubleSide});
  for(const river of riverPaths){
   const points:{x:number;z:number;y:number}[]=[];
   for(let i=1;i<river.points.length;i++){const a=river.points[i-1],b=river.points[i],steps=Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.25);for(let j=0;j<steps;j++){const t=j/steps;points.push({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,y:a.y+(b.y-a.y)*t});}}
@@ -102,7 +102,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   const root=cityAsset.scene.clone(true);root.position.set(c.x,c.height+.05,c.z);scene.add(root);
   root.traverse(ob=>{if(ob instanceof Mesh){ob.castShadow=true;ob.receiveShadow=true;}});
   const pole=new Mesh(new CylinderGeometry(.045,.065,7,8),new MeshStandardMaterial({color:'#49412b',roughness:.8}));pole.position.set(c.x+6.8,c.height+3.5,c.z-1);pole.castShadow=true;scene.add(pole);
-  const cloth=new Mesh(new PlaneGeometry(1.65,3.0,12,16),new MeshStandardMaterial({map:flagTexture(c.id==='changan'?'魏':'魏',c.id==='changan'?'#374c5a':'#7a3829'),roughness:.9,side:DoubleSide}));cloth.position.set(c.x+7.65,c.height+5.3,c.z-1);cloth.castShadow=true;scene.add(cloth);flags.push(cloth);
+  const cloth=new Mesh(new PlaneGeometry(1.65,3.0,12,16),new MeshStandardMaterial({map:flagTexture('魏',c.id==='changan'?'#243d49':'#732e25'),roughness:.9,side:DoubleSide}));cloth.position.set(c.x+7.65,c.height+5.3,c.z-1);cloth.castShadow=true;scene.add(cloth);flags.push(cloth);
   const button=document.createElement('button');button.className='city-label';button.textContent=siteById[c.id].name;button.setAttribute('aria-label','定位'+siteById[c.id].name);button.dataset.site=c.id;button.addEventListener('click',()=>focus(c.id));document.querySelector('#labels')!.append(button);labels.push({button,anchor:new Vector3(c.x+9,c.height+5.6,c.z-1)});
  }
  // Small farm parcels and paths form inhabited basins. These are art placements, not history data.
@@ -113,11 +113,12 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
    const x=c.x+ix*2.9,z=c.z+iz*2.5,w=2.3+random()*.4,d=1.5+random()*.7;
    if(Math.abs(x-c.x)<11&&Math.abs(z-c.z)<7.5||nearRiver(x,z,1.5)||Math.abs(ground(x+w,z)-ground(x-w,z))>.65||Math.hypot(ix,iz)>11||random()<.26)continue;
    const px=cityIndex*1024+(x-c.x+35)/70*1024,py=(z-c.z+35)/70*1024,pw=w/70*1024,ph=d/70*1024;
+   fg.save();fg.beginPath();fg.moveTo(px-pw/2,py-ph/2+random()*2);fg.lineTo(px+pw/2,py-ph/2+random()*3);fg.lineTo(px+pw/2-random()*3,py+ph/2);fg.lineTo(px-pw/2+random()*2,py+ph/2-random()*2);fg.closePath();fg.clip();
    fg.fillStyle=fieldColors[Math.floor(random()*fieldColors.length)].getStyle();fg.fillRect(px-pw/2,py-ph/2,pw,ph);
    fg.fillStyle='rgba(44,61,21,.17)';for(let row=0;row<ph;row+=3)fg.fillRect(px-pw/2,py-ph/2+row,pw,1);
-   fg.strokeStyle='rgba(176,167,107,.7)';fg.lineWidth=1.2;fg.strokeRect(px-pw/2,py-ph/2,pw,ph);
+   fg.strokeStyle='rgba(176,167,107,.7)';fg.lineWidth=1.2;fg.stroke();fg.restore();
   }
-  const road=new MeshStandardMaterial({color:'#a9a179',roughness:1,side:DoubleSide});
+  const road=new MeshStandardMaterial({color:'#b0a084',roughness:1,side:DoubleSide});
   for(const [dx,dz] of [[0,27],[-25,9],[24,10]]){
    const points=Array.from({length:160},(_,i)=>({x:c.x+dx*i/159+Math.sin(i/159*Math.PI)*1.2,z:c.z+5.4+dz*i/159}));ribbon(points,.21,road,.10);
   }
@@ -151,7 +152,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
  placements.forEach((p,i)=>instances(natureAssets[i].scene,p));instances(natureAssets[3].scene,rocks);
  // Restrained, static valley mist. Perspective depth fog supplies the distant atmosphere.
  const mistCanvas=document.createElement('canvas');mistCanvas.width=128;mistCanvas.height=64;const mg=mistCanvas.getContext('2d')!;const gradient=mg.createRadialGradient(64,32,1,64,32,63);gradient.addColorStop(0,'rgba(228,232,215,.22)');gradient.addColorStop(.45,'rgba(228,232,215,.10)');gradient.addColorStop(1,'rgba(228,232,215,0)');mg.fillStyle=gradient;mg.fillRect(0,0,128,64);const mistMap=new CanvasTexture(mistCanvas);
- for(let i=0;i<55;i++){const x=-250+random()*520,z=-95+random()*210,y=ground(x,z);if(y<6)continue;const sprite=new Sprite(new SpriteMaterial({map:mistMap,transparent:true,opacity:.32,depthWrite:false}));sprite.position.set(x,y+1,z);sprite.scale.set(18+random()*17,3+random()*3,1);scene.add(sprite);}
+ for(let i=0;i<55;i++){const x=-250+random()*520,z=-95+random()*210,y=ground(x,z);if(y<6)continue;const sprite=new Sprite(new SpriteMaterial({map:mistMap,transparent:true,opacity:.56,depthWrite:false}));sprite.position.set(x,y+1,z);sprite.scale.set(18+random()*17,3+random()*3,1);scene.add(sprite);}
  const selected=(id:string)=>{document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===id)));for(const l of labels)l.button.setAttribute('aria-current',String(l.button.dataset.site===id));};
  let targetFlight:{from:Vector3;to:Vector3;fromCamera:Vector3;toCamera:Vector3;start:number;frames:number}|undefined;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,7 +186,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   const before=controls.target.clone();controls.target.x=Math.max(-245,Math.min(255,controls.target.x));controls.target.z=Math.max(-105,Math.min(115,controls.target.z));controls.target.y=ground(controls.target.x,controls.target.z);
   camera.position.add(controls.target.clone().sub(before));camera.position.y=Math.max(camera.position.y,ground(camera.position.x,camera.position.z)+7);camera.lookAt(controls.target);
   const distance=camera.position.distanceTo(controls.target),shadowSize=Math.max(55,Math.min(290,distance*.9));
-  sun.position.copy(controls.target).add(new Vector3(-120,170,90));sun.target.position.copy(controls.target);const sc=sun.shadow.camera;sc.left=-shadowSize;sc.right=shadowSize;sc.top=shadowSize;sc.bottom=-shadowSize;sc.updateProjectionMatrix();
+  sun.position.copy(controls.target).add(new Vector3(-135,155,80));sun.target.position.copy(controls.target);const sc=sun.shadow.camera;sc.left=-shadowSize;sc.right=shadowSize;sc.top=shadowSize;sc.bottom=-shadowSize;sc.updateProjectionMatrix();
   (scene.fog as Fog).near=distance*.8;(scene.fog as Fog).far=distance*2.6;
   if(!reduced)for(const flag of flags){const p=flag.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*2.8+p.getY(i)*1.8+now*.0013)*.13*(p.getX(i)+.825)/1.65);p.needsUpdate=true;flag.geometry.computeVertexNormals();}
   camera.updateMatrixWorld();

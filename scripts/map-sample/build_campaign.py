@@ -13,9 +13,17 @@ def mat(name,c):
  m=bpy.data.materials.new(name);m.diffuse_color=(*c,1);m.use_nodes=True
  p=m.node_tree.nodes.get('Principled BSDF');p.inputs['Base Color'].default_value=(*c,1);p.inputs['Roughness'].default_value=.91
  return m
-materials=[mat('Warm limestone',(.42,.39,.29)),mat('Lime plaster',(.66,.60,.43)),mat('Slate tile',(.13,.18,.17)),mat('Dark timber',(.18,.105,.055)),mat('Courtyard earth',(.37,.31,.18)),mat('Ridge pottery',(.31,.28,.19)),mat('Leaf olive',(.16,.23,.055)),mat('Leaf light',(.24,.30,.09)),mat('Pine green',(.08,.16,.085))]
+materials=[mat('Warm limestone',(.36,.335,.275)),mat('Lime plaster',(.57,.52,.42)),mat('Slate tile',(.064,.091,.095)),mat('Dark timber',(.18,.105,.055)),mat('Courtyard earth',(.37,.31,.18)),mat('Ridge pottery',(.185,.18,.145)),mat('Leaf olive',(.072,.139,.061)),mat('Leaf light',(.15,.21,.074)),mat('Pine green',(.039,.093,.055))]
 def mesh(name,verts,faces,material):
  me=bpy.data.meshes.new(name);me.from_pydata(verts,[],faces);me.materials.append(material);me.update()
+ if name.startswith('City '):
+  colors=me.color_attributes.new(name='Weathering',type='FLOAT_COLOR',domain='CORNER')
+  base=material.diffuse_color
+  for poly in me.polygons:
+   for li in poly.loop_indices:
+    v=me.vertices[me.loops[li].vertex_index].co
+    shade=.80+.20*(.5+.5*math.sin(v.x*31.7+v.y*19.3+v.z*9.1))
+    colors.data[li].color=(shade,shade,shade,1)
  ob=bpy.data.objects.new(name,me);scene.collection.objects.link(ob);return ob
 def export(objects,name):
  bpy.ops.object.select_all(action='DESELECT')

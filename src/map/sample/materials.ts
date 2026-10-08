@@ -15,13 +15,15 @@ export function terrainMaterial(fields?:{map:Texture;centers:{x:number;z:number}
  `).replace('#include <color_fragment>',`#include <color_fragment>
  vec2 p=terrainPosition.xz;float n=fbm(p*.47),fine=fbm(p*7.);
  float slope=1.-abs(normalize(terrainNormal).y);
- vec3 meadow=mix(vec3(.14,.205,.058),vec3(.34,.345,.13),n);
- vec3 forest=mix(vec3(.06,.12,.048),vec3(.16,.23,.072),n);
- vec3 rock=mix(vec3(.26,.265,.23),vec3(.58,.55,.43),fbm(p*.75));
+ vec3 meadow=mix(vec3(.085,.135,.064),vec3(.265,.285,.135),n);
+ vec3 forest=mix(vec3(.035,.072,.043),vec3(.105,.165,.077),n);
+ vec3 rock=mix(vec3(.205,.205,.175),vec3(.49,.455,.355),fbm(p*.75));
  float wooded=smoothstep(4.,9.,terrainPosition.y)*smoothstep(.26,.7,n);
- vec3 land=mix(meadow,forest,wooded*.9);
- float stone=smoothstep(.24,.63,slope+n*.22)*smoothstep(4.,11.,terrainPosition.y);
- float strata=.90+.10*sin(terrainPosition.y*7.+noise2(p*1.4)*4.);
+ vec3 soil=mix(vec3(.235,.195,.115),vec3(.37,.315,.205),n);
+ vec3 land=mix(meadow,soil,smoothstep(.52,.76,fbm(p*.19+15.))*.65);
+ land=mix(land,forest,wooded*.85);
+ float stone=smoothstep(.18,.52,slope+n*.19)*smoothstep(4.,11.,terrainPosition.y);
+ float strata=.86+.14*sin(terrainPosition.y*5.+noise2(p*1.4)*5.);
  land=mix(land,rock*strata,stone);
  if(hasFarms>.5){
   vec2 uv0=(p-farmCenter0)/70.+.5;vec2 uv1=(p-farmCenter1)/70.+.5;
@@ -42,11 +44,24 @@ export function terrainMaterial(fields?:{map:Texture;centers:{x:number;z:number}
  };
  return m;
 }
-export function waterMaterial(){return new MeshStandardMaterial({color:'#477d79',roughness:.27,metalness:.22,side:DoubleSide});}
+export function waterMaterial(){
+ const m=new MeshStandardMaterial({color:'#426f70',roughness:.34,metalness:.10,side:DoubleSide});
+ m.onBeforeCompile=s=>{
+  s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <begin_vertex>','#include <begin_vertex>\nriverUV=uv;');
+  s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <color_fragment>',`#include <color_fragment>
+   float shore=pow(abs(riverUV.x-.5)*2.,7.);
+   float ripple=.96+.04*sin(riverUV.y*17.+sin(riverUV.x*23.));
+   diffuseColor.rgb=mix(diffuseColor.rgb*ripple,vec3(.32,.40,.32),shore*.48);
+  `);
+ };
+ return m;
+}
 export function flagTexture(name:string,color:string){
  const c=document.createElement('canvas');c.width=128;c.height=256;const g=c.getContext('2d')!;
- g.fillStyle=color;g.fillRect(0,0,128,256);g.strokeStyle='#bba36a';g.lineWidth=4;g.strokeRect(9,9,110,238);
+ g.fillStyle=color;g.fillRect(0,0,128,256);
+ for(let y=0;y<256;y+=3){g.fillStyle=y%6===0?'rgba(255,238,196,.065)':'rgba(0,0,0,.08)';g.fillRect(0,y,128,1);}
+ for(let x=1;x<128;x+=4){g.fillStyle='rgba(20,17,11,.09)';g.fillRect(x,0,1,256);}g.strokeStyle='#bba36a';g.lineWidth=4;g.strokeRect(9,9,110,238);
  g.fillStyle='#e4d3a3';g.textAlign='center';g.font='68px "Songti SC",serif';g.fillText(name,64,132);
  const t=new CanvasTexture(c);t.colorSpace=SRGBColorSpace;return t;
 }
-export const fieldColors=['#929853','#a29b55','#b2a56b','#859149','#b7a564'].map(c=>new Color(c));
+export const fieldColors=['#8c8748','#a79a58','#b3a269','#76804c','#a88e50'].map(c=>new Color(c));
