@@ -21,3 +21,11 @@ export function atlasRegionalStrength(zoom:number,flat=false){
  const close=Math.max(0,Math.min(1,(zoom-9.4)/.8));
  return (1-atlasPaperStrength(zoom,flat))*(1-close*close*(3-2*close));
 }
+
+/** Avoid the look-at pole and enter the strategic atlas with north at the top. */
+export function normalizeAtlasCamera<T extends {zoom?:number;pitch?:number;bearing?:number}>(options:T,currentZoom:number):T{
+ let result={...options};
+ if(options.zoom!==undefined&&options.zoom<=PAPER_ZOOM&&currentZoom>PAPER_ZOOM)result={...result,bearing:0};
+ if(options.pitch===0)result={...result,pitch:.06,bearing:0};
+ return result;
+}

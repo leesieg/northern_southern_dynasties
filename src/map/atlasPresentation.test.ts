@@ -26,3 +26,11 @@ it('limits paper to distant views and keeps the middle view three-dimensional',(
 });
 
 it('confines the stronger rock treatment to regional views',()=>{expect(atlasRegionalStrength(4.8)).toBe(0);expect(atlasRegionalStrength(7)).toBe(1);expect(atlasRegionalStrength(8.2)).toBe(1);expect(atlasRegionalStrength(10.2)).toBe(0);expect(atlasRegionalStrength(8,true)).toBe(0);});
+
+it('normalizes strategic entry while preserving close-view rotation and room perspective',async()=>{
+ const {normalizeAtlasCamera}=await import('./atlasPresentation');
+ expect(normalizeAtlasCamera({zoom:4,bearing:170},8).bearing).toBe(0);
+ expect(normalizeAtlasCamera({pitch:0,bearing:180},4)).toEqual({pitch:.06,bearing:0});
+ expect(normalizeAtlasCamera({zoom:10,pitch:66,bearing:90},8).bearing).toBe(90);
+ expect(normalizeAtlasCamera({zoom:1.1,pitch:30,bearing:0},2).pitch).toBe(30);
+});

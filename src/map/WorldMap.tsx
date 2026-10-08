@@ -110,16 +110,16 @@ export function WorldMap(props:Props){
       if(!map||disposed)return;
       for(const marker of fogHidden)marker.getElement().hidden=false;fogHidden.clear();
       const zoom=map.getZoom(),w=container.clientWidth,h=container.clientHeight;
-      const presentation=atlasPresentation(zoom,current.current.tilted);
+      const presentation=atlasPresentation(zoom,current.current.tilted),strategicView=presentation.strategic||!current.current.tilted;
       container.parentElement?.style.setProperty('--atlas-paper-strength',String(presentation.paper));
-      container.parentElement?.setAttribute('data-scale',presentation.strategic?'strategic':zoom>=CITY_DETAIL_ZOOM?'close':'landscape');
+      container.parentElement?.setAttribute('data-scale',strategicView?'strategic':zoom>=CITY_DETAIL_ZOOM?'close':'landscape');
       const occupied:{x:number;y:number;width:number}[]=[];
       const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===current.current.world.holdings.estate.location)-Number(a.id===current.current.world.holdings.estate.location)||Number(b.capital)-Number(a.capital));
       for(const item of list){
         const s=siteById[item.id],p=map.project([s.lon,s.lat]);
         const selected=item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
         const width=Math.max(item.marker.getElement().offsetWidth,(item.button.textContent?.length??0)*(item.capital?20:14)+60+(estate?34:0));
-        const visible=controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
+        const visible=!strategicView&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
         item.marker.getElement().hidden=!visible;
         item.button.classList.toggle('is-selected',selected);item.marker.getElement().classList.toggle('is-selected',selected);
         if(visible)occupied.push({x:p.x,y:p.y,width});
@@ -136,7 +136,7 @@ export function WorldMap(props:Props){
         const old=atlasLabels.find(v=>v.kind==='realm'&&v.text===(r==='liang'?'梁':r==='east'?'东 魏':r==='west'?'西 魏':'')),site=siteById[capital(r,world)],moved=!!world.realm?.identities?.[r],coords:[number,number]=old&&!moved?[old.lon,old.lat]:[site.lon,site.lat],offset=moved?-50:0,point=map.project(coords),element=marker.getElement();
         marker.setLngLat(coords).setOffset([0,offset]);element.textContent=regimeName(world,r);element.setAttribute('aria-label','查看'+regimeName(world,r)+'外交');element.hidden=!!world.realm?.annexed?.[r]||zoom<2||zoom>6||!['political','diplomacy'].includes(current.current.mode)||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y-offset)<38);
       }
-      for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(presentation.strategic&&id!=='player'&&id!==current.current.world.characterId);}
+      for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(strategicView&&id!=='player'&&id!==current.current.world.characterId);}
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
       const viewport=container.getBoundingClientRect(),mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
       const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,sceneryLayer?.showsSite(p.id)?25:-7] as [number,number]})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
@@ -147,7 +147,7 @@ export function WorldMap(props:Props){
         const bounds={left:rect.left-viewport.left-dx-6,top:rect.top-viewport.top-dy-6,right:rect.right-viewport.left-dx+6,bottom:rect.bottom-viewport.top-dy+6};if(bounds.right>0&&bounds.left<w&&bounds.bottom>0&&bounds.top<h){mapMarkers.push({marker,offset,bounds});}
       }
       const anchors=armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
-      const fixed=models?anchoredArmyModels(anchors.filter(a=>a.available),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
+      const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
       // Place settlement groups first, then cards against their final bounds. Models never move.
       const placed:ScreenRect[]=[];
       for(const item of mapMarkers){
@@ -158,11 +158,11 @@ export function WorldMap(props:Props){
         element.style.setProperty('--annotation-link-angle',Math.atan2(-offset[1],-offset[0])+'rad');
         placed.push(dock.bounds);
       }
-      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!fixed.has(a.key)),[...placed,...modelBounds],view,presentation.strategic)]);
+      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!strategicView&&!fixed.has(a.key)),[...placed,...modelBounds],view,strategicView)]);
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
-        const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=!placement;if(!placement)continue;
-        const {offset,model}=placement,size=armyMarkerFootprint(model,presentation.strategic);
+        const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=strategicView||!placement;if(strategicView||!placement)continue;
+        const {offset,model}=placement,size=armyMarkerFootprint(model,strategicView);
         item.button.dataset.presentation=model?'model':'card';
         item.button.style.setProperty('--army-target-width',size.width+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
         item.button.style.setProperty('--army-badge-bottom',armyModelBadgeBottom(map.getPitch())+'px');

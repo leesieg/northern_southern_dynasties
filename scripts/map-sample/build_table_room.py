@@ -10,7 +10,7 @@ def material(name,rgb,metal=0):
  m=bpy.data.materials.new('Study '+name);m.diffuse_color=(*rgb,1);m.use_nodes=True
  p=m.node_tree.nodes.get('Principled BSDF');p.inputs['Base Color'].default_value=(*rgb,1);p.inputs['Roughness'].default_value=.28 if name=='celadon' else .42 if metal else .76;p.inputs['Metallic'].default_value=metal
  materials[name]=m;return m
-material('timber',(.13,.059,.029));material('edge',(.24,.12,.055));material('paper',(.61,.55,.40));material('wall',(.39,.35,.26));material('ink',(.018,.025,.024));material('bronze',(.36,.26,.10),.45);material('celadon',(.13,.29,.25));material('floor',(.20,.18,.145));material('red',(.30,.07,.045));material('screen silk',(.9,.85,.7))
+material('timber',(.13,.059,.029));material('edge',(.24,.12,.055));material('paper',(.61,.55,.40));material('wall',(.39,.35,.26));material('ink',(.018,.025,.024));material('bronze',(.36,.26,.10),.45);material('celadon',(.13,.29,.25));material('floor',(.20,.18,.145));material('red',(.30,.07,.045));material('screen silk',(.9,.85,.7));material('window silk',(.76,.75,.65))
 def box(name,x,y,z,w,h,d,mat):
  bpy.ops.mesh.primitive_cube_add(size=1,location=(x,-z,y));o=bpy.context.object;o.name='Study '+name;o.scale=(w,d,h);bpy.ops.object.transform_apply(location=False,rotation=False,scale=True);o.data.materials.append(materials[mat])
  if min(w,h,d)>.045:
@@ -70,8 +70,13 @@ box('back wall',0,.5,-7.0,18,6,.2,'wall')
 for x in [-8.8,-4.4,0,4.4,8.8]:box('pillar',x,.5,-6.75,.25,6,.25,'timber')
 for y in [-1.6,2.8]:box('beam',0,y,-6.73,18,.2,.28,'timber')
 box('side wall',-8.8,.5,0,.2,6,14,'wall')
+box('right wall sill course',8.85,-1.32,0,.24,1.62,14,'wall')
+box('right wall head course',8.85,2.98,0,.24,.86,14,'wall')
+for z,width in [(-6.625,.75),(-3.5,.5),(-.5,.5),(2.5,.5),(6.125,1.75)]:box('right wall pier',8.85,1,z,.24,3.02,width,'wall')
 for z in [-5,-2,1,4]:
- box('window frame',8.7,1,z,.14,3,2.5,'edge')
+ box('window silk',8.82,1,z,.025,2.9,2.4,'window silk')
+ for y in [-.5,2.5]:box('window lintel',8.7,y,z,.24,.12,2.6,'edge')
+ for dz in [-1.25,1.25]:box('window jamb',8.7,1,z+dz,.24,3.1,.12,'edge')
  for k in range(6):box('window lattice',8.60,1,z-1+k*.4,.12,3,.04,'timber')
  for y in [0,1,2]:box('window crossbar',8.58,y,z,.12,.055,2.5,'timber')
 for x in range(-9,9):

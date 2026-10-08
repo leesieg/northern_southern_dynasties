@@ -7,7 +7,7 @@ it('ships a bounded Blender room with an open live-map surface and no external d
  const triangles=doc.meshes.flatMap(m=>m.primitives).reduce((sum,p)=>sum+doc.accessors[p.indices].count/3,0);
  expect(triangles).toBeGreaterThan(20000);expect(triangles).toBeLessThan(60000);
  expect(doc.meshes.every(m=>m.primitives.every(p=>p.attributes.COLOR_0!==undefined))).toBe(true);
- expect(doc.materials.map(m=>m.name)).toContain('Study screen silk');
+ expect(doc.materials.map(m=>m.name)).toContain('Study screen silk');expect(doc.materials.map(m=>m.name)).toContain('Study window silk');
  expect(doc.buffers.every(b=>!b.uri)).toBe(true);
  expect(doc.materials.map(m=>m.name)).toContain('Study celadon');
  expect(b.length).toBeLessThan(5000000);

@@ -1,6 +1,7 @@
+import {TerrainTint} from './terrainTint';
 import {loadTableRoom,TABLE_COORDINATE} from './tableRoom';
 import {cameraNearPlane} from './cameraDepth';
-import {atlasPaperStrength,atlasRegionalStrength} from '../atlasPresentation';
+import {atlasPaperStrength,atlasRegionalStrength,normalizeAtlasCamera} from '../atlasPresentation';
 import {PointerGesture} from './pointerGesture';
 import {ACESFilmicToneMapping,Color,DirectionalLight,Fog,Group,HemisphereLight,PCFSoftShadowMap,PerspectiveCamera,Raycaster,Scene,ShaderMaterial,Vector2,Vector3,WebGLRenderer,type Object3D,type Texture} from 'three';
 import {MapControls} from 'three/addons/controls/MapControls.js';
@@ -24,6 +25,7 @@ const empty:FeatureCollection={type:'FeatureCollection',features:[]};
 export class ThreeCampaignMap{
  readonly renderer:WebGLRenderer;readonly scene=new Scene();readonly camera:PerspectiveCamera;readonly controls:MapControls;readonly markers=new Set<ThreeMarker>();
  private room?:Awaited<ReturnType<typeof loadTableRoom>>;private roomRequested=false;
+ private tint=new TerrainTint();
  private season=createSeasonState();private surface?:Awaited<ReturnType<typeof countrySurface>>;private actors?:Awaited<ReturnType<typeof campaignActors>>;
  private sun=new DirectionalLight('#ffe1ad',2.7);private sky=new HemisphereLight('#cadcde','#393d2d',.85);private overlays:CampaignOverlays;private clouds=new Group();private cloudMaterial:ShaderMaterial;private coverage?:Texture;
  private listeners=new Map<string,Set<(event:AtlasEvent)=>void>>();private sources=new Map<string,FeatureCollection>();private layers:OverlayLayer[];private states=new Map<string,Record<string,unknown>>();
@@ -80,6 +82,7 @@ export class ThreeCampaignMap{
  project(ll:[number,number]){const p=projectGround(ll[0],ll[1]),v=new Vector3(p.x,this.height(ll[0],ll[1])??0,p.z).project(this.camera);return v.z< -1||v.z>1?{x:-100000,y:-100000}:{x:(v.x*.5+.5)*this.container.clientWidth,y:(.5-v.y*.5)*this.container.clientHeight};}
  getCanvas(){return this.renderer.domElement;}getZoom(){return distanceZoom(this.camera.position.distanceTo(this.controls.target));}getPitch(){return this.controls.getPolarAngle()*180/Math.PI;}getBearing(){return -this.controls.getAzimuthalAngle()*180/Math.PI;}isMoving(){return this.moving||this.settlingUntil>0||!!this.flight;}areTilesLoaded(){return this.ready;}unitsPerPixel(){return this.camera.position.distanceTo(this.controls.target)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);}
  easeTo(options:{center?:[number,number];zoom?:number;pitch?:number;bearing?:number;duration?:number}){
+  options=normalizeAtlasCamera(options,this.getZoom());
   if(options.zoom!==undefined&&options.zoom<=1.3&&!options.center)options={...options,center:[TABLE_COORDINATE.lng,TABLE_COORDINATE.lat]};
   // Drain residual pan inertia before an explicit camera flight.
   const damping=this.controls.enableDamping;this.controls.enableDamping=false;this.controls.update();this.controls.enableDamping=damping;this.settlingUntil=0;
@@ -117,11 +120,11 @@ export class ThreeCampaignMap{
    const paper=atlasPaperStrength(this.getZoom(),this.flat);this.surface!.setPaperStrength(paper);this.surface!.setRegionalStyle(atlasRegionalStrength(this.getZoom(),this.flat));this.cloudMaterial.uniforms.strategic.value=paper;const paperLabel=String(paper>=.5);if(this.container.dataset.paper!==paperLabel)this.container.dataset.paper=paperLabel;
    const animate=this.actors?.update(now)??false;if(this.actors&&!this.isMoving())this.surface!.setFarms(this.actors.farmCenters());const seasonSync=this.lastSeason+':'+(this.actors?.revision()??0);if(seasonSync!==this.lastSeasonSync){this.lastSeasonSync=seasonSync;this.season.sync(this.scene);}const d=this.camera.position.distanceTo(this.controls.target),fog=this.scene.fog as Fog;const near=cameraNearPlane(d);if(Math.abs(this.camera.near-near)>.001){this.camera.near=near;this.camera.updateProjectionMatrix();}fog.near=d*.95;fog.far=d*2.8;
    if(!this.isMoving()){this.sun.position.copy(this.controls.target).add(new Vector3(-135,155,80));this.sun.target.position.copy(this.controls.target);const size=Math.max(55,Math.min(290,d*.9)),sc=this.sun.shadow.camera;sc.left=sc.bottom=-size;sc.right=sc.top=size;sc.updateProjectionMatrix();this.sun.castShadow=this.getZoom()>=6.2;}
-   if(this.overlaysDirty&&!this.isMoving()){const range=this.unitsPerPixel()*Math.max(this.container.clientWidth,this.container.clientHeight)*1.4,a=unprojectGround(this.controls.target.x-range,this.controls.target.z+range),b=unprojectGround(this.controls.target.x+range,this.controls.target.z-range);this.overlays.rebuild(this.layers,this.sources,this.getZoom(),this.unitsPerPixel(),this.states,[a.lng,a.lat,b.lng,b.lat],this.flat);this.overlaysDirty=false;}
+   if(this.overlaysDirty&&!this.isMoving()){const range=this.unitsPerPixel()*Math.max(this.container.clientWidth,this.container.clientHeight)*1.4,a=unprojectGround(this.controls.target.x-range,this.controls.target.z+range),b=unprojectGround(this.controls.target.x+range,this.controls.target.z-range);const extent:[number,number,number,number]=[this.controls.target.x-range,this.controls.target.z-range,range*2,range*2];if(!this.flat)this.tint.update(this.layers,this.sources,this.getZoom(),this.states,extent);this.surface!.setTint(this.tint.texture,extent,!this.flat);this.overlays.rebuild(this.layers,this.sources,this.getZoom(),this.unitsPerPixel(),this.states,[a.lng,a.lat,b.lng,b.lat],this.flat,!this.flat);this.overlaysDirty=false;}
    this.camera.updateMatrixWorld();this.renderer.shadowMap.needsUpdate=(this.dirty||animate)&&!this.isMoving();this.renderer.render(this.scene,this.camera);for(const marker of this.markers)marker.render();this.dirty=animate;this.emit('idle');
   }catch(error){this.stopped=true;cancelAnimationFrame(this.frame);this.emit('error',{error:error instanceof Error?error:new Error(String(error))});}
  };
- remove(){this.stopped=true;cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}
+ remove(){this.stopped=true;cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.tint.dispose();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}
 }
 export class ThreeMarker{
  private ll:[number,number]=[0,0];private offset:[number,number]=[0,0];private map?:ThreeCampaignMap;private element:HTMLElement;private anchor:string;private transform='';

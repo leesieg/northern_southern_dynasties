@@ -11,6 +11,7 @@ export async function loadTableRoom(painting:Texture){
  const model=(await new GLTFLoader().parseAsync(await response.arrayBuffer(),'')).scene;
  const root=new Group();root.add(model);root.scale.setScalar(1000);root.position.set(TABLE_CENTER.x,0,TABLE_CENTER.z);root.visible=false;
  const materials=new Set<MeshStandardMaterial>();model.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial){m.fog=false;
+ if(m.name==='Study window silk'){m.emissive.set('#d9d9c8');m.emissiveIntensity=.18;}
  if(m.name==='Study screen silk'){m.map=painting;m.roughness=1;m.needsUpdate=true;}
  if(m.name==='Study timber'||m.name==='Study edge'){
   m.onBeforeCompile=s=>{s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 studyPosition;').replace('#include <begin_vertex>','#include <begin_vertex>\nstudyPosition=position;');s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 studyPosition;').replace('#include <color_fragment>','#include <color_fragment>\nfloat wave=studyPosition.z*105.+sin(studyPosition.x*2.3)*3.+sin(studyPosition.y*5.)*.6;float grain=sin(wave)*.065+sin(wave*.37+sin(studyPosition.x*8.))*.035;float fade=1.-smoothstep(.5,2.,fwidth(wave));diffuseColor.rgb*=.94+grain*fade;');};
