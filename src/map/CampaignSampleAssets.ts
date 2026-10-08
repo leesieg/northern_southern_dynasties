@@ -1,3 +1,4 @@
+import {regionalGeometry} from './three/regionalGeometry';
 import {Box3,BufferGeometry,Color,CylinderGeometry,DoubleSide,Float32BufferAttribute,Group,Mesh,MeshStandardMaterial,PlaneGeometry,SRGBColorSpace,TextureLoader,type Texture} from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -35,14 +36,14 @@ export function sampleCampaignAssets(models:Map<string,Group>){
    for(const key of Object.keys(g.attributes))if(!['position','normal'].includes(key))g.deleteAttribute(key);
    g.setAttribute('color',new Float32BufferAttribute(values,3));g.setAttribute('ground',new Float32BufferAttribute(ground,2));pieces.push(g);if(name.startsWith('worksite-')&&! /^(Lime plaster|Slate tile)/.test(m.name))scaffolds.push(g.clone());
   });
-  const geometry=mergeGeometries(pieces)!;pieces.forEach(g=>g.dispose());templates.set(name,geometry);if(scaffolds.length){templates.set(name.replace('worksite-','upgrade-'),mergeGeometries(scaffolds)!);scaffolds.forEach(g=>g.dispose());}
+  const geometry=mergeGeometries(pieces)!;pieces.forEach(g=>g.dispose());templates.set(name,geometry);if(name==='city')templates.set('city-regional',regionalGeometry(geometry));if(scaffolds.length){templates.set(name.replace('worksite-','upgrade-'),mergeGeometries(scaffolds)!);scaffolds.forEach(g=>g.dispose());}
  }
  const poles=new CylinderGeometry(.035,.035,3.5,6).translate(0,1.75,0),poleMaterial=new MeshStandardMaterial({color:'#665941',roughness:1});
  const flagGeometry=new PlaneGeometry(1.25,1.54).translate(.63,2.7,0),flags=new Map<string,MeshStandardMaterial>(),textureLoader=new TextureLoader();let disposed=false;
  function city(a:CampaignCityAppearance,detail:CityDetail='regional',flagUrl?:string,repaint?:()=>void){
   const key=campaignCityKey(a)+':'+detail;let geometry=geometries.get(key);
   if(!geometry){
-   const parts=[templates.get('city')!.clone()];
+   const parts=[templates.get(detail==='regional'&&templates.has('city-regional')?'city-regional':'city')!.clone()];
    ['market','granary','hostel'].forEach((name,i)=>{
     const x=(i-1)*3.8,z=2.5;
     const add=(id:string)=>{const g=templates.get(id)!.clone().translate(x,0,z),ground=g.getAttribute('ground');for(let j=0;j<ground.count;j++)ground.setXY(j,x,z);parts.push(g);};
