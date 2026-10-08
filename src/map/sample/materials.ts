@@ -35,13 +35,28 @@ export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[
   if(uv1.x>0.&&uv1.x<1.&&uv1.y>0.&&uv1.y<1.)field=texture2D(farmAtlas,vec2(.5+uv1.x*.5,1.-uv1.y));
   land=mix(land,mix(field.rgb,seasonField,.72),field.a*.83);
  }
- float snowCover=seasonSnow*smoothstep(.18,.65,abs(normalize(terrainNormal).y))*(.72+.28*n);
- land=mix(land,vec3(.78,.83,.85),snowCover);
- diffuseColor.rgb*=land*(.80+fine*.35);
+ float snowCover=0.;
+ if(seasonSnow>.001){
+ // Display elevation is exaggerated: these are art thresholds, not a climatic snowline.
+ vec3 groundNormal=normalize(terrainNormal);
+ float altitude=smoothstep(4.,21.,terrainPosition.y);
+ vec2 driftUV=p*.23+vec2(noise2(p*.075),noise2(p*.075+37.))*2.4;
+ float drift=fbm(driftUV)*.78+noise2(p*1.8)*.22;
+ // Sunward faces thaw first; steep rock faces retain only isolated snow shelves.
+ float sunward=dot(groundNormal.xz,normalize(vec2(-135.,80.)));
+ float retention=smoothstep(.40,.88,groundNormal.y);
+ float accumulation=.20+altitude*.38+drift*.48-sunward*.13;
+ snowCover=seasonSnow*retention*smoothstep(.46,.70,accumulation);
+ float snowLight=clamp(.52+sunward*.30+(drift-.5)*.22,0.,1.);
+ vec3 snowColor=mix(vec3(.56,.65,.72),vec3(.84,.85,.81),snowLight);
+ land=mix(land,snowColor,snowCover);
+ }
+ // Keep grain on exposed earth, but avoid stamping the soil texture into deep snow.
+ diffuseColor.rgb*=land*mix(.80+fine*.35,.97+fine*.045,snowCover);
  float edge=min(min(p.x+276.,294.4-p.x),min(p.y+133.2,144.3-p.y));diffuseColor.a*=smoothstep(0.,14.,edge);
  `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
  float rugged=smoothstep(5.,13.,terrainPosition.y);
- float relief=(noise2(terrainPosition.xz*3.)*.13+noise2(terrainPosition.xz*10.)*.022)*rugged;
+ float relief=(noise2(terrainPosition.xz*3.)*.13+noise2(terrainPosition.xz*10.)*.022)*rugged*(1.-snowCover*.85);
  vec3 q0=dFdx(-vViewPosition),q1=dFdy(-vViewPosition);
  vec3 r1=cross(q1,normal),r2=cross(normal,q0);float determinant=dot(q0,r1);
  normal=normalize(abs(determinant)*normal-sign(determinant)*(dFdx(relief)*r1+dFdy(relief)*r2));
