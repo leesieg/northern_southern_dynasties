@@ -25,11 +25,11 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  float pasture=smoothstep(.18,.82,fbm(p*.035));
  vec3 meadow=mix(seasonLow,seasonHigh,pasture)*(.96+n*.08);
  vec3 forest=seasonForest*(.88+n*.24);
- float groveCover=smoothstep(.46,.62,noise2(p/28.));
+ float groveCover=smoothstep(.23,.80,noise2(p/28.)*.7+fbm(p*.12)*.3);
  float wooded=groveCover*(1.-smoothstep(.30,.58,slope));
  vec3 soil=mix(vec3(.35,.28,.145),vec3(.51,.43,.24),n);
  vec3 land=mix(meadow,soil,smoothstep(.61,.8,fbm(p*.05+15.))*.32);
- land=mix(land,forest,wooded*.82);
+ land=mix(land,forest,wooded*.38);
  // Warm exposed strata against cool, dark vegetation. All shapes still come from the DEM.
  float stone=smoothstep(.16,.43,slope)*smoothstep(1.2,6.,terrainPosition.y);
  stone=mix(stone,smoothstep(.11,.34,slope)*smoothstep(.8,4.,terrainPosition.y),regionalStyle);
@@ -57,13 +57,14 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  // Display elevation is exaggerated: these are art thresholds, not a climatic snowline.
  vec3 groundNormal=normalize(terrainNormal);
  float altitude=smoothstep(4.,21.,terrainPosition.y);
- vec2 driftUV=p*.23+vec2(noise2(p*.075),noise2(p*.075+37.))*2.4;
- float drift=fbm(driftUV)*.78+noise2(p*1.8)*.22;
+ vec2 driftUV=p*.08+vec2(noise2(p*.035),noise2(p*.035+37.))*1.4;
+ float driftGrain=mix(noise2(p*.4),.5,smoothstep(.1,.7,length(fwidth(p*.4))));
+ float drift=fbm(driftUV)*.86+driftGrain*.14;
  // Sunward faces thaw first; steep rock faces retain only isolated snow shelves.
  float sunward=dot(groundNormal.xz,normalize(vec2(-135.,80.)));
  float retention=smoothstep(.40,.88,groundNormal.y);
  float accumulation=.20+altitude*.38+drift*.48-sunward*.13;
- snowCover=seasonSnow*retention*smoothstep(.46,.70,accumulation);
+ snowCover=seasonSnow*retention*smoothstep(.38,.74,accumulation);
  float snowLight=clamp(.52+sunward*.30+(drift-.5)*.22,0.,1.);
  vec3 snowColor=mix(vec3(.56,.65,.72),vec3(.84,.85,.81),snowLight);
  land=mix(land,snowColor,snowCover);

@@ -77,8 +77,8 @@ for variant in range(3):
  def branch(a,b,radius):
   a,b=Vector(a),Vector(b);axis=(b-a).normalized();u=axis.cross(Vector((0,1,0))).normalized();v=axis.cross(u);offset=len(verts)
   for p,r in [(a,radius),(b,radius*.5)]:
-   for j in range(5):verts.append(tuple(p+(u*math.cos(j*math.tau/5)+v*math.sin(j*math.tau/5))*r))
-  for j in range(5):faces.append((offset+j,offset+(j+1)%5,offset+5+(j+1)%5,offset+5+j));material_ids.append(0)
+   for j in range(4):verts.append(tuple(p+(u*math.cos(j*math.tau/4)+v*math.sin(j*math.tau/4))*r))
+  for j in range(4):faces.append((offset+j,offset+(j+1)%4,offset+4+(j+1)%4,offset+4+j));material_ids.append(0)
  branch((0,0,0),(.025,0,.98),.045)
  if variant<2:
   for k in range(7):
@@ -90,7 +90,9 @@ for variant in range(3):
     for j in range(segments):
      theta=j*math.tau/segments;rag=1+rng.uniform(-.15,.15);verts.append((cx+math.cos(theta)*math.sin(phi)*rx*rag,cy+math.sin(theta)*math.sin(phi)*ry*rag,cz+math.cos(phi)*rz))
    for ring in range(rings-1):
-    for j in range(segments):faces.append((offset+ring*segments+j,offset+ring*segments+(j+1)%segments,offset+(ring+1)*segments+(j+1)%segments,offset+(ring+1)*segments+j));material_ids.append(1 if k%3 else 2)
+    for j in range(segments):faces.append((offset+ring*segments+j,offset+(ring+1)*segments+j,offset+(ring+1)*segments+(j+1)%segments,offset+ring*segments+(j+1)%segments));material_ids.append(1 if k%3 else 2)
+   faces.append(tuple(offset+j for j in range(segments)));material_ids.append(1 if k%3 else 2)
+   faces.append(tuple(offset+(rings-1)*segments+j for j in reversed(range(segments))));material_ids.append(1 if k%3 else 2)
  else:
   for k in range(6):
    z=.28+k*.14;r=.34-k*.043;n=9;offset=len(verts)

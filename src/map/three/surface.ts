@@ -1,3 +1,4 @@
+import {coarseSurfaceHeight} from './terrainSeam';
 import {elevationTiles,decodeElevation,type ElevationManifest} from './elevationTiles';
 import {parchmentTexture,strategicReliefTexture} from './parchment';
 import {segmentDistance} from '../sample/geography';
@@ -43,7 +44,7 @@ export async function countrySurface(season:SeasonState){
  }}}
  function geometry(m:DEMGrid,step:number,cut?:DEMGrid){
   const columns=Math.ceil(m.columns/step),rows=Math.ceil(m.rows/step),vertices:number[]=[],elevations:number[]=[],indices:number[]=[];
-  for(let j=0;j<=rows;j++)for(let i=0;i<=columns;i++){const x=m.west+i/columns*m.width,y=m.north+j/rows*m.height,ll=geographic(x,y);const h=height(ll.lng,ll.lat)??0;vertices.push((x-ORIGIN.x)*WORLD_KM,h,(y-ORIGIN.y)*WORLD_KM);elevations.push(h);}
+  for(let j=0;j<=rows;j++)for(let i=0;i<=columns;i++){const x=m.west+i/columns*m.width,y=m.north+j/rows*m.height,ll=geographic(x,y);let h=height(ll.lng,ll.lat)??0;if(m!==meta&&(i===0||j===0||i===columns||j===rows))h=coarseSurfaceHeight(x,y,meta,8,(x,y)=>{const p=geographic(x,y);return height(p.lng,p.lat)??0;});vertices.push((x-ORIGIN.x)*WORLD_KM,h,(y-ORIGIN.y)*WORLD_KM);elevations.push(h);}
   for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){const x=m.west+(i+.5)/columns*m.width,y=m.north+(j+.5)/rows*m.height;if(cut&&x>cut.west&&x<cut.west+cut.width&&y>cut.north&&y<cut.north+cut.height)continue;const a=j*(columns+1)+i;indices.push(a,a+columns+1,a+1,a+1,a+columns+1,a+columns+2);}
   const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(vertices,3));g.setIndex(indices);g.setAttribute('campaignElevation',new Float32BufferAttribute(elevations,1));g.computeVertexNormals();g.computeBoundingSphere();return g;
  }

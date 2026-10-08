@@ -10,7 +10,7 @@ export async function loadTableRoom(painting:Texture){
  if(!response.ok)throw new Error('室内舆图模型加载失败（'+response.status+'）');
  const model=(await new GLTFLoader().parseAsync(await response.arrayBuffer(),'')).scene;
  const root=new Group();root.add(model);root.scale.setScalar(1000);root.position.set(TABLE_CENTER.x,0,TABLE_CENTER.z);root.visible=false;
- const materials=new Set<MeshStandardMaterial>();model.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial){m.fog=false;
+ const materials=new Set<MeshStandardMaterial>();model.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial){m.fog=false;m.transparent=true;
  if(m.name==='Study window silk'){m.emissive.set('#d9d9c8');m.emissiveIntensity=.18;}
  if(m.name==='Study screen silk'){m.map=painting;m.roughness=1;m.needsUpdate=true;}
  if(m.name==='Study timber'||m.name==='Study edge'){
@@ -18,5 +18,5 @@ export async function loadTableRoom(painting:Texture){
   m.customProgramCacheKey=()=> 'atlas-study-timber-v2';
  }
  materials.add(m);}}});
- return {root,update(zoom:number){const opacity=tableRoomStrength(zoom);root.visible=opacity>0;for(const m of materials){m.transparent=opacity<1;m.opacity=opacity;m.depthWrite=opacity===1;}},dispose(){root.removeFromParent();model.traverse(o=>{if(o instanceof Mesh)o.geometry.dispose();});materials.forEach(m=>m.dispose());}};
+ return {root,update(zoom:number){const opacity=tableRoomStrength(zoom);root.visible=opacity>0;for(const m of materials){m.opacity=opacity;m.depthWrite=opacity===1;}},dispose(){root.removeFromParent();model.traverse(o=>{if(o instanceof Mesh)o.geometry.dispose();});materials.forEach(m=>m.dispose());}};
 }

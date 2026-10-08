@@ -19,6 +19,15 @@ it('bakes the actual Blender assets with material identity, stable footprints an
    const red=Array.from({length:colors.count},(_,i)=>colors.getX(i));
    expect(Math.max(...red),name).toBeLessThan(.9);expect(Math.min(...red),name).toBeGreaterThan(0);
    if(o.material.name.startsWith('Slate tile'))expect(Math.max(...red)).toBeLessThan(.12);
+   if(name.startsWith('tree-')&&o.material.name.startsWith('Leaf ')){
+    // A closed crown must face outward; inward winding exposes dark hollow backs in the browser.
+    const g=o.geometry,p=g.getAttribute('position'),idx=g.index;let volume=0;
+    const at=i=>idx?idx.getX(i):i;
+    for(let i=0;i<(idx?.count??p.count);i+=3){const a=at(i),b=at(i+1),c=at(i+2);
+     volume+=p.getX(a)*(p.getY(b)*p.getZ(c)-p.getZ(b)*p.getY(c))+p.getY(a)*(p.getZ(b)*p.getX(c)-p.getX(b)*p.getZ(c))+p.getZ(a)*(p.getX(b)*p.getY(c)-p.getY(b)*p.getX(c));
+    }
+    expect(volume,`${name}: outward closed crowns`).toBeGreaterThan(0);
+   }
   });
  }
  const assets=sampleCampaignAssets(new Map(models));

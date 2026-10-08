@@ -25,13 +25,13 @@ const empty:FeatureCollection={type:'FeatureCollection',features:[]};
 /** Actual standalone renderer. Map-compatible event/data adapters retain existing game actions only. */
 export class ThreeCampaignMap{
  readonly renderer:WebGLRenderer;readonly scene=new Scene();readonly camera:PerspectiveCamera;readonly controls:MapControls;readonly markers=new Set<ThreeMarker>();
- private room?:Awaited<ReturnType<typeof loadTableRoom>>;private roomRequested=false;
+ private room?:Awaited<ReturnType<typeof loadTableRoom>>;private roomRequested=false;private roomTimer?:ReturnType<typeof setTimeout>;
  private tint=new TerrainTint();private overlaysFlat:boolean|undefined;private farmsRevision=-1;
  private season=createSeasonState();private surface?:Awaited<ReturnType<typeof countrySurface>>;private actors?:Awaited<ReturnType<typeof campaignActors>>;
  private sun=new DirectionalLight('#ffe1ad',2.7);private sky=new HemisphereLight('#c5d5e6','#49432c',.66);private overlays:CampaignOverlays;private clouds=new Group();private cloudMaterial:ShaderMaterial;private coverage?:Texture;
  private listeners=new Map<string,Set<(event:AtlasEvent)=>void>>();private sources=new Map<string,FeatureCollection>();private layers:OverlayLayer[];private states=new Map<string,Record<string,unknown>>();
  private stopped=false;private ready=false;private frame=0;private dirty=true;private overlaysDirty=true;private moving=false;private settlingUntil=0;private lastCameraMotion=-Infinity;private lastZoom=0;private lastSeason='';private lastSeasonSync='';private flat=false;private lastFrame=0;private lastRefine='';private refineTimer?:ReturnType<typeof setTimeout>;
- private zoomMotion:CampaignZoomMotion;private zoomBearing=0;private zoomOrigin=new Vector3();private motionFrame=0;private reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+ private zoomMotion:CampaignZoomMotion;private zoomBearing=0;private zoomOrigin=new Vector3();private zoomAnchorReady=false;private motionFrame=0;private reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
  private flight?:{start:number;duration:number;from:Vector3;to:Vector3;fromTarget:Vector3;toTarget:Vector3;autoPitch:boolean};
  private state?:()=>CampaignState;private getPlacement:(id:number)=>ArmyMarkerPlacement|undefined=()=>undefined;
  private gesture=new PointerGesture();private cleanup:(()=>void)[]=[];private container:HTMLElement;
@@ -57,10 +57,11 @@ export class ThreeCampaignMap{
   this.cleanup.push(()=>{canvas.removeEventListener('pointerdown',pointerStart,true);window.removeEventListener('pointermove',pointerMove,true);window.removeEventListener('pointerup',pointerEnd,true);window.removeEventListener('pointercancel',pointerCancel,true);window.removeEventListener('blur',pointerCancel);});
   for(const name of ['mousemove','click','dblclick','contextmenu'])bind(name,event=>{const e=event as MouseEvent;if(name==='contextmenu')e.preventDefault();if(((name==='click'||name==='dblclick')&&!this.gesture.allowsClick()||name==='contextmenu'&&!this.gesture.allowsContextMenu()))return;if(name==='contextmenu')e.preventDefault();const r=canvas.getBoundingClientRect();this.emit(name,{point:{x:e.clientX-r.left,y:e.clientY-r.top},originalEvent:e,preventDefault:()=>e.preventDefault()});});
   const smoothWheel=(e:WheelEvent)=>{
+   if((e.target as Element).closest('.three-map-attribution[open]'))return;
    e.preventDefault();e.stopImmediatePropagation();
    if(e.deltaY)this.queueZoom(wheelZoomDelta(e.deltaY,e.deltaMode,this.container.clientHeight));
   };
-  canvas.addEventListener('wheel',smoothWheel,{capture:true,passive:false});this.cleanup.push(()=>canvas.removeEventListener('wheel',smoothWheel,true));
+  this.container.addEventListener('wheel',smoothWheel,{capture:true,passive:false});this.cleanup.push(()=>this.container.removeEventListener('wheel',smoothWheel,true));
   bind('webglcontextlost',e=>{e.preventDefault();this.emit('webglcontextlost');});
   bind('keydown',event=>{const e=event as KeyboardEvent;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();this.zoomMotion.cancel();this.flight=undefined;const d=this.unitsPerPixel()*60,shift=new Vector3(e.key==='ArrowLeft'?-d:e.key==='ArrowRight'?d:0,0,e.key==='ArrowUp'?-d:e.key==='ArrowDown'?d:0);this.controls.target.add(shift);this.camera.position.add(shift);this.changedView();}else if(e.key==='+'||e.key==='=')this.zoomIn();else if(e.key==='-')this.zoomOut();else if(e.key.toLowerCase()==='q'||e.key.toLowerCase()==='e')this.easeTo({bearing:this.getBearing()+(e.key.toLowerCase()==='q'?-20:20)});});
   const attribution=document.createElement('details');attribution.className='three-map-attribution';attribution.innerHTML='<summary>地图资料</summary><p>地形：<a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Mapzen / AWS</a>，SRTM 与 GMTED2010 courtesy USGS，ETOPO1 courtesy NOAA。水系与陆地：<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>（公共领域）。雾外为本局已建模政权范围，非完整历史疆界；近景高程从本地全国分块按需细化。</p>';this.container.append(attribution);this.cleanup.push(()=>attribution.remove());
@@ -68,7 +69,7 @@ export class ThreeCampaignMap{
   void prefetchCampaignSampleAssets().catch(()=>{});void this.load();this.frame=requestAnimationFrame(this.render);
  }
  private async load(){try{const surface=await countrySurface(this.season);if(this.stopped){surface.dispose();return;}this.surface=surface;this.cloudMaterial.uniforms.parchment.value=surface.hiddenPaper;this.cloudMaterial.uniforms.paperExtent.value.fromArray(surface.parchment.userData.extent);surface.setFlat(this.flat);this.sources.set('land',surface.land);this.sources.set('local-rivers',surface.rivers);this.scene.add(surface.root);this.ready=true;this.overlaysDirty=true;this.updateClouds();this.emit('style.load');this.changedView();this.emit('sourcedata',{sourceId:'national-dem'});this.triggerRepaint();}catch(error){if(!this.stopped)this.emit('error',{sourceId:'national-dem',error:error instanceof Error?error:new Error(String(error))});}}
- attachWorld(state:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined,ready:()=>void,warning:(message:string)=>void){this.state=state;this.getPlacement=placement;void campaignActors({scene:this.scene,height:(lon,lat)=>this.height(lon,lat),isRiver:(lon,lat)=>this.surface?.isRiver(lon,lat)??false,isLand:(lon,lat)=>this.surface?.isLand(lon,lat)??false,isMoving:()=>this.isMoving(),project:ll=>this.project(ll),getZoom:()=>this.getZoom(),getSize:()=>({width:this.container.clientWidth,height:this.container.clientHeight}),unitsPerPixel:()=>this.unitsPerPixel(),unitsPerPixelAt:(lon,lat)=>{const p=projectGround(lon,lat),v=new Vector3(p.x,this.height(lon,lat)??0,p.z).applyMatrix4(this.camera.matrixWorldInverse);return Math.max(0,-v.z)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);},getTarget:()=>this.controls.target,getViewKey:()=>[this.container.clientWidth,this.container.clientHeight,...this.camera.quaternion.toArray().map(n=>n.toFixed(2))].join(":"),repaint:()=>this.triggerRepaint(),warning},state,id=>this.getPlacement(id)).then(actors=>{if(this.stopped){actors.dispose();return;}this.actors=actors;ready();this.triggerRepaint();}).catch(e=>warning('模型加载失败，保留铭牌操作：'+String(e)));}
+ attachWorld(state:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined,ready:()=>void,warning:(message:string)=>void){this.state=state;this.getPlacement=placement;void campaignActors({scene:this.scene,height:(lon,lat)=>this.height(lon,lat),isRiver:(lon,lat)=>this.surface?.isRiver(lon,lat)??false,isLand:(lon,lat)=>this.surface?.isLand(lon,lat)??false,isMoving:()=>this.isMoving(),project:ll=>this.project(ll),getZoom:()=>this.getZoom(),getSize:()=>({width:this.container.clientWidth,height:this.container.clientHeight}),unitsPerPixel:()=>this.unitsPerPixel(),unitsPerPixelAt:(lon,lat)=>{const p=projectGround(lon,lat),v=new Vector3(p.x,this.height(lon,lat)??0,p.z).applyMatrix4(this.camera.matrixWorldInverse);return Math.max(0,-v.z)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);},getTarget:()=>this.controls.target,getViewKey:()=>[this.container.clientWidth,this.container.clientHeight,...this.camera.quaternion.toArray().map(n=>n.toFixed(2))].join(":"),repaint:()=>this.triggerRepaint(),warning},state,id=>this.getPlacement(id)).then(actors=>{if(this.stopped){actors.dispose();return;}this.actors=actors;ready();this.triggerRepaint();this.prepareRoom();}).catch(e=>warning('模型加载失败，保留铭牌操作：'+String(e)));}
  showsSite(id:string){return this.actors?.showsSite(id)??false;}
  siteAt(point:Point){if(!this.actors)return null;const ray=this.ray(point),hits=ray.intersectObjects(this.actors.cityRoots(),true);let root:Object3D|undefined=hits[0]?.object;while(root&&!root.userData.site)root=root.parent??undefined;const ground=this.groundAt(point);if(ground&&hits[0]&&hits[0].distance>ground.distance+1)return null;return root?.userData.site as string??null;}
  private ray(point:Point){const ray=new Raycaster();this.camera.updateMatrixWorld();ray.setFromCamera(new Vector2(point.x/this.container.clientWidth*2-1,1-point.y/this.container.clientHeight*2),this.camera);return ray;}
@@ -80,6 +81,7 @@ export class ThreeCampaignMap{
  project(ll:[number,number]){const p=projectGround(ll[0],ll[1]),v=new Vector3(p.x,this.height(ll[0],ll[1])??0,p.z).project(this.camera);return v.z< -1||v.z>1?{x:-100000,y:-100000}:{x:(v.x*.5+.5)*this.container.clientWidth,y:(.5-v.y*.5)*this.container.clientHeight};}
  getCanvas(){return this.renderer.domElement;}getZoom(){return distanceZoom(this.camera.position.distanceTo(this.controls.target));}getPitch(){return this.controls.getPolarAngle()*180/Math.PI;}getBearing(){return -this.controls.getAzimuthalAngle()*180/Math.PI;}isMoving(){return this.moving||this.settlingUntil>0||!!this.flight||this.zoomMotion.target!==undefined;}areTilesLoaded(){return this.ready;}unitsPerPixel(){return this.camera.position.distanceTo(this.controls.target)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);}
  easeTo(options:{center?:[number,number];zoom?:number;pitch?:number;bearing?:number;duration?:number}){
+  if(this.getZoom()>=1.8){this.zoomOrigin.copy(this.controls.target);this.zoomAnchorReady=true;}
   this.zoomMotion.cancel();this.flight=undefined;
   options=normalizeAtlasCamera(options,this.getZoom());
   const autoPitch=options.zoom!==undefined&&options.pitch===undefined;
@@ -88,6 +90,8 @@ export class ThreeCampaignMap{
   // Drain residual pan inertia before an explicit camera flight.
   const damping=this.controls.enableDamping;this.controls.enableDamping=false;this.controls.update();this.controls.enableDamping=damping;this.settlingUntil=0;
   const target=this.controls.target.clone();if(options.center){const p=projectGround(...options.center);target.set(p.x,this.height(...options.center)??0,p.z);}
+  if(options.center&&(options.zoom??this.getZoom())>=1.8){this.zoomOrigin.copy(target);this.zoomAnchorReady=true;}
+  else if(!options.center&&options.zoom!==undefined&&options.zoom>=1.8&&this.getZoom()<1.8&&this.zoomAnchorReady)target.copy(this.zoomOrigin);
   const d=zoomDistance(options.zoom??this.getZoom()),phi=(options.pitch??this.getPitch())*Math.PI/180,theta=-(options.bearing??this.getBearing())*Math.PI/180,to=new Vector3(target.x+d*Math.sin(phi)*Math.sin(theta),target.y+d*Math.cos(phi),target.z+d*Math.sin(phi)*Math.cos(theta));
   if(this.ready&&options.duration&&!matchMedia('(prefers-reduced-motion: reduce)').matches){this.flight={start:performance.now(),duration:options.duration,from:this.camera.position.clone(),to,fromTarget:this.controls.target.clone(),toTarget:target,autoPitch};this.emit('movestart');this.triggerRepaint();return;}
   this.camera.position.copy(to);this.controls.target.copy(target);this.controls.update();this.camera.updateMatrixWorld();this.changedView();
@@ -95,7 +99,7 @@ export class ThreeCampaignMap{
  fitBounds(bounds:[[number,number],[number,number]],options:{padding?:unknown;pitch?:number;bearing?:number;duration?:number;maxZoom?:number}){const a=projectGround(...bounds[0]),b=projectGround(...bounds[1]),aspect=this.container.clientWidth/Math.max(1,this.container.clientHeight),d=Math.max(Math.abs(a.z-b.z),Math.abs(a.x-b.x)/aspect)/Math.tan(this.camera.fov*Math.PI/360)*.68;this.easeTo({center:[(bounds[0][0]+bounds[1][0])/2,(bounds[0][1]+bounds[1][1])/2],zoom:Math.min(options.maxZoom??12,distanceZoom(Math.max(25,d))),pitch:options.pitch??0,bearing:options.bearing??0,duration:options.duration});}
  private queueZoom(delta:number,reduced=false){
   if(this.zoomMotion.target===undefined){
-   this.flight=undefined;const damping=this.controls.enableDamping;this.controls.enableDamping=false;this.controls.update();this.controls.enableDamping=damping;this.settlingUntil=0;this.zoomBearing=this.getBearing();this.zoomOrigin.copy(this.controls.target);this.motionFrame=performance.now();this.emit('movestart');
+   this.flight=undefined;const damping=this.controls.enableDamping;this.controls.enableDamping=false;this.controls.update();this.controls.enableDamping=damping;this.settlingUntil=0;this.zoomBearing=this.getBearing();if(this.getZoom()>=1.8||!this.zoomAnchorReady){this.zoomOrigin.copy(this.controls.target);this.zoomAnchorReady=true;}this.motionFrame=performance.now();this.emit('movestart');
   }
   this.zoomMotion.push(this.getZoom(),delta);
   if(reduced||this.reducedMotion.matches){this.applyZoom(this.zoomMotion.step(this.getZoom(),0,true));this.changedView();}
@@ -130,6 +134,21 @@ export class ThreeCampaignMap{
   }return hits;
  }
  private updateClouds(rebuildCoverage=false){if(!this.coverage||rebuildCoverage){this.coverage?.dispose();this.coverage=coverageTexture(this.sources.get('realms')??empty,2048);this.cloudMaterial.uniforms.coverage.value=this.coverage;}this.clouds.clear();if(this.surface)for(const mesh of this.surface.fogMaterialMeshes(this.cloudMaterial)){mesh.renderOrder=1000;this.clouds.add(mesh);}}
+ private prepareRoom(){
+  if(this.stopped||this.roomRequested||!this.surface)return;
+  if(this.roomTimer)clearTimeout(this.roomTimer);
+  if(this.isMoving()){this.roomTimer=setTimeout(()=>this.prepareRoom(),180);return;}
+  this.roomRequested=true;
+  void loadTableRoom(this.surface.hiddenPaper).then(async room=>{
+   if(this.stopped){room.dispose();return;}
+   try{
+    // Compile against the real lights before the room enters the moving view.
+    await this.renderer.compileAsync(room.root,this.camera,this.scene);
+    if(this.stopped){room.dispose();return;}
+    room.update(this.getZoom());this.room=room;this.scene.add(room.root);this.triggerRepaint();
+   }catch(error){room.dispose();throw error;}
+  }).catch(error=>{if(!this.stopped)this.emit('error',{sourceId:'atlas-study',error:new Error(String(error))});});
+ }
  private changedView(){this.dirty=true;this.overlaysDirty=true;this.emit('move');this.emit('moveend');const z=Math.round(this.getZoom()*5);if(z!==this.lastZoom){this.lastZoom=z;this.overlaysDirty=true;this.emit('zoomend');}if(this.refineTimer)clearTimeout(this.refineTimer);if(this.ready&&this.getZoom()>5.4&&!this.flat){const ll=unprojectGround(this.controls.target.x,this.controls.target.z),key=Math.floor((ll.lng+180)/360*128)+':'+Math.floor((1-Math.asinh(Math.tan(ll.lat*Math.PI/180))/Math.PI)/2*128);if(key!==this.lastRefine)this.refineTimer=setTimeout(()=>{this.lastRefine=key;void this.surface!.refine(ll.lng,ll.lat,()=>!this.isMoving()).then(changed=>{if(!changed||this.stopped)return;this.updateClouds();this.overlaysDirty=true;this.actors?.refresh();this.emit('sourcedata',{sourceId:'detail-dem'});this.triggerRepaint();}).catch(error=>{if(!this.stopped){this.lastRefine='';this.emit('error',{sourceId:'detail-dem',error:new Error('本地近景高程加载失败，保留真实全国底图：'+String(error))});}});},400);}this.triggerRepaint();}
  triggerRepaint(){this.dirty=true;}
  private render=(now:number)=>{
@@ -156,18 +175,20 @@ export class ThreeCampaignMap{
    const safePitch=terrainSafePitch(radius,pitch,r=>{const at=unprojectGround(this.controls.target.x+Math.sin(bearing)*r,this.controls.target.z+Math.cos(bearing)*r);return (this.height(at.lng,at.lat)??0)-this.controls.target.y;});
    if(safePitch!==pitch)this.camera.position.copy(this.controls.target).add(new Vector3(radius*Math.sin(safePitch)*Math.sin(bearing),radius*Math.cos(safePitch),radius*Math.sin(safePitch)*Math.cos(bearing)));
    this.camera.lookAt(this.controls.target);this.camera.updateMatrixWorld();if(before.distanceToSquared(this.controls.target)>.0001)this.emit('move');const state=this.state?.();if(state){const value=state.seasonPreview??campaignSeason(state.world);if(value!==this.lastSeason){this.lastSeason=value;const p=seasons[value];this.season.set(value);(this.scene.background as Color).set(p.fog);(this.scene.fog as Fog).color.set(p.fog);this.cloudMaterial.uniforms.fogColor.value.set(p.fog);this.sun.color.set(p.sun);this.sun.intensity=p.intensity;this.sky.color.set(p.sky);this.surface!.water.color.set(p.water);}}
-   if(this.getZoom()<3.2&&!this.roomRequested){this.roomRequested=true;void loadTableRoom(this.surface!.hiddenPaper).then(room=>{if(this.stopped){room.dispose();return;}this.room=room;this.scene.add(room.root);this.triggerRepaint();}).catch(error=>{this.emit('error',{sourceId:'atlas-study',error:new Error(String(error))});});}this.room?.update(this.getZoom());
+   if(this.getZoom()<3.2&&!this.roomRequested)this.prepareRoom();this.room?.update(this.getZoom());
 
    const previousRevision=this.actors?.revision(),animate=this.actors?.update(now)??false,actorsChanged=previousRevision!==this.actors?.revision();const seasonSync=this.lastSeason+':'+(this.actors?.revision()??0);if(seasonSync!==this.lastSeasonSync){this.lastSeasonSync=seasonSync;this.season.sync(this.scene);}const d=this.camera.position.distanceTo(this.controls.target),fog=this.scene.fog as Fog;const near=cameraNearPlane(d);if(Math.abs(this.camera.near-near)>.001){this.camera.near=near;this.camera.updateProjectionMatrix();}fog.near=d*.95;fog.far=d*2.8;
-   this.sun.castShadow=this.getZoom()>=6.2;
+   // Keep the light/shadow shader layout stable while crossing the landscape threshold.
+   // Toggling castShadow recompiles every lit material and stalls continuous zoom.
+   this.sun.shadow.intensity=Math.max(0,Math.min(1,(this.getZoom()-6.2)/.4));
    if(!this.isMoving()){this.sun.position.copy(this.controls.target).add(new Vector3(-135,130,80));this.sun.target.position.copy(this.controls.target);const size=Math.max(55,Math.min(290,d*.9)),sc=this.sun.shadow.camera;sc.left=sc.bottom=-size;sc.right=sc.top=size;sc.updateProjectionMatrix();}
    let deferred=actorsChanged;
    if(this.overlaysDirty&&!this.isMoving()&&!actorsChanged){const range=this.unitsPerPixel()*Math.max(this.container.clientWidth,this.container.clientHeight)*1.4,a=unprojectGround(this.controls.target.x-range,this.controls.target.z+range),b=unprojectGround(this.controls.target.x+range,this.controls.target.z-range);const extent:[number,number,number,number]=[this.controls.target.x-range,this.controls.target.z-range,range*2,range*2];const strategic=paper>=.999;if(!strategic)this.tint.update(this.layers,this.sources,this.getZoom(),this.states,extent);this.surface!.setTint(this.tint.texture,extent,!strategic);this.overlays.rebuild(this.layers,this.sources,this.getZoom(),this.unitsPerPixel(),this.states,[a.lng,a.lat,b.lng,b.lat],strategic,!strategic);this.overlaysFlat=strategic;this.overlays.root.visible=true;this.overlaysDirty=false;deferred=true;}
    if(!deferred&&!this.isMoving()&&this.actors&&this.farmsRevision!==this.actors.revision()){this.surface!.setFarms(this.actors.farmCenters());this.farmsRevision=this.actors.revision();}
-   this.camera.updateMatrixWorld();this.renderer.shadowMap.needsUpdate=(this.dirty||animate)&&!this.isMoving();this.renderer.render(this.scene,this.camera);for(const marker of this.markers)marker.render();this.dirty=animate||deferred;if(!this.isMoving()&&!deferred)this.emit('idle');
+   this.camera.updateMatrixWorld();this.renderer.shadowMap.needsUpdate=this.getZoom()>=6.2&&(this.dirty||animate)&&!this.isMoving();this.renderer.render(this.scene,this.camera);for(const marker of this.markers)marker.render();this.dirty=animate||deferred;if(!this.isMoving()&&!deferred)this.emit('idle');
   }catch(error){this.stopped=true;cancelAnimationFrame(this.frame);this.emit('error',{error:error instanceof Error?error:new Error(String(error))});}
  };
- remove(){this.stopped=true;cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.tint.dispose();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}
+ remove(){this.stopped=true;cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);if(this.roomTimer)clearTimeout(this.roomTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.tint.dispose();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}
 }
 export class ThreeMarker{
  private ll:[number,number]=[0,0];private offset:[number,number]=[0,0];private map?:ThreeCampaignMap;private element:HTMLElement;private anchor:string;private transform='';
