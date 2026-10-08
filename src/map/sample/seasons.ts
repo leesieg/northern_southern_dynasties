@@ -2,7 +2,7 @@ import {Color,Mesh,MeshStandardMaterial,type Scene} from 'three';
 
 export const seasons={
  spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.12,.20,.065],high:[.32,.38,.16],forest:[.085,.17,.07],field:[.18,.28,.085],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#c5cfc0',sun:'#fff0cf',sky:'#d1e1df',intensity:2.5,water:'#557e79'},
- summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.15,.185,.088],high:[.31,.33,.17],forest:[.078,.135,.09],field:[.21,.29,.095],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#bdc6c1',sun:'#f8e8c5',sky:'#cadcde',intensity:2.7,water:'#567c75'},
+ summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.20,.27,.10],high:[.40,.46,.22],forest:[.10,.17,.095],field:[.21,.29,.095],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#d8dbcf',sun:'#f8e8c5',sky:'#d5e3df',intensity:2.7,water:'#567c75'},
  autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.20,.16,.07],high:[.40,.32,.15],forest:[.23,.15,.055],field:[.42,.31,.10],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#c9c1b0',sun:'#ffdc9f',sky:'#cbd4da',intensity:2.5,water:'#526d6a'},
  winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:[.14,.16,.13],high:[.27,.28,.22],forest:[.10,.14,.12],field:[.24,.22,.17],leaf:'#777a64',pine:'#50655b',snow:.92,fog:'#ced8dc',sun:'#e4edff',sky:'#d5e5f3',intensity:2.15,water:'#67858d'},
 } as const;

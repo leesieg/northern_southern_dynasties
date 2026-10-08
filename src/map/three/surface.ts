@@ -57,8 +57,11 @@ export async function countrySurface(season:SeasonState){
  }
  prepareRivers();rebuild();
  let detailKey='',pendingKey='';
- async function refine(lon:number,lat:number){const key=tileStore.window(lon,lat).key;if(key===detailKey||key===pendingKey)return false;pendingKey=key;
-  try{const next=await tileStore.load(lon,lat);if(closed||pendingKey!==key)return false;
+ async function refine(lon:number,lat:number,canApply:()=>boolean=()=>true){const key=tileStore.window(lon,lat).key;if(key===detailKey||key===pendingKey)return false;pendingKey=key;
+  try{const next=await tileStore.load(lon,lat);
+   // Decode ahead, but never replace terrain meshes in the middle of a gesture.
+   while(!closed&&pendingKey===key&&!canApply())await new Promise<void>(resolve=>setTimeout(resolve,100));
+   if(closed||pendingKey!==key)return false;
    detail=next;detailKey=key;
    // Keep river XY stable; refresh elevations without nine valley searches per point.
    for(const path of riverPaths)for(const point of path){const ll=geographic(point.x/WORLD_KM+ORIGIN.x,point.z/WORLD_KM+ORIGIN.y);point.y=landHeight(ll.lng,ll.lat,true)??point.y;}

@@ -12,6 +12,7 @@ describe('campaign atlas scale (non-UI)',()=>{
    expect(atlasPresentation(zoom,true)).toEqual({paper:0,strategic:false,terrain:true,pitch:44});
    expect(atlasPresentation(zoom,false)).toEqual({paper:0,strategic:false,terrain:false,pitch:0});
   }
-  expect(atlasPresentation(CITY_VIEW_ZOOM,true).pitch).toBe(52);expect(atlasPresentation(CITY_VIEW_ZOOM,false).pitch).toBe(0);
+  expect(atlasPresentation(14,true).pitch).toBe(66);
+  expect(atlasPresentation(CITY_VIEW_ZOOM,true).pitch).toBe(66);expect(atlasPresentation(CITY_VIEW_ZOOM,false).pitch).toBe(0);
  });
 });
