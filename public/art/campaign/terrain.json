@@ -1,0 +1,17 @@
+{
+  "west": 107.6,
+  "east": 113.8,
+  "south": 33.1,
+  "north": 35.6,
+  "columns": 769,
+  "rows": 385,
+  "originLon": 110.6,
+  "originLat": 34.4,
+  "lonScale": 92,
+  "latScale": 111,
+  "heightScale": 0.01,
+  "heightUnit": "metres",
+  "source": "AWS Open Data Terrain Tiles / Terrarium z8",
+  "riverSource": "Natural Earth 1:10m rivers (public domain)",
+  "treeBudget": 18000
+}
