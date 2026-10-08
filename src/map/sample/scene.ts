@@ -1,9 +1,10 @@
-import {ACESFilmicToneMapping,BufferGeometry,CatmullRomCurve3,CanvasTexture,Color,CylinderGeometry,DirectionalLight,DoubleSide,Float32BufferAttribute,Fog,Group,HemisphereLight,InstancedMesh,Mesh,MeshStandardMaterial,MOUSE,Object3D,PCFSoftShadowMap,PerspectiveCamera,PlaneGeometry,Scene,Sprite,SpriteMaterial,SRGBColorSpace,Vector3,WebGLRenderer} from 'three';
+import {ACESFilmicToneMapping,BufferGeometry,CatmullRomCurve3,CanvasTexture,Color,CylinderGeometry,DirectionalLight,DoubleSide,Float32BufferAttribute,Fog,Group,HemisphereLight,InstancedMesh,Mesh,MeshStandardMaterial,MOUSE,Object3D,PCFSoftShadowMap,PerspectiveCamera,PlaneGeometry,Scene,Sprite,SpriteMaterial,SRGBColorSpace,TextureLoader,Vector3,WebGLRenderer} from 'three';
+import {armyHeraldry} from '../ArmyHeraldry';
 import {MapControls} from 'three/addons/controls/MapControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {siteById} from '../../data/scenario';
+import {polities,siteById} from '../../data/scenario';
 import {project,sampleHeight,seededRandom,segmentDistance,type River,type TerrainMetadata} from './geography';
-import {fieldColors,flagTexture,terrainMaterial,waterMaterial} from './materials';
+import {fieldColors,terrainMaterial,waterMaterial} from './materials';
 
 const BASE=import.meta.env.BASE_URL+'art/campaign/';
 const cityIds=['changan','luoyang'] as const;
@@ -98,12 +99,20 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
  }
  const nearRiver=(x:number,z:number,margin:number)=>riverAt(x,z).some(s=>segmentDistance(x,z,s.a,s.b)<s.width/2+margin);
  const labels:{button:HTMLButtonElement;anchor:Vector3}[]=[],flags:Mesh[]=[];
- for(const c of cities){
+ const flagLoader=new TextureLoader();
+ const countryFlags=await Promise.all(cities.map(c=>{const realm=siteById[c.id].polity;return flagLoader.loadAsync(armyHeraldry(realm,polities[realm].name));}));
+ countryFlags.forEach(t=>{t.colorSpace=SRGBColorSpace;});
+ if(disposed){countryFlags.forEach(t=>t.dispose());return;}
+
+ for(const [cityIndex,c] of cities.entries()){
   const root=cityAsset.scene.clone(true);root.position.set(c.x,c.height+.05,c.z);scene.add(root);
   root.traverse(ob=>{if(ob instanceof Mesh){ob.castShadow=true;ob.receiveShadow=true;}});
   const pole=new Mesh(new CylinderGeometry(.045,.065,7,8),new MeshStandardMaterial({color:'#49412b',roughness:.8}));pole.position.set(c.x+6.8,c.height+3.5,c.z-1);pole.castShadow=true;scene.add(pole);
-  const cloth=new Mesh(new PlaneGeometry(1.65,3.0,12,16),new MeshStandardMaterial({map:flagTexture('魏',c.id==='changan'?'#243d49':'#732e25'),roughness:.9,side:DoubleSide}));cloth.position.set(c.x+7.65,c.height+5.3,c.z-1);cloth.castShadow=true;scene.add(cloth);flags.push(cloth);
-  const button=document.createElement('button');button.className='city-label';button.textContent=siteById[c.id].name;button.setAttribute('aria-label','定位'+siteById[c.id].name);button.dataset.site=c.id;button.addEventListener('click',()=>focus(c.id));document.querySelector('#labels')!.append(button);labels.push({button,anchor:new Vector3(c.x+9,c.height+5.6,c.z-1)});
+  const cloth=new Mesh(new PlaneGeometry(2.30,2.83,12,16),new MeshStandardMaterial({map:countryFlags[cityIndex],transparent:true,alphaTest:.12,roughness:.95,side:DoubleSide}));cloth.position.set(c.x+6.8,c.height+5.7,c.z-1);cloth.castShadow=true;scene.add(cloth);flags.push(cloth);
+  const button=document.createElement('button');button.className='city-label';const site=siteById[c.id];
+  button.innerHTML='<span class="city-medallion" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 14 16 5l12 9H4Zm3 2h18v12h-7v-7h-4v7H7Z" fill="currentColor"/><path d="M3 29h26M6 14v-3m20 3v-3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span><span class="city-caption"><strong></strong><small></small></span>';
+  button.querySelector('strong')!.textContent=site.name;button.querySelector('small')!.textContent=polities[site.polity].name+' · '+(site.capital?'都城':'城邑');
+  button.setAttribute('aria-label','定位'+site.name+'，'+polities[site.polity].name);button.title=site.name+' · '+polities[site.polity].name;button.dataset.site=c.id;button.addEventListener('click',()=>focus(c.id));document.querySelector('#labels')!.append(button);labels.push({button,anchor:new Vector3(c.x,c.height+.7,c.z+10)});
  }
  // Small farm parcels and paths form inhabited basins. These are art placements, not history data.
  const random=seededRandom(546);
@@ -188,7 +197,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   const distance=camera.position.distanceTo(controls.target),shadowSize=Math.max(55,Math.min(290,distance*.9));
   sun.position.copy(controls.target).add(new Vector3(-135,155,80));sun.target.position.copy(controls.target);const sc=sun.shadow.camera;sc.left=-shadowSize;sc.right=shadowSize;sc.top=shadowSize;sc.bottom=-shadowSize;sc.updateProjectionMatrix();
   (scene.fog as Fog).near=distance*.8;(scene.fog as Fog).far=distance*2.6;
-  if(!reduced)for(const flag of flags){const p=flag.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*2.8+p.getY(i)*1.8+now*.0013)*.13*(p.getX(i)+.825)/1.65);p.needsUpdate=true;flag.geometry.computeVertexNormals();}
+  if(!reduced)for(const flag of flags){const p=flag.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*2.8+p.getY(i)*1.8+now*.0013)*.13*(1.415-p.getY(i))/2.83);p.needsUpdate=true;flag.geometry.computeVertexNormals();}
   camera.updateMatrixWorld();
   for(const {button,anchor} of labels){const p=anchor.clone().project(camera),inView=p.z>-1&&p.z<1&&Math.abs(p.x)<1.1&&Math.abs(p.y)<1.15;button.hidden=!inView;if(inView)button.style.transform=`translate(${(p.x*.5+.5)*container.clientWidth}px,${(-p.y*.5+.5)*container.clientHeight}px) translate(-50%,-100%) scale(${Math.max(.65,Math.min(1,135/distance))})`;}
   try{renderer.shadowMap.needsUpdate=dirty;renderer.render(scene,camera);dirty=false;

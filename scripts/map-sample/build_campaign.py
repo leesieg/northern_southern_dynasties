@@ -108,6 +108,8 @@ def building(x,y,w,d,height,palace=False):
  for side in (-1,1):
   for k in range(4):box(x-w*.43+k*w*.286,y+side*d*.505,.15,.055,.045,height,3)
   box(x,y+side*d*.51,.32,w*.9,.045,.10,3)
+ # Timber door and lintel make facades legible at city zoom.
+ box(x,y-d*.51,.14,w*.19,.028,height*.69,3)
  roof(x,y,height+.18,w,d,.60 if palace else .34)
 # Square city with open south gate, spaced gatehouses, irregular outer hamlets.
 box(0,0,-.06,12.8,10.8,.06,4)
@@ -120,8 +122,22 @@ for side in (-1,1):
  for k in range(41):box(side*6.3,-5.25+k*.26,.86,.40,.14,.20,0)
 for x,y in [(-6.3,-5.3),(6.3,-5.3),(-6.3,5.3),(6.3,5.3),(0,-5.3),(0,5.3)]:
  box(x,y,.85,1,.9,.58,1);roof(x,y,1.43,1.3,1.2,.39)
+# Main gate: masonry piers support the opening, lintel and double-eaved gate hall.
+for x in (-1.15,1.15):box(x,-5.3,0,.42,.85,.95,0)
+box(0,-5.3,.88,2.72,.85,.24,0)
+roof(0,-5.3,1.17,2.8,1.42,.39)
+box(0,-5.3,1.65,1.45,.86,.47,1);roof(0,-5.3,2.12,1.95,1.28,.43)
+for x in (-.56,0,.56):box(x,-5.745,1.65,.07,.05,.47,3)
+# Rampart buttresses and stone walks retain the open gate and original footprint.
+for sign in (-1,1):
+ for y in (-4,-2,0,2,4):box(sign*6.5,y,0,.21,.38,.78,0)
+ box(sign*6.02,0,.68,.28,10.4,.10,0)
 # Palace precinct at north, distinct courtyards and broad axial street.
 for x,y,w,d,hh in [(0,2.5,2.6,1.2,.95),(0,.65,2,1,.67),(-2.1,2,1,2,.43),(2.1,2,1,2,.43)]:building(x,y,w,d,hh,True)
+# Palace forecourt, low enclosure, and broad stepped approach.
+for step in range(4):box(0,-.15-step*.10,0,1.5+step*.13,.16,.13-step*.025,0)
+for x in (-2.85,2.85):box(x,2.3,0,.10,4.1,.32,1)
+box(0,4.33,0,5.8,.12,.32,1)
 # Upper palace hall and corner roof silhouette, kept within the same original asset.
 box(0,2.5,1.50,1.75,.78,.70,1);roof(0,2.5,2.20,2.1,1.15,.58)
 for x in (-1,1):

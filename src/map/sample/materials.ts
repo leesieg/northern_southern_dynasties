@@ -1,4 +1,4 @@
-import {CanvasTexture,Color,DoubleSide,MeshStandardMaterial,SRGBColorSpace,type Texture} from 'three';
+import {Color,DoubleSide,MeshStandardMaterial,type Texture} from 'three';
 /** Original surface noise, independent of geographic height (never generates hills). */
 export function terrainMaterial(fields?:{map:Texture;centers:{x:number;z:number}[]}){
  const m=new MeshStandardMaterial({color:'#ffffff',roughness:.94,transparent:true});
@@ -55,13 +55,5 @@ export function waterMaterial(){
   `);
  };
  return m;
-}
-export function flagTexture(name:string,color:string){
- const c=document.createElement('canvas');c.width=128;c.height=256;const g=c.getContext('2d')!;
- g.fillStyle=color;g.fillRect(0,0,128,256);
- for(let y=0;y<256;y+=3){g.fillStyle=y%6===0?'rgba(255,238,196,.065)':'rgba(0,0,0,.08)';g.fillRect(0,y,128,1);}
- for(let x=1;x<128;x+=4){g.fillStyle='rgba(20,17,11,.09)';g.fillRect(x,0,1,256);}g.strokeStyle='#bba36a';g.lineWidth=4;g.strokeRect(9,9,110,238);
- g.fillStyle='#e4d3a3';g.textAlign='center';g.font='68px "Songti SC",serif';g.fillText(name,64,132);
- const t=new CanvasTexture(c);t.colorSpace=SRGBColorSpace;return t;
 }
 export const fieldColors=['#8c8748','#a79a58','#b3a269','#76804c','#a88e50'].map(c=>new Color(c));
