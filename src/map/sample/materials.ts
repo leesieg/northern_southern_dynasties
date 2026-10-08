@@ -1,7 +1,7 @@
 import type {SeasonState} from './seasons';
 import {Color,DoubleSide,MeshStandardMaterial,type Texture} from 'three';
 /** Original surface noise, independent of geographic height (never generates hills). */
-export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[]}|undefined,season:SeasonState){
+export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[]}|undefined,season:SeasonState,options:{fade?:boolean}={}){
  const m=new MeshStandardMaterial({color:'#ffffff',roughness:.94,transparent:true});
  m.onBeforeCompile=s=>{
   Object.assign(s.uniforms,season.uniforms);
@@ -53,7 +53,7 @@ export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[
  }
  // Keep grain on exposed earth, but avoid stamping the soil texture into deep snow.
  diffuseColor.rgb*=land*mix(.80+fine*.35,.97+fine*.045,snowCover);
- float edge=min(min(p.x+276.,294.4-p.x),min(p.y+133.2,144.3-p.y));diffuseColor.a*=smoothstep(0.,14.,edge);
+ ${options.fade===false?'':'float edge=min(min(p.x+276.,294.4-p.x),min(p.y+133.2,144.3-p.y));diffuseColor.a*=smoothstep(0.,14.,edge);'}
  `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
  float rugged=smoothstep(5.,13.,terrainPosition.y);
  float relief=(noise2(terrainPosition.xz*3.)*.13+noise2(terrainPosition.xz*10.)*.022)*rugged*(1.-snowCover*.85);

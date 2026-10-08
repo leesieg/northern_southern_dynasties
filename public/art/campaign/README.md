@@ -26,3 +26,9 @@ SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey. Global E
 城邑旗帜由运行时复用 `armyHeraldry` / `RealmFlag`：长安按开局归属展示西魏旗，洛阳展示东魏旗；不再使用样板单独绘制的国号旗。
 
 动态建筑从独立教学演示局的真实营建状态派生，复用现有报价、扣款、工期、完工和三级上限规则。演示资金初始 2000 钱，日期推进包含现有营建模块的月度收入结算；不读取或写入正式存档。升级期间保留已建建筑并叠加工地，完成后切换新等级。城墙、人口密度和战损尚未动态化。
+
+## 全国正式地图高程
+
+`national-elevation.bin` 为 2048 × 1536 的 little-endian float32 米制高程，12 MiB；坐标窗口和数据来源见 `national-terrain.json`。由 `scripts/map-sample/build_national_dem.py` 解码 48 张 AWS Terrarium z5 瓦片（x=21–28、y=9–14），未经程序化造山。全国网格使用距离分级采样；近景按需读取同来源 z8 的 3 × 3 瓦片并与本地底图接缝过渡。城市覆盖范围测试通过，细化失败仍保留真实本地底图并告知用户。
+
+正式入口使用 `src/map/three` 的独立 Three.js 场景，共用样板的地形、水面和季节材质；全国位置采用 Mercator 公里坐标，10 倍高程展示夸张。城址平整、河槽适配、田块和疏林仍为明确的美术展示，不用于历史精度或面积推断。资源沿用本页上方 Mapzen／USGS／NOAA 的来源与署名；水系及陆地轮廓使用项目已有 Natural Earth 本地资源。

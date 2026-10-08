@@ -1,0 +1,11 @@
+{
+  "columns": 2048,
+  "rows": 1536,
+  "west": 0.65625,
+  "north": 0.28125,
+  "width": 0.25,
+  "height": 0.1875,
+  "source": "Mapzen Terrain Tiles on AWS / Terrarium z5",
+  "heightUnit": "metres",
+  "attribution": "SRTM and GMTED2010 courtesy USGS; ETOPO1 courtesy NOAA"
+}

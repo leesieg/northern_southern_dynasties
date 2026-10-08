@@ -1,11 +1,10 @@
 import {waterMaskContains} from './campaignTerrain';
 import {campaignDomains,controlledSite,domainSignature} from './campaignDomains';
-import {campaignSeason,applyCampaignSeason} from './campaignSeason';
+import {campaignSeason} from './campaignSeason';
 import {ActionDialog} from '../ui/ActionDialog';
 import {engagementGroups,type EngagementRef} from '../ui/warPresentation';
 import {polityStyle,worldRealms} from '../core/polityRuntime';
 import {updateMarkerPortrait} from './markerPortrait';
-import {ATLAS_MATERIALS,atlasMaterial} from './atlasMaterials';
 import {atlasPresentation,CITY_VIEW_ZOOM,type CameraAction} from './atlasPresentation';
 import {CITY_DETAIL_ZOOM} from './campaignScenery';
 import {getPerson} from '../core/personRegistry';
@@ -26,9 +25,8 @@ import {OngoingItemsDialog} from '../ui/OngoingFlags';
 import {estateName} from '../core/construction';
 import { territoryNodes,descendantSites,nodeForSite,levelNames,controlEvents,type TerritoryLevel } from '../data/territorialHierarchy';
 import { useEffect, useRef, useState } from 'react';
-import { Map as AtlasMap, Marker, setWorkerUrl, setWorkerCount, type GeoJSONSource } from 'maplibre-gl';
-import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import type {GeoJSONSource} from 'maplibre-gl';
+import {ThreeCampaignMap as AtlasMap,ThreeMarker as Marker} from './three/ThreeCampaignMap';
 import './atlas.css';
 import { polities, siteById, sites } from '../data/scenario';
 import { position,planRoute } from '../core/world';
@@ -37,12 +35,9 @@ import { activeRoute, previewArmyRoute, atlasLabels, pointFeature } from './geog
 import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
 import { territoryHit } from './territories';
-import { mapResourceUrl } from './mapResources';
 import type {CampaignSceneryLayer} from './CampaignLayer';
 import {armyShowsModel,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
 
-setWorkerUrl(mapWorkerUrl);
-setWorkerCount(2);
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
@@ -99,7 +94,7 @@ export function WorldMap(props:Props){
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
-    let sceneryLayer:CampaignSceneryLayer|undefined;
+    let sceneryLayer:Pick<CampaignSceneryLayer,'siteAt'|'showsSite'>|undefined;
     const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;portrait:HTMLButtonElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement}>();
     const labels:{marker:Marker;data:typeof atlasLabels[number]}[]=[];
@@ -184,7 +179,7 @@ export function WorldMap(props:Props){
     function syncPerspective(){
       if(!map||!styleReady||disposed)return;
       const view=atlasPresentation(map.getZoom(),current.current.tilted);
-      if(terrainEnabled!==view.terrain){map.setTerrain(view.terrain?{source:'dem-terrain',exaggeration:3.2}:null);terrainEnabled=view.terrain;}
+      if(terrainEnabled!==view.terrain){map.setTerrain(view.terrain);terrainEnabled=view.terrain;}
       if(Math.abs(map.getPitch()-view.pitch)>.5)map.easeTo({pitch:view.pitch,duration:reduced?0:250});
     }
     function focusSite(id:string){
@@ -202,7 +197,7 @@ export function WorldMap(props:Props){
       const p=current.current;
       const signature=domainSignature(p.world);
       if(signature!==lastDomains){const domain=campaignDomains(p.world);knownDomains=domain.realms;(map.getSource('unruled-fog') as GeoJSONSource).setData(domain.fog);for(const source of ['realms','frontiers'])(map.getSource(source) as GeoJSONSource).setData(domain.realms);lastDomains=signature;}
-      const season=campaignSeason(p.world);if(lastSeason!==season){applyCampaignSeason(map,season);lastSeason=season;container.parentElement?.setAttribute('data-season',season);}
+      const season=campaignSeason(p.world);if(lastSeason!==season){lastSeason=season;container.parentElement?.setAttribute('data-season',season);}
       const activeSites=sites.filter(s=>controlledSite(p.world,s.id)).map(s=>s.id);for(const layer of ['site-halo','site-heart'])map.setFilter(layer,['in',['get','id'],['literal',activeSites]]);
       if(lastTerritory!==p.territory||lastLevel!==p.territoryLevel){
         const selectedId=territoryNodes[p.territory].level==='city'?'':p.territory;
@@ -309,28 +304,21 @@ export function WorldMap(props:Props){
         syncPerspective();
         lastTilt=p.tilted;
       }
-      scheduleLabels();
+      map.triggerRepaint();scheduleLabels();
     }
 
     try{
       map=new AtlasMap({
         container,style:atlasStyle(),center:[105.5,34.5],zoom:3.7,pitch:24,bearing:0,
-        minZoom:2.2,maxZoom:12,maxPitch:60,renderWorldCopies:false,
-        maxBounds:[[64,8],[148,61]],dragRotate:false,pitchWithRotate:false,
-        canvasContextAttributes:{antialias:true,powerPreference:'high-performance'},
-        attributionControl:{compact:false,customAttribution:'雾外为本局已建模政权范围，非完整历史疆界'},
-        transformRequest:url=>({url:mapResourceUrl(url,location.origin)}),
+        minZoom:2.2,maxZoom:12,
       });
-      map.getCanvas().setAttribute('aria-label','全国地形地图，拖动平移，滚轮缩放；也可通过地点目录选择城邑');
-      map.doubleClickZoom.disable();
-      map.boxZoom.disable();
+      map.getCanvas().setAttribute('aria-label','全国三维地图，拖动平移，右键拖动旋转，滚轮缩放；右键单击查看操作，也可通过地点目录选择城邑');
       home();
       map.on('style.load',()=>{
         if(!map||disposed)return;
-        for(const name of ATLAS_MATERIALS)if(!map.hasImage(name))map.addImage(name,atlasMaterial(name),{pixelRatio:2});
         styleReady=true;
-        void import('./CampaignLayer').then(({campaignLayer})=>{if(!map||disposed||map.getLayer('campaign-scenery'))return;try{sceneryLayer=campaignLayer(()=>current.current,reason=>setWarning(reason),scheduleLabels);map.addLayer(sceneryLayer,'site-halo');}catch(e){sceneryLayer=undefined;setWarning('城池图层不可用，保留城邑铭牌：'+(e instanceof Error?e.message:'WebGL 不可用'));}}).catch(()=>setWarning('城池模型加载失败，保留基础城邑。'));
-        void import('./MilitaryLayer').then(({militaryLayer})=>{if(!map||disposed||map.getLayer('military-models'))return;try{map.addLayer(militaryLayer(()=>current.current,reason=>{militaryLayerReady=false;setWarning(reason);scheduleLabels();},()=>{militaryLayerReady=true;scheduleLabels();},id=>armyPlacements.get(String(id))),'unruled-fog-edge');}catch(e){militaryLayerReady=false;setWarning('军队 3D 图层不可用，保留军旗操作：'+(e instanceof Error?e.message:'WebGL 不可用'));scheduleLabels();}}).catch(()=>setWarning('军队模型加载失败，保留军旗操作。'));
+        sceneryLayer={siteAt:point=>map?.siteAt(point)??null,showsSite:id=>map?.showsSite(id)??false};
+        map.attachWorld(()=>current.current,id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},reason=>setWarning(reason));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
           const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;element.style.setProperty('--city-realm',polities[s.polity].color);button.setAttribute('aria-label',`选择${s.name}`);
@@ -363,7 +351,7 @@ export function WorldMap(props:Props){
           const marker=new Marker({element,anchor:'center',opacityWhenCovered:.4}).setLngLat([data.lon,data.lat]).addTo(map);
           labels.push({marker,data});allMarkers.push(marker);
         }
-        update();setReady(true);
+        update();
       });
       const hit=(point:{x:number;y:number})=>{
         if(!map||!styleReady)return null;
@@ -394,14 +382,16 @@ export function WorldMap(props:Props){
         if(disposed)return;
         console.error('[Atlas]',event.error);
         const id=(event as typeof event&{sourceId?:string}).sourceId;
-        if(id==='land')setWarning('备用陆地底图未能载入。请重新载入地图。');
+        if(id==='national-dem')setError('全国真实地形无法载入，请重新载入地图：'+event.error.message);
+        else if(id==='detail-dem')setWarning(event.error.message);
+        else if(id==='land')setWarning('备用陆地底图未能载入。请重新载入地图。');
         else if(id||/fetch|network|tile|http|ajax/i.test(event.error.message))setWarning('部分在线地形或水系未能载入，当前显示可用图层。');
         else setError(`地图初始化异常：${event.error.message}`);
       });
       map.on('webglcontextlost',()=>setError('图形上下文中断。重新载入地图可恢复，游戏进度仍保留。'));
       map.on('zoomend',syncPerspective);
-      map.on('move',scheduleLabels);map.on('sourcedata',scheduleLabels);
-      map.once('idle',()=>{if(slowLoad)clearTimeout(slowLoad);});
+      map.on('move',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId==='detail-dem')setWarning(value=>value.startsWith('近景高程')?'':value);});
+      map.once('idle',()=>{setReady(true);if(slowLoad)clearTimeout(slowLoad);});
       slowLoad=setTimeout(()=>{if(!disposed&&map&&!map.areTilesLoaded())setWarning('高清地形仍在加载；可以继续操作，或稍后重试。');},20000);
       observer=new ResizeObserver(()=>{map?.resize();scheduleLabels();});observer.observe(container);
       api.current={update,camera(type){
