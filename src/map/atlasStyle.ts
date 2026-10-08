@@ -43,7 +43,7 @@ export function atlasStyle():StyleSpecification {
       {id:'dry-ground',type:'fill',source:'natural','source-layer':'landcover',minzoom:5,filter:['==',['get','class'],'sand'],paint:{'fill-color':'#d3ba88','fill-opacity':['interpolate',['linear'],['zoom'],5,0,7,.25,10,.36]}},
       {id:'woodland',type:'fill',source:'natural','source-layer':'landcover',minzoom:5,filter:['==',['get','class'],'wood'],paint:{'fill-color':'#506e4e','fill-opacity':['interpolate',['linear'],['zoom'],5,.06,7,.23,10,.35]}},
       {id:'woodland-canopy',type:'fill',source:'natural','source-layer':'landcover',minzoom:6,filter:['==',['get','class'],'wood'],paint:{'fill-pattern':'atlas-canopy','fill-opacity':['interpolate',['linear'],['zoom'],6,0,7,.42,9,.65]}},
-      {id:'realm-tint',type:'fill',source:'realms',paint:{'fill-color':['get','color'],'fill-opacity':['interpolate',['linear'],['zoom'],3,.22,5,.16,8,.035]}},
+      {id:'realm-tint',type:'fill',source:'realms',paint:{'fill-color':['get','color'],'fill-opacity':['interpolate',['linear'],['zoom'],3,.48,4.8,.44,6.2,.10,8,.035]}},
       {id:'territory-fill',type:'fill',source:'territories',paint:{'fill-color':['get','color'],'fill-opacity':0}},
       {id:'territory-tone',type:'fill',source:'territories',paint:{'fill-color':['match',['get','tone'],0,'#fff0c6',1,'#314832','#d4c492'],'fill-opacity':['interpolate',['linear'],['zoom'],4,0,6,.12,9,.04]}},
       {id:'territory-border',type:'line',source:'territories',paint:{'line-color':'#534d39','line-width':['interpolate',['linear'],['zoom'],4,.3,6,.8,9,1.2],'line-opacity':['interpolate',['linear'],['zoom'],4,0,5,.45,8,.65]}},

@@ -39,6 +39,6 @@ SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey. Global E
 
 运行时仅加载镜头附近 3×3 分块，最多缓存 48 张解码瓦片；全国资源约 58.9 MiB，不随首屏一次性下载。全国网格约 5 万顶点，近景细化约 14.8 万顶点，沿用真实高程与展示夸张。无需在游戏运行时请求 AWS。植被仍为确定性美术布局，不代表历史林地调查数据。
 
-`national-parchment.webp` 是 `scripts/map-sample/build_parchment.py` 从同一全国 DEM 与 Natural Earth 陆地、水系预生成的纸绘图（2048×1536，约 221 KiB）。仅绘制自然地貌，不包含政权、城邑或军队；运行时复用实际控制遮罩，不再逐次重绘约 315 万像素。
+`national-parchment.webp` 是 `scripts/map-sample/build_parchment.py` 从同一全国 DEM 与 Natural Earth 陆地、水系预生成的纸绘图（2048×1536，约 301 KiB）。仅绘制自然地貌，不包含政权、城邑或军队；运行时复用实际控制遮罩，不再逐次重绘约 315 万像素。
 
 `national-relief.png` 为 `scripts/map-sample/build_strategic_relief.py` 从全国真实 DEM 预生成的战略法线／高程纹理（1024×768，线性 RGBA 数据；RGB 为法线编码，alpha 为展示高程／180）。战略视图统一采样这一纹理，山纹、坡面光照与季节高程效果不再依赖镜头附近的近景网格细化程度。不是随机地形或新增历史数据。

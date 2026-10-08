@@ -288,7 +288,7 @@ export function WorldMap(props:Props){
       for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
       map.setPaintProperty('territory-fill','fill-opacity',p.mode==='diplomacy'?.55:0);
-      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:p.mode==='domains'?['interpolate',['linear'],['zoom'],3,.12,5,.06,8,.015]:['interpolate',['linear'],['zoom'],3,.22,5,.16,8,.035]);
+      map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:p.mode==='domains'?['interpolate',['linear'],['zoom'],3,.12,5,.06,8,.015]:['interpolate',['linear'],['zoom'],3,.48,4.8,.44,6.2,.10,8,.035]);
       // Domains already draw the chosen hierarchy: do not stack the city catchment grid over it.
       map.setLayoutProperty('territory-border','visibility',p.mode!=='domains'&&['county','city'].includes(p.territoryLevel)?'visible':'none');
       if(lastMode!==p.mode){

@@ -246,3 +246,13 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#6d7769;text-shadow:0 1px #e4dfcd}
 .atlas-map .atlas-paper{background:radial-gradient(ellipse at 50% 42%,transparent 48%,#374c432b);box-shadow:inset 0 0 85px #273d3522}
 .three-map-attribution{position:absolute;bottom:5px;right:8px;z-index:2;max-width:330px;font-size:10px;color:#d8d6c3;background:#24332cdd;padding:3px 6px}.three-map-attribution summary{cursor:pointer}.three-map-attribution p{margin:6px;line-height:1.7}.three-map-attribution a{color:#e8d5a2}.three-map-attribution[open]{padding:8px 12px;border:1px solid #998460}
+
+/* Strategic atlas: ink plaques over tinted illustrated paper. */
+.focused-shell .atlas-map [data-strategic="true"] .atlas-place{background:transparent;box-shadow:none;min-height:26px}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-place-label{min-height:26px;padding:3px 13px 3px 7px;background:#192321;color:#f4efdb;border:0;box-shadow:none;font-size:13px;font-weight:600;letter-spacing:2px;clip-path:polygon(0 4%,94% 0,91% 17%,100% 28%,94% 49%,99% 64%,91% 93%,0 100%)}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-place-label small{display:none}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-place-label.is-selected{background:#443d27;color:#ffe49a}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-city-realm{background:transparent;width:25px;flex-basis:25px;height:30px}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-city-realm img{width:25px;height:30px}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-governor{width:25px;height:28px}
+.focused-shell .atlas-map [data-strategic="true"] .atlas-place-label:focus-visible{clip-path:none;outline:2px solid #ffe49a;outline-offset:2px}

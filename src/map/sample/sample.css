@@ -15,3 +15,11 @@
 .season-controls{position:absolute;top:80px;right:25px;text-align:right}.season-controls>div{display:flex;justify-content:flex-end}.season-controls button{min-width:42px;padding:6px 12px;background:#202e27ed;border-color:#8f805c}.season-controls button+button{border-left:0}.season-controls button[aria-pressed=true]{background:#47503b;color:#fff0c3;border-bottom:2px solid #c0a66b}.season-controls button:disabled{opacity:.5;cursor:wait}.season-description{margin:6px 0 0;padding:4px 8px;font-size:11px;color:#e4d5af;background:#202e27dc}@media(max-width:650px){.season-controls{top:151px;right:18px}.season-controls button{min-width:38px;min-height:36px;padding:5px 10px}.season-description{font-size:10px}#notice{top:234px}}
 
 .site-picker{display:flex;align-items:center;gap:8px;padding:0 10px;background:#202e27ed;border:1px solid #8f805c;border-left:0;font-size:13px}.site-picker select{font:inherit;color:#eadcbb;background:#25352b;border:0;min-height:38px;max-width:145px;padding:4px}.site-picker select:focus-visible{outline:2px solid #e2c884}.city-medallion:is(img){object-fit:contain;border-radius:0;padding:2px}.three-map-attribution{position:absolute;bottom:18px;right:20px;font-size:12px;color:#e8d9b5}.three-map-attribution[open]{left:auto;bottom:18px;right:20px;z-index:6}.three-map-attribution a{color:#e5cb90}@media(max-width:650px){nav{right:18px;flex-wrap:wrap}.site-picker{padding:0 6px}.site-picker select{max-width:100px}.season-controls{top:191px}#notice{top:265px}}
+
+[data-strategic="true"] .city-label{min-width:90px;min-height:28px;gap:3px;padding:0 12px 0 0;border:0;border-radius:0;background:#192321;box-shadow:none;color:#f4efdb;clip-path:polygon(0 0,94% 0,91% 17%,100% 28%,94% 49%,99% 64%,91% 96%,0 100%)}
+[data-strategic="true"] .city-label:after{display:none}
+[data-strategic="true"] .city-medallion{width:25px;height:30px;flex-basis:25px;border:0;border-radius:0;background:transparent;box-shadow:none;object-fit:contain}
+[data-strategic="true"] .city-caption strong{font-size:14px;letter-spacing:2px;font-weight:600}
+[data-strategic="true"] .city-caption small{display:none}
+[data-strategic="true"] .city-label[aria-current=true]{background:#443d27;color:#ffe49a}
+[data-strategic="true"] .city-label:focus-visible{clip-path:none;outline:2px solid #ffe49a;outline-offset:2px}
