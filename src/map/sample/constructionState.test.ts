@@ -18,3 +18,19 @@ describe('isolated construction sample uses production rules',()=>{
   expect(newConstructionDemo().holdings.cities.luoyang.levels.granary).toBe(0);expect(()=>advanceDemoConstruction(w,-1)).toThrow();
  });
 });
+
+it('previews actual construction state across the national settlement list, not just Heluo',async()=>{
+ const {sites,siteById}=await import('../../data/scenario');
+ const {controlledSite}=await import('../campaignDomains');
+ const {campaignCityAppearance}=await import('../campaignScenery');
+ const initial=newConstructionDemo(),ids=sites.filter(s=>controlledSite(initial,s.id)).map(s=>s.id),world=newConstructionDemo(ids);
+ for(const id of ids)expect(world.holdings.cities[id],id).toBeDefined();
+ for(const id of ['jiankang','chengdu','guangzhou','wuwei','ye','changan']){
+  startDemoConstruction(world,id,'market');
+  expect(campaignCityAppearance(world,siteById[id])).toMatchObject({project:0,progress:0});
+ }
+ advanceDemoConstruction(world,15);
+ for(const id of ['jiankang','chengdu','guangzhou','wuwei','ye','changan'])expect(campaignCityAppearance(world,siteById[id])).toMatchObject({project:-1,levels:[1,0,0]});
+ expect(world.holdings.cities.luoyang.levels.market).toBe(0);
+ expect(newConstructionDemo(ids).holdings.cities.jiankang.levels.market).toBe(0);
+});

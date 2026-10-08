@@ -5,10 +5,10 @@ import type {World} from '../../core/types';
 export const DEMO_BUILDINGS=Object.keys(cityBuildings) as CityBuilding[];
 export const DEMO_SITES=['luoyang','changan'] as const;
 /** Explicit isolated teaching scenario. No save, worker, or production-world access. */
-export function newConstructionDemo(){
+export function newConstructionDemo(cityIds:readonly string[]=DEMO_SITES){
  const world=newWorld();world.people[0].coins=2000;world.people[0].location='luoyang';
- world.holdings.governedCities=[...DEMO_SITES];
- for(const site of DEMO_SITES)world.holdings.cities[site]=emptyCity();
+ world.holdings.governedCities=[...cityIds];
+ for(const site of cityIds)world.holdings.cities[site]=emptyCity();
  return world;
 }
 export function constructionQuote(world:World,site:string,building:CityBuilding){return buildQuote(world,{type:'build',scope:'city',site,building});}

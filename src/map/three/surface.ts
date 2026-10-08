@@ -1,3 +1,4 @@
+import {parchmentTexture} from './parchment';
 import {segmentDistance} from '../sample/geography';
 import {sites} from '../../data/scenario';
 import {campaignFarmAtlas} from '../sample/farmAtlas';
@@ -12,6 +13,7 @@ async function local(path:string){const r=await fetch(import.meta.env.BASE_URL+p
 export async function countrySurface(season:SeasonState){
  const [meta,buffer,land,rivers]=await Promise.all([local('art/campaign/national-terrain.json').then(r=>r.json()) as Promise<DEMGrid>,local('art/campaign/national-elevation.bin').then(r=>r.arrayBuffer()),local('data/land.geojson').then(r=>r.json()) as Promise<FeatureCollection>,local('data/rivers.geojson').then(r=>r.json()) as Promise<FeatureCollection>]);
  const values=new Float32Array(buffer);if(values.length!==meta.columns*meta.rows)throw new Error('全国高程数据不完整');
+ const parchment=parchmentTexture(values,meta,land,rivers);
  const root=new Group(),meshes:Mesh[]=[],water=waterMaterial(),riverGroup=new Group();let surface=terrainMaterial(undefined,season,{fade:false});root.add(riverGroup);
  const strategic={value:0},landMask=coverageTexture(land,2048);let farms:ReturnType<typeof campaignFarmAtlas>|undefined,farmKey="";
  function bindLand(){const compile=surface.onBeforeCompile;
@@ -39,7 +41,7 @@ export async function countrySurface(season:SeasonState){
   for(let j=0;j<rows;j++)for(let i=0;i<columns;i++){const x=m.west+(i+.5)/columns*m.width,y=m.north+(j+.5)/rows*m.height;if(cut&&x>cut.west&&x<cut.west+cut.width&&y>cut.north&&y<cut.north+cut.height)continue;const a=j*(columns+1)+i;indices.push(a,a+columns+1,a+1,a+1,a+columns+1,a+columns+2);}
   const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(vertices,3));g.setIndex(indices);g.setAttribute('campaignElevation',new Float32BufferAttribute(elevations,1));g.computeVertexNormals();if(flat){const p=g.getAttribute('position');for(let i=0;i<p.count;i++)p.setY(i,0);}g.computeBoundingSphere();return g;
  }
- function rebuild(){prepareRivers();for(const mesh of meshes){root.remove(mesh);mesh.geometry.dispose();}meshes.length=0;for(const [m,step,cut] of [[meta,4,detail?.meta],...(detail?[[detail.meta,2,undefined]]:[])] as [DEMGrid,number,DEMGrid|undefined][]){const mesh=new Mesh(geometry(m,step,cut),surface);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);meshes.push(mesh);}rebuildRivers();}
+ function rebuild(){farmKey="";prepareRivers();for(const mesh of meshes){root.remove(mesh);mesh.geometry.dispose();}meshes.length=0;for(const [m,step,cut] of [[meta,4,detail?.meta],...(detail?[[detail.meta,2,undefined]]:[])] as [DEMGrid,number,DEMGrid|undefined][]){const mesh=new Mesh(geometry(m,step,cut),surface);mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);meshes.push(mesh);}rebuildRivers();}
  function rebuildRivers(){for(const o of [...riverGroup.children]){riverGroup.remove(o);(o as Mesh).geometry.dispose();}
   for(const source of riverPaths){const points=source.map(p=>new Vector3(p.x,flat?.1:p.y+.085,p.z));
    if(points.length<2)continue;const pos:number[]=[],uv:number[]=[],indices:number[]=[];
@@ -55,5 +57,5 @@ export async function countrySurface(season:SeasonState){
    detail={meta:{columns:768,rows:768,west:tx/256,north:ty/256,width:3/256,height:3/256},values:fine};detailKey=key;rebuild();return true;
   }finally{if(pendingKey===key)pendingKey='';}
  }
- return {root,meshes,land,rivers,height,refine,water,isRiver(lon:number,lat:number){const p=projectGround(lon,lat);return nearSegments(p.x,p.z).some(s=>segmentDistance(p.x,p.z,s.a,s.b)<.65);},setFarms(centers:{x:number;z:number}[]){const key=centers.map(c=>c.x+':'+c.z).join('|');if(key===farmKey)return;farmKey=key;farms?.dispose();farms=campaignFarmAtlas(centers,(x,z)=>{const ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y);return height(ll.lng,ll.lat);});surface.dispose();const pair=[centers[0]??{x:1e8,z:1e8},centers[1]??{x:1e8,z:1e8}];surface=terrainMaterial({map:farms,centers:pair},season,{fade:false});bindLand();for(const mesh of meshes)mesh.material=surface;},setFlat(value:boolean){if(flat===value)return;flat=value;strategic.value=value?1:0;rebuild();},dispose(){closed=true;landMask.dispose();farms?.dispose();root.traverse(o=>{if(o instanceof Mesh)o.geometry.dispose();});for(const material of [surface,water])material.dispose();},fogMaterialMeshes(material:Material){return meshes.map(m=>new Mesh(m.geometry,material));}};
+ return {root,meshes,land,rivers,parchment,height,refine,water,isRiver(lon:number,lat:number){const p=projectGround(lon,lat);return nearSegments(p.x,p.z).some(s=>segmentDistance(p.x,p.z,s.a,s.b)<.65);},setFarms(centers:{x:number;z:number}[]){const key=centers.map(c=>c.x+':'+c.z).join('|');if(key===farmKey)return;farmKey=key;farms?.dispose();farms=campaignFarmAtlas(centers,(x,z)=>{const ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y);return height(ll.lng,ll.lat,true);});surface.dispose();surface=terrainMaterial({map:farms,centers,columns:6,rows:6},season,{fade:false});bindLand();for(const mesh of meshes)mesh.material=surface;},setFlat(value:boolean){if(flat===value)return;flat=value;strategic.value=value?1:0;rebuild();},dispose(){closed=true;parchment.dispose();landMask.dispose();farms?.dispose();root.traverse(o=>{if(o instanceof Mesh)o.geometry.dispose();});for(const material of [surface,water])material.dispose();},fogMaterialMeshes(material:Material){return meshes.map(m=>new Mesh(m.geometry,material));}};
 }

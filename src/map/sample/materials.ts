@@ -1,17 +1,17 @@
 import type {SeasonState} from './seasons';
-import {Color,DoubleSide,MeshStandardMaterial,type Texture} from 'three';
+import {Color,DoubleSide,MeshStandardMaterial,Vector2,type Texture} from 'three';
 /** Original surface noise, independent of geographic height (never generates hills). */
-export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[]}|undefined,season:SeasonState,options:{fade?:boolean}={}){
+export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[];columns?:number;rows?:number}|undefined,season:SeasonState,options:{fade?:boolean}={}){
  const m=new MeshStandardMaterial({color:'#ffffff',roughness:.94,transparent:true});
  m.onBeforeCompile=s=>{
   Object.assign(s.uniforms,season.uniforms);
   s.uniforms.farmAtlas={value:fields?.map??null};s.uniforms.hasFarms={value:fields?1:0};
-  s.uniforms.farmCenter0={value:fields?[fields.centers[0].x,fields.centers[0].z]:[0,0]};s.uniforms.farmCenter1={value:fields?[fields.centers[1].x,fields.centers[1].z]:[0,0]};
+  s.uniforms.farmCenters={value:Array.from({length:36},(_,i)=>new Vector2(fields?.centers[i]?.x??1e8,fields?.centers[i]?.z??1e8))};s.uniforms.farmCount={value:Math.min(36,fields?.centers.length??0)};s.uniforms.farmGrid={value:new Vector2(fields?.columns??2,fields?.rows??1)};
   s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 terrainPosition; varying vec3 terrainNormal;').replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=position; terrainNormal=normal;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>',`#include <common>
  varying vec3 terrainPosition; varying vec3 terrainNormal;
  uniform vec3 seasonLow; uniform vec3 seasonHigh; uniform vec3 seasonForest; uniform vec3 seasonField; uniform float seasonSnow;
- uniform sampler2D farmAtlas; uniform float hasFarms; uniform vec2 farmCenter0; uniform vec2 farmCenter1;
+ uniform sampler2D farmAtlas; uniform float hasFarms; uniform vec2 farmCenters[36]; uniform int farmCount; uniform vec2 farmGrid;
  float hash2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
  float noise2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash2(i),hash2(i+vec2(1,0)),f.x),mix(hash2(i+vec2(0,1)),hash2(i+vec2(1,1)),f.x),f.y);}
  float fbm(vec2 p){return noise2(p)*.55+noise2(p*2.07)*.26+noise2(p*4.1)*.13+noise2(p*8.2)*.06;}
@@ -29,10 +29,16 @@ export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[
  float strata=.86+.14*sin(terrainPosition.y*5.+noise2(p*1.4)*5.);
  land=mix(land,rock*strata,stone);
  if(hasFarms>.5){
-  vec2 uv0=(p-farmCenter0)/70.+.5;vec2 uv1=(p-farmCenter1)/70.+.5;
   vec4 field=vec4(0.);
-  if(uv0.x>0.&&uv0.x<1.&&uv0.y>0.&&uv0.y<1.)field=texture2D(farmAtlas,vec2(uv0.x*.5,1.-uv0.y));
-  if(uv1.x>0.&&uv1.x<1.&&uv1.y>0.&&uv1.y<1.)field=texture2D(farmAtlas,vec2(.5+uv1.x*.5,1.-uv1.y));
+  for(int i=0;i<36;i++){
+   if(i>=farmCount)break;
+   vec2 local=(p-farmCenters[i])/70.+.5;
+   if(local.x>0.&&local.x<1.&&local.y>0.&&local.y<1.){
+    vec2 tile=vec2(mod(float(i),farmGrid.x),floor(float(i)/farmGrid.x));
+    vec4 parcel=texture2D(farmAtlas,vec2((tile.x+local.x)/farmGrid.x,1.-(tile.y+local.y)/farmGrid.y));
+    field=mix(field,parcel,parcel.a);
+   }
+  }
   land=mix(land,mix(field.rgb,seasonField,.72),field.a*.83);
  }
  float snowCover=0.;
