@@ -30,6 +30,30 @@ for ob in originals:
         v.co=ob.matrix_world @ v.co-Vector((cx,cy,cz))
     copy=bpy.data.objects.new('City component',me);scene.collection.objects.link(copy);parts.append(copy)
 bpy.context.window.scene=scene
+# Low-rise suburbs break the isolated rectangular silhouette; original architectural vocabulary.
+wallmat=next(m for ob in originals for m in ob.data.materials if m and m.name.startswith('Pale plaster'))
+roofmat=next(m for ob in originals for m in ob.data.materials if m and m.name.startswith('Grey green roof tiles'))
+random.seed(546)
+for i in range(24):
+    side=-1 if i<12 else 1
+    x=side*random.uniform(3.8,5.0);y=random.uniform(-2.7,2.7)
+    w=random.uniform(.25,.45);d=random.uniform(.22,.35);h=random.uniform(.18,.28)
+    bpy.ops.mesh.primitive_cube_add(size=1,location=(x,y,h/2))
+    ob=bpy.context.object;ob.scale=(w,d,h);ob.data.materials.append(wallmat);parts.append(ob)
+    verts=[(x-w*.6,y-d*.65,h),(x+w*.6,y-d*.65,h),(x-w*.6,y+d*.65,h),(x+w*.6,y+d*.65,h),(x-w*.6,y,h+.15),(x+w*.6,y,h+.15)]
+    me=bpy.data.meshes.new('Suburb roof');me.from_pydata(verts,[],[(0,1,5,4),(4,5,3,2),(0,4,2),(1,3,5)]);me.materials.append(roofmat)
+    ob=bpy.data.objects.new('Suburb roof',me);scene.collection.objects.link(ob);parts.append(ob)
+# Static draped standard: a readable silhouette without an animation loop.
+woodmat=next(m for ob in originals for m in ob.data.materials if m and m.name.startswith('Dark timber'))
+bpy.ops.mesh.primitive_cylinder_add(vertices=7,radius=.035,depth=3.1,location=(3.25,.5,1.55))
+pole=bpy.context.object;pole.data.materials.append(woodmat);parts.append(pole)
+cloth=bpy.data.materials.new('Muted cinnabar standard');cloth.use_nodes=True
+cloth.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value=(.34,.045,.025,1)
+cloth.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value=.95
+verts=[(3.25+i*.12,.5+math.sin(i*.7-j*.2)*.10,3.02-j*.16) for j in range(10) for i in range(8)]
+faces=[(j*8+i,j*8+i+1,(j+1)*8+i+1,(j+1)*8+i) for j in range(9) for i in range(7)]
+me=bpy.data.meshes.new('Draped standard');me.from_pydata(verts,[],faces);me.materials.append(cloth)
+flag=bpy.data.objects.new('Draped standard',me);scene.collection.objects.link(flag);parts.append(flag)
 bpy.ops.object.select_all(action='DESELECT')
 for ob in parts:ob.select_set(True)
 bpy.context.view_layer.objects.active=parts[0]
@@ -53,9 +77,11 @@ for slot in city.material_slots:
     pixels=[]
     for y in range(64):
         for x in range(64):
-            grain=random.uniform(.78,1.08)
+            grain=random.uniform(.87,1.09)
+            if 'wall' in m.name.lower() and (y%12==0 or (x+(6 if y//12%2 else 0))%24==0):grain*=.72
             pixels.extend([min(1,c*grain) for c in base[:3]]+[1])
-    im.colorspace_settings.name='Non-Color';im.pixels=pixels;im.pack()
+    # Albedo is color data: exporting a Non-Color image darkened the runtime city.
+    im.colorspace_settings.name='sRGB';im.pixels=pixels;im.pack()
     tex=m.node_tree.nodes.new('ShaderNodeTexImage');tex.image=im
     m.node_tree.links.new(tex.outputs['Color'],p.inputs['Base Color'])
 bpy.ops.export_scene.gltf(filepath=OUT+'/northern-city.glb',use_selection=True,use_active_scene=True,export_format='GLB',export_materials='EXPORT')
