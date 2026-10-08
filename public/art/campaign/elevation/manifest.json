@@ -1,0 +1,12 @@
+{
+  "zoom": 7,
+  "west": 84,
+  "east": 116,
+  "north": 36,
+  "south": 60,
+  "tileSize": 256,
+  "format": "gzip little-endian int16 metres",
+  "source": "Mapzen Terrain Tiles on AWS / Terrarium z7",
+  "attribution": "SRTM and GMTED2010 courtesy USGS; ETOPO1 courtesy NOAA",
+  "tiles": 768
+}

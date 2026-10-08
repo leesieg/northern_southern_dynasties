@@ -32,3 +32,9 @@ SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey. Global E
 `national-elevation.bin` 为 2048 × 1536 的 little-endian float32 米制高程，12 MiB；坐标窗口和数据来源见 `national-terrain.json`。由 `scripts/map-sample/build_national_dem.py` 解码 48 张 AWS Terrarium z5 瓦片（x=21–28、y=9–14），未经程序化造山。全国网格使用距离分级采样；近景按需读取同来源 z8 的 3 × 3 瓦片并与本地底图接缝过渡。城市覆盖范围测试通过，细化失败仍保留真实本地底图并告知用户。
 
 正式入口使用 `src/map/three` 的独立 Three.js 场景，共用样板的地形、水面和季节材质；全国位置采用 Mercator 公里坐标，10 倍高程展示夸张。城址平整、河槽适配、田块和疏林仍为明确的美术展示，不用于历史精度或面积推断。资源沿用本页上方 Mapzen／USGS／NOAA 的来源与署名；水系及陆地轮廓使用项目已有 Natural Earth 本地资源。
+
+### 全国本地近景高程
+
+`elevation/manifest.json` 与 768 个 `elevation/*.bin.gz` 分块覆盖与全国底图相同的范围（Terrarium z7，x=84..115，y=36..59）。每块 256×256，gzip 压缩、小端有符号 16 位整数米；由原始 Terrarium 样本四舍五入到米，未生成山丘。来源仍为 Mapzen Terrain Tiles on AWS（SRTM / GMTED2010 courtesy USGS；ETOPO1 courtesy NOAA）。生成脚本 `scripts/map-sample/build_detail_dem.py` 保留下载缓存并验证载荷，缺块可独立重试。
+
+运行时仅加载镜头附近 3×3 分块，最多缓存 48 张解码瓦片；全国资源约 58.9 MiB，不随首屏一次性下载。全国网格约 5 万顶点，近景细化约 14.8 万顶点，沿用真实高程与展示夸张。无需在游戏运行时请求 AWS。植被仍为确定性美术布局，不代表历史林地调查数据。

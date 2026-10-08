@@ -21,7 +21,7 @@ export function terrainMaterial(fields:{map:Texture;centers:{x:number;z:number}[
  vec3 meadow=mix(seasonLow,seasonHigh,n);
  vec3 forest=seasonForest*(.65+n*.7);
  vec3 rock=mix(vec3(.205,.205,.175),vec3(.49,.455,.355),fbm(p*.75));
- float wooded=smoothstep(4.,9.,terrainPosition.y)*smoothstep(.26,.7,n);
+ float wooded=smoothstep(.05,4.,terrainPosition.y)*smoothstep(.26,.7,n);
  vec3 soil=mix(vec3(.235,.195,.115),vec3(.37,.315,.205),n);
  vec3 land=mix(meadow,soil,smoothstep(.52,.76,fbm(p*.19+15.))*.65);
  land=mix(land,forest,wooded*.85);

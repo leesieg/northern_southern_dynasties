@@ -30,7 +30,7 @@ export function mountCampaign(host:HTMLElement,notice:(message:string)=>void){
    const kept=campaignCityPlacements(candidates,selected,zoom).filter((v,i,all)=>!all.slice(0,i).some(o=>Math.abs(o.point.x-v.point.x)<145&&Math.abs(o.point.y-v.point.y)<60));
    const visible=new Set(kept.map(p=>p.site.id));for(const m of markers){m.button.hidden=!visible.has(m.site.id);m.button.setAttribute('aria-current',String(m.site.id===selected));}
   }
-  function presentation(){const next=strategic||!atlasPresentation(map.getZoom(),true).terrain;if(next!==flat){flat=next;map.setTerrain(!flat);}labels();}
+  function presentation(){const view=atlasPresentation(map.getZoom(),true),next=strategic||!view.terrain;if(next!==flat){flat=next;map.setTerrain(!flat);}labels();const pitch=strategic?0:view.pitch;if(Math.abs(map.getPitch()-pitch)>.25)map.easeTo({pitch});}
   function focus(id:string){const site=siteById[id];if(!site||!locations.some(s=>s.id===id))return;selected=id;picker.value=id;strategic=false;document.querySelector('#strategic')!.setAttribute('aria-pressed','false');sample.dispatchEvent(new CustomEvent('sample:site',{detail:id}));map.easeTo({center:[site.lon,site.lat],zoom:10.7,pitch:51,duration:700});}
   picker.addEventListener('change',()=>focus(picker.value));
   document.querySelector('[data-view="region"]')!.addEventListener('click',()=>{strategic=false;document.querySelector('#strategic')!.setAttribute('aria-pressed','false');map.fitBounds([[85,20],[130,45]],{pitch:0,duration:900});});
