@@ -234,3 +234,14 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-siege-progress{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);padding:2px 7px;border:1px solid #b59a61;background:#213c2e;color:#f3e4bd;font:700 14px Georgia,serif;white-space:nowrap;pointer-events:none}
 
 .atlas-combat-siege-mini{position:absolute;top:calc(100% + 3px);right:0;background:#223c2d;color:#eaddb8;border:1px solid #ba9c62;padding:3px 7px;font:12px var(--serif);pointer-events:none}
+
+/* Approved campaign sample: ink-green city plates and restrained parchment strategy view. */
+.atlas-map .atlas-place-label{color:#efe3c4;background:linear-gradient(90deg,#17221cf5,#233028ee);border:1px solid #998460;box-shadow:0 3px 8px #10201855;min-height:34px;text-shadow:none;padding:5px 10px}
+.atlas-map .atlas-place-label small{color:#c4bda6}
+.atlas-map .atlas-place-label:is(:hover,.is-selected){background:#354130;border-color:#c8aa6a;color:#fff0c3}
+.atlas-map[data-scale=strategic] .atlas-place-label{background:#e4dfc9ed;color:#343e36;border-color:#9b967e;box-shadow:0 1px 4px #3b413126}
+.atlas-map[data-scale=strategic] .atlas-place-label small{color:#69705e}
+.atlas-map[data-scale=strategic] .atlas-place-label:is(:hover,.is-selected){background:#354130;color:#fff0c3}
+.atlas-map[data-scale=strategic] .atlas-geographic-label.realm{font-family:var(--serif);font-weight:600;font-size:clamp(24px,2.6vw,38px);letter-spacing:9px;color:#354337;text-shadow:0 1px 3px #f0e9cf,0 0 10px #e5dec7;opacity:.92}
+.atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#6d7769;text-shadow:0 1px #e4dfcd}
+.atlas-map .atlas-paper{background:radial-gradient(ellipse at 50% 42%,transparent 48%,#374c432b);box-shadow:inset 0 0 85px #273d3522}

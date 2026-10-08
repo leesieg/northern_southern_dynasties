@@ -1,6 +1,6 @@
 /** Original, static map-anchored pigments. Landcover masks come from the vector source;
  * these tiles describe material only, never terrain, forest extent or historical land use. */
-export const ATLAS_MATERIALS=['atlas-earth-grain','atlas-canopy','atlas-water-silk'] as const;
+export const ATLAS_MATERIALS=['atlas-earth-grain','atlas-canopy','atlas-water-silk','atlas-fog-cloud'] as const;
 export type AtlasMaterial=typeof ATLAS_MATERIALS[number];
 export function atlasMaterial(name:AtlasMaterial){
  const width=128,height=128,data=new Uint8Array(width*height*4);
@@ -9,7 +9,10 @@ export function atlasMaterial(name:AtlasMaterial){
  const wrap=(d:number)=>d-Math.round(d/128)*128;
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   const i=(y*width+x)*4,n=noise(x,y);let r=73,g=68,b=42,a=0;
-  if(name==='atlas-earth-grain'){const light=n>.55;r=light?227:73;g=light?218:79;b=light?173:49;a=5+n*15;}
+  if(name==='atlas-fog-cloud'){
+   const cloud=(Math.sin(x*Math.PI/64+Math.sin(y*Math.PI/64)*1.2)+Math.cos(y*Math.PI/64)+Math.sin((x+y)*Math.PI/32)*.35)/2.35;
+   r=cloud>0?225:129;g=cloud>0?230:149;b=cloud>0?224:145;a=18+Math.abs(cloud)*57;
+  }else if(name==='atlas-earth-grain'){const light=n>.55;r=light?227:73;g=light?218:79;b=light?173:49;a=5+n*15;}
   else if(name==='atlas-canopy'){
    // Overlapping canopy marks with northwest highlights; wrapped edges are seamless.
    for(const c of crowns){const dx=wrap(x-c.x),dy=wrap(y-c.y),d=Math.hypot(dx,dy*.85);

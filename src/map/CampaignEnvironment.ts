@@ -1,4 +1,4 @@
-import {BoxGeometry,Color,CylinderGeometry,SphereGeometry,InstancedMesh,Matrix4,MeshLambertMaterial,Vector3,BufferGeometry,Float32BufferAttribute,Group} from 'three';
+import {BoxGeometry,Color,CylinderGeometry,SphereGeometry,InstancedMesh,Matrix4,MeshLambertMaterial,MeshStandardMaterial,Vector3,BufferGeometry,Float32BufferAttribute,Group} from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MercatorCoordinate,type Map} from 'maplibre-gl';
 import {siteById,roads} from '../data/scenario';
@@ -26,8 +26,8 @@ export function campaignEnvironment(origin:{x:number;y:number}){
  const trunk=new CylinderGeometry(.07,.12,1.3,7).toNonIndexed().translate(0,.65,0);
  const crowns=Array.from({length:7},(_,i)=>new SphereGeometry(i===6?.46:.38,8,5).toNonIndexed().scale(1,.8,1).translate(i===6?0:Math.cos(i*Math.PI/3)*.35,i===6?1.7:1.25+(i%3)*.12,i===6?0:Math.sin(i*Math.PI/3)*.35));
  for(const [g,color] of [[trunk,'#65533a'],...crowns.map(g=>[g,'#506749'] as const)] as const){const c=new Color(color),n=g.getAttribute('normal'),values:number[]=[];for(let i=0;i<n.count;i++){const shade=.82+.18*Math.max(0,n.getY(i));values.push(c.r*shade,c.g*shade,c.b*shade);}g.setAttribute('color',new Float32BufferAttribute(values,3));g.deleteAttribute('uv');parts.push(g);}
- const treeGeometry=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
- const material=new MeshLambertMaterial({vertexColors:true}),trees=new InstancedMesh(treeGeometry,material,MAX_ENVIRONMENT_INSTANCES);
+ let treeGeometry=mergeGeometries(parts)!;parts.forEach(g=>g.dispose());
+ const material=new MeshStandardMaterial({name:'Leaf campaign',vertexColors:true,roughness:1}),trees=new InstancedMesh(treeGeometry,material,MAX_ENVIRONMENT_INSTANCES);
  const fieldParts=[new BoxGeometry(1,.015,1),...Array.from({length:8},(_,i)=>new BoxGeometry(1,.015,.022).translate(0,.012,(i-3.5)/8))],fieldGeometry=mergeGeometries(fieldParts)!;
  fieldParts.forEach(g=>g.dispose());
  const fieldMaterial=new MeshLambertMaterial({color:'#a9a56b'}),fields=new InstancedMesh(fieldGeometry,fieldMaterial,64);
@@ -36,7 +36,7 @@ export function campaignEnvironment(origin:{x:number;y:number}){
  for(const m of [trees,fields,villages]){m.frustumCulled=false;m.count=0;}root.add(trees,fields,villages);
  const matrix=new Matrix4(),rotation=new Matrix4().makeRotationX(Math.PI/2);
  function position(at:ReturnType<typeof MercatorCoordinate.fromLngLat>,w:number,h:number,d:number){const u=at.meterInMercatorCoordinateUnits();return matrix.makeTranslation(at.x-origin.x,origin.y-at.y,at.z).multiply(rotation).scale(new Vector3(w*u,h*u,d*u));}
- function refresh(map:Map,urban:{id:string;capital:boolean}[],tilted:boolean,enabled:boolean){
+ function refresh(map:Map,urban:{id:string;capital:boolean}[],tilted:boolean,enabled:boolean,known?:(lon:number,lat:number)=>boolean){
   trees.count=0;fields.count=0;villages.count=0;
   if(!enabled||map.getZoom()<7.2)return;
   const completeNatural=map.isSourceLoaded('natural');
@@ -47,6 +47,7 @@ export function campaignEnvironment(origin:{x:number;y:number}){
   chunks.sort((a,b)=>(a.x-cx)**2+(a.y-cy)**2-(b.x-cx)**2-(b.y-cy)**2);
   const masks=['land-fallback','ocean','inland-water','rivers-major','rivers-minor','woodland'].filter(id=>!!map.getLayer(id));
   function land(lon:number,lat:number,forest:boolean){
+   if(known&&!known(lon,lat))return null;
    if(!forest&&!completeNatural)return null;
    const p=map.project([lon,lat]);if(p.x<0||p.y<0||p.x>map.getCanvas().clientWidth||p.y>map.getCanvas().clientHeight)return null;
    const hits=map.queryRenderedFeatures([[p.x-2,p.y-2],[p.x+2,p.y+2]],{layers:masks});
@@ -77,5 +78,6 @@ export function campaignEnvironment(origin:{x:number;y:number}){
   if(trees.instanceColor)trees.instanceColor.needsUpdate=true;
  }
  function dispose(){trees.dispose();fields.dispose();villages.dispose();treeGeometry.dispose();fieldGeometry.dispose();villageGeometry.dispose();material.dispose();fieldMaterial.dispose();villageMaterial.dispose();}
- return {root,refresh,dispose};
+ function useSampleTree(geometry:BufferGeometry){treeGeometry.dispose();treeGeometry=geometry.clone();trees.geometry=treeGeometry;}
+ return {root,refresh,dispose,useSampleTree};
 }
