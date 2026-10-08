@@ -1,3 +1,4 @@
+import {annotationDensity} from './annotationDensity';
 import {waterMaskContains} from './campaignTerrain';
 import {campaignDomains,controlledSite,domainSignature} from './campaignDomains';
 import {campaignSeason} from './campaignSeason';
@@ -115,12 +116,13 @@ export function WorldMap(props:Props){
       container.parentElement?.setAttribute('data-scale',strategicView?'strategic':zoom>=CITY_DETAIL_ZOOM?'close':'landscape');
       const occupied:{x:number;y:number;width:number}[]=[];
       const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===current.current.world.holdings.estate.location)-Number(a.id===current.current.world.holdings.estate.location)||Number(b.capital)-Number(a.capital));
+      const cityIds=annotationDensity(list.filter(i=>controlledSite(current.current.world,i.id)).map(i=>({key:i.id,point:map!.project([siteById[i.id].lon,siteById[i.id].lat]),priority:i.capital?2:siteById[i.id].rank==='county'?0:1,required:i.id===current.current.selected||i.id===current.current.world.holdings.estate.location})),{width:w,height:h},zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
       for(const item of list){
         const s=siteById[item.id],p=map.project([s.lon,s.lat]);
         const selected=item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
-        const width=Math.max(item.marker.getElement().offsetWidth,(item.button.textContent?.length??0)*(item.capital?20:14)+60+(estate?34:0));
-        const visible=!strategicView&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
-        item.marker.getElement().hidden=!visible;
+        const width=Math.max(item.marker.getElement().offsetWidth,s.name.length*14+38+(selected||item.capital&&zoom>=9?28:0)+(estate?34:0));
+        const visible=!strategicView&&cityIds.has(item.id)&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
+        item.marker.getElement().hidden=!visible;item.portrait.hidden=!(selected||item.capital&&zoom>=9);
         item.button.classList.toggle('is-selected',selected);item.marker.getElement().classList.toggle('is-selected',selected);
         if(visible)occupied.push({x:p.x,y:p.y,width});
       }
@@ -136,7 +138,8 @@ export function WorldMap(props:Props){
         const old=atlasLabels.find(v=>v.kind==='realm'&&v.text===(r==='liang'?'梁':r==='east'?'东 魏':r==='west'?'西 魏':'')),site=siteById[capital(r,world)],moved=!!world.realm?.identities?.[r],coords:[number,number]=old&&!moved?[old.lon,old.lat]:[site.lon,site.lat],offset=moved?-50:0,point=map.project(coords),element=marker.getElement();
         marker.setLngLat(coords).setOffset([0,offset]);element.textContent=regimeName(world,r);element.setAttribute('aria-label','查看'+regimeName(world,r)+'外交');element.hidden=!!world.realm?.annexed?.[r]||zoom<2||zoom>6||!['political','diplomacy'].includes(current.current.mode)||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y-offset)<38);
       }
-      for(const [id,entry] of people){entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||(strategicView&&id!=='player'&&id!==current.current.world.characterId);}
+      const travelerIds=annotationDensity([...people].filter(([id])=>travelingIds.has(id)).map(([id,entry])=>({key:id,point:map!.project([entry.marker.getLngLat().lng,entry.marker.getLngLat().lat]),priority:0,required:id==='player'||id===current.current.world.characterId})),{width:w,height:h},zoom<9?2:5,130);
+      for(const [id,entry] of people){const self=id==='player'||id===current.current.world.characterId;entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||!travelerIds.has(id)||(!self&&(strategicView||zoom<7));}
       const armies=current.current.world.realm?.armies??[],models=armyShowsModel(zoom,current.current.militaryModels&&militaryLayerReady);
       const viewport=container.getBoundingClientRect(),mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
       const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,sceneryLayer?.showsSite(p.id)?25:-7] as [number,number]})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
@@ -147,7 +150,8 @@ export function WorldMap(props:Props){
         const bounds={left:rect.left-viewport.left-dx-6,top:rect.top-viewport.top-dy-6,right:rect.right-viewport.left-dx+6,bottom:rect.bottom-viewport.top-dy+6};if(bounds.right>0&&bounds.left<w&&bounds.bottom>0&&bounds.top<h){mapMarkers.push({marker,offset,bounds});}
       }
       const anchors=armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
-      const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
+      const armyIds=annotationDensity(anchors.map((a,i)=>({...a,priority:armyVisualState(current.current.world,armies[i])==='battle'?3:militaryArmyView(current.current.world,armies[i]).command?2:0,required:current.current.selectedArmies.includes(Number(a.key))})),view,zoom<6.2?4:zoom<9?8:12,90);
+      const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available&&armyIds.has(a.key)),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
       // Place settlement groups first, then cards against their final bounds. Models never move.
       const placed:ScreenRect[]=[];
       for(const item of mapMarkers){
@@ -158,7 +162,7 @@ export function WorldMap(props:Props){
         element.style.setProperty('--annotation-link-angle',Math.atan2(-offset[1],-offset[0])+'rad');
         placed.push(dock.bounds);
       }
-      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!strategicView&&!fixed.has(a.key)),[...placed,...modelBounds],view,strategicView)]);
+      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>!strategicView&&armyIds.has(a.key)&&!fixed.has(a.key)),[...placed,...modelBounds],view,strategicView,120)]);
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
         const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=strategicView||!placement;if(strategicView||!placement)continue;

@@ -15,7 +15,7 @@ export interface ScreenPoint {x:number;y:number}
 export interface ScreenRect {left:number;top:number;right:number;bottom:number}
 export interface ArmyMarkerPlacement {offset:ScreenPoint;model:boolean;bounds:ScreenRect}
 // Both DOM hit targets and GPU models consume these screen placements. No world position is changed.
-export const armyMarkerFootprint=(model:boolean,strategic=false)=>model?{width:Math.ceil(3*ARMY_MODEL_PIXELS),height:Math.ceil(348*ARMY_MODEL_PIXELS/72),bottom:Math.ceil(132*ARMY_MODEL_PIXELS/72)}:strategic?{width:126,height:46,bottom:50}:{width:154,height:58,bottom:66};
+export const armyMarkerFootprint=(model:boolean,strategic=false)=>model?{width:Math.ceil(3*ARMY_MODEL_PIXELS),height:Math.ceil(348*ARMY_MODEL_PIXELS/72),bottom:Math.ceil(132*ARMY_MODEL_PIXELS/72)}:strategic?{width:126,height:46,bottom:50}:{width:82,height:78,bottom:66};
 export const armyModelBadgeBottom=(pitch:number)=>Math.ceil(96*ARMY_MODEL_PIXELS/72*Math.cos(pitch*Math.PI/180))+36;
 export const screenOverlap=(a:ScreenRect,b:ScreenRect)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 /** One representative at each actual location; choosing another co-located army never moves the model. */
@@ -64,7 +64,7 @@ export function dockMapMarker(rect:ScreenRect,armies:ScreenRect[],placed:ScreenR
  return {offset:best,bounds:{left:rect.left+best.x,right:rect.right+best.x,top:rect.top+best.y,bottom:rect.bottom+best.y}};
 }
 
-export function layoutArmyCards(armies:{key:string;point:ScreenPoint}[],obstacles:ScreenRect[],viewport:{width:number;height:number},strategic=false){
+export function layoutArmyCards(armies:{key:string;point:ScreenPoint}[],obstacles:ScreenRect[],viewport:{width:number;height:number},strategic=false,maxDistance=Infinity){
  const placements=new Map<string,ArmyMarkerPlacement>(),occupied:ScreenRect[]=[],gap=8;
  const padded=(r:ScreenRect)=>({left:r.left-gap,top:r.top-gap,right:r.right+gap,bottom:r.bottom+gap});
  const fixed=obstacles.map(padded);
@@ -81,6 +81,7 @@ export function layoutArmyCards(armies:{key:string;point:ScreenPoint}[],obstacle
   candidates.sort((a,b)=>(a.x-point.x)**2+(a.y-point.y)**2-((b.x-point.x)**2+(b.y-point.y)**2));
   let crowded:ArmyMarkerPlacement|undefined,crowding=Infinity;
   for(const anchor of candidates){
+   if(Math.hypot(anchor.x-point.x,anchor.y-point.y)>maxDistance)continue;
    const bounds={left:anchor.x-size.width/2,right:anchor.x+size.width/2,top:anchor.y-above,bottom:anchor.y+size.bottom};
    if(fixed.some(rect=>screenOverlap(bounds,rect)>0))continue;
    const overlap=occupied.reduce((sum,rect)=>sum+screenOverlap(bounds,padded(rect)),0),placement={offset:{x:anchor.x-point.x,y:anchor.y-point.y},model:false,bounds};

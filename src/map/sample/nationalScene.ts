@@ -1,3 +1,4 @@
+import {annotationDensity} from '../annotationDensity';
 import {sites,siteById,polities} from '../../data/scenario';
 import {ThreeCampaignMap,ThreeMarker} from '../three/ThreeCampaignMap';
 import {atlasStyle} from '../atlasStyle';
@@ -28,7 +29,7 @@ export function mountCampaign(host:HTMLElement,notice:(message:string)=>void){
   function labels(){const zoom=map.getZoom(),w=host.clientWidth,h=host.clientHeight;
    const candidates=locations.filter(s=>zoom>=6.2||s.capital||s.id===selected).map(site=>({site,capital:!!site.capital,point:map.project([site.lon,site.lat])})).filter(p=>p.point.x>30&&p.point.x<w-30&&p.point.y>35&&p.point.y<h-70);
    const kept=campaignCityPlacements(candidates,selected,zoom).filter((v,i,all)=>!all.slice(0,i).some(o=>Math.abs(o.point.x-v.point.x)<145&&Math.abs(o.point.y-v.point.y)<60));
-   const visible=new Set(kept.map(p=>p.site.id));for(const m of markers){m.button.hidden=strategic||zoom<=4.8||!visible.has(m.site.id);m.button.setAttribute('aria-current',String(m.site.id===selected));}
+   const visible=annotationDensity(kept.map(p=>({key:p.site.id,point:p.point,priority:p.capital?2:0,required:p.site.id===selected})),{width:w,height:h},zoom<9?10:16,zoom<9?150:115);for(const m of markers){m.button.hidden=strategic||zoom<=4.8||!visible.has(m.site.id);m.button.setAttribute('aria-current',String(m.site.id===selected));}
   }
   function presentation(){const view=atlasPresentation(map.getZoom(),true),next=strategic||!view.terrain;if(next!==flat){flat=next;map.setTerrain(!flat);}labels();const pitch=map.getZoom()<2.2?view.pitch:strategic?0:view.pitch;if(Math.abs(map.getPitch()-pitch)>.25)map.easeTo({pitch,duration:220});}
   function focus(id:string){const site=siteById[id];if(!site||!locations.some(s=>s.id===id))return;selected=id;picker.value=id;strategic=false;document.querySelector('#strategic')!.setAttribute('aria-pressed','false');sample.dispatchEvent(new CustomEvent('sample:site',{detail:id}));map.easeTo({center:[site.lon,site.lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,true).pitch,duration:700});}

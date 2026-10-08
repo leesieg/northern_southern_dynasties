@@ -110,3 +110,28 @@ dialog.action-detail-dialog .single-choice-reason,dialog.person-selection-dialog
 .focused-shell .atlas-map .traveler-face canvas{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #bca36c;box-sizing:border-box}
 .focused-shell .atlas-map .traveler-face::after{content:'';position:absolute;left:18px;bottom:2px;width:6px;height:6px;background:#2d3528;border-right:1px solid #c4aa70;border-bottom:1px solid #c4aa70;transform:rotate(45deg)}
 @media(max-width:760px){.game-entry.is-selecting .roster-columns{overflow:auto;grid-template-rows:auto}.game-entry.is-selecting .roster-columns--map .roster-list{max-height:300px}.game-entry.is-selecting .roster-columns--map .roster-profile{grid-row:2;grid-column:1/-1}.game-entry.is-selecting .entry-message-slot{max-height:52px}}
+
+/* Campaign annotation hierarchy: city plaques, upright standards, travelling seals. */
+.focused-shell .atlas-map .atlas-place{min-height:28px;background:#e8e2d1;box-shadow:0 0 0 1px #20291f,0 2px 3px #0005;border-left:2px solid #20291f}
+.focused-shell .atlas-map .atlas-place-label{min-height:28px;padding:3px 8px;font:13px/16px var(--serif);border-bottom:2px solid var(--city-realm)}
+.focused-shell .atlas-map .atlas-place:not(.is-selected) .atlas-place-label small{display:none}
+.focused-shell .atlas-map .atlas-place-label.capital{font-size:14px}
+.focused-shell .atlas-map .atlas-city-realm,.focused-shell .atlas-map .atlas-city-realm img{width:24px;height:31px;flex-basis:24px}
+.focused-shell .atlas-map .atlas-governor{width:28px;height:31px}
+.focused-shell .atlas-map .atlas-place.is-selected{outline:1px solid #e8c77a;outline-offset:2px}
+.focused-shell .atlas-map .atlas-army-marker[data-presentation=card]{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;min-height:78px;background:none;border:0;box-shadow:none}
+.focused-shell .atlas-map .atlas-army-marker[data-presentation=card] .atlas-army-flag{position:relative;width:34px;height:48px;flex:0 0 48px;filter:drop-shadow(1px 2px 1px #0008)}
+.focused-shell .atlas-map .atlas-army-marker[data-presentation=card] .atlas-army-card-body{flex:0 0 25px;min-width:60px;max-width:82px;height:25px;margin:0;padding:2px 5px 6px;align-items:center;background:#192b23;color:#f2e5bd;border:1px solid #a48c58;box-shadow:0 2px 3px #0005}
+.focused-shell .atlas-map .atlas-army-marker .atlas-army-label{display:none}
+.focused-shell .atlas-map .atlas-army-marker .atlas-army-strength{font:600 12px/16px var(--serif);color:#f4e8ca;text-shadow:none}
+.focused-shell .atlas-map .atlas-army-marker[data-exact=true] .atlas-army-strength::after{content:''}
+.focused-shell .atlas-map .atlas-army-marker[data-exact=false]:not(:hover):not(:focus-visible):not([data-selected=true]) .atlas-army-card-body{visibility:hidden}
+.focused-shell .atlas-map .atlas-army-marker[data-exact=false] .atlas-army-strength{font-size:10px}
+.focused-shell .atlas-map .atlas-army-marker[data-selected=true]{outline:0;filter:drop-shadow(0 0 3px #f4d282)}
+.focused-shell .atlas-map .atlas-army-marker[data-presentation=model] .atlas-army-card-body{min-width:74px;height:28px;padding:2px 5px 6px 28px}
+.focused-shell .atlas-map .atlas-army-marker[data-presentation=model] .atlas-army-flag{height:38px;width:26px;left:calc(50% - 40px)}
+.focused-shell .atlas-map .atlas-traveler>span{display:none}
+.focused-shell .atlas-map .atlas-traveler:is(:hover,:focus-visible)>span{display:block;position:absolute;top:100%;left:50%;transform:translateX(-50%);white-space:nowrap}
+.focused-shell .atlas-map .atlas-traveler{min-width:36px;width:36px}
+.focused-shell .atlas-map .atlas-traveler .traveler-face{width:36px;height:40px;background-size:36px 36px;padding:5px 5px 9px}
+.focused-shell .atlas-map .traveler-face canvas{width:26px;height:26px}
