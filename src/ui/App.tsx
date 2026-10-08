@@ -1,3 +1,5 @@
+import {CampaignMinimap} from './CampaignMinimap';
+import type {ThreeCampaignMap} from '../map/three/ThreeCampaignMap';
 import type {CameraAction} from '../map/atlasPresentation';
 import {IntriguePanel} from './IntriguePanel';
 import {WarDetailsDialog,EngagementDialog} from './WarDetails';
@@ -64,6 +66,7 @@ import './campaignControls.css';
 import './campaignSkin.css';
 import './campaignReference.css';
 import './mapCommandCompact.css';
+import './campaignMinimap.css';
 import './armyFormation.css';
 import './dialogContrast.css';
 import './detailActions.css';
@@ -79,6 +82,7 @@ function Icon({name,size=18}:{name:IconName;size?:number}){
 
 export function App(){
   const game=useGame();
+  const [campaignMap,setCampaignMap]=useState<ThreeCampaignMap|null>(null);
   const [sceneryDetail,setSceneryDetail]=useState(true);
   const [militaryModels,setMilitaryModels]=useState(true),[armyMotion,setArmyMotion]=useState(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [armyMove,setArmyMove]=useState<ArmyMove>(null);
@@ -197,9 +201,9 @@ export function App(){
       {warDetail!==null&&<WarDetailsDialog world={game.world} warId={warDetail} pending={game.pending} send={command=>game.send({type:'command',command})} onPerson={id=>{setWarDetail(null);openPerson(id);}} onClose={()=>setWarDetail(null)}/>}
       {engagement&&<EngagementDialog onPerson={id=>openPerson(id)} world={game.world} selected={engagement} onClose={()=>setEngagement(null)} onWar={id=>{setEngagement(null);setWarDetail(id);}}/>}
       <section className={`map-stage ${journalOpen?'journal-expanded':''}`} aria-label="战略地图">
-        {game.world&&<WorldMap onEngagement={selected=>{game.send({type:'speed',speed:0});setEngagement(selected);}} militaryModels={militaryModels} armyMotion={armyMotion} sceneryDetail={sceneryDetail} onActivity={openOngoing} onBrowseActivities={()=>game.send({type:'speed',speed:0})} onEstate={()=>openModal('estate')} world={game.world} selected={selected} selectedArmies={selectedArmies} onSelectArmy={selectArmy} onCommandArmy={commandArmyTo} route={drawer==='place'&&cityTab==='travel'?plan?.route??[]:[]} mode={mode} showTravelers={showTravelers} tilted={tilted} cameraAction={cameraAction} territory={territory} territoryLevel={level} historyEvent={historyEvent} onDiplomacy={r=>openDiplomacy(r,false)} onInspectPeople={ids=>{openModal('map-person');setMapPeople(ids);setPersonTab('overview');}} onSelectTerritory={chooseTerritory} onSelect={chooseCity} onPreviewRoute={id=>{chooseCity(id);setCityTab('travel');setMode('roads');}}/>}
+        {game.world&&<WorldMap onMapReady={setCampaignMap} onEngagement={selected=>{game.send({type:'speed',speed:0});setEngagement(selected);}} militaryModels={militaryModels} armyMotion={armyMotion} sceneryDetail={sceneryDetail} onActivity={openOngoing} onBrowseActivities={()=>game.send({type:'speed',speed:0})} onEstate={()=>openModal('estate')} world={game.world} selected={selected} selectedArmies={selectedArmies} onSelectArmy={selectArmy} onCommandArmy={commandArmyTo} route={drawer==='place'&&cityTab==='travel'?plan?.route??[]:[]} mode={mode} showTravelers={showTravelers} tilted={tilted} cameraAction={cameraAction} territory={territory} territoryLevel={level} historyEvent={historyEvent} onDiplomacy={r=>openDiplomacy(r,false)} onInspectPeople={ids=>{openModal('map-person');setMapPeople(ids);setPersonTab('overview');}} onSelectTerritory={chooseTerritory} onSelect={chooseCity} onPreviewRoute={id=>{chooseCity(id);setCityTab('travel');setMode('roads');}}/>}
         {game.world.campaign&&game.world.mode!=='sandbox'&&<CampaignTracker world={game.world} send={game.send} onCity={id=>{chooseCity(id);setCityTab(game.world?.characterId||game.world?.campaign?.appointed&&id==='jingkou'?'build':'travel');focus('selected');}} onEstate={()=>openModal('estate')} onRealm={()=>openModal('realm')}/>}
-        <div className="map-command-dock"><div className="map-navigation-row">{armyOrderError&&<span className="map-army-order-error" role="status">{armyOrderError}</span>}        {game.world.realm&&courtOf(game.world)&&<button className="court-map-button" aria-label={'朝廷与朝局 · '+phases[courtOf(game.world)!.phase].name} aria-expanded={modal==='staff'} onClick={()=>openCourt('central',undefined,false)}><ArtIcon name="influence" size={30}/><span className="court-map-caption"><strong>朝廷</strong><small>{phases[courtOf(game.world)!.phase].name}{courtTrend?.enabled&&(courtTrend.delta>0?' ↑':courtTrend.delta<0?' ↓':'')}</small></span>{(courtOf(game.world)!.petition||courtTrend?.enabled&&courtTrend.phase!==courtOf(game.world)!.phase)&&<b className="court-map-alert" aria-label="有奏议或局势变化风险">!</b>}</button>}        <MapCameraControls focus={focus}/>
+        <div className="map-command-dock campaign-navigation"><CampaignMinimap map={campaignMap} world={game.world} selected={selected}/><div className="map-navigation-row">{armyOrderError&&<span className="map-army-order-error" role="status">{armyOrderError}</span>}        {game.world.realm&&courtOf(game.world)&&<button className="court-map-button" aria-label={'朝廷与朝局 · '+phases[courtOf(game.world)!.phase].name} aria-expanded={modal==='staff'} onClick={()=>openCourt('central',undefined,false)}><ArtIcon name="influence" size={30}/><span className="court-map-caption"><strong>朝廷</strong><small>{phases[courtOf(game.world)!.phase].name}{courtTrend?.enabled&&(courtTrend.delta>0?' ↑':courtTrend.delta<0?' ↓':'')}</small></span>{(courtOf(game.world)!.petition||courtTrend?.enabled&&courtTrend.phase!==courtOf(game.world)!.phase)&&<b className="court-map-alert" aria-label="有奏议或局势变化风险">!</b>}</button>}        <MapCameraControls focus={focus}/>
 </div>        <MapDisplayControls sceneryDetail={sceneryDetail} onSceneryDetail={()=>setSceneryDetail(v=>!v)} mode={mode} onMode={setMode} hasRealm={!!game.world.realm} options={mapOptions} onOptions={()=>{setMapOptions(v=>!v);if(mapOptions)document.getElementById('atlas-display-toggle')?.focus();}} travelers={showTravelers} onTravelers={()=>setShowTravelers(v=>!v)} tilted={tilted} onTilted={()=>setTilted(v=>!v)} models={militaryModels} onModels={()=>setMilitaryModels(v=>!v)} motion={armyMotion} onMotion={()=>setArmyMotion(v=>!v)}/>
 </div>
 

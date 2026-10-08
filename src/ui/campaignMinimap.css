@@ -1,0 +1,44 @@
+/* Campaign dial: paper map inset, blackened metal rims and worn gold pictograms. */
+.focused-shell .map-command-dock.campaign-navigation{position:fixed;display:block;right:14px;bottom:24px;width:282px;height:294px;max-width:none;pointer-events:none;isolation:isolate;--dial-metal:radial-gradient(ellipse at 32% 16%,#52504b 0%,#262725 29%,#111614 66%,#080c0b 100%)}
+.campaign-minimap-frame{position:absolute;left:28px;top:54px;width:226px;height:226px;border-radius:50%;background:conic-gradient(from 25deg,#4b4534,#aaa087 8%,#272c27 17%,#111815 40%,#746c56 57%,#c0ad7d 63%,#282d26 72%,#747261 87%,#222a22);box-shadow:0 3px 6px #000b,0 0 0 2px #111612,inset 0 0 0 3px #1b211b;pointer-events:auto;padding:13px}
+.campaign-minimap-frame::after{content:'';position:absolute;inset:7px;border:1px solid #ae9b67;border-radius:50%;box-shadow:0 0 0 2px #0f1611,inset 0 0 8px 2px #0009;pointer-events:none}
+.campaign-minimap-surface{width:100%;height:100%;overflow:hidden;border-radius:50%;background:#dbcca6;box-shadow:inset 0 0 18px #4d3c2380;cursor:crosshair;touch-action:none;outline:none;position:relative}
+.campaign-minimap-surface::after{content:'';position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 14px 3px #4b382963;pointer-events:none}
+.campaign-minimap-surface:focus-visible{outline:2px solid #f6df9b;outline-offset:3px}
+.campaign-minimap-chart{display:block;width:100%;height:100%;pointer-events:none}
+.minimap-viewport{filter:drop-shadow(0 0 1px #241d13);stroke-linejoin:round}
+.campaign-minimap-compass{position:absolute;inset:2px;width:222px;height:222px;pointer-events:none}
+.minimap-loading{position:absolute;inset:0;display:grid;place-items:center;color:#6d5c39;font:12px var(--serif);pointer-events:none}
+.focused-shell .campaign-navigation .map-navigation-row,.focused-shell .campaign-navigation .zoom-tools.compact-map-tools,.focused-shell .campaign-navigation .map-tool-group{display:contents;position:static;border:0;background:none!important;box-shadow:none;padding:0!important}
+.focused-shell .campaign-navigation .campaign-mode-arc{display:contents}
+.focused-shell .map-command-dock.campaign-navigation :is(.campaign-dial-mode,.map-options-toggle,.court-map-button),.focused-shell .map-command-dock.campaign-navigation .zoom-tools :is(.view-control,.map-tool-group>summary){position:absolute;display:flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:0;min-height:0;margin:0;gap:0;padding:8px;border:1px solid #807960!important;border-radius:50%!important;background:var(--dial-metal)!important;box-shadow:inset 0 0 0 2px #101613,inset 0 0 0 3px #85795666,inset 0 3px 5px #c7b57524,0 2px 4px #000b;color:#d8bc74;pointer-events:auto;cursor:pointer;transition:filter .12s,box-shadow .12s}
+.focused-shell .campaign-navigation .campaign-dial-mode{width:48px;height:48px;z-index:2}
+.focused-shell .campaign-navigation .campaign-dial-mode .art-icon{width:29px!important;height:29px!important;filter:sepia(.9) saturate(.9) brightness(1.15) drop-shadow(0 1px 1px #000)}
+.focused-shell .campaign-navigation .mode-political{left:17px;top:63px;transform:rotate(-24deg)}
+.focused-shell .campaign-navigation .mode-domains{left:58px;top:26px;transform:rotate(-12deg)}
+.focused-shell .campaign-navigation .mode-diplomacy{left:114px;top:12px}
+.focused-shell .campaign-navigation .mode-terrain{left:170px;top:27px;transform:rotate(12deg)}
+.focused-shell .campaign-navigation .mode-roads{left:213px;top:65px;transform:rotate(24deg)}
+.focused-shell .map-command-dock.campaign-navigation .campaign-dial-mode[aria-pressed=true]{border-color:#dbc389!important;box-shadow:inset 0 0 0 2px #101813,inset 0 0 0 3px #c0a36a,0 0 6px #dec78744}
+.focused-shell .map-command-dock.campaign-navigation :is(button,summary):hover{filter:brightness(1.22)}
+.focused-shell .map-command-dock.campaign-navigation :is(button,summary):focus-visible{outline:2px solid #ffe4a0;outline-offset:3px}
+.focused-shell .campaign-navigation .campaign-dial-mode:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.focused-shell .map-command-dock.campaign-navigation .zoom-tools .view-control{width:34px;height:34px;padding:5px;left:242px;z-index:2}
+.focused-shell .campaign-navigation .zoom-tools .view-control:nth-child(1){top:119px}
+.focused-shell .campaign-navigation .zoom-tools .view-control:nth-child(2){top:159px}
+.focused-shell .campaign-navigation .zoom-tools .view-control svg{width:23px;height:23px}
+.focused-shell .map-command-dock.campaign-navigation .zoom-tools .map-tool-group>summary{width:40px;height:40px;left:22px;top:204px;z-index:2}
+.focused-shell .map-command-dock.campaign-navigation .zoom-tools .map-tool-group:last-child>summary{left:61px;top:243px}
+.focused-shell .campaign-navigation .map-tool-group>summary small,.focused-shell .campaign-navigation .map-options-toggle>span:not(.art-icon){display:none}
+.focused-shell .campaign-navigation .map-tool-group[open]>summary::after{left:18px;bottom:3px}
+.focused-shell .map-command-dock.campaign-navigation .map-options-toggle{width:34px;height:34px;left:8px;top:130px;padding:6px;z-index:2}
+.focused-shell .campaign-navigation .map-options-toggle .art-icon{width:23px!important;height:23px!important}
+.focused-shell .map-command-dock.campaign-navigation .court-map-button{left:198px;top:213px;width:80px;height:80px;z-index:3;padding:11px 8px;border-color:#aa9870!important;box-shadow:inset 0 0 0 3px #141a14,inset 0 0 0 4px #74694e,0 3px 8px #000b}
+.focused-shell .campaign-navigation .court-map-button>.art-icon{width:36px!important;height:36px!important;filter:sepia(1) saturate(1.2) brightness(1.4)}
+.focused-shell .campaign-navigation .court-map-caption strong{font-size:11px;letter-spacing:2px;color:#d9bc77}.focused-shell .campaign-navigation .court-map-caption small{font-size:9px;color:#b5a57e}
+.focused-shell .campaign-navigation .court-map-alert{right:2px;top:1px}
+.focused-shell .map-command-dock.campaign-navigation .map-tool-popover,.focused-shell .map-command-dock.campaign-navigation>.map-options{position:absolute;right:0;left:auto;bottom:calc(100% + 12px);width:220px;max-height:calc(100vh - 440px);overflow-y:auto;z-index:5;pointer-events:auto;background:#19231deb;border:1px solid #aa925f}
+.focused-shell .map-command-dock.campaign-navigation>.map-options{width:260px}
+.focused-shell .campaign-navigation .map-army-order-error{position:absolute;right:4px;bottom:calc(100% + 12px);pointer-events:auto;max-width:245px}
+@media(max-width:850px){.focused-shell .map-command-dock.campaign-navigation{right:6px;bottom:22px}}
+@media(prefers-reduced-motion:reduce){.focused-shell .map-command-dock.campaign-navigation :is(button,summary){transition:none}}

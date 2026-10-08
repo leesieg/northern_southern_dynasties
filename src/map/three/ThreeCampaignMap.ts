@@ -81,6 +81,12 @@ export class ThreeCampaignMap{
  height(lon:number,lat:number){return this.surface?.height(lon,lat)??null;}
  queryTerrainElevation(ll:{lng:number;lat:number}){const height=this.height(ll.lng,ll.lat);return height===null?null:height*1000*Math.cos(ll.lat*Math.PI/180);}
  project(ll:[number,number]){const p=projectGround(ll[0],ll[1]),v=new Vector3(p.x,this.height(ll[0],ll[1])??0,p.z).project(this.camera);return v.z< -1||v.z>1?{x:-100000,y:-100000}:{x:(v.x*.5+.5)*this.container.clientWidth,y:(.5-v.y*.5)*this.container.clientHeight};}
+ /** Ground-plane viewport for the north-up inset; no second renderer or per-frame terrain ray marches. */
+ minimapView(){
+  const center=unprojectGround(this.controls.target.x,this.controls.target.z),w=this.container.clientWidth,h=this.container.clientHeight,r=this.container.getBoundingClientRect(),left=Math.max(0,-r.left),top=Math.max(0,-r.top),right=Math.min(w,innerWidth-r.left),bottom=Math.min(h,innerHeight-r.top);
+  const corners=([{x:left,y:top},{x:right,y:top},{x:right,y:bottom},{x:left,y:bottom}]).map(p=>{const ray=this.ray(p).ray,t=ray.direction.y<-.00001?Math.max(0,Math.min(50000,(this.controls.target.y-ray.origin.y)/ray.direction.y)):50000,at=ray.at(t,new Vector3()),ll=unprojectGround(at.x,at.z);return [ll.lng,ll.lat] as [number,number];});
+  return {center:[center.lng,center.lat] as [number,number],corners};
+ }
  getCanvas(){return this.renderer.domElement;}getZoom(){return distanceZoom(this.camera.position.distanceTo(this.controls.target));}getPitch(){return this.controls.getPolarAngle()*180/Math.PI;}getBearing(){return -this.controls.getAzimuthalAngle()*180/Math.PI;}isMoving(){return this.moving||this.settlingUntil>0||!!this.flight||this.zoomMotion.target!==undefined;}areTilesLoaded(){return this.ready;}unitsPerPixel(){return this.camera.position.distanceTo(this.controls.target)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);}
  easeTo(options:{center?:[number,number];zoom?:number;pitch?:number;bearing?:number;duration?:number}){
   if(this.getZoom()>=1.8){this.zoomOrigin.copy(this.controls.target);this.zoomAnchorReady=true;}
@@ -120,6 +126,7 @@ export class ThreeCampaignMap{
  setTerrain(value:boolean){if(this.flat===!value)return;this.flat=!value;this.container.dataset.strategic=String(this.flat);this.cloudMaterial.uniforms.strategic.value=this.flat?1:0;this.surface?.setFlat(this.flat);this.surface?.setPaperStrength(atlasPaperStrength(this.getZoom(),this.flat));if(!this.isMoving())this.easeTo({pitch:campaignZoomPose(this.getZoom(),value,this.getBearing()).pitch});this.updateClouds();this.actors?.refresh();this.overlaysDirty=true;this.triggerRepaint();}
  resize(){const w=Math.max(1,this.container.clientWidth),h=Math.max(1,this.container.clientHeight);this.renderer.setSize(w,h);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.triggerRepaint();}
  on(name:string,callback:(event:AtlasEvent)=>void){const list=this.listeners.get(name)??new Set();list.add(callback);this.listeners.set(name,list);return this;}
+ off(name:string,callback:(event:AtlasEvent)=>void){this.listeners.get(name)?.delete(callback);return this;}
  once(name:string,callback:(event:AtlasEvent)=>void){const once=(e:AtlasEvent)=>{this.listeners.get(name)?.delete(once);callback(e);};return this.on(name,once);}
  private emit(name:string,data:Partial<AtlasEvent>={}){for(const listener of this.listeners.get(name)??[])listener(data as AtlasEvent);}
  getSource(id:string){return {setData:(data:FeatureCollection)=>{this.sources.set(id,data);this.overlaysDirty=true;if(id==='realms')this.updateClouds(true);this.triggerRepaint();}};}

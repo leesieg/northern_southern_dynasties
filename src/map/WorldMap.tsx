@@ -42,6 +42,7 @@ import {armyShowsModel,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
+  onMapReady?:(map:AtlasMap|null)=>void;
   militaryModels:boolean;armyMotion:boolean;sceneryDetail:boolean;
   onActivity:(item:OngoingItem)=>void;
   onEngagement:(selected:EngagementRef)=>void;
@@ -321,7 +322,7 @@ export function WorldMap(props:Props){
       home();
       map.on('style.load',()=>{
         if(!map||disposed)return;
-        styleReady=true;
+        styleReady=true;current.current.onMapReady?.(map);
         sceneryLayer={siteAt:point=>map?.siteAt(point)??null,showsSite:id=>map?.showsSite(id)??false};
         map.attachWorld(()=>current.current,id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},reason=>setWarning(reason));
         for(const s of sites){
@@ -418,7 +419,7 @@ export function WorldMap(props:Props){
     }catch(e){setError(e instanceof Error?e.message:'无法启动 WebGL 2 地图。');}
     return()=>{
       disposed=true;if(slowLoad)clearTimeout(slowLoad);cancelAnimationFrame(frame);observer?.disconnect();
-      combatMarkers.forEach(e=>e.marker.remove());activityMarkers.forEach(e=>e.marker.remove());armyMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());map?.remove();api.current=null;
+      combatMarkers.forEach(e=>e.marker.remove());activityMarkers.forEach(e=>e.marker.remove());armyMarkers.forEach(e=>e.marker.remove());allMarkers.forEach(marker=>marker.remove());current.current.onMapReady?.(null);map?.remove();api.current=null;
     };
   },[retry]);
 
