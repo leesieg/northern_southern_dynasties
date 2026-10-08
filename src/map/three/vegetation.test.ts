@@ -10,3 +10,11 @@ it('distributes a limited tree budget across all quadrants in each major region'
   expect(all).toEqual(vegetationCandidates(center.x,center.z,160));
  }
 });
+
+it('keeps tree positions, scale and species fixed when the camera moves or zooms',()=>{
+ const near=vegetationCandidates(35,48,60),wide=vegetationCandidates(47,52,100);
+ const byPosition=new Map(wide.map(p=>[`${p.x}:${p.z}`,p]));
+ expect(near.length).toBeGreaterThan(300);
+ for(const p of near){expect(byPosition.get(`${p.x}:${p.z}`)).toEqual(p);expect(p.variant).toBeGreaterThanOrEqual(0);expect(p.variant).toBeLessThan(3);}
+ expect(new Set(near.map(p=>p.variant)).size).toBe(3);
+});

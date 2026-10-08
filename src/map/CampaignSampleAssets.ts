@@ -6,7 +6,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {campaignCityKey,MAX_CITY_GEOMETRIES,type CampaignCityAppearance,type CityDetail} from './campaignScenery';
 
-const modules=['city','tree-0',...['market','granary','hostel'].flatMap(b=>[1,2,3].map(level=>`${b}-${level}`)),...['worksite-0','worksite-1','worksite-2']];
+const modules=['city','tree-0','tree-1','tree-2','rocks',...['market','granary','hostel'].flatMap(b=>[1,2,3].map(level=>`${b}-${level}`)),...['worksite-0','worksite-1','worksite-2']];
 let modelData:Promise<(readonly [string,ArrayBuffer])[]>|undefined;
 export function prefetchCampaignSampleAssets(){
  if(!modelData){const pending=Promise.all(modules.map(async name=>{
@@ -60,5 +60,5 @@ export function sampleCampaignAssets(models:Map<string,Group>){
  }
  function prune(active:Set<string>,activeFlags:Set<string>=new Set()){for(const [url,m] of flags){if(flags.size<=32)break;if(!activeFlags.has(url)){m.map?.dispose();m.dispose();flags.delete(url);}}for(const [key,g] of geometries){if(geometries.size<=MAX_CITY_GEOMETRIES)break;if(!active.has(key)){g.dispose();geometries.delete(key);}}}
  function dispose(){disposed=true;for(const g of [...templates.values(),...geometries.values()])g.dispose();material.dispose();poles.dispose();poleMaterial.dispose();flagGeometry.dispose();for(const m of flags.values()){m.map?.dispose();m.dispose();}for(const root of models.values())root.traverse(o=>{if(o instanceof Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});}
- return {city,prune,dispose,tree:templates.get('tree-0')!};
+ return {city,prune,dispose,tree:templates.get('tree-0')!,trees:[0,1,2].map(i=>templates.get('tree-'+i)!),rocks:templates.get('rocks')!};
 }

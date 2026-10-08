@@ -1,10 +1,10 @@
 import {Color,Mesh,MeshStandardMaterial,type Scene} from 'three';
 
 export const seasons={
- spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.12,.20,.065],high:[.32,.38,.16],forest:[.085,.17,.07],field:[.18,.28,.085],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#c5cfc0',sun:'#fff0cf',sky:'#d1e1df',intensity:2.5,water:'#557e79'},
- summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.20,.27,.10],high:[.40,.46,.22],forest:[.10,.17,.095],field:[.21,.29,.095],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#d8dbcf',sun:'#f8e8c5',sky:'#d5e3df',intensity:2.7,water:'#567c75'},
- autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.20,.16,.07],high:[.40,.32,.15],forest:[.23,.15,.055],field:[.42,.31,.10],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#c9c1b0',sun:'#ffdc9f',sky:'#cbd4da',intensity:2.5,water:'#526d6a'},
- winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:[.14,.16,.13],high:[.27,.28,.22],forest:[.10,.14,.12],field:[.24,.22,.17],leaf:'#777a64',pine:'#50655b',snow:.92,fog:'#ced8dc',sun:'#e4edff',sky:'#d5e5f3',intensity:2.15,water:'#67858d'},
+ spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.24,.34,.07],high:[.48,.55,.19],forest:[.07,.14,.035],field:[.32,.40,.09],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#cbd0ce',sun:'#fff0cf',sky:'#c5d6e5',intensity:2.8,water:'#43899d'},
+ summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.26,.34,.065],high:[.49,.53,.18],forest:[.055,.115,.035],field:[.34,.39,.12],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#ccd1d2',sun:'#ffedc4',sky:'#c5d5e6',intensity:2.9,water:'#367f99'},
+ autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.32,.25,.08],high:[.56,.43,.19],forest:[.21,.15,.045],field:[.48,.37,.14],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#cfc9c2',sun:'#ffe0ac',sky:'#c8d4e4',intensity:2.7,water:'#477d8d'},
+ winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:[.20,.22,.16],high:[.34,.35,.26],forest:[.09,.13,.11],field:[.29,.27,.20],leaf:'#777a64',pine:'#50655b',snow:.92,fog:'#ced8dc',sun:'#e4edff',sky:'#d5e5f3',intensity:2.15,water:'#678b9c'},
 } as const;
 export type Season=keyof typeof seasons;
 export function createSeasonState(up:'y'|'z'='y'){

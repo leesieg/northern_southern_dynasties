@@ -23,7 +23,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
  const controls=new MapControls(camera,renderer.domElement);controls.enableDamping=false;controls.screenSpacePanning=false;
  controls.minDistance=24;controls.maxDistance=360;controls.minPolarAngle=.22;controls.maxPolarAngle=1.12;controls.zoomSpeed=.85;controls.panSpeed=.8;
  controls.mouseButtons={LEFT:MOUSE.PAN,MIDDLE:MOUSE.DOLLY,RIGHT:MOUSE.ROTATE};
- const sky=new HemisphereLight('#cadcde','#393d2d',.85);scene.add(sky);
+ const sky=new HemisphereLight('#c5d5e6','#49432c',.66);scene.add(sky);
  const sun=new DirectionalLight('#ffe1ad',2.7);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);sun.shadow.bias=-.00025;sun.shadow.normalBias=.13;sun.shadow.camera.near=1;sun.shadow.camera.far=600;sun.shadow.radius=2;
  scene.add(sun,sun.target);
  const loader=new GLTFLoader();loader.setCrossOrigin('anonymous');
@@ -213,7 +213,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   const before=controls.target.clone();controls.target.x=Math.max(-245,Math.min(255,controls.target.x));controls.target.z=Math.max(-105,Math.min(115,controls.target.z));controls.target.y=ground(controls.target.x,controls.target.z);
   camera.position.add(controls.target.clone().sub(before));camera.position.y=Math.max(camera.position.y,ground(camera.position.x,camera.position.z)+7);camera.lookAt(controls.target);
   const distance=camera.position.distanceTo(controls.target),shadowSize=Math.max(55,Math.min(290,distance*.9));
-  sun.position.copy(controls.target).add(new Vector3(-135,155,80));sun.target.position.copy(controls.target);const sc=sun.shadow.camera;sc.left=-shadowSize;sc.right=shadowSize;sc.top=shadowSize;sc.bottom=-shadowSize;sc.updateProjectionMatrix();
+  sun.position.copy(controls.target).add(new Vector3(-135,130,80));sun.target.position.copy(controls.target);const sc=sun.shadow.camera;sc.left=-shadowSize;sc.right=shadowSize;sc.top=shadowSize;sc.bottom=-shadowSize;sc.updateProjectionMatrix();
   (scene.fog as Fog).near=distance*.8;(scene.fog as Fog).far=distance*2.6;
   if(!reduced)for(const flag of flags){const p=flag.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(p.getX(i)*2.8+p.getY(i)*1.8+now*.0013)*.13*(1.415-p.getY(i))/2.83);p.needsUpdate=true;flag.geometry.computeVertexNormals();}
   camera.updateMatrixWorld();

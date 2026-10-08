@@ -4,7 +4,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {Mesh} from 'three';
 import {sampleCampaignAssets} from '../../src/map/CampaignSampleAssets';
 it('reduces real Blender city geometry while preserving footprint and construction modules',async()=>{
- const names=['city','tree-0',...['market','granary','hostel'].flatMap(n=>[1,2,3].map(i=>`${n}-${i}`)),...['worksite-0','worksite-1','worksite-2']];
+ const names=['city','tree-0','tree-1','tree-2','rocks',...['market','granary','hostel'].flatMap(n=>[1,2,3].map(i=>`${n}-${i}`)),...['worksite-0','worksite-1','worksite-2']];
  const loader=new GLTFLoader(),models=await Promise.all(names.map(async name=>{const b=await readFile(`public/art/campaign/${name}.glb`);return [name,(await loader.parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'')).scene];}));
  const assets=sampleCampaignAssets(new Map(models));
  const a={capital:true,south:false,style:'northern',county:false,fort:2,levels:[2,1,1],project:-1,progress:0,besieged:false,color:'#ffffff'};

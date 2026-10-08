@@ -21,18 +21,23 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  float grainFootprint=max(length(dFdx(p*5.)),length(dFdy(p*5.)));
  float fine=mix(noise2(p*5.),.5,smoothstep(.15,.8,grainFootprint));
  float slope=1.-abs(normalize(terrainNormal).y);
- vec3 meadow=mix(seasonLow,seasonHigh,n);
- vec3 forest=seasonForest*(.82+n*.38);
- vec3 rock=mix(vec3(.27,.29,.27),vec3(.55,.54,.47),noise2(p*.32));
- rock=mix(rock,mix(vec3(.22,.24,.22),vec3(.48,.49,.43),n),regionalStyle);
- float wooded=smoothstep(.05,4.,terrainPosition.y)*smoothstep(.26,.7,n);
- vec3 soil=mix(vec3(.235,.195,.115),vec3(.37,.315,.205),n);
- vec3 land=mix(meadow,soil,smoothstep(.52,.76,fbm(p*.19+15.))*.4);
- land=mix(land,forest,wooded*mix(.64,.32,regionalStyle));
- float stone=smoothstep(.18,.52,slope+n*.19)*smoothstep(4.,11.,terrainPosition.y);
- stone=mix(stone,smoothstep(.10,.38,slope+n*.09)*smoothstep(1.,5.,terrainPosition.y),regionalStyle);
- float strataPhase=terrainPosition.y*1.8+noise2(p*.4)*3.;
- float strata=.96+.04*sin(strataPhase)*(1.-smoothstep(.4,2.,fwidth(strataPhase)));
+ // Broad pasture / woodland masses carry the composition; fine noise only weathers them.
+ float pasture=smoothstep(.18,.82,fbm(p*.035));
+ vec3 meadow=mix(seasonLow,seasonHigh,pasture)*(.96+n*.08);
+ vec3 forest=seasonForest*(.88+n*.24);
+ float groveCover=smoothstep(.46,.62,noise2(p/28.));
+ float wooded=groveCover*(1.-smoothstep(.30,.58,slope));
+ vec3 soil=mix(vec3(.35,.28,.145),vec3(.51,.43,.24),n);
+ vec3 land=mix(meadow,soil,smoothstep(.61,.8,fbm(p*.05+15.))*.32);
+ land=mix(land,forest,wooded*.82);
+ // Warm exposed strata against cool, dark vegetation. All shapes still come from the DEM.
+ float stone=smoothstep(.16,.43,slope)*smoothstep(1.2,6.,terrainPosition.y);
+ stone=mix(stone,smoothstep(.11,.34,slope)*smoothstep(.8,4.,terrainPosition.y),regionalStyle);
+ vec2 cliffUV=vec2(dot(p,vec2(.73,.68))*.52,terrainPosition.y*.23);
+ float fissure=smoothstep(.57,.77,fbm(cliffUV));
+ vec3 rock=mix(vec3(.56,.51,.405),vec3(.34,.345,.31),fissure);
+ float strataPhase=terrainPosition.y*2.3+noise2(p*.14)*2.;
+ float strata=.93+.07*sin(strataPhase)*(1.-smoothstep(.4,2.,fwidth(strataPhase)));
  land=mix(land,rock*strata,stone);
  if(hasFarms>.5){
   vec4 field=vec4(0.);
@@ -45,7 +50,7 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
     field=mix(field,parcel,parcel.a);
    }
   }
-  land=mix(land,mix(field.rgb,seasonField,.72),field.a*.83);
+  land=mix(land,mix(field.rgb,seasonField,.40),field.a*.78);
  }
  float snowCover=0.;
  if(seasonSnow>.001){
@@ -67,7 +72,7 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  diffuseColor.rgb*=land*mix(.94+fine*.12,.97+fine*.045,snowCover);
  ${options.fade===false?'':'float edge=min(min(p.x+276.,294.4-p.x),min(p.y+133.2,144.3-p.y));diffuseColor.a*=smoothstep(0.,14.,edge);'}
  `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
- float rugged=smoothstep(5.,13.,terrainPosition.y);
+ float rugged=stone;
  float rockFootprint=length(fwidth(terrainPosition.xz));
  float relief=(noise2(terrainPosition.xz*3.)*.13*(1.-smoothstep(.15,.5,rockFootprint))+noise2(terrainPosition.xz*10.)*.022*(1.-smoothstep(.04,.16,rockFootprint)))*rugged*(1.-snowCover*.85);
  vec3 q0=dFdx(-vViewPosition),q1=dFdy(-vViewPosition);
@@ -78,16 +83,16 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  return Object.assign(m,{setRegionalStyle(value:number){regionalStyle.value=value;},setFarms(next:FarmFields){farmUniforms.farmAtlas.value=next.map;farmUniforms.hasFarms.value=1;farmUniforms.farmCount.value=Math.min(36,next.centers.length);farmUniforms.farmGrid.value.set(next.columns??2,next.rows??1);farmUniforms.farmCenters.value.forEach((c,i)=>c.set(next.centers[i]?.x??1e8,next.centers[i]?.z??1e8));}});
 }
 export function waterMaterial(){
- const m=new MeshStandardMaterial({color:'#426f70',roughness:.46,metalness:.06,side:DoubleSide});m.name='Campaign river';
+ const m=new MeshStandardMaterial({color:'#357d95',roughness:.34,metalness:.10,side:DoubleSide});m.name='Campaign river';
  m.onBeforeCompile=s=>{
   s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <begin_vertex>','#include <begin_vertex>\nriverUV=uv;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <color_fragment>',`#include <color_fragment>
    float shore=pow(abs(riverUV.x-.5)*2.,7.);
    float ripplePhase=riverUV.y*17.+sin(riverUV.x*23.);
    float ripple=.96+.04*sin(ripplePhase)*(1.-smoothstep(.4,2.,fwidth(ripplePhase)));
-   diffuseColor.rgb=mix(diffuseColor.rgb*ripple,vec3(.32,.40,.32),shore*.3);
+   diffuseColor.rgb=mix(diffuseColor.rgb*ripple,vec3(.55,.51,.36),shore*.66);
   `);
  };
  return m;
 }
-export const fieldColors=['#8c8748','#a79a58','#b3a269','#76804c','#a88e50'].map(c=>new Color(c));
+export const fieldColors=['#aaa452','#b9aa62','#c1b67d','#879249','#b29a52'].map(c=>new Color(c));
