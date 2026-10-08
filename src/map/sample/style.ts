@@ -5,6 +5,10 @@ export function sampleStyle():StyleSpecification{
  const style=atlasStyle();
  const hidden=['territory','realm','prefecture','hierarchy','frontier','site-','history-event','selected-ring','route-','road-','campaign-trails'];
  style.layers=style.layers.filter(l=>!hidden.some(prefix=>l.id.startsWith(prefix)));
+ // Hidden gameplay layers must not leave their nationwide GeoJSON workers loading.
+ const used=new Set(style.layers.flatMap(layer=>'source' in layer?[layer.source]:[]));
+ used.add('dem-terrain');
+ style.sources=Object.fromEntries(Object.entries(style.sources).filter(([id])=>used.has(id)));
  const edits:Record<string,Record<string,unknown>>={
   'land-fallback':{'fill-color':'#b0b580'},
   'woodland':{'fill-color':'#4e6940','fill-opacity':.84},

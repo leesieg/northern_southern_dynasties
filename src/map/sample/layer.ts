@@ -12,7 +12,10 @@ export function sampleLayer(report:(message:string)=>void):CustomLayerInterface{
  const cities=new globalThis.Map<string,Group>(),trees:InstancedMesh[]=[],resources:Group[]=[];
  let map:Map,renderer:WebGLRenderer,disposed=false,dirty=true,timer:ReturnType<typeof setTimeout>|undefined,failed=false;
  const changed=()=>{dirty=true;map?.triggerRepaint();};
- const sourceChanged=()=>{if(timer)return;timer=setTimeout(()=>{timer=undefined;changed();},300);};
+ const sourceChanged=(event:{sourceId?:string;isSourceLoaded?:boolean})=>{
+  if(!['dem-terrain','natural'].includes(event.sourceId??'')||!event.isSourceLoaded||timer)return;
+  timer=setTimeout(()=>{timer=undefined;changed();},300);
+ };
  function refresh(){
   for(const [id,root] of cities){
    const site=siteById[id],z=map.getTerrain()?map.queryTerrainElevation({lng:site.lon,lat:site.lat}):0;
