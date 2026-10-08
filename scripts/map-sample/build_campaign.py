@@ -145,7 +145,7 @@ for x in (-1,1):
 for ix in range(-4,5):
  for iy in range(-3,5):
   x=ix*1.2;y=iy*1.04
-  if abs(x)<.7 or (abs(x)<3 and y>0):continue
+  if y<-.5 or abs(x)<.7 or (abs(x)<3 and y>0):continue
   building(x+rng.uniform(-.08,.08),y,.68+rng.random()*.25,.58+rng.random()*.18,.25+rng.random()*.29)
 for i in range(22):
  x=rng.choice([-1,1])*rng.uniform(7,9.5);y=rng.uniform(-4.7,4.7)
@@ -154,6 +154,48 @@ city=[]
 for m,(v,f) in parts.items():
  if v:city.append(mesh('City '+materials[m].name,v,f,materials[m]))
 export(city,'city')
+# Three reserved southern lots receive real construction-state modules at runtime.
+for kind in ('market','granary','hostel'):
+ for level in range(1,4):
+  parts={i:[[],[]] for i in range(len(materials))}
+  box(0,0,-.02,2.8,2.8,.08,4)
+  if kind=='market':
+   for i in range(2+level*2):
+    x=(-.88 if i%2==0 else .88);y=-.92+(i//2)*.60
+    box(x,y,.09,.56,.40,.27,3)
+    for dx in (-.26,.26):
+     for dy in (-.20,.20):box(x+dx,y+dy,.06,.04,.04,.61,3)
+    roof(x,y,.67,.72,.56,.18)
+   if level==3:building(0,.55,.65,.95,.85,True)
+  elif kind=='granary':
+   for i in range(level+1):
+    x=(-.65 if i%2==0 else .65);y=(-.65 if i<2 else .65)
+    box(x,y,.05,.92,.94,.16,0);building(x,y,.82,.86,.65+level*.06)
+    for dx in (-.28,.28):box(x+dx,y-.46,.08,.06,.03,.63,3)
+  else:
+   building(0,.52,1.7,.8,.62+level*.10,True)
+   if level>=2:building(-.95,-.43,.62,1.1,.42)
+   if level>=3:building(.95,-.43,.62,1.1,.42)
+   for x in (-1.26,1.26):box(x,-.10,0,.08,2.3,.30,1)
+   for x in (-.9,.9):box(x,-1.22,0,.70,.09,.30,1)
+  module=[mesh(kind+' '+str(level)+' '+str(m),v,f,materials[m]) for m,(v,f) in parts.items() if v]
+  export(module,kind+'-'+str(level))
+for phase in range(3):
+ parts={i:[[],[]] for i in range(len(materials))}
+ box(0,0,.01,2.7,2.6,.12,0)
+ for x in (-1.25,1.25):
+  for y in (-1.15,0,1.15):
+   box(x,y,.13,.07,.07,.55+phase*.54,3)
+ for y in (-1.15,1.15):
+  box(0,y,.58+phase*.54,2.6,.065,.07,3)
+ if phase>0:
+  for x in (-1.25,1.25):
+   for z in (.6,1.1):box(x,0,z,.07,2.5,.07,3)
+  box(0,0,.12,1.9,1.7,.40+phase*.25,1)
+ if phase==2:roof(0,0,1.05,2,1.8,.42)
+ for i in range(4):box(-.7+i*.18,-.9,.15,.12,.36,.12,0)
+ module=[mesh('Construction '+str(phase)+' '+str(m),v,f,materials[m]) for m,(v,f) in parts.items() if v]
+ export(module,'worksite-'+str(phase))
 # Three irregular tree crowns, authored at unit height, instanced at runtime.
 for variant in range(3):
  parts={i:[[],[]] for i in range(len(materials))}

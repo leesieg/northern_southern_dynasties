@@ -4,7 +4,8 @@
 
 - `terrain.glb`：296,065 顶点／589,824 三角面；范围 107.6°E–113.8°E，33.1°N–35.6°N。
 - `elevation.bin`：769 × 385 个 little-endian float32，北到南、行优先，单位米；`terrain.json` 保存坐标与比例。高程约 62–3,610 米。
-- `city.glb`：39,954 三角面；原创城墙、门楼、院落、瓦顶与近郊建筑，长安和洛阳暂共用原型。
+- `city.glb`：29,394 三角面；原创城墙、门楼、院落、瓦顶与近郊建筑，长安和洛阳共用基础原型，南侧留出三个动态营建地块。
+- `market-1/2/3.glb`、`granary-1/2/3.glb`、`hostel-1/2/3.glb`：市肆、城仓、驿舍各三级原创模型；`worksite-0/1/2.glb`：地基、主体、屋面三个施工阶段。每个建筑模块低于 10,000 三角面，施工模块低于 3,000 面。
 - `tree-0/1/2.glb`：332／332／76 三角面；全区域合计不超过 18,000 株，以实例化绘制。`rocks.glb`：115 面。
 - `rivers.json`：10 条区域河段，包括黄河、渭河及部分支流；并非古代水系全集。
 
@@ -23,3 +24,5 @@ SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey. Global E
 将上述 24 张 DEM 原始瓦片放入 `.cache/map-style-sample/dem8/{x}-{y}.png`，Natural Earth 文件放入 `.cache/map-style-sample/rivers-10m.geojson`。在 Blender MCP 里设置 `FYNBC_PROJECT_ROOT` 为仓库根、`FYNBC_CAMPAIGN_BLEND` 为独立 `.blend` 输出路径；使用有 window 的上下文执行 `build_campaign.py`。脚本创建独立 scene，不修改既有场景。
 
 城邑旗帜由运行时复用 `armyHeraldry` / `RealmFlag`：长安按开局归属展示西魏旗，洛阳展示东魏旗；不再使用样板单独绘制的国号旗。
+
+动态建筑从独立教学演示局的真实营建状态派生，复用现有报价、扣款、工期、完工和三级上限规则。演示资金初始 2000 钱，日期推进包含现有营建模块的月度收入结算；不读取或写入正式存档。升级期间保留已建建筑并叠加工地，完成后切换新等级。城墙、人口密度和战损尚未动态化。

@@ -1,3 +1,4 @@
+import {mountConstructionPreview} from './constructionPreview';
 import {ACESFilmicToneMapping,BufferGeometry,CatmullRomCurve3,CanvasTexture,Color,CylinderGeometry,DirectionalLight,DoubleSide,Float32BufferAttribute,Fog,Group,HemisphereLight,InstancedMesh,Mesh,MeshStandardMaterial,MOUSE,Object3D,PCFSoftShadowMap,PerspectiveCamera,PlaneGeometry,Scene,Sprite,SpriteMaterial,SRGBColorSpace,TextureLoader,Vector3,WebGLRenderer} from 'three';
 import {armyHeraldry} from '../ArmyHeraldry';
 import {MapControls} from 'three/addons/controls/MapControls.js';
@@ -24,8 +25,8 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
  const sun=new DirectionalLight('#ffe1ad',2.7);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);sun.shadow.bias=-.00025;sun.shadow.normalBias=.13;sun.shadow.camera.near=1;sun.shadow.camera.far=600;sun.shadow.radius=2;
  scene.add(sun,sun.target);
  const loader=new GLTFLoader();loader.setCrossOrigin('anonymous');
- let disposed=false,dirty=true,frame=0;const auxiliaryTextures:CanvasTexture[]=[];
- const dispose=()=>{disposed=true;cancelAnimationFrame(frame);controls.dispose();resize.disconnect();const geometries=new Set<BufferGeometry>(),materials=new Set<MeshStandardMaterial|SpriteMaterial>();scene.traverse(o=>{if(o instanceof Mesh){geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}if(o instanceof Sprite)materials.add(o.material);});for(const g of geometries)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const texture of auxiliaryTextures)texture.dispose();renderer.dispose();};
+ let disposed=false,dirty=true,frame=0;let cleanupConstruction:(()=>void)|undefined;const auxiliaryTextures:CanvasTexture[]=[];
+ const dispose=()=>{disposed=true;cleanupConstruction?.();cancelAnimationFrame(frame);controls.dispose();resize.disconnect();const geometries=new Set<BufferGeometry>(),materials=new Set<MeshStandardMaterial|SpriteMaterial>();scene.traverse(o=>{if(o instanceof Mesh){geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}if(o instanceof Sprite)materials.add(o.material);});for(const g of geometries)g.dispose();for(const m of materials){m.map?.dispose();m.dispose();}for(const texture of auxiliaryTextures)texture.dispose();renderer.dispose();};
  const resize=new ResizeObserver(()=>{camera.aspect=container.clientWidth/container.clientHeight;camera.updateProjectionMatrix();renderer.setSize(container.clientWidth,container.clientHeight);dirty=true;});resize.observe(container);
  window.addEventListener('pagehide',dispose,{once:true});
  let loaded;
@@ -183,6 +184,9 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   }else return;e.preventDefault();
  });
  controls.addEventListener('start',()=>{targetFlight=undefined;});controls.addEventListener('change',()=>{dirty=true;});
+ report('正在装配营建模型…');
+ try{cleanupConstruction=await mountConstructionPreview(scene,camera,renderer,cities,site=>{focus(site,true);camera.position.sub(controls.target).multiplyScalar(.65).add(controls.target);controls.update();},()=>{dirty=true;});}catch(error){dispose();throw error;}
+ if(disposed){cleanupConstruction();return;}
  focus('luoyang',true);
  let resolveReady:()=>void,rejectReady:(e:unknown)=>void;
  const ready=new Promise<void>((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});let firstFrame=true;
