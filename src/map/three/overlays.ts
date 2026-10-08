@@ -17,7 +17,7 @@ export class CampaignOverlays{
  readonly root=new Group();
  constructor(private height:(lon:number,lat:number)=>number|null){}
  clear(){for(const o of [...this.root.children]){const m=o as Mesh;this.root.remove(m);m.geometry.dispose();(m.material as MeshBasicMaterial).dispose();}}
- rebuild(layers:OverlayLayer[],sources:Map<string,FeatureCollection>,zoom:number,unitsPerPixel:number,states:Map<string,Record<string,unknown>>,bounds?:[number,number,number,number]){
+ rebuild(layers:OverlayLayer[],sources:Map<string,FeatureCollection>,zoom:number,unitsPerPixel:number,states:Map<string,Record<string,unknown>>,bounds?:[number,number,number,number],flat=false){
   this.clear();let order=1;
   for(const layer of layers){if(!['realms','territories','hierarchy','frontiers','roads','route','selection','history-event'].includes(layer.source??'')||layer.layout?.visibility==='none'||zoom<(layer.minzoom??0)||zoom>(layer.maxzoom??99))continue;
    // Independent fill triangles intersect detailed relief. Near selection uses outlines only.
@@ -43,7 +43,7 @@ export class CampaignOverlays{
      }
     }else if(layer.type==='circle'&&f.geometry.type==='Point'){const p=f.geometry.coordinates,at=projectGround(p[0],p[1]),radius=Number(evaluate(paint['circle-radius']??4,f,zoom,state))*unitsPerPixel;for(let i=0;i<32;i++){for(const angle of [null,i*Math.PI/16,(i+1)*Math.PI/16]){const x=at.x+(angle===null?0:Math.cos(angle)*radius),z=at.z+(angle===null?0:Math.sin(angle)*radius);positions.push(x,(this.height(p[0],p[1])??0)+.4,z);colors.push(color.r,color.g,color.b,opacity);}}}
    }
-   if(!positions.length)continue;const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(positions,3));geometry.setAttribute('color',new Float32BufferAttribute(colors,4));geometry.computeVertexNormals();const material=new MeshBasicMaterial({vertexColors:true,transparent:true,depthWrite:false,side:DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});const mesh=new Mesh(geometry,material);mesh.renderOrder=order++;this.root.add(mesh);
+   if(!positions.length)continue;const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(positions,3));geometry.setAttribute('color',new Float32BufferAttribute(colors,4));geometry.computeVertexNormals();const material=new MeshBasicMaterial({vertexColors:true,transparent:true,depthWrite:false,depthTest:!(flat&&zoom<=6.2),side:DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});const mesh=new Mesh(geometry,material);mesh.renderOrder=order++;this.root.add(mesh);
   }
  }
  contains(f:Feature,lon:number,lat:number){return waterMaskContains([lon,lat],f.geometry);}
