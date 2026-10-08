@@ -12,5 +12,5 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173, strictPort: true, proxy:tileProxy, watch:{ignored:['**/.cache/**']} },
   preview: {proxy:tileProxy},
-  build: { rollupOptions: { output: { manualChunks: (id) => id.includes('/node_modules/maplibre-gl/') ? 'maplibre' : undefined } } },
+  build: { rollupOptions: { input:{game:'index.html',mapSample:'map-sample.html'},output: { manualChunks: (id) => id.includes('/node_modules/maplibre-gl/') ? 'maplibre' : undefined } } },
 });
