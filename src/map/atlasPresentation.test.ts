@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {atlasPresentation,PAPER_ZOOM,LANDSCAPE_ZOOM,CITY_VIEW_ZOOM} from './atlasPresentation';
+import {atlasPresentation,atlasPaperStrength,PAPER_ZOOM,LANDSCAPE_ZOOM,CITY_VIEW_ZOOM} from './atlasPresentation';
 
 describe('campaign atlas scale (non-UI)',()=>{
  it('flattens the distant atlas regardless of the landscape preference',()=>{
@@ -15,4 +15,12 @@ describe('campaign atlas scale (non-UI)',()=>{
   expect(atlasPresentation(14,true).pitch).toBe(66);
   expect(atlasPresentation(CITY_VIEW_ZOOM,true).pitch).toBe(66);expect(atlasPresentation(CITY_VIEW_ZOOM,false).pitch).toBe(0);
  });
+});
+
+it('retains paper in the middle view and smoothly restores close campaign materials',()=>{
+ for(const z of [3,4.8,6.2,8.2])expect(atlasPaperStrength(z)).toBe(1);
+ expect(atlasPaperStrength(9.2)).toBeCloseTo(.5);
+ for(const z of [10.2,11.7,12])expect(atlasPaperStrength(z)).toBe(0);
+ expect(atlasPaperStrength(12,true)).toBe(1);
+ expect(atlasPresentation(8.2,true).terrain).toBe(true);
 });
