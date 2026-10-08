@@ -4,7 +4,7 @@ import {journeyPosition} from '../core/routeGeometry';
 
 // Visual scale only; marker targets and the shared model layer use the same anchors.
 export const ARMY_MODEL_ZOOM=6.5;
-export const ARMY_MODEL_PIXELS=72;
+export const ARMY_MODEL_PIXELS=92;
 export const armyShowsModel=(zoom:number,enabled:boolean)=>enabled&&zoom>=ARMY_MODEL_ZOOM;
 export function armyMapPosition(a:Army){
  let {lon,lat}=siteById[a.location];
@@ -15,8 +15,8 @@ export interface ScreenPoint {x:number;y:number}
 export interface ScreenRect {left:number;top:number;right:number;bottom:number}
 export interface ArmyMarkerPlacement {offset:ScreenPoint;model:boolean;bounds:ScreenRect}
 // Both DOM hit targets and GPU models consume these screen placements. No world position is changed.
-export const armyMarkerFootprint=(model:boolean,strategic=false)=>model?{width:192,height:348,bottom:132}:strategic?{width:126,height:46,bottom:50}:{width:154,height:58,bottom:66};
-export const armyModelBadgeBottom=(pitch:number)=>Math.ceil(96*Math.cos(pitch*Math.PI/180))+36;
+export const armyMarkerFootprint=(model:boolean,strategic=false)=>model?{width:Math.ceil(3*ARMY_MODEL_PIXELS),height:Math.ceil(348*ARMY_MODEL_PIXELS/72),bottom:Math.ceil(132*ARMY_MODEL_PIXELS/72)}:strategic?{width:126,height:46,bottom:50}:{width:154,height:58,bottom:66};
+export const armyModelBadgeBottom=(pitch:number)=>Math.ceil(96*ARMY_MODEL_PIXELS/72*Math.cos(pitch*Math.PI/180))+36;
 export const screenOverlap=(a:ScreenRect,b:ScreenRect)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 /** One representative at each actual location; choosing another co-located army never moves the model. */
 export function anchoredArmyModels(armies:{key:string;point:ScreenPoint;position:{lon:number;lat:number}}[],selected:readonly string[],viewport:{width:number;height:number}){

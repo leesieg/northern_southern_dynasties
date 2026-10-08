@@ -29,19 +29,21 @@ export function campaignCityPixels(site:Site,capital:boolean,zoom:number){
  return Math.max(capital?30:site.rank==='county'?14:22,campaignCityMeters(site,capital)/metersPerPixel);
 }
 /** Bounded symbolic footprint, independent of zoom, latitude and viewport. Not measured historical city area. */
-export function campaignCityMeters(site:Site,capital:boolean){return capital?8000:site.rank==='county'?2400:5000;}
+export function campaignCityMeters(site:Site,capital:boolean){return capital?17000:site.rank==='county'?8000:13000;}
+/** World-space platform and vegetation clearance, in projected kilometres. */
+export function campaignCityRadius(site:Site,capital:boolean){return campaignCityMeters(site,capital)*.65/1000/Math.cos(site.lat*Math.PI/180);}
 /** Static landscape style, independent of conquest and today's polity. Visual design zones, not cultural census. */
 export function cityRegionalStyle(site:Site){
  if(site.terrain==='绿洲')return 'oasis';
  if(site.lon<106&&site.lat<34)return 'basin';
  return site.lat<33&&site.lon>=106?'jiangnan':'northern';
 }
-export function campaignCityPlacements<T extends {site:Site;point:{x:number;y:number};capital:boolean}>(items:T[],selected:string,zoom:number){
+export function campaignCityPlacements<T extends {site:Site;point:{x:number;y:number};capital:boolean;pixels?:number}>(items:T[],selected:string,zoom:number){
  const result:T[]=[];
  const sorted=[...items].sort((a,b)=>Number(b.site.id===selected)-Number(a.site.id===selected)||Number(b.capital)-Number(a.capital)||Number(a.site.rank==='county')-Number(b.site.rank==='county'));
  for(const item of sorted){
-  const radius=campaignCityPixels(item.site,item.capital,zoom)*.6;
-  if(result.some(other=>Math.hypot(other.point.x-item.point.x,(other.point.y-item.point.y)*1.3)<radius+campaignCityPixels(other.site,other.capital,zoom)*.6))continue;
+  const radius=(item.pixels??campaignCityPixels(item.site,item.capital,zoom))*.6;
+  if(result.some(other=>Math.hypot(other.point.x-item.point.x,(other.point.y-item.point.y)*1.3)<radius+(other.pixels??campaignCityPixels(other.site,other.capital,zoom))*.6))continue;
   result.push(item);if(result.length===MAX_SCENERY_CITIES)break;
  }
  return result;
