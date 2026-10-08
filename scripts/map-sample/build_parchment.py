@@ -35,3 +35,32 @@ for f in json.loads((root/'public/data/rivers.geojson').read_text())['features']
  for path in paths:d.line([point(p) for p in path],fill=(86,99,91,105),width=1)
 Image.alpha_composite(paper,ink).convert('RGB').save(out/'national-parchment.webp',quality=88,method=6)
 print((out/'national-parchment.webp').stat().st_size)
+
+# Separate fog-only artwork: sparse ink washes and bamboo, never a tiled symbol pattern.
+# Decorative scenery, not additional geographic or game-world data.
+hidden=Image.alpha_composite(paper,ink)
+wash=Image.new('RGBA',(w,h));brush=ImageDraw.Draw(wash)
+for cx,cy,width,height in [(210,420,320,160),(430,1200,380,175),(1660,1080,330,160),(1800,360,330,190)]:
+ for layer in range(3):
+  ridge=[]
+  for i in range(33):
+   x=cx-width/2+i*width/32
+   silhouette=(math.sin(i*.17+layer)*.18+math.sin(i*.41+layer*.7)*.12+.65)
+   y=cy-height*silhouette*(1-layer*.22)+layer*22
+   ridge.append((x,y))
+  brush.polygon(ridge+[(cx+width/2,cy+28),(cx-width/2,cy+28)],fill=(56+layer*8,70+layer*6,63+layer*7,35+layer*12))
+  brush.line(ridge,fill=(52,66,60,70),width=2)
+ # A few cloud washes crossing the ridges, with generous unpainted space.
+ for i in range(3):
+  y=cy-35+i*23
+  brush.line([(cx-width*.55+j*width/22,y+math.sin(j*.32+i)*5) for j in range(25)],fill=(223,220,197,125),width=8)
+ for stem in range(3):
+  x=cx+width*.32+stem*9;y=cy+32;tip=y-70-stem*11
+  brush.line([(x,y),(x-7,tip)],fill=(46,64,53,105),width=2)
+  for j in range(4):
+   sy=y-15-j*15;sign=1 if j%2 else -1
+   brush.line([(x-2,sy),(x+sign*20,sy-13)],fill=(46,64,53,105),width=2)
+   for k in range(3):
+    px=x+sign*(8+k*6);py=sy-5-k*3
+    brush.polygon([(px,py),(px+sign*13,py-11),(px+sign*6,py-1)],fill=(46,64,53,100))
+Image.alpha_composite(hidden,wash).convert('RGB').save(out/'hidden-shanshui.webp',quality=88,method=6)

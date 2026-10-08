@@ -16,7 +16,7 @@ export function mountCampaign(host:HTMLElement,notice:(message:string)=>void){
  return new Promise<void>((resolve,reject)=>{
   const initial=newWorld(),locations=sites.filter(s=>controlledSite(initial,s.id));
   let world=newConstructionDemo(locations.map(s=>s.id)),selected='luoyang',seasonPreview:Season='summer',strategic=false,flat=false,settled=false;
-  const map=new ThreeCampaignMap({container:host,style:atlasStyle(),center:[siteById[selected].lon,siteById[selected].lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,true).pitch,minZoom:2.2,maxZoom:12});
+  const map=new ThreeCampaignMap({container:host,style:atlasStyle(),center:[siteById[selected].lon,siteById[selected].lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,true).pitch,minZoom:1.1,maxZoom:12});
   const picker=document.querySelector<HTMLSelectElement>('#site-picker')!,sample=document.querySelector('#sample')!;
   for(const [polityId,polity] of Object.entries(polities)){const group=document.createElement('optgroup');group.label=polity.name;for(const site of locations.filter(s=>s.polity===polityId)){const o=document.createElement('option');o.value=site.id;o.textContent=site.name;group.append(o);}if(group.children.length)picker.append(group);}
   picker.value=selected;
@@ -30,7 +30,7 @@ export function mountCampaign(host:HTMLElement,notice:(message:string)=>void){
    const kept=campaignCityPlacements(candidates,selected,zoom).filter((v,i,all)=>!all.slice(0,i).some(o=>Math.abs(o.point.x-v.point.x)<145&&Math.abs(o.point.y-v.point.y)<60));
    const visible=new Set(kept.map(p=>p.site.id));for(const m of markers){m.button.hidden=!visible.has(m.site.id);m.button.setAttribute('aria-current',String(m.site.id===selected));}
   }
-  function presentation(){const view=atlasPresentation(map.getZoom(),true),next=strategic||!view.terrain;if(next!==flat){flat=next;map.setTerrain(!flat);}labels();const pitch=strategic?0:view.pitch;if(Math.abs(map.getPitch()-pitch)>.25)map.easeTo({pitch,duration:220});}
+  function presentation(){const view=atlasPresentation(map.getZoom(),true),next=strategic||!view.terrain;if(next!==flat){flat=next;map.setTerrain(!flat);}labels();const pitch=map.getZoom()<2.2?view.pitch:strategic?0:view.pitch;if(Math.abs(map.getPitch()-pitch)>.25)map.easeTo({pitch,duration:220});}
   function focus(id:string){const site=siteById[id];if(!site||!locations.some(s=>s.id===id))return;selected=id;picker.value=id;strategic=false;document.querySelector('#strategic')!.setAttribute('aria-pressed','false');sample.dispatchEvent(new CustomEvent('sample:site',{detail:id}));map.easeTo({center:[site.lon,site.lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,true).pitch,duration:700});}
   picker.addEventListener('change',()=>focus(picker.value));
   document.querySelector('[data-view="region"]')!.addEventListener('click',()=>{strategic=false;document.querySelector('#strategic')!.setAttribute('aria-pressed','false');map.fitBounds([[85,20],[130,45]],{pitch:0,duration:900});});
@@ -41,7 +41,7 @@ export function mountCampaign(host:HTMLElement,notice:(message:string)=>void){
   let labelFrame=0;
   map.on('move',()=>{if(!labelFrame)labelFrame=requestAnimationFrame(()=>{labelFrame=0;labels();});});map.on('moveend',presentation);
   map.on('click',event=>{const id=map.siteAt(event.point);if(id)focus(id);});
-  map.on('error',event=>{notice(event.error.message);if(event.sourceId==='detail-dem'){document.querySelector<HTMLElement>('#notice')!.dataset.warning='true';document.querySelector('#notice')!.classList.remove('ready');return;}if(!settled){settled=true;reject(event.error);}else{document.querySelector('#notice')!.classList.remove('ready');document.querySelector<HTMLButtonElement>('#retry')!.hidden=false;}});
+  map.on('error',event=>{notice(event.error.message);if(event.sourceId==='detail-dem'||event.sourceId==='atlas-study'){document.querySelector<HTMLElement>('#notice')!.dataset.warning='true';document.querySelector('#notice')!.classList.remove('ready');return;}if(!settled){settled=true;reject(event.error);}else{document.querySelector('#notice')!.classList.remove('ready');document.querySelector<HTMLButtonElement>('#retry')!.hidden=false;}});
   const observer=new ResizeObserver(()=>{map.resize();labels();});observer.observe(host);let cleanupConstruction:(()=>void)|undefined;
   const warning=(message:string)=>{notice(message);document.querySelector('#notice')!.classList.remove('ready');};
   map.on('style.load',()=>{

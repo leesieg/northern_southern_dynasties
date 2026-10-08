@@ -42,3 +42,9 @@ SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey. Global E
 `national-parchment.webp` 是 `scripts/map-sample/build_parchment.py` 从同一全国 DEM 与 Natural Earth 陆地、水系预生成的纸绘图（2048×1536，约 169 KiB）。采用真实 DEM 连续山影，不再铺设重复山形符号；仅绘制自然地貌，不包含政权、城邑或军队；运行时复用实际控制遮罩，不再逐次重绘约 315 万像素。
 
 `national-relief.png` 为 `scripts/map-sample/build_strategic_relief.py` 从全国真实 DEM 预生成的战略法线／高程纹理（1024×768，线性 RGBA 数据；RGB 为法线编码，alpha 为展示高程／180）。战略视图统一采样这一纹理，山纹、坡面光照与季节高程效果不再依赖镜头附近的近景网格细化程度。不是随机地形或新增历史数据。
+
+### 室内舆图与雾外山水（2026-10-08）
+
+`atlas-study.glb` 为本项目原创、通过 Blender MCP 制作的题材化室内模型（生成脚本 `scripts/map-sample/build_table_room.py`），9 个材质网格、约 6,240 个三角面、约 464 KiB。采用木构、素壁、屏风、低案、卷轴与文房器物营造南北朝氛围，不宣称考古复原。模型单位对应 1000 投影公里，桌上空出的 10.018754×7.514066 区域与真实全国 DEM 范围匹配，不含静态游戏地图截图。
+
+`hidden-shanshui.webp` 由纸图生成脚本独立生成（2048×1536、约 180 KiB），仅在未建模范围遮罩中显示。其山峦、云带与竹枝是美术装饰，不代表新增地理考据、城邑或其他游戏实体；已知领地继续使用 `national-parchment.webp`。

@@ -310,7 +310,7 @@ export function WorldMap(props:Props){
     try{
       map=new AtlasMap({
         container,style:atlasStyle(),center:[105.5,34.5],zoom:3.7,pitch:24,bearing:0,
-        minZoom:2.2,maxZoom:12,
+        minZoom:1.1,maxZoom:12,
       });
       map.getCanvas().setAttribute('aria-label','全国三维地图，拖动平移，右键拖动旋转，滚轮缩放；右键单击查看操作，也可通过地点目录选择城邑');
       home();
