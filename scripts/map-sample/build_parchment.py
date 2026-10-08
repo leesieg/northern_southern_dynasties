@@ -20,15 +20,16 @@ for f in land['features']:
   for i,ring in enumerate(polygon):
    path=[point(p) for p in ring];md.polygon(path,fill=255 if i==0 else 0);d.line(path,fill=(80,64,41,125),width=1)
 sea=Image.fromarray(np.stack([67+grain,98+grain,111+grain],axis=2).clip(0,255).astype('uint8')).convert('RGBA');soil=Image.new('RGBA',(w,h),(225,224,195,60));paper=Image.alpha_composite(paper,Image.composite(soil,sea,mask))
-for y in range(8,h-8,12):
- for x in range(8,w-8,13):
-  altitude=float(dem[y,x]);relief=abs(float(dem[y,x+5])-altitude)+abs(float(dem[y+5,x])-altitude)
-  if altitude<450 or relief<75 or rng.random()>.68 or mask.getpixel((x,y))==0:continue
-  px=x+(rng.random()-.5)*8;py=y+(rng.random()-.5)*6;peak=min(9,2+relief/200);width=3+rng.random()*3
-  d.polygon([(px-width,py+2),(px-.8,py-peak),(px+width,py+1)],fill=(69,76,66,90))
-  d.polygon([(px-width,py+2),(px-.8,py-peak),(px,py+1)],fill=(238,239,214,150))
-  d.line([(px-width,py+2),(px-.8,py-peak),(px+width,py+1)],fill=(61,71,64,110),width=1)
-  for j in range(1,4):d.line([(px+j*.8,py-peak+j*1.5),(px+j*.8+2,py+1)],fill=(61,71,64,65))
+# Continuous, geographically aligned hillshade; no repeated mountain pictograms.
+padded=np.pad(dem,1,mode='edge')
+smoothed=sum(padded[j:j+h,i:i+w] for j in range(3) for i in range(3))/9
+north,east=np.gradient(smoothed)
+east=east/(m['width']*40075016.686/w)*8
+north=north/(m['height']*40075016.686/h)*8
+light=(-east*.6-north*.5+1)/np.sqrt(east*east+north*north+1)
+shade=np.clip(.95+(light-.7)*.22,.78,1.04)
+shade=np.where(np.asarray(mask)>127,shade,1)
+pixels=np.asarray(paper).copy();pixels[:,:,:3]=(pixels[:,:,:3]*shade[:,:,None]).clip(0,255).astype('uint8');paper=Image.fromarray(pixels)
 for f in json.loads((root/'public/data/rivers.geojson').read_text())['features']:
  g=f['geometry'];paths=[g['coordinates']] if g['type']=='LineString' else g['coordinates'] if g['type']=='MultiLineString' else []
  for path in paths:d.line([point(p) for p in path],fill=(86,99,91,105),width=1)

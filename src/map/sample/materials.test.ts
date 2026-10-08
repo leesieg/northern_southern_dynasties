@@ -10,6 +10,7 @@ it('updates farmland uniforms without replacing the compiled terrain material or
  expect(shader.uniforms.farmAtlas.value).toBe(first);expect(shader.uniforms.farmCount.value).toBe(1);
  material.setFarms({map:second,centers:Array.from({length:36},(_,i)=>({x:i,z:i*2})),columns:6,rows:6});
  expect(shader.uniforms.farmAtlas.value).toBe(second);expect(shader.uniforms.farmCenters.value[35].toArray()).toEqual([35,70]);
+ material.setRegionalStyle(1);expect(shader.uniforms.regionalStyle.value).toBe(1);material.setRegionalStyle(0);expect(shader.uniforms.regionalStyle.value).toBe(0);
  expect(material.version).toBe(version);expect(shader.uniforms.seasonSnow).toBe(season.uniforms.seasonSnow);
  season.set('winter');expect(shader.uniforms.seasonSnow.value).toBeGreaterThan(0);material.dispose();first.dispose();second.dispose();
 });

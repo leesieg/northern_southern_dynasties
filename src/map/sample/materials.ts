@@ -4,28 +4,33 @@ type FarmFields={map:Texture;centers:{x:number;z:number}[];columns?:number;rows?
 /** Original surface noise, independent of geographic height (never generates hills). */
 export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,options:{fade?:boolean}={}){
  const m=new MeshStandardMaterial({color:'#ffffff',roughness:.94,transparent:true});
+ const regionalStyle={value:0};
  const farmUniforms={farmAtlas:{value:fields?.map??null},hasFarms:{value:fields?1:0},farmCenters:{value:Array.from({length:36},(_,i)=>new Vector2(fields?.centers[i]?.x??1e8,fields?.centers[i]?.z??1e8))},farmCount:{value:Math.min(36,fields?.centers.length??0)},farmGrid:{value:new Vector2(fields?.columns??2,fields?.rows??1)}};
  m.onBeforeCompile=s=>{
-  Object.assign(s.uniforms,season.uniforms,farmUniforms);
+  Object.assign(s.uniforms,season.uniforms,farmUniforms,{regionalStyle});
   s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 terrainPosition; varying vec3 terrainNormal;').replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=position; terrainNormal=normal;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>',`#include <common>
  varying vec3 terrainPosition; varying vec3 terrainNormal;
- uniform vec3 seasonLow; uniform vec3 seasonHigh; uniform vec3 seasonForest; uniform vec3 seasonField; uniform float seasonSnow;
+ uniform float regionalStyle; uniform vec3 seasonLow; uniform vec3 seasonHigh; uniform vec3 seasonForest; uniform vec3 seasonField; uniform float seasonSnow;
  uniform sampler2D farmAtlas; uniform float hasFarms; uniform vec2 farmCenters[36]; uniform int farmCount; uniform vec2 farmGrid;
  float hash2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
  float noise2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash2(i),hash2(i+vec2(1,0)),f.x),mix(hash2(i+vec2(0,1)),hash2(i+vec2(1,1)),f.x),f.y);}
  float fbm(vec2 p){return noise2(p)*.55+noise2(p*2.07)*.26+noise2(p*4.1)*.13+noise2(p*8.2)*.06;}
  `).replace('#include <color_fragment>',`#include <color_fragment>
- vec2 p=terrainPosition.xz;float n=fbm(p*.18),fine=noise2(p*5.);
+ vec2 p=terrainPosition.xz;float n=fbm(p*.18);
+ float grainFootprint=max(length(dFdx(p*5.)),length(dFdy(p*5.)));
+ float fine=mix(noise2(p*5.),.5,smoothstep(.15,.8,grainFootprint));
  float slope=1.-abs(normalize(terrainNormal).y);
  vec3 meadow=mix(seasonLow,seasonHigh,n);
  vec3 forest=seasonForest*(.82+n*.38);
  vec3 rock=mix(vec3(.27,.29,.27),vec3(.55,.54,.47),noise2(p*.32));
+ rock=mix(rock,mix(vec3(.22,.24,.22),vec3(.48,.49,.43),n),regionalStyle);
  float wooded=smoothstep(.05,4.,terrainPosition.y)*smoothstep(.26,.7,n);
  vec3 soil=mix(vec3(.235,.195,.115),vec3(.37,.315,.205),n);
  vec3 land=mix(meadow,soil,smoothstep(.52,.76,fbm(p*.19+15.))*.4);
- land=mix(land,forest,wooded*.64);
+ land=mix(land,forest,wooded*mix(.64,.32,regionalStyle));
  float stone=smoothstep(.18,.52,slope+n*.19)*smoothstep(4.,11.,terrainPosition.y);
+ stone=mix(stone,smoothstep(.10,.38,slope+n*.09)*smoothstep(1.,5.,terrainPosition.y),regionalStyle);
  float strata=.96+.04*sin(terrainPosition.y*1.8+noise2(p*.4)*3.);
  land=mix(land,rock*strata,stone);
  if(hasFarms>.5){
@@ -68,7 +73,7 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  normal=normalize(abs(determinant)*normal-sign(determinant)*(dFdx(relief)*r1+dFdy(relief)*r2));
  `);
  };
- return Object.assign(m,{setFarms(next:FarmFields){farmUniforms.farmAtlas.value=next.map;farmUniforms.hasFarms.value=1;farmUniforms.farmCount.value=Math.min(36,next.centers.length);farmUniforms.farmGrid.value.set(next.columns??2,next.rows??1);farmUniforms.farmCenters.value.forEach((c,i)=>c.set(next.centers[i]?.x??1e8,next.centers[i]?.z??1e8));}});
+ return Object.assign(m,{setRegionalStyle(value:number){regionalStyle.value=value;},setFarms(next:FarmFields){farmUniforms.farmAtlas.value=next.map;farmUniforms.hasFarms.value=1;farmUniforms.farmCount.value=Math.min(36,next.centers.length);farmUniforms.farmGrid.value.set(next.columns??2,next.rows??1);farmUniforms.farmCenters.value.forEach((c,i)=>c.set(next.centers[i]?.x??1e8,next.centers[i]?.z??1e8));}});
 }
 export function waterMaterial(){
  const m=new MeshStandardMaterial({color:'#426f70',roughness:.46,metalness:.06,side:DoubleSide});m.name='Campaign river';
