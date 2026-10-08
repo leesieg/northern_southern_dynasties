@@ -1,3 +1,4 @@
+import {CourtIcon} from './CourtIcon';
 import {NobilityPanel,RulerHistoryPanel} from './PoliticalIdentity';
 import {terrainSceneStyle,personTerrainSite} from './terrainScene';
 import {PowerPoliticsPanel} from './PowerPoliticsPanel';
@@ -100,7 +101,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
   </div>
   <div className="court-workspace">
    <nav className="court-rail" aria-label="朝廷事务">
-    {pages.map(page=><HoverHint key={page.id} label={page.label} content={page.detail}><button className="court-rail-button" aria-label={page.label} aria-pressed={active===page.id} onClick={()=>onTab(page.id)}><ArtIcon name={page.icon} size={32}/>{page.id==='central'&&<small aria-hidden="true">{occupied}/5</small>}{page.id==='local'&&localRequests.length>0&&<small aria-hidden="true">{localRequests.length}</small>}</button></HoverHint>)}
+    {pages.map(page=><HoverHint key={page.id} label={page.label} content={page.detail}><button className="court-rail-button" aria-label={page.label} aria-pressed={active===page.id} onClick={()=>onTab(page.id)}>{page.id==='central'?<CourtIcon/>:page.id==='situation'?<CourtIcon name={court.phase}/>:<ArtIcon name={page.icon} size={32}/>}{page.id==='central'&&<small aria-hidden="true">{occupied}/5</small>}{page.id==='local'&&localRequests.length>0&&<small aria-hidden="true">{localRequests.length}</small>}</button></HoverHint>)}
    </nav>
    <main className={'court-page court-page--'+active} aria-label={pages.find(page=>page.id===active)?.label??'朝会'}>
     {active==='factions'&&<PowerPoliticsPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson}/>}
@@ -142,7 +143,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
   </div>
   {nobilityOpen&&<ActionDialog title="爵位与殊礼" onClose={()=>setNobilityOpen(false)} cancelLabel="返回朝廷" actions={null}><NobilityPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson}/></ActionDialog>}
   <footer className="court-footer"><HoverHint label="爵位与殊礼" content="查阅封侯、晋公、封王与殊礼；爵位不替代官职与土地。"><button className="court-icon-button" aria-label="爵位与殊礼" onClick={()=>setNobilityOpen(true)}><ArtIcon name="renown" size={25}/></button></HoverHint>
-   <HoverHint label="朝局与下次月结" content={<>{phases[court.phase].effect}。{projection.enabled?'当前条件预估 '+phases[projection.phase].name:'当前政体暂停结算'}；治理规则持续有效。</>}><button className={'court-phase court-phase--'+court.phase} onClick={()=>onTab('situation')} aria-label="查看朝局与月结原因"><span aria-hidden="true"/>{phases[court.phase].name}<b>{projection.enabled?(projection.delta>0?'↑':projection.delta<0?'↓':'→'):''}</b></button></HoverHint>
+   <HoverHint label="朝局与下次月结" content={<>{phases[court.phase].effect}。{projection.enabled?'当前条件预估 '+phases[projection.phase].name:'当前政体暂停结算'}；治理规则持续有效。</>}><button className={'court-phase court-phase--'+court.phase} onClick={()=>onTab('situation')} aria-label="查看朝局与月结原因"><CourtIcon name={court.phase} size={28}/>{phases[court.phase].name}<b>{projection.enabled?(projection.delta>0?'↑':projection.delta<0?'↓':'→'):''}</b></button></HoverHint>
    <HoverHint label="中央薪俸" content="已填中枢职掌的每月薪俸，支付与收款仍按实际任职结算。"><span className="court-salary" tabIndex={0}><ArtIcon name="coins" size={21}/>{courtSalary(w,realm)} / 月</span></HoverHint>
    <div className="court-footer-actions">{own&&<>
     {!sovereign&&!w.realm?.mandate&&<HoverHint label="请求军务授权" content={mandateReason||'向上级请求军务授权，消耗个人影响力 40。'}><button className="court-icon-button" aria-label="请求军务授权" disabled={pending||!!mandateReason} onClick={()=>send({type:'realm',action:'mandate'})}><ArtIcon name="army" size={25}/></button></HoverHint>}

@@ -1,0 +1,24 @@
+.court-art-icon{display:inline-block;flex:none;object-fit:contain;aspect-ratio:1;vertical-align:middle;pointer-events:none;filter:drop-shadow(0 2px 1px #0009)}
+[data-phase=stable]{--phase-metal:#b9c28d;--phase-wash:#394b39}
+[data-phase=strained]{--phase-metal:#e2b767;--phase-wash:#62452a}
+[data-phase=chaos]{--phase-metal:#dc9980;--phase-wash:#652e27}
+.focused-shell .map-command-dock.campaign-navigation .court-map-button{gap:1px;padding:8px 8px 6px;border-color:var(--phase-metal)!important;background:radial-gradient(ellipse at 40% 25%,#56604755,transparent 58%),linear-gradient(145deg,#343b2e,#131b18 68%)!important;box-shadow:inset 0 0 0 3px #101713,inset 0 0 0 4px #9d895b,0 3px 9px #000c}
+.focused-shell .campaign-navigation .court-map-button>.court-art-icon{width:42px;height:42px;max-width:none;filter:drop-shadow(0 2px 2px #000b)}
+.focused-shell .campaign-navigation .court-map-phase{position:absolute;left:-9px;top:-7px;display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--phase-metal);border-radius:50%;background:radial-gradient(circle at 40% 30%,var(--phase-wash),#111b16 85%);box-shadow:inset 0 0 0 2px #111b16,0 2px 4px #000b;pointer-events:none}
+.focused-shell .campaign-navigation .court-map-caption{display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.1}
+.focused-shell .campaign-navigation .court-map-caption strong{color:#e6c988;text-shadow:0 1px 2px #000;font-size:11px}
+.focused-shell .campaign-navigation .court-map-caption small{color:var(--phase-metal);font-size:9px;line-height:1.2}
+.focused-shell .campaign-navigation .court-map-button[aria-expanded=true]{outline:1px solid #edcf89;outline-offset:2px}
+.dynasty-phase-controls .phase-art-medallion{display:grid;place-items:center;box-sizing:border-box;width:46px;height:46px;background:radial-gradient(circle at 40% 30%,var(--phase-wash),#131d17 80%);border:1px solid #9e8c65;box-shadow:inset 0 0 0 2px #161f17,0 2px 5px #000a;transition:border-color .15s,box-shadow .15s}
+.dynasty-phase-controls button[aria-pressed=true] .phase-art-medallion{border-color:var(--phase-metal);box-shadow:inset 0 0 0 2px #182019,0 0 0 2px #c2a46c88,0 3px 8px #000b}
+.dynasty-phase-controls button:focus-visible{outline:2px solid #f1d595;outline-offset:3px;border-radius:4px}
+dialog.action-detail-dialog.paper-dialog .action-detail-body .dynasty-dial .dynasty-phase-controls button{--dialog-ink:#ead5a2;--dialog-muted:#c9b88c;min-width:62px;min-height:68px;padding:5px;border:0;border-radius:4px;background:transparent;box-shadow:none;color:var(--dialog-ink)}
+dialog.action-detail-dialog.paper-dialog .action-detail-body .dynasty-dial .dynasty-phase-controls button:hover{background:#dbc28715}
+dialog.action-detail-dialog.paper-dialog .action-detail-body .dynasty-dial .dynasty-phase-controls button[aria-pressed=true] small{color:#ffe3a1}
+.dynasty-dial[data-phase]{--dialog-ink:#ead5a2;--dialog-muted:#c9b88c;border-color:var(--phase-metal)}
+.dynasty-dial[data-phase] .dynasty-dial-caption{background:linear-gradient(110deg,var(--phase-wash),#213128);border-top-color:#b8996066}
+.dynasty-dial-caption>div>.court-art-icon{margin-left:auto}
+.dynasty-dial-caption>div>strong{white-space:nowrap}
+.dynasty-dial-caption>div>small{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.court-audience .court-phase>.court-art-icon{width:28px;height:28px}
+@media(prefers-reduced-motion:reduce){.dynasty-phase-controls .phase-art-medallion{transition:none}}

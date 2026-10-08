@@ -1,3 +1,4 @@
+import {CourtIcon} from './CourtIcon';
 import {useEffect,useState} from 'react';
 import {countyTerritory} from '../core/localAdministration';
 import {nextMonthStart} from '../core/calendar';
@@ -67,7 +68,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
    {ownRealm&&c.petition&&<div className="court-petition-pending"><span>{movements[c.petition.group].name}奏议<small>{c.petition.due<=w.day?'候裁决':'余 '+(c.petition.due-w.day)+' 日'}</small></span><HoverHint label="查看集团奏议" content={'由 '+politicalName(c.petition.sponsor,w)+' 呈奏；批复仍受实际权限、钱粮与日期限制。'}><button className="court-icon-button" aria-label="查看集团奏议" onClick={()=>setPetitionOpen(true)}><ArtIcon name="influence" size={25}/></button></HoverHint></div>}
   </section>
   <section className="court-outlook court-desk-column">
-   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>朝局</h3><HoverHint label="阶段画像预览" content="比较安定、动荡与危局的画像及规则，不改变实际局势。"><button className="court-icon-button" aria-label="打开阶段画像预览" onClick={()=>setPreviewOpen(true)}><ArtIcon name="renown" size={25}/></button></HoverHint></header>
+   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>朝局</h3><HoverHint label="阶段画像预览" content="比较安定、动荡与危局的画像及规则，不改变实际局势。"><button className="court-icon-button" aria-label="打开阶段画像预览" onClick={()=>setPreviewOpen(true)}><CourtIcon name={c.phase} size={28}/></button></HoverHint></header>
    <SituationWheel phase={c.phase} tension={c.tension} realm={<RealmBadge realm={r} world={w}/>} interactive={false}/>
    <HoverHint label="局势阈值与增益" content={<>每月 1 日结算；紧张 40 转入动荡、80 转入危局，合法性低于 15 也会进入危局。动荡须降至 35 以下恢复；危局须降至 70 以下且合法性至少 20 才缓解。税收 {bonus.tax}% · 军饷 {bonus.pay}% · 攻击 {bonus.attack}%。</>}><div className="court-outlook-forecast" tabIndex={0}><strong>{c.phase==='stable'?'安定 · '+policies[c.policy].name:'前国策 · '+policies[c.policy].name}</strong><span>{enabled?(nextMonthStart(w.day,w.scriptId)-w.day)+' 日后月结':'暂停结算'}</span><b>{enabled?(projection.delta>=0?'+':'')+projection.delta:'—'}</b><small>{enabled?'条件预估 '+phases[projection.phase].name:'当前政体暂停集团与局势结算'}</small></div></HoverHint>
    {c.phase==='stable'&&<><p className="political-note">{courtPolicyPressure(w,r)[0]?movements[courtPolicyPressure(w,r)[0].group].name+'正推动'+policies[courtPolicyPressure(w,r)[0].policy].name:'各集团尚无主导方向'}</p>{ownRealm&&<button className="court-icon-button" aria-label="议定安定国策" onClick={()=>setPolicyDraft(c.policy)}><ArtIcon name="estate" size={25}/></button>}</>}
