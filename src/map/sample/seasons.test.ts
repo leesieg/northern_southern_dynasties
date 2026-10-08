@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {BoxGeometry,Mesh,MeshStandardMaterial,Scene} from 'three';
+import {BoxGeometry,Color,Mesh,MeshStandardMaterial,Scene} from 'three';
 import {createSeasonState} from './seasons';
 
 describe('sample seasonal materials',()=>{
@@ -23,4 +23,15 @@ describe('sample seasonal materials',()=>{
   state.set('winter');state.sync(scene);state.set('summer');state.sync(scene);expect(leaf.color.equals(summer)).toBe(true);
   state.sync(scene);expect(leaf.color.equals(summer)).toBe(true);expect(flag.color.getHexString()).toBe('a83c38');
  });
+});
+
+it('preserves baked foliage albedo in summer and applies reversible relative seasonal tint',()=>{
+ const state=createSeasonState(),scene=new Scene(),leaf=new MeshStandardMaterial({name:'Leaf campaign',vertexColors:true});
+ const geometry=new BoxGeometry(),mesh=new Mesh(geometry,leaf);scene.add(mesh);
+ state.sync(scene);expect(leaf.color.toArray()).toEqual([1,1,1]);
+ state.set('autumn');state.sync(scene);const autumn=leaf.color.clone();expect(autumn.equals(new Color('#ffffff'))).toBe(false);
+ state.sync(scene);expect(leaf.color.equals(autumn)).toBe(true);
+ state.set('winter');state.sync(scene);for(const channel of leaf.color.toArray())expect(channel).toBeGreaterThanOrEqual(.45);
+ state.set('summer');state.sync(scene);expect(leaf.color.toArray()).toEqual([1,1,1]);
+ geometry.dispose();leaf.dispose();
 });

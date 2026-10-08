@@ -29,7 +29,7 @@ export function campaignCityPixels(site:Site,capital:boolean,zoom:number){
  return Math.max(capital?30:site.rank==='county'?14:22,campaignCityMeters(site,capital)/metersPerPixel);
 }
 /** Bounded symbolic footprint, independent of zoom, latitude and viewport. Not measured historical city area. */
-export function campaignCityMeters(site:Site,capital:boolean){return capital?17000:site.rank==='county'?8000:13000;}
+export function campaignCityMeters(site:Site,capital:boolean){return capital?19500:site.rank==='county'?9200:15000;}
 /** World-space platform and vegetation clearance, in projected kilometres. */
 export function campaignCityRadius(site:Site,capital:boolean){return campaignCityMeters(site,capital)*.65/1000/Math.cos(site.lat*Math.PI/180);}
 /** Static landscape style, independent of conquest and today's polity. Visual design zones, not cultural census. */

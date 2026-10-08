@@ -26,8 +26,17 @@ export function createSeasonState(up:'y'|'z'='y'){
     };
     m.customProgramCacheKey=()=> 'campaign-season-surface-v1-'+up;m.needsUpdate=true;
    }
-   if(m.name.startsWith('Leaf '))m.color.copy(tracked.get(m)!).lerp(new Color(p.leaf),.8);
-   else if(m.name.startsWith('Pine '))m.color.copy(tracked.get(m)!).lerp(new Color(p.pine),.65);
+   const kind=m.name.startsWith('Leaf ')?'leaf':m.name.startsWith('Pine ')?'pine':null;
+   if(kind){
+    const base=tracked.get(m)!;
+    if(m.vertexColors){
+     // Baked vertex colours already contain the green albedo. Apply a seasonal ratio,
+     // not a second dark albedo multiplication; summer must preserve the source colour.
+     const reference=new Color(seasons.summer[kind]),target=new Color(p[kind]);
+     const ratio=(value:number,original:number)=>Math.max(.45,Math.min(2.2,value/Math.max(.025,original)));
+     m.color.copy(base).multiply(new Color().setRGB(ratio(target.r,reference.r),ratio(target.g,reference.g),ratio(target.b,reference.b)));
+    }else m.color.copy(base).lerp(new Color(p[kind]),kind==='leaf'?.8:.65);
+   }
   }});
  }
  return {uniforms,set,sync};

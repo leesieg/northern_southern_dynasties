@@ -20,7 +20,7 @@ export interface ActorView{scene:Scene;height:(lon:number,lat:number)=>number|nu
 export async function campaignActors(view:ActorView,getState:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined){
  const assets=await loadCampaignSampleAssets(),military=militaryModelAssets(view.repaint,view.warning),root=new Group();view.scene.add(root);
  const cities=new Map<string,{root:Group;key:string}>(),armies=new Map<number,MilitaryModel>();let world:World|undefined,viewKey='',forestKey='',coverageKey='',revision=0;
- const treeMaterial=new MeshStandardMaterial({name:'Leaf campaign',vertexColors:true,roughness:1}),trees=new InstancedMesh(assets.tree,treeMaterial,2400);trees.count=0;trees.castShadow=true;trees.receiveShadow=true;root.add(trees);
+ const treeMaterial=new MeshStandardMaterial({name:'Leaf campaign',vertexColors:true,roughness:.9,emissive:'#61724c',emissiveIntensity:.12}),trees=new InstancedMesh(assets.tree,treeMaterial,2400);trees.count=0;trees.castShadow=true;trees.receiveShadow=true;root.add(trees);
  function refresh(forceTerrain=true){
   const state=getState(),zoom=view.getZoom(),size=view.getSize(),known=campaignCoverage(state.world),capitals=new Set(worldRealms(state.world).map(r=>capital(r,state.world)));
   const visible=zoom<6.2?[]:campaignCityPlacements(sites.filter(s=>controlledSite(state.world,s.id)).map(site=>({site,capital:capitals.has(site.id),point:view.project([site.lon,site.lat]),pixels:campaignCityMeters(site,capitals.has(site.id))/1000/Math.cos(site.lat*Math.PI/180)/view.unitsPerPixelAt(site.lon,site.lat)})).filter(p=>p.point.x>=-30&&p.point.x<=size.width+30&&p.point.y>=-30&&p.point.y<=size.height+30),state.selected,zoom);
@@ -41,7 +41,7 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
     if(screen.x< -20||screen.x>size.width+20||screen.y< -20||screen.y>size.height+20||!view.isLand(ll.lng,ll.lat))continue;
     const h=view.height(ll.lng,ll.lat);
     if(h===null||view.isRiver(ll.lng,ll.lat)||!known(ll.lng,ll.lat)||footprints.some(c=>Math.abs(c.x-p.x)<c.radius&&Math.abs(c.z-p.z)<c.radius)||Math.abs((view.height(ll.lng+.006,ll.lat)??h)-h)>2)continue;
-    dummy.position.set(p.x,h,p.z);dummy.scale.setScalar(p.scale*1.6);dummy.rotation.y=p.rotation;dummy.updateMatrix();trees.setMatrixAt(trees.count++,dummy.matrix);
+    dummy.position.set(p.x,h,p.z);dummy.scale.setScalar(p.scale*1.9);dummy.rotation.y=p.rotation;dummy.updateMatrix();trees.setMatrixAt(trees.count++,dummy.matrix);
    }
   }trees.instanceMatrix.needsUpdate=true;trees.computeBoundingSphere();}
   revision++;world=state.world;viewKey=[view.getViewKey(),Math.round(zoom*5),Math.round(view.getTarget().x/10),Math.round(view.getTarget().z/10),state.selected,state.sceneryDetail,state.tilted].join(':');

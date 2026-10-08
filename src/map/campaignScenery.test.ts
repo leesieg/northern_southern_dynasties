@@ -35,7 +35,7 @@ describe('campaign scenery projection and budgets (CPU only)',()=>{
   expect(campaignCityPlacements(spread,'99',8)).toHaveLength(MAX_SCENERY_CITIES);
   expect(campaignCityPlacements(spread,'99',8)[0].site.id).toBe('99');
   expect(campaignCityPixels(siteById.jiankang,true,11)).toBeGreaterThan(400);
-  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeLessThan(600);
+  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeLessThan(650);
  });
  it('produces finite outward normals and merges houses into one city mesh',()=>{
   const a=campaignCityAppearance(newWorld(),siteById.jiankang),g=campaignCityGeometry({...a,fort:3,levels:[3,3,3],project:0,progress:2,besieged:true});
