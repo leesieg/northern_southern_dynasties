@@ -1,3 +1,4 @@
+import {createSeasonState,seasons,type Season} from './seasons';
 import {mountConstructionPreview} from './constructionPreview';
 import {ACESFilmicToneMapping,BufferGeometry,CatmullRomCurve3,CanvasTexture,Color,CylinderGeometry,DirectionalLight,DoubleSide,Float32BufferAttribute,Fog,Group,HemisphereLight,InstancedMesh,Mesh,MeshStandardMaterial,MOUSE,Object3D,PCFSoftShadowMap,PerspectiveCamera,PlaneGeometry,Scene,Sprite,SpriteMaterial,SRGBColorSpace,TextureLoader,Vector3,WebGLRenderer} from 'three';
 import {armyHeraldry} from '../ArmyHeraldry';
@@ -16,6 +17,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
  renderer.outputColorSpace=SRGBColorSpace;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.10;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
  container.append(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','三维地图，方向键平移，Q E 旋转，加减号缩放');
+ const season=createSeasonState();
  const scene=new Scene();scene.background=new Color('#bdc6c1');scene.fog=new Fog('#bdc6c1',140,440);
  const camera=new PerspectiveCamera(39,container.clientWidth/container.clientHeight,1,1500);
  const controls=new MapControls(camera,renderer.domElement);controls.enableDamping=false;controls.screenSpacePanning=false;
@@ -79,7 +81,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   // glTF Y-up is baked by Blender into the node transform; operate in world coordinates.
   ob.updateWorldMatrix(true,false);ob.geometry=ob.geometry.clone().applyMatrix4(ob.matrixWorld);ob.position.set(0,0,0);ob.rotation.set(0,0,0);ob.scale.set(1,1,1);
   const p=ob.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,ground(p.getX(i),p.getZ(i)));p.needsUpdate=true;ob.geometry.computeVertexNormals();ob.geometry.computeBoundingSphere();
-  ob.material=terrainMaterial();ob.castShadow=true;ob.receiveShadow=true;
+  ob.material=terrainMaterial(undefined,season);ob.castShadow=true;ob.receiveShadow=true;
  });scene.add(terrain);
  report('山河已展开，正在布置河流与城邑…');
  function ribbon(points:{x:number;z:number;y?:number}[],width:number,material:MeshStandardMaterial,offset:number){
@@ -134,7 +136,7 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
   }
  }
  const farmAtlas=new CanvasTexture(fieldCanvas);auxiliaryTextures.push(farmAtlas);farmAtlas.colorSpace=SRGBColorSpace;farmAtlas.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
- terrain.traverse(ob=>{if(ob instanceof Mesh){(ob.material as MeshStandardMaterial).dispose();ob.material=terrainMaterial({map:farmAtlas,centers:cities});}});
+ terrain.traverse(ob=>{if(ob instanceof Mesh){(ob.material as MeshStandardMaterial).dispose();ob.material=terrainMaterial({map:farmAtlas,centers:cities},season);}});
  const waterNearby=(x:number,z:number)=>riverAt(x,z).some(s=>segmentDistance(x,z,s.a,s.b)<s.width/2+.6);
  const placements:{x:number;y:number;z:number;scale:number;rotation:number}[][]=[[],[],[]],rocks:typeof placements[0]=[];
  for(let i=0;i<100000;i++){
@@ -185,8 +187,20 @@ export async function mountCampaign(container:HTMLElement,report:(s:string)=>voi
  });
  controls.addEventListener('start',()=>{targetFlight=undefined;});controls.addEventListener('change',()=>{dirty=true;});
  report('正在装配营建模型…');
- try{cleanupConstruction=await mountConstructionPreview(scene,camera,renderer,cities,site=>{focus(site,true);camera.position.sub(controls.target).multiplyScalar(.65).add(controls.target);controls.update();},()=>{dirty=true;});}catch(error){dispose();throw error;}
+ try{cleanupConstruction=await mountConstructionPreview(scene,camera,renderer,cities,site=>{focus(site,true);camera.position.sub(controls.target).multiplyScalar(.65).add(controls.target);controls.update();},()=>{season.sync(scene);dirty=true;});}catch(error){dispose();throw error;}
  if(disposed){cleanupConstruction();return;}
+ const seasonControls=document.querySelector<HTMLElement>('.season-controls')!;
+ function applySeason(value:Season){
+  const p=seasons[value];season.set(value);season.sync(scene);
+  (scene.background as Color).set(p.fog);(scene.fog as Fog).color.set(p.fog);
+  sun.color.set(p.sun);sun.intensity=p.intensity;sky.color.set(p.sky);
+  scene.traverse(o=>{if(o instanceof Mesh){for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial&&m.name==='Campaign river')m.color.set(p.water);}});
+  seasonControls.querySelectorAll<HTMLButtonElement>('[data-season]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.season===value)));
+  seasonControls.querySelector<HTMLElement>('.season-description')!.textContent=p.description;
+  container.dataset.season=value;dirty=true;
+ }
+ seasonControls.querySelectorAll<HTMLButtonElement>('[data-season]').forEach(b=>{b.disabled=false;b.addEventListener('click',()=>applySeason(b.dataset.season as Season));});
+ applySeason('summer');
  focus('luoyang',true);
  let resolveReady:()=>void,rejectReady:(e:unknown)=>void;
  const ready=new Promise<void>((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});let firstFrame=true;
