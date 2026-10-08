@@ -4,13 +4,18 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {campaignCityKey,MAX_CITY_GEOMETRIES,type CampaignCityAppearance,type CityDetail} from './campaignScenery';
 
 const modules=['city','tree-0',...['market','granary','hostel'].flatMap(b=>[1,2,3].map(level=>`${b}-${level}`)),...['worksite-0','worksite-1','worksite-2']];
-export async function loadCampaignSampleAssets(){
- const loader=new GLTFLoader();
- const models=await Promise.all(modules.map(async name=>{
+let modelData:Promise<(readonly [string,ArrayBuffer])[]>|undefined;
+export function prefetchCampaignSampleAssets(){
+ if(!modelData){const pending=Promise.all(modules.map(async name=>{
   const response=await fetch(import.meta.env.BASE_URL+'art/campaign/'+name+'.glb',{signal:AbortSignal.timeout(20000)});
   if(!response.ok)throw new Error(`${name} 模型加载失败（${response.status}）`);
-  return [name,(await loader.parseAsync(await response.arrayBuffer(),'')).scene] as const;
- }));
+  return [name,await response.arrayBuffer()] as const;
+ }));modelData=pending;void pending.catch(()=>{if(modelData===pending)modelData=undefined;});}
+ return modelData;
+}
+export async function loadCampaignSampleAssets(){
+ const loader=new GLTFLoader(),data=await prefetchCampaignSampleAssets();
+ const models=await Promise.all(data.map(async([name,buffer])=>[name,(await loader.parseAsync(buffer,'')).scene] as const));
  return sampleCampaignAssets(new Map(models));
 }
 /** Bake the approved Blender modules to one draw call per settlement; no legacy city fallback. */

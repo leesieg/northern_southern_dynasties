@@ -38,3 +38,5 @@ SRTM and GMTED2010 terrain data courtesy of the U.S. Geological Survey. Global E
 `elevation/manifest.json` 与 768 个 `elevation/*.bin.gz` 分块覆盖与全国底图相同的范围（Terrarium z7，x=84..115，y=36..59）。每块 256×256，gzip 压缩、小端有符号 16 位整数米；由原始 Terrarium 样本四舍五入到米，未生成山丘。来源仍为 Mapzen Terrain Tiles on AWS（SRTM / GMTED2010 courtesy USGS；ETOPO1 courtesy NOAA）。生成脚本 `scripts/map-sample/build_detail_dem.py` 保留下载缓存并验证载荷，缺块可独立重试。
 
 运行时仅加载镜头附近 3×3 分块，最多缓存 48 张解码瓦片；全国资源约 58.9 MiB，不随首屏一次性下载。全国网格约 5 万顶点，近景细化约 14.8 万顶点，沿用真实高程与展示夸张。无需在游戏运行时请求 AWS。植被仍为确定性美术布局，不代表历史林地调查数据。
+
+`national-parchment.webp` 是 `scripts/map-sample/build_parchment.py` 从同一全国 DEM 与 Natural Earth 陆地、水系预生成的纸绘图（2048×1536，约 221 KiB）。仅绘制自然地貌，不包含政权、城邑或军队；运行时复用实际控制遮罩，不再逐次重绘约 315 万像素。
