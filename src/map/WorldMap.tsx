@@ -117,10 +117,11 @@ export function WorldMap(props:Props){
       const occupied:{x:number;y:number;width:number}[]=[];
       const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===current.current.world.holdings.estate.location)-Number(a.id===current.current.world.holdings.estate.location)||Number(b.capital)-Number(a.capital));
       const cityIds=annotationDensity(list.filter(i=>controlledSite(current.current.world,i.id)).map(i=>({key:i.id,point:map!.project([siteById[i.id].lon,siteById[i.id].lat]),priority:i.capital?2:siteById[i.id].rank==='county'?0:1,required:i.id===current.current.selected||i.id===current.current.world.holdings.estate.location})),{width:w,height:h},zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
+      const widths=new Map(list.map(item=>[item.id,item.marker.getElement().offsetWidth]));
       for(const item of list){
         const s=siteById[item.id],p=map.project([s.lon,s.lat]);
         const selected=item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
-        const width=Math.max(item.marker.getElement().offsetWidth,s.name.length*14+38+(selected||item.capital&&zoom>=9?28:0)+(estate?34:0));
+        const width=Math.max(widths.get(item.id)??0,s.name.length*14+38+(selected||item.capital&&zoom>=9?28:0)+(estate?34:0));
         const visible=!strategicView&&cityIds.has(item.id)&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
         item.marker.getElement().hidden=!visible;item.portrait.hidden=!(selected||item.capital&&zoom>=9);
         item.button.classList.toggle('is-selected',selected);item.marker.getElement().classList.toggle('is-selected',selected);
@@ -182,9 +183,8 @@ export function WorldMap(props:Props){
     }
     function syncPerspective(){
       if(!map||!styleReady||disposed)return;
-      const view=atlasPresentation(map.getZoom(),current.current.tilted);
-      if(terrainEnabled!==view.terrain){map.setTerrain(view.terrain);terrainEnabled=view.terrain;}
-      if(Math.abs(map.getPitch()-view.pitch)>.5)map.easeTo({pitch:view.pitch,duration:reduced?0:250});
+      const enabled=current.current.tilted;
+      if(terrainEnabled!==enabled){map.setTerrain(enabled);terrainEnabled=enabled;}
     }
     function focusSite(id:string){
       const site=siteById[id];
@@ -195,7 +195,8 @@ export function WorldMap(props:Props){
       current.current.onSelect(id);setHover(null);
       setMenu({id,x:Math.max(8,Math.min(x,container.clientWidth-220)),y:Math.max(8,Math.min(y,container.clientHeight-190))});
     }
-    const scheduleLabels=()=>{if(!frame)frame=requestAnimationFrame(()=>{frame=0;updateLabels();});};
+    let lastLabelUpdate=-Infinity;
+    const scheduleLabels=()=>{if(!frame)frame=requestAnimationFrame(now=>{frame=0;if(map?.isMoving()&&now-lastLabelUpdate<50){scheduleLabels();return;}lastLabelUpdate=now;updateLabels();});};
     function update(){
       if(!map||!styleReady||disposed)return;
       const p=current.current;
@@ -394,7 +395,7 @@ export function WorldMap(props:Props){
       });
       map.on('webglcontextlost',()=>setError('图形上下文中断。重新载入地图可恢复，游戏进度仍保留。'));
       map.on('zoomend',syncPerspective);
-      map.on('move',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId==='detail-dem')setWarning(value=>value.startsWith('近景高程')?'':value);});
+      map.on('move',scheduleLabels);map.on('moveend',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId==='detail-dem')setWarning(value=>value.startsWith('近景高程')?'':value);});
       map.once('idle',()=>{setReady(true);if(slowLoad)clearTimeout(slowLoad);});
       slowLoad=setTimeout(()=>{if(!disposed&&map&&!map.areTilesLoaded())setWarning('高清地形仍在加载；可以继续操作，或稍后重试。');},20000);
       observer=new ResizeObserver(()=>{map?.resize();scheduleLabels();});observer.observe(container);

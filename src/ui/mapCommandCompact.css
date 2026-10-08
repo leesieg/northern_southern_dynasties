@@ -2,11 +2,51 @@
 .focused-shell .map-command-dock .compact-map-tools{position:relative;display:flex;align-items:center;gap:0}
 .focused-shell .map-command-dock .map-toolbox.compact-map-tools{padding:8px 10px;background:var(--ink-tray) center/100% 100% no-repeat;border:0;box-shadow:none}
 .map-tool-group{position:relative}.map-tool-group>summary{list-style:none}.map-tool-group>summary::-webkit-details-marker{display:none}
-.focused-shell .map-command-dock .map-tool-group>summary{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;box-sizing:border-box;width:58px;height:58px;padding:9px 5px;border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;color:#e0d1ad;font:10px var(--serif);cursor:pointer}
+.focused-shell .map-command-dock .map-tool-group>summary{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;box-sizing:border-box;width:50px;height:50px;padding:7px 5px;border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;color:#e0d1ad;font:11px var(--serif);cursor:pointer}
 .focused-shell .map-command-dock .zoom-tools .map-tool-group>summary{width:50px;height:50px;padding:8px}
-.focused-shell .map-command-dock .map-tool-group>summary small{font:10px var(--serif)}
+.focused-shell .map-command-dock .map-tool-group>summary small{font:11px var(--serif)}
 .focused-shell .map-command-dock .map-tool-group[open]>summary,.focused-shell .map-command-dock .map-tool-group>summary:hover{filter:brightness(1.2);color:#ffefbf}
 .map-tool-popover{position:absolute;right:0;bottom:calc(100% + 12px);display:grid;gap:4px;width:155px;padding:7px;background:#1d3027;border:1px solid #aa925f;box-shadow:0 5px 18px #0007;z-index:12}
-.focused-shell .map-command-dock .map-tool-popover button{display:flex;align-items:center;gap:10px;width:100%;height:auto;min-height:40px;padding:6px 9px;border:0;border-radius:1px;background:transparent;color:#e5d6b4;font:13px var(--serif);text-align:left}
+.focused-shell .map-command-dock .map-tool-popover button{display:flex;align-items:center;gap:10px;width:100%;height:auto;min-height:44px;padding:6px 9px;border:0;border-radius:1px;background:transparent;color:#e5d6b4;font:13px var(--serif);text-align:left}
 .focused-shell .map-command-dock .map-tool-popover button[aria-pressed=true]{background:#bda66b30;color:#fff0bd;box-shadow:inset 2px 0 #d9bd7e}
 .compact-map-tools :is(button,summary):focus-visible{outline:2px solid #f2d897;outline-offset:2px}
+
+/* Main map fittings: retain original painted pictograms and engraved seals. */
+.focused-shell .map-command-dock{gap:3px}
+.focused-shell .map-command-dock .map-toolbox.compact-map-tools{gap:3px}
+.focused-shell .map-command-dock .map-options-toggle{width:50px;height:50px;min-width:50px;min-height:50px;padding:7px 5px;font:11px var(--serif)}
+.focused-shell .map-command-dock .zoom-tools{gap:2px}
+.focused-shell .map-command-dock .zoom-tools .view-control{width:50px;height:50px;flex:0 0 50px}
+.focused-shell .map-command-dock .map-tool-group>summary{position:relative;transition:filter 150ms,color 150ms}
+.focused-shell .map-command-dock .map-tool-group[open]>summary::after{content:'';position:absolute;left:23px;bottom:4px;width:4px;height:4px;background:#f0d18b;transform:rotate(45deg)}
+.focused-shell .map-command-dock .map-tool-popover{padding:8px;background:linear-gradient(115deg,#25342a,#17251f);border:1px solid #a8915c;box-shadow:inset 0 0 0 2px #101c17,0 6px 20px #08110dc9}
+.focused-shell .map-command-dock .map-tool-popover button{border-bottom:1px solid #b5a07322;transition:background-color 150ms,color 150ms}
+.focused-shell .map-command-dock .map-tool-popover button:last-child{border-bottom:0}
+.focused-shell .map-command-dock .map-tool-popover button:hover{background:#d4bc7e18;color:#fff1cf}
+.focused-shell .map-command-dock .map-tool-popover button[aria-pressed=true]{background:#bda66b26;box-shadow:inset 2px 0 #d9bd7e}
+.focused-shell .map-command-dock .map-tool-popover button[aria-pressed=true]::after{content:'◆';font-size:9px;margin-left:auto;color:#e0c78c}
+.focused-shell .map-command-dock .map-option>button{min-height:44px}
+.focused-shell .map-options>header button{min-width:36px;min-height:36px}
+.focused-shell .court-map-caption small{font-size:10px;line-height:1.25}
+.focused-shell .command-rail button{transition:color 150ms;flex-shrink:0}
+.focused-shell .command-rail button:focus-visible{outline-offset:-3px}
+.focused-shell .command-rail .rail-emblem{transition:filter 150ms}
+.focused-shell .command-rail .rail-emblem>svg{width:27px;height:27px;color:#dfc894;filter:drop-shadow(0 1px 1px #0009)}
+.focused-shell .chronicle-control .clock-step{min-height:28px;padding:4px 2px;color:#d1c5a3;font:11px var(--serif)}
+.focused-shell .chronicle-control .speed-dial{grid-template-columns:repeat(3,30px)}
+.focused-shell .chronicle-control .tally-speed{min-height:32px;min-width:30px}
+.focused-shell .clock-utilities button{width:36px;height:36px;min-height:36px;padding:8px}
+.focused-shell .chronicle-control{height:88px;min-height:88px;align-items:center;padding-block:6px 7px}
+.focused-shell .sovereign-strip{height:auto;min-height:76px;align-items:center}
+.focused-shell :is(.sovereign-strip,.chronicle-control){font-variant-numeric:tabular-nums}
+.focused-shell .atlas-map .atlas-place-label{letter-spacing:.04em}
+.focused-shell .atlas-map .atlas-place.is-selected{outline:2px solid #d6b86d;outline-offset:2px}
+.focused-shell .atlas-map .atlas-place.is-selected .atlas-place-label{color:#fff0ce;background:#26392d;text-shadow:none}
+.focused-shell .atlas-map .atlas-place :is(button):focus-visible{outline:2px solid #ead39c;outline-offset:2px}
+@media(max-width:850px){
+ .focused-shell :is(.sovereign-strip,.chronicle-control){min-height:112px}
+ .focused-shell .clock-utilities button{width:32px;height:32px;min-height:32px;padding:6px}
+ .focused-shell .chronicle-control .speed-dial{grid-template-columns:repeat(3,27px)}
+ .focused-shell .chronicle-control .tally-speed{min-width:27px}
+}
+@media(prefers-reduced-motion:reduce){.focused-shell .map-command-dock .map-tool-group>summary,.focused-shell .map-command-dock .map-tool-popover button,.focused-shell .command-rail :is(button,.rail-emblem){transition:none}}

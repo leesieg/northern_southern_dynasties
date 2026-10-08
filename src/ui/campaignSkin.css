@@ -1,18 +1,18 @@
 /* Original ink silhouettes and engraved bronze, composed around the existing controls. */
-.focused-shell{--ink-tray:url('/art/interface/ink-brush-tray.svg');--bronze-seal:url('/art/interface/bronze-ink-medallion.svg')}
+.focused-shell{--hud-icon-filter:sepia(.36) saturate(.72) drop-shadow(0 1px 1px #0009);--ink-tray:url('/art/interface/ink-brush-tray.svg');--bronze-seal:url('/art/interface/bronze-ink-medallion.svg')}
 .focused-shell :is(.sovereign-strip,.chronicle-control){border:0;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none;border-radius:0;padding-bottom:14px}
 .focused-shell .sovereign-strip{padding-left:12px;padding-right:20px}
 .focused-shell .player-hud-identity .painted-portrait.compact{border-radius:2px;border:2px solid #bba375;box-shadow:0 0 0 2px #111711,0 0 0 3px #605b40,0 3px 8px #0008}
 .focused-shell .player-hud-identity strong{color:#eadebc;text-shadow:0 1px 2px #000}
-.focused-shell .sovereign-strip .art-icon{filter:sepia(.38) saturate(.75) drop-shadow(0 1px 1px #000)}
+.focused-shell .sovereign-strip .art-icon{filter:var(--hud-icon-filter)}
 .focused-shell .command-rail{border:0;box-shadow:none;background:none;overflow-x:hidden;padding:6px 4px 12px;gap:1px;border-radius:0}
-.focused-shell .command-rail button{min-height:68px;gap:0;padding:0 0 5px;letter-spacing:2px;color:#f1e6c4;text-shadow:0 1px 3px #000,0 0 5px #142117}
-.focused-shell .command-rail .rail-emblem{width:54px;height:54px;flex:0 0 54px;border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none}
-.focused-shell .command-rail button[aria-expanded=true] .rail-emblem{border:0;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;filter:brightness(1.35) drop-shadow(0 0 3px #e7c57a55)}
-.focused-shell .command-rail button[aria-expanded=true]::before{display:none}
+.focused-shell .command-rail button{min-height:62px;gap:0;padding:2px 0 4px;letter-spacing:2px;color:#f1e6c4;text-shadow:0 1px 3px #000,0 0 5px #142117}
+.focused-shell .command-rail .rail-emblem{width:50px;height:50px;flex:0 0 50px;border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none}
+.focused-shell .command-rail button[aria-expanded=true] .rail-emblem{border:0;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;filter:brightness(1.18)}
+.focused-shell .command-rail button[aria-expanded=true]::before{display:block;left:2px;top:14px;bottom:20px;width:2px;background:#e2c487;box-shadow:0 0 0 1px #17231c}
 .focused-shell .command-rail button[aria-expanded=true] .rail-emblem::after{right:0;width:4px;height:4px;border:0;background:#eed59a}
-.focused-shell .command-rail .art-icon{width:32px!important;height:32px!important;filter:sepia(.42) saturate(.65) drop-shadow(0 2px 1px #000)}
-.focused-shell .command-rail button:hover .rail-emblem{filter:brightness(1.24)}
+.focused-shell .command-rail .art-icon{width:32px!important;height:32px!important;filter:var(--hud-icon-filter)}
+.focused-shell .command-rail button:hover .rail-emblem{filter:brightness(1.12)}
 .focused-shell .chronicle-control{padding-inline:15px}
 .focused-shell .chronicle-control .clock-play{height:64px;width:64px;flex-basis:64px;padding:12px;gap:2px;border:0;border-radius:50%;box-shadow:none;background:var(--bronze-seal) center/100% no-repeat}
 .focused-shell .chronicle-control .clock-play.is-running{background:var(--bronze-seal) center/100% no-repeat;filter:brightness(1.2)}
@@ -30,7 +30,7 @@
 .focused-shell .map-command-dock :is(.map-options-toggle,.court-map-button){border:0;box-shadow:none;background:var(--bronze-seal) center/100% no-repeat;border-radius:50%;width:64px;height:64px;min-width:64px;padding:12px 8px;gap:0;flex-direction:column}
 .focused-shell .court-map-caption{text-align:center;gap:0}.focused-shell .court-map-caption strong{font-size:11px}.focused-shell .court-map-caption small{font-size:8px;white-space:nowrap}.focused-shell .court-map-button>.art-icon{width:23px!important;height:23px!important}.focused-shell .court-map-alert{right:0;top:2px}
 .focused-shell .map-command-dock .map-options-toggle{align-self:center;font-size:10px}
-.focused-shell .map-command-dock .art-icon{filter:sepia(.4) saturate(.7) drop-shadow(0 1px 1px #000)}
+.focused-shell .map-command-dock .art-icon{filter:var(--hud-icon-filter)}
 /* Parchment muster slips: faction binding, commander portrait, ink readings. */
 .focused-shell .atlas-map .atlas-place-label{color:#403a2b;text-shadow:0 1px #f6e9c8;background:#e2d1aaeb;border-color:#968361;border-bottom-color:var(--city-realm,#8c7954);box-shadow:0 1px 3px #4a412324}
 .focused-shell .atlas-map .atlas-place-label:is(:hover,.is-selected){background:#344337;color:#f9e6b9;border-color:#eed18c;text-shadow:none}
@@ -61,7 +61,7 @@
 .focused-shell .ongoing-embroidery{stroke:#d4bc81;opacity:.55;stroke-width:.65}
 .focused-shell .ongoing-flag-content{inset:12px 8px 15px;gap:3px;background:none}
 .ongoing-flag-seal{display:flex;align-items:center;justify-content:center;flex:0 0 37px;width:37px;height:37px;background:var(--bronze-seal) center/contain no-repeat}
-.ongoing-flag-seal .art-icon{filter:sepia(.4) saturate(.7) drop-shadow(0 1px 1px #000)}
+.ongoing-flag-seal .art-icon{filter:var(--hud-icon-filter)}
 .focused-shell .ongoing-flag-name{font-size:11px;color:#f0dfb6;line-height:15px;text-shadow:0 1px 3px #000}
 .focused-shell .ongoing-meter{height:4px;border:1px solid #b69a6277;background:#0c1913;box-shadow:0 1px #d6bd6933}
 .focused-shell .ongoing-meter i{background:linear-gradient(90deg,#9c8250,#ead49a)}

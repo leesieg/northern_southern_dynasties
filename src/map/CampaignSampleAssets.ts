@@ -1,3 +1,5 @@
+import {detailArchitecture} from './three/architectureDetail';
+import {architectureMaterial,architectureSurface} from './three/architectureMaterial';
 import {regionalGeometry} from './three/regionalGeometry';
 import {Box3,BufferGeometry,Color,CylinderGeometry,DoubleSide,Float32BufferAttribute,Group,Mesh,MeshStandardMaterial,PlaneGeometry,SRGBColorSpace,TextureLoader,type Texture} from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -21,20 +23,20 @@ export async function loadCampaignSampleAssets(){
 }
 /** Bake the approved Blender modules to one draw call per settlement; no legacy city fallback. */
 export function sampleCampaignAssets(models:Map<string,Group>){
- const material=new MeshStandardMaterial({name:'Campaign city',vertexColors:true,roughness:.94,side:DoubleSide});
+ const material=architectureMaterial();
  const templates=new Map<string,BufferGeometry>(),geometries=new Map<string,BufferGeometry>();
  const base=models.get('city')!;base.updateMatrixWorld(true);const bounds=new Box3().setFromObject(base),scale=17/(bounds.max.x-bounds.min.x);
  for(const [name,model] of models){
   model.updateMatrixWorld(true);const pieces:BufferGeometry[]=[],scaffolds:BufferGeometry[]=[];
   model.traverse(o=>{if(!(o instanceof Mesh))return;const m=(Array.isArray(o.material)?o.material[0]:o.material) as MeshStandardMaterial;
-   const g=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrixWorld),position=g.getAttribute('position'),old=g.getAttribute('color'),values:number[]=[],ground:number[]=[];
+   const g=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrixWorld),position=g.getAttribute('position'),old=g.getAttribute('color'),values:number[]=[],ground:number[]=[],surfaces:number[]=[];
    for(let i=0;i<position.count;i++){
-    const c=m.color.clone();if(old)c.multiply(new Color().setRGB(old.getX(i),old.getY(i),old.getZ(i)));values.push(c.r,c.g,c.b);
+    const c=m.color.clone();if(old)c.multiply(new Color().setRGB(old.getX(i),old.getY(i),old.getZ(i)));values.push(c.r,c.g,c.b);surfaces.push(...architectureSurface(m.name,m.roughness));
     // The city core stays rigid. Courtyard skin follows the DEM; modules anchor at their actual lot.
     ground.push(m.name.startsWith('Courtyard earth')?position.getX(i):0,m.name.startsWith('Courtyard earth')?position.getZ(i):0);
    }
    for(const key of Object.keys(g.attributes))if(!['position','normal'].includes(key))g.deleteAttribute(key);
-   g.setAttribute('color',new Float32BufferAttribute(values,3));g.setAttribute('ground',new Float32BufferAttribute(ground,2));pieces.push(g);if(name.startsWith('worksite-')&&! /^(Lime plaster|Slate tile)/.test(m.name))scaffolds.push(g.clone());
+   g.setAttribute('architectureSurface',new Float32BufferAttribute(surfaces,2));g.setAttribute('color',new Float32BufferAttribute(values,3));g.setAttribute('ground',new Float32BufferAttribute(ground,2));pieces.push(g);if(name.startsWith('worksite-')&&! /^(Lime plaster|Slate tile)/.test(m.name))scaffolds.push(g.clone());
   });
   const geometry=mergeGeometries(pieces)!;pieces.forEach(g=>g.dispose());templates.set(name,geometry);if(name==='city')templates.set('city-regional',regionalGeometry(geometry));if(scaffolds.length){templates.set(name.replace('worksite-','upgrade-'),mergeGeometries(scaffolds)!);scaffolds.forEach(g=>g.dispose());}
  }
@@ -43,7 +45,7 @@ export function sampleCampaignAssets(models:Map<string,Group>){
  function city(a:CampaignCityAppearance,detail:CityDetail='regional',flagUrl?:string,repaint?:()=>void){
   const key=campaignCityKey(a)+':'+detail;let geometry=geometries.get(key);
   if(!geometry){
-   const parts=[templates.get(detail==='regional'&&templates.has('city-regional')?'city-regional':'city')!.clone()];
+   const parts=[detailArchitecture(templates.get(detail==='regional'&&templates.has('city-regional')?'city-regional':'city')!.clone(),a)];
    ['market','granary','hostel'].forEach((name,i)=>{
     const x=(i-1)*3.8,z=2.5;
     const add=(id:string)=>{const g=templates.get(id)!.clone().translate(x,0,z),ground=g.getAttribute('ground');for(let j=0;j<ground.count;j++)ground.setXY(j,x,z);parts.push(g);};

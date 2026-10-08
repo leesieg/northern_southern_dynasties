@@ -31,7 +31,8 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  land=mix(land,forest,wooded*mix(.64,.32,regionalStyle));
  float stone=smoothstep(.18,.52,slope+n*.19)*smoothstep(4.,11.,terrainPosition.y);
  stone=mix(stone,smoothstep(.10,.38,slope+n*.09)*smoothstep(1.,5.,terrainPosition.y),regionalStyle);
- float strata=.96+.04*sin(terrainPosition.y*1.8+noise2(p*.4)*3.);
+ float strataPhase=terrainPosition.y*1.8+noise2(p*.4)*3.;
+ float strata=.96+.04*sin(strataPhase)*(1.-smoothstep(.4,2.,fwidth(strataPhase)));
  land=mix(land,rock*strata,stone);
  if(hasFarms>.5){
   vec4 field=vec4(0.);
@@ -67,7 +68,8 @@ export function terrainMaterial(fields:FarmFields|undefined,season:SeasonState,o
  ${options.fade===false?'':'float edge=min(min(p.x+276.,294.4-p.x),min(p.y+133.2,144.3-p.y));diffuseColor.a*=smoothstep(0.,14.,edge);'}
  `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
  float rugged=smoothstep(5.,13.,terrainPosition.y);
- float relief=(noise2(terrainPosition.xz*3.)*.13+noise2(terrainPosition.xz*10.)*.022)*rugged*(1.-snowCover*.85);
+ float rockFootprint=length(fwidth(terrainPosition.xz));
+ float relief=(noise2(terrainPosition.xz*3.)*.13*(1.-smoothstep(.15,.5,rockFootprint))+noise2(terrainPosition.xz*10.)*.022*(1.-smoothstep(.04,.16,rockFootprint)))*rugged*(1.-snowCover*.85);
  vec3 q0=dFdx(-vViewPosition),q1=dFdy(-vViewPosition);
  vec3 r1=cross(q1,normal),r2=cross(normal,q0);float determinant=dot(q0,r1);
  normal=normalize(abs(determinant)*normal-sign(determinant)*(dFdx(relief)*r1+dFdy(relief)*r2));
@@ -81,7 +83,8 @@ export function waterMaterial(){
   s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <begin_vertex>','#include <begin_vertex>\nriverUV=uv;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 riverUV;').replace('#include <color_fragment>',`#include <color_fragment>
    float shore=pow(abs(riverUV.x-.5)*2.,7.);
-   float ripple=.96+.04*sin(riverUV.y*17.+sin(riverUV.x*23.));
+   float ripplePhase=riverUV.y*17.+sin(riverUV.x*23.);
+   float ripple=.96+.04*sin(ripplePhase)*(1.-smoothstep(.4,2.,fwidth(ripplePhase)));
    diffuseColor.rgb=mix(diffuseColor.rgb*ripple,vec3(.32,.40,.32),shore*.3);
   `);
  };

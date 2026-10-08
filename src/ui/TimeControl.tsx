@@ -2,13 +2,13 @@ import {useEffect,useRef} from 'react';
 export function TimeControl({date,day,speed,locked,lockReason,onSpeed,onStep,onMenu,onSave}:{date:string;day:number;speed:number;locked:boolean;lockReason:string;onSpeed:(speed:number)=>void;onStep:()=>void;onMenu:()=>void;onSave:()=>void}){
  const lastSpeed=useRef(1);useEffect(()=>{if(speed)lastSpeed.current=speed;},[speed]);
  useEffect(()=>{
-  const editing=(event:KeyboardEvent)=>event.target instanceof Element&&!!event.target.closest('input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),textarea,[contenteditable="true"],[role="textbox"],[role="combobox"]');
+  const ownsSpace=(event:KeyboardEvent)=>event.target instanceof Element&&!!event.target.closest('button,summary,a[href],input,select,textarea,[contenteditable="true"],[role="textbox"],[role="combobox"],[role="button"],dialog');
   const onKeyDown=(event:KeyboardEvent)=>{
-   if(event.code!=='Space'||event.isComposing||editing(event))return;
+   if(event.code!=='Space'||event.isComposing||ownsSpace(event))return;
    event.preventDefault();event.stopImmediatePropagation();
    if(!event.repeat&&!event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!locked)onSpeed(speed?0:lastSpeed.current);
   };
-  const onKeyUp=(event:KeyboardEvent)=>{if(event.code==='Space'&&!editing(event)){event.preventDefault();event.stopImmediatePropagation();}};
+  const onKeyUp=(event:KeyboardEvent)=>{if(event.code==='Space'&&!ownsSpace(event)){event.preventDefault();event.stopImmediatePropagation();}};
   window.addEventListener('keydown',onKeyDown,true);window.addEventListener('keyup',onKeyUp,true);
   return()=>{window.removeEventListener('keydown',onKeyDown,true);window.removeEventListener('keyup',onKeyUp,true);};
  },[locked,speed,onSpeed]);

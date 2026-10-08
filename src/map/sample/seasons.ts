@@ -19,12 +19,14 @@ export function createSeasonState(up:'y'|'z'='y'){
    if(!(m instanceof MeshStandardMaterial)||! /^(Leaf |Pine |Slate tile|Ridge pottery|Warm limestone|Courtyard earth|Lime plaster|Campaign city)/.test(m.name))continue;
    if(!tracked.has(m)){
     tracked.set(m,m.color.clone());
-    m.onBeforeCompile=s=>{
+    const compile=m.onBeforeCompile,programKey=m.customProgramCacheKey();
+    m.onBeforeCompile=(s,renderer)=>{
+     compile.call(m,s,renderer);
      s.uniforms.seasonSnow=uniforms.seasonSnow;
      s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying float seasonFacing;').replace('#include <defaultnormal_vertex>',`#include <defaultnormal_vertex>\nseasonFacing=inverseTransformDirection(transformedNormal,viewMatrix).${up};`);
      s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform float seasonSnow; varying float seasonFacing;').replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(.78,.83,.85),seasonSnow*smoothstep(.18,.75,seasonFacing));');
     };
-    m.customProgramCacheKey=()=> 'campaign-season-surface-v1-'+up;m.needsUpdate=true;
+    m.customProgramCacheKey=()=> programKey+'-campaign-season-surface-v2-'+up;m.needsUpdate=true;
    }
    const kind=m.name.startsWith('Leaf ')?'leaf':m.name.startsWith('Pine ')?'pine':null;
    if(kind){
