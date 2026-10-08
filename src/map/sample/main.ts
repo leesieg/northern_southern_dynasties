@@ -1,4 +1,5 @@
-import {Map,Marker,NavigationControl} from 'maplibre-gl';
+import {Map,Marker,NavigationControl,setWorkerUrl,setWorkerCount} from 'maplibre-gl';
+import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './sample.css';
 import {siteById} from '../../data/scenario';
@@ -8,6 +9,9 @@ import {sampleStyle} from './style';
 import {sampleLayer} from './layer';
 import {SAMPLE_CITIES} from './presentation';
 import {geographicStatus} from './loading';
+
+setWorkerUrl(mapWorkerUrl);
+setWorkerCount(2);
 
 document.querySelector<HTMLDivElement>('#sample')!.innerHTML=`
  <main id="map" aria-label="关中河洛地图样板"></main>
@@ -36,7 +40,7 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function focus(id:string){
  document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===id)));
  const site=siteById[id];
- if(site)map.easeTo({center:[site.lon,site.lat],zoom:10.7,pitch:terrain?52:0,bearing:-12,duration:reduced?0:850});
+ if(site)map.easeTo({center:[site.lon,site.lat],zoom:11.8,pitch:terrain?52:0,bearing:-12,duration:reduced?0:850});
  else map.easeTo({center:[110.6,34.5],zoom:7,pitch:terrain?48:0,bearing:-8,duration:reduced?0:850});
 }
 document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach(b=>b.addEventListener('click',()=>focus(b.dataset.view!)));
