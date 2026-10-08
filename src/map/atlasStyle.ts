@@ -50,6 +50,7 @@ export function atlasStyle():StyleSpecification {
       {id:'prefecture-boundary',type:'line',source:'prefectures',layout:{visibility:'none'},paint:{'line-color':'#e8d7a5','line-width':2.5,'line-opacity':.85}},
       {id:'territory-hover',type:'fill',source:'territories',paint:{'fill-color':'#fff1c2','fill-opacity':['case',['boolean',['feature-state','hover'],false],.22,0]}},
       {id:'territory-selected',type:'fill',source:'territories',paint:{'fill-color':'#f5db88','fill-opacity':['case',['boolean',['feature-state','selected'],false],.2,0]}},
+      {id:'territory-hover-edge',type:'line',source:'territories',minzoom:6.2,paint:{'line-color':'#fff1c2','line-width':1.5,'line-opacity':['case',['boolean',['feature-state','hover'],false],.75,0]}},
       {id:'territory-selected-shadow',type:'line',source:'territories',paint:{'line-color':'#52432a','line-width':5,'line-opacity':['case',['boolean',['feature-state','selected'],false],.65,0]}},
       {id:'territory-selected-edge',type:'line',source:'territories',paint:{'line-color':'#ffe5a1','line-width':2,'line-opacity':['case',['boolean',['feature-state','selected'],false],1,0]}},
       // Quiet administrative seams sit below the relief; selection remains the visual anchor.

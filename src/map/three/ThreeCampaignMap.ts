@@ -1,3 +1,4 @@
+import {PointerGesture} from './pointerGesture';
 import {ACESFilmicToneMapping,Color,DirectionalLight,Fog,Group,HemisphereLight,PCFSoftShadowMap,PerspectiveCamera,Raycaster,Scene,ShaderMaterial,Vector2,Vector3,WebGLRenderer,type Object3D,type Texture} from 'three';
 import {MapControls} from 'three/addons/controls/MapControls.js';
 import type {FeatureCollection,Geometry} from 'geojson';
@@ -22,10 +23,10 @@ export class ThreeCampaignMap{
  private season=createSeasonState();private surface?:Awaited<ReturnType<typeof countrySurface>>;private actors?:Awaited<ReturnType<typeof campaignActors>>;
  private sun=new DirectionalLight('#ffe1ad',2.7);private sky=new HemisphereLight('#cadcde','#393d2d',.85);private overlays:CampaignOverlays;private clouds=new Group();private cloudMaterial:ShaderMaterial;private coverage?:Texture;
  private listeners=new Map<string,Set<(event:AtlasEvent)=>void>>();private sources=new Map<string,FeatureCollection>();private layers:OverlayLayer[];private states=new Map<string,Record<string,unknown>>();
- private stopped=false;private ready=false;private frame=0;private dirty=true;private overlaysDirty=true;private moving=false;private settlingUntil=0;private lastZoom=0;private lastSeason='';private lastSeasonSync='';private flat=false;private lastFrame=0;private lastShadow=0;private lastRefine='';private refineTimer?:ReturnType<typeof setTimeout>;
+ private stopped=false;private ready=false;private frame=0;private dirty=true;private overlaysDirty=true;private moving=false;private settlingUntil=0;private lastCameraMotion=-Infinity;private lastZoom=0;private lastSeason='';private lastSeasonSync='';private flat=false;private lastFrame=0;private lastShadow=0;private lastRefine='';private refineTimer?:ReturnType<typeof setTimeout>;
  private flight?:{start:number;duration:number;from:Vector3;to:Vector3;fromTarget:Vector3;toTarget:Vector3};
  private state?:()=>CampaignState;private getPlacement:(id:number)=>ArmyMarkerPlacement|undefined=()=>undefined;
- private pointerDown={x:0,y:0};private cleanup:(()=>void)[]=[];private container:HTMLElement;
+ private gesture=new PointerGesture();private cleanup:(()=>void)[]=[];private container:HTMLElement;
  constructor(options:Pick<MapOptions,'container'|'style'|'center'|'zoom'|'pitch'|'bearing'|'minZoom'|'maxZoom'>){
   if(!(options.container instanceof HTMLElement))throw new Error('地图容器不存在');this.container=options.container;this.layers=((options.style as StyleSpecification).layers??[]) as OverlayLayer[];
   for(const [id,source] of Object.entries((options.style as StyleSpecification).sources))if(source.type==='geojson'&&typeof source.data!=='string')this.sources.set(id,source.data as FeatureCollection);
@@ -34,11 +35,19 @@ export class ThreeCampaignMap{
   this.scene.background=new Color('#bdc6c1');this.scene.fog=new Fog('#bdc6c1',140,440);this.scene.add(this.sky,this.sun,this.sun.target);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.bias=-.00025;this.sun.shadow.normalBias=.13;this.sun.shadow.camera.near=1;this.sun.shadow.camera.far=650;this.sun.shadow.radius=2;
   this.overlays=new CampaignOverlays((lon,lat)=>this.height(lon,lat));this.scene.add(this.overlays.root,this.clouds);
   this.cloudMaterial=hiddenTerrainMaterial();
-  this.controls.addEventListener('start',()=>{this.flight=undefined;this.settlingUntil=performance.now()+140;this.moving=true;this.emit('movestart');});this.controls.addEventListener('change',()=>{this.dirty=true;if(this.moving||this.settlingUntil)this.settlingUntil=performance.now()+140;this.camera.updateMatrixWorld();this.emit('move');this.triggerRepaint();});this.controls.addEventListener('end',()=>{this.moving=false;this.settlingUntil=performance.now()+140;this.triggerRepaint();});
+  this.controls.addEventListener('start',()=>{this.flight=undefined;this.settlingUntil=performance.now()+140;this.moving=true;this.emit('movestart');});this.controls.addEventListener('change',()=>{this.lastCameraMotion=performance.now();this.dirty=true;if(this.moving||this.settlingUntil)this.settlingUntil=performance.now()+140;this.camera.updateMatrixWorld();this.emit('move');this.triggerRepaint();});this.controls.addEventListener('end',()=>{this.moving=false;this.settlingUntil=performance.now()+140;this.triggerRepaint();});
   const canvas=this.renderer.domElement;canvas.tabIndex=0;
   const bind=(name:string,handler:EventListener)=>{canvas.addEventListener(name,handler);this.cleanup.push(()=>canvas.removeEventListener(name,handler));};
-  bind('pointerdown',e=>{const p=e as PointerEvent;this.pointerDown={x:p.clientX,y:p.clientY};});
-  for(const name of ['mousemove','click','dblclick','contextmenu'])bind(name,event=>{const e=event as MouseEvent;if(name==='contextmenu')e.preventDefault();if((name==='click'||name==='contextmenu')&&Math.hypot(e.clientX-this.pointerDown.x,e.clientY-this.pointerDown.y)>5)return;if(name==='contextmenu')e.preventDefault();const r=canvas.getBoundingClientRect();this.emit(name,{point:{x:e.clientX-r.left,y:e.clientY-r.top},originalEvent:e,preventDefault:()=>e.preventDefault()});});
+  // Capture before MapControls starts moving; observe the whole path, including off-canvas release.
+  const pointerStart=(e:PointerEvent)=>this.gesture.begin(e.pointerId,e.clientX,e.clientY,e.pointerType==='touch',!!this.flight||this.moving||(this.settlingUntil>0&&performance.now()-this.lastCameraMotion<180));
+  const pointerMove=(e:PointerEvent)=>this.gesture.move(e.pointerId,e.clientX,e.clientY);
+  const pointerEnd=(e:PointerEvent)=>this.gesture.end(e.pointerId,e.clientX,e.clientY);
+  const pointerCancel=()=>this.gesture.cancel();
+  canvas.addEventListener('pointerdown',pointerStart,true);
+  window.addEventListener('pointermove',pointerMove,true);window.addEventListener('pointerup',pointerEnd,true);
+  window.addEventListener('pointercancel',pointerCancel,true);window.addEventListener('blur',pointerCancel);
+  this.cleanup.push(()=>{canvas.removeEventListener('pointerdown',pointerStart,true);window.removeEventListener('pointermove',pointerMove,true);window.removeEventListener('pointerup',pointerEnd,true);window.removeEventListener('pointercancel',pointerCancel,true);window.removeEventListener('blur',pointerCancel);});
+  for(const name of ['mousemove','click','dblclick','contextmenu'])bind(name,event=>{const e=event as MouseEvent;if(name==='contextmenu')e.preventDefault();if(((name==='click'||name==='dblclick')&&!this.gesture.allowsClick()||name==='contextmenu'&&!this.gesture.allowsContextMenu()))return;if(name==='contextmenu')e.preventDefault();const r=canvas.getBoundingClientRect();this.emit(name,{point:{x:e.clientX-r.left,y:e.clientY-r.top},originalEvent:e,preventDefault:()=>e.preventDefault()});});
   bind('webglcontextlost',e=>{e.preventDefault();this.emit('webglcontextlost');});
   bind('keydown',event=>{const e=event as KeyboardEvent;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const d=this.unitsPerPixel()*60,shift=new Vector3(e.key==='ArrowLeft'?-d:e.key==='ArrowRight'?d:0,0,e.key==='ArrowUp'?-d:e.key==='ArrowDown'?d:0);this.controls.target.add(shift);this.camera.position.add(shift);this.changedView();}else if(e.key==='+'||e.key==='=')this.zoomIn();else if(e.key==='-')this.zoomOut();else if(e.key.toLowerCase()==='q'||e.key.toLowerCase()==='e')this.easeTo({bearing:this.getBearing()+(e.key.toLowerCase()==='q'?-20:20)});});
   const attribution=document.createElement('details');attribution.className='three-map-attribution';attribution.innerHTML='<summary>地图资料</summary><p>地形：<a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Mapzen / AWS</a>，SRTM 与 GMTED2010 courtesy USGS，ETOPO1 courtesy NOAA。水系与陆地：<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>（公共领域）。雾外为本局已建模政权范围，非完整历史疆界；近景高程从本地全国分块按需细化。</p>';this.container.append(attribution);this.cleanup.push(()=>attribution.remove());

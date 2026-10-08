@@ -2,7 +2,7 @@ import {describe,it,expect} from 'vitest';
 import {MercatorCoordinate} from 'maplibre-gl';
 import {projectGround,unprojectGround,mercator,gridHeight,zoomDistance,distanceZoom,campaignHeight} from './geography';
 import {sites} from '../../data/scenario';
-import {evaluate} from './overlays';
+import {evaluate,CampaignOverlays,type OverlayLayer} from './overlays';
 import {atlasStyle} from '../atlasStyle';
 import {territories} from '../territories';
 
@@ -33,4 +33,16 @@ it('drapes and clips tactical territory fills to sampled terrain instead of floa
  const p=(overlay.root.children[0] as InstanceType<typeof Mesh>).geometry.getAttribute('position');expect(p.count).toBeGreaterThan(6);
  for(let i=0;i<p.count;i++){const ll=unprojectGround(p.getX(i),p.getZ(i));expect(ll.lng).toBeGreaterThan(110.049);expect(ll.lng).toBeLessThan(110.151);expect(p.getY(i)).toBeCloseTo(height(ll.lng,ll.lat)+.165,3);}
  overlay.clear();expect(overlay.root.children).toHaveLength(0);
+});
+
+
+it('keeps close selection off terrain faces while retaining borders and strategic fills',()=>{
+ const overlay=new CampaignOverlays(()=>3);
+ const data={type:'FeatureCollection' as const,features:[{type:'Feature' as const,id:'test',properties:{id:'test'},geometry:{type:'Polygon' as const,coordinates:[[[110,32],[110.02,32],[110.02,32.02],[110,32.02],[110,32]]]}}]};
+ const states=new Map([['territories:test',{selected:true,hover:true}]]),sources=new Map([['territories',data]]);
+ const layers=atlasStyle().layers.filter(l=>['territory-selected','territory-hover'].includes(l.id)) as OverlayLayer[];
+ overlay.rebuild(layers,sources,10,.02,states);expect(overlay.root.children).toHaveLength(0);
+ overlay.rebuild(layers,sources,4,.02,states);expect(overlay.root.children).toHaveLength(2);
+ const borders=atlasStyle().layers.filter(l=>['territory-selected-edge','territory-hover-edge'].includes(l.id)) as OverlayLayer[];
+ overlay.rebuild(borders,sources,10,.02,states);expect(overlay.root.children).toHaveLength(2);overlay.clear();
 });

@@ -20,6 +20,8 @@ export class CampaignOverlays{
  rebuild(layers:OverlayLayer[],sources:Map<string,FeatureCollection>,zoom:number,unitsPerPixel:number,states:Map<string,Record<string,unknown>>,bounds?:[number,number,number,number]){
   this.clear();let order=1;
   for(const layer of layers){if(!['realms','territories','hierarchy','frontiers','roads','route','selection','history-event'].includes(layer.source??'')||layer.layout?.visibility==='none'||zoom<(layer.minzoom??0)||zoom>(layer.maxzoom??99))continue;
+   // Independent fill triangles intersect detailed relief. Near selection uses outlines only.
+   if(zoom>6.2&&layer.type==='fill'&&['territory-hover','territory-selected','hierarchy-selected'].includes(layer.id))continue;
    const data=sources.get(layer.source!),paint=layer.paint??{};if(!data)continue;
    const positions:number[]=[],colors:number[]=[];
    const vertex=(p:Position,color:Color,alpha:number)=>{const xy=projectGround(p[0],p[1]);positions.push(xy.x,(this.height(p[0],p[1])??0)+.15+order*.015,xy.z);colors.push(color.r,color.g,color.b,alpha);};
