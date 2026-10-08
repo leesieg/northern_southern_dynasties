@@ -53,7 +53,7 @@ interface Props {
   onDiplomacy:(r:RealmId)=>void;
   onInspectPeople:(ids:string[])=>void;
   territory:string;territoryLevel:TerritoryLevel;historyEvent:string|null;onSelectTerritory:(id:string)=>void;
-  world:World; selected:string; route:string[]; mode:MapMode; showTravelers:boolean; tilted:boolean;
+  world:World; selected:string; selectionActive?:boolean; onClearSelection?:()=>void; route:string[]; mode:MapMode; showTravelers:boolean; tilted:boolean;
   cameraAction:{type:CameraAction;seq:number}; onSelect:(id:string)=>void; onPreviewRoute:(id:string)=>void;
 }
 interface MapAPI {update:()=>void;camera:(type:Props['cameraAction']['type'])=>void}
@@ -84,7 +84,7 @@ export function WorldMap(props:Props){
     let map:AtlasMap|undefined,observer:ResizeObserver|undefined,disposed=false,styleReady=false,frame=0,slowLoad:ReturnType<typeof setTimeout>|undefined;
     let lastDomains='',lastSeason='';
     let knownDomains:ReturnType<typeof campaignDomains>['realms']|undefined;
-    let lastTerritory='',lastLevel='',lastEvent:string|null|undefined;
+    let lastTerritory='',lastLevel='',lastSelectionActive:boolean|undefined,lastEvent:string|null|undefined;
     let terrainEnabled:boolean|undefined;
     let travelingIds=new Set<string>();
     let lastMode='',lastTilt:boolean|undefined,lastWorld:World|undefined,lastSelected='',lastRoute='';
@@ -121,7 +121,7 @@ export function WorldMap(props:Props){
       const widths=new Map(list.map(item=>[item.id,item.marker.getElement().offsetWidth]));
       for(const item of list){
         const s=siteById[item.id],coordinate=map.cityCoordinate(s.id,[s.lon,s.lat]),p=map.project(coordinate);item.marker.setLngLat(coordinate);
-        const selected=item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
+        const selected=current.current.selectionActive!==false&&item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
         const width=Math.max(widths.get(item.id)??0,s.name.length*14+38+(selected||item.capital&&zoom>=9?28:0)+(estate?34:0));
         const visible=!strategicView&&cityIds.has(item.id)&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
         item.marker.getElement().hidden=!visible;item.portrait.hidden=!(selected||item.capital&&zoom>=9);
@@ -205,24 +205,26 @@ export function WorldMap(props:Props){
       if(signature!==lastDomains){const domain=campaignDomains(p.world);knownDomains=domain.realms;(map.getSource('unruled-fog') as GeoJSONSource).setData(domain.fog);for(const source of ['realms','frontiers'])(map.getSource(source) as GeoJSONSource).setData(domain.realms);lastDomains=signature;}
       const season=campaignSeason(p.world);if(lastSeason!==season){lastSeason=season;container.parentElement?.setAttribute('data-season',season);}
       const activeSites=sites.filter(s=>controlledSite(p.world,s.id)).map(s=>s.id);for(const layer of ['site-halo','site-heart'])map.setFilter(layer,['in',['get','id'],['literal',activeSites]]);
-      if(lastTerritory!==p.territory||lastLevel!==p.territoryLevel){
-        const selectedId=territoryNodes[p.territory].level==='city'?'':p.territory;
+      const selectionActive=p.selectionActive!==false,selected=selectionActive?p.selected:'';
+      if(lastTerritory!==p.territory||lastLevel!==p.territoryLevel||lastSelectionActive!==selectionActive){
+        const selectedId=!selectionActive||territoryNodes[p.territory].level==='city'?'':p.territory;
         for(const layer of ['hierarchy-selected','hierarchy-selected-edge'])map.setFilter(layer,['==',['get','id'],selectedId]);
         for(const layer of ['hierarchy-seam','hierarchy-lines'])map.setFilter(layer,['==',['get','level'],p.territoryLevel]);
-        for(const layer of ['territory-selected','territory-selected-shadow','territory-selected-edge','selected-ring'])map.setLayoutProperty(layer,'visibility',p.territoryLevel==='city'?'visible':'none');
-        lastTerritory=p.territory;lastLevel=p.territoryLevel;
+        for(const layer of ['territory-selected','territory-selected-shadow','territory-selected-edge','selected-ring'])map.setLayoutProperty(layer,'visibility',selectionActive&&p.territoryLevel==='city'?'visible':'none');
+        if(!selectionActive){if(hoveredId)map.setFeatureState({source:'territories',id:hoveredId},{hover:false});hoveredId=null;setHover(null);setMenu(null);}
+        lastTerritory=p.territory;lastLevel=p.territoryLevel;lastSelectionActive=selectionActive;
       }
       if(lastEvent!==p.historyEvent){
         const event=controlEvents.find(e=>e.id===p.historyEvent),city=event?siteById[event.site]:null;
         (map.getSource('history-event') as GeoJSONSource).setData({type:'FeatureCollection',features:city?[pointFeature(city.lon,city.lat)]:[]});
         lastEvent=p.historyEvent;
       }
-      if(lastSelected!==p.selected){
+      if(lastSelected!==selected){
         if(lastSelected)map.setFeatureState({source:'territories',id:lastSelected},{selected:false});
-        map.setFeatureState({source:'territories',id:p.selected},{selected:true});
-        const site=siteById[p.selected];
-        (map.getSource('selection') as GeoJSONSource).setData({type:'FeatureCollection',features:[pointFeature(site.lon,site.lat)]});
-        lastSelected=p.selected;
+        if(selected)map.setFeatureState({source:'territories',id:selected},{selected:true});
+        const site=siteById[selected];
+        (map.getSource('selection') as GeoJSONSource).setData({type:'FeatureCollection',features:site?[pointFeature(site.lon,site.lat)]:[]});
+        lastSelected=selected;
       }
       const selectedArmy=p.world.realm?.armies.find(a=>p.selectedArmies.includes(a.id!)),routeKey=p.route.join(',')+'|'+(selectedArmy?.id??'');
       if(lastWorld!==p.world||lastRoute!==routeKey){
@@ -314,17 +316,17 @@ export function WorldMap(props:Props){
     }
 
     try{
+      const initialPosition=position(current.current.world.people[0]);
       map=new AtlasMap({
-        container,style:atlasStyle(),center:[105.5,34.5],zoom:3.7,pitch:24,bearing:0,
+        container,style:atlasStyle(),center:[initialPosition.lon,initialPosition.lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,current.current.tilted).pitch,bearing:0,
         minZoom:1.1,maxZoom:12,
       });
       map.getCanvas().setAttribute('aria-label','全国三维地图，拖动平移，右键拖动旋转，滚轮缩放；右键单击查看操作，也可通过地点目录选择城邑');
-      home();
       map.on('style.load',()=>{
         if(!map||disposed)return;
         styleReady=true;current.current.onMapReady?.(map);
         sceneryLayer={siteAt:point=>map?.siteAt(point)??null,showsSite:id=>map?.showsSite(id)??false};
-        map.attachWorld(()=>current.current,id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},reason=>setWarning(reason));
+        map.attachWorld(()=>({...current.current,selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},reason=>setWarning(reason));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
           const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;element.style.setProperty('--city-realm',polities[s.polity].color);button.setAttribute('aria-label',`选择${s.name}`);
@@ -381,7 +383,7 @@ export function WorldMap(props:Props){
       });
       map.getCanvas().addEventListener('mouseleave',clearHover);
       map.on('movestart',()=>{clearHover();setMenu(null);});
-      map.on('click',event=>{const id=hit(event.point),model=id&&sceneryLayer?.siteAt(event.point);if(id){if(model)current.current.onSelect(id);else current.current.onSelectTerritory(nodeForSite(id,current.current.territoryLevel).id);}setMenu(null);});
+      map.on('click',event=>{const p=current.current,id=hit(event.point),model=id&&sceneryLayer?.siteAt(event.point),node=id?nodeForSite(id,p.territoryLevel):null;if(!id||!model&&p.selectionActive!==false&&node?.id===p.territory){clearHover();p.onClearSelection?.();}else if(model)p.onSelect(id);else if(node)p.onSelectTerritory(node.id);setMenu(null);});
       map.on('dblclick',event=>{const id=hit(event.point);if(id){current.current.onSelect(id);focusSite(id);}});
       map.on('contextmenu',event=>{event.preventDefault();event.originalEvent.preventDefault();const id=hit(event.point);if(id)openMenu(id,event.point.x,event.point.y);});
       map.on('error',event=>{
@@ -411,7 +413,7 @@ export function WorldMap(props:Props){
         }
         else if(type==='player'){
           const p=position(current.current.world.people[0]);
-          map.easeTo({center:[p.lon,p.lat],zoom:7,pitch:atlasPresentation(7,current.current.tilted).pitch,duration});
+          map.easeTo({center:[p.lon,p.lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,current.current.tilted).pitch,duration});
         }else if(type==='left'||type==='right')map.easeTo({bearing:map.getBearing()+(type==='left'?-30:30),duration});
         else if(type==='north')map.easeTo({bearing:0,duration});
         else if(type==='in')map.zoomIn({duration});else map.zoomOut({duration});

@@ -51,3 +51,11 @@
 .focused-shell .map-options button b{font-size:11px;font-weight:400;color:#c0b597}
 .focused-shell .map-options button[aria-pressed=true] b{color:#ffe5aa}
 @media(max-width:900px){.focused-shell .map-command-dock{right:8px;max-width:calc(100% - 16px)}.focused-shell .map-command-dock .map-modes button{min-width:42px;padding-inline:4px}.focused-shell .map-navigation-row{gap:4px}}
+
+/* Keep every projected label inside the map layer, below HUD controls. */
+.focused-shell .world-map{z-index:0;isolation:isolate}
+.focused-shell .command-rail{z-index:5}
+.focused-shell .map-command-dock{z-index:5}
+.focused-shell .sovereign-strip,.focused-shell .chronicle-control{z-index:10}
+.focused-shell .ongoing-flags{z-index:5}
+.focused-shell .army-dock{z-index:5}
