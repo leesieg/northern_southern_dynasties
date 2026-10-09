@@ -174,13 +174,12 @@ for name,last in [('Idle',73),('Walk',109),('Attack',241)]:
   # Three 1.2s strides / one revolution; endpoints differ only by quaternion sign.
   if name=='Walk':
    for n in radii:rotate(n,math.tau*u)
-  angle=-math.radians(35);pouch_at=pouch.copy();release=0
+  angle=-math.radians(35);pouch_at=pouch.copy()
   if name=='Attack':
    # Load 0.5–2.2s, tension 2.2–4.0s, release 4.0–4.6s, settle and rewind 4.6–8s.
    fire=smooth(3.9,4.55,t);rewind=smooth(5.2,7.7,t);angle+=math.radians(124)*fire*(1-rewind)
-   release=smooth(4.48,4.7,t)*(1-smooth(5.0,6.4,t))
   rotate('ThrowArm',angle);bpy.context.view_layer.update();arm_matrix=rig.pose.bones['ThrowArm'].matrix@rest['ThrowArm'].inverted();tip_at=arm_matrix@tip
-  # Gravity-hanging loaded sling; it trails behind the accelerating arm and opens at release.
+  # Both suspension ropes stay tied to the pouch; only the projectile detaches at release.
   sling_angle=sling_swing(t) if name=='Attack' else .025*math.sin(math.tau*u)
   pouch_at=tip_at+Vector((0,.56*math.sin(sling_angle),-.56*math.cos(sling_angle)))
   pose_world('Pouch',Matrix.Translation(pouch_at-pouch)@rest['Pouch'])
@@ -195,7 +194,6 @@ for name,last in [('Idle',73),('Walk',109),('Attack',241)]:
   for prefix in shifts:hands(prefix,[v+Vector((0,.06,0)) for v in targets[prefix]])
   for side,sign in [('L',1),('R',-1)]:
    start=tip_at+Vector((sign*.07,0,0));end=pouch_at+Vector((sign*.12,0,.03))
-   if side=='R':end+=Vector((0,.45*release,.12*release))
    stretch('Sling'+side,start,end)
   stretch('HaulRope',arm_matrix@haul,targets['CrewL'][0])
   rock=pouch_at+Vector((0,0,.045));visible=1

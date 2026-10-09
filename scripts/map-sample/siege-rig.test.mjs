@@ -84,3 +84,29 @@ it('swings the loaded pouch counterclockwise about the arm tip through release',
  }
  mixer.stopAllAction();mixer.uncacheRoot(gltf.scene);
 });
+it('keeps both actual rope mesh ends attached to the arm and pouch throughout all clips',()=>{
+ const attachments=[];
+ for(const side of ['L','R']){
+  const mesh=meshes.find(m=>m.name.startsWith('Sling'+side+'Mesh'));expect(mesh).toBeDefined();
+  const positions=mesh.geometry.getAttribute('position'),ropeIndex=mesh.skeleton.bones.indexOf(joint('Sling'+side));
+  const local=Array.from({length:positions.count},(_,i)=>new Vector3().fromBufferAttribute(positions,i).applyMatrix4(mesh.bindMatrix).applyMatrix4(mesh.skeleton.boneInverses[ropeIndex]));
+  for(const [end,target] of [['min','ThrowArm'],['max','Pouch']]){
+   const y=Math[end](...local.map(v=>v.y)),indices=local.flatMap((v,i)=>Math.abs(v.y-y)<.0001?[i]:[]);expect(indices.length).toBeGreaterThanOrEqual(8);
+   const rest=indices.reduce((sum,i)=>sum.add(new Vector3().fromBufferAttribute(positions,i)),new Vector3()).divideScalar(indices.length).applyMatrix4(mesh.bindMatrix);
+   const bone=joint(target),offset=rest.applyMatrix4(mesh.skeleton.boneInverses[mesh.skeleton.bones.indexOf(bone)]);
+   attachments.push({mesh,positions,indices,bone,offset,side,end});
+  }
+ }
+ for(const clip of gltf.animations){
+  const mixer=new AnimationMixer(gltf.scene);mixer.clipAction(clip).play();
+  for(let frame=0;frame<=Math.round(clip.duration*60);frame++){
+   pose(mixer,frame/60);
+   for(const {mesh,positions,indices,bone,offset,side,end} of attachments){
+    const actual=indices.reduce((sum,i)=>sum.add(mesh.applyBoneTransform(i,new Vector3().fromBufferAttribute(positions,i)).applyMatrix4(mesh.matrixWorld)),new Vector3()).divideScalar(indices.length);
+    // Subframe interpolation may vary by millimetres; the end must remain within its 1cm rope radius.
+    expect(actual.distanceTo(offset.clone().applyMatrix4(bone.matrixWorld)),`${clip.name} ${frame/60}s ${side} ${end}`).toBeLessThan(.01);
+   }
+  }
+  mixer.stopAllAction();mixer.uncacheRoot(gltf.scene);
+ }
+});
