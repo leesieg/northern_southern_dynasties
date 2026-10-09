@@ -44,7 +44,7 @@ import './personSheet.css';
 export type PersonTab='overview'|'family'|'relations'|'interaction'|'focus';
 export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,onIntrigue,pending,send}:{world:World;ids:string[];lifeEntry?:PersonLifeEntry|null;tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:(site:string)=>void;onCity:(id:string)=>void;onIntrigue?:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
  const [order,setOrder]=useState<'provision'|'repatriate'|null>(null);
- const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'legacy'>('tree');
+ const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'contributions'|'legacy'>('tree');
  const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=getCharacter(w,id)!,extra=getPerson(w,id)!,self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
  useEffect(()=>setOrder(null),[id,tab]);
  const reference=familyPersonOf(w,id)!;
@@ -55,7 +55,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  const orderReason=order==='provision'?provisionReason:returnQuote?.reason??'';
  const name=c?.name??extra?.name??reference?.name??p!.name,family=familyById[c?.family??reference?.family??extra?.family??''],realm=w.realm?allegianceRealm(w,id):c?.polity??extra?.realm,clan=family?clanStanding(w,id):null;
  const model=personSheetPresentation(w,id),canInteract=!retired&&!deceased&&(self&&!!w.realm||!self&&!!extra&&!!w.social);
- return <div className="person-sheet person-sheet--ink">
+ return <div className="person-sheet person-sheet--ink" data-person-tab={tab}>
  {ids.length>1&&<nav className="person-picker-list" aria-label="此处人物">{ids.map(person=><button key={person} aria-pressed={person===raw} onClick={()=>onSelect(person)}><ArtIcon name="person" size={22}/>{getCharacter(w,person)?.name??getPerson(w,person)?.name??w.people.find(p=>p.id===person)?.name}</button>)}</nav>}
  <aside className="person-portrait-stage" aria-label={name+'的立绘'}>
   <div className="person-portrait-hall" aria-hidden="true"/>
@@ -89,7 +89,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  {reference&&!c&&<p>{reference.description}</p>}
  {c&&<section className="detail-record-group"><h4>生平</h4><p>{c.biography}</p></section>}
  </>}
- {tab==='family'&&family&&<>{self&&<DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree',label:'族谱',icon:'renown'},{id:'legacy',label:'世业继任',icon:'estate'}]}/>}{(!self||familyMode==='tree')&&<FamilyPanel world={w} selected={familySelection??id} onSelect={setFamilySelection} onPerson={onPerson}/>}{self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
+ {tab==='family'&&family&&<><DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree' as const,label:'族谱',icon:'renown' as const},{id:'contributions' as const,label:'威望',icon:'influence' as const},...(self?[{id:'legacy' as const,label:'世业继任',icon:'estate' as const}]:[])]}/>{familyMode!=='legacy'&&<FamilyPanel world={w} selected={familySelection??id} chapter={familyMode} onSelect={id=>{setFamilySelection(id);setFamilyMode('tree');}} onPerson={onPerson}/>} {self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
 
  {tab==='focus'&&self&&<LifestylePanel world={w} pending={pending} send={send}/>}
  {tab==='interaction'&&w.realm&&allegianceRealm(w,id)&&<NobilityPanel world={w} realm={allegianceRealm(w,id)!} person={id} pending={pending} send={send} onPerson={onPerson}/>}

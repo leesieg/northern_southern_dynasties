@@ -31,8 +31,8 @@ export function PersonConnections({world:w,person,onPerson}:{world:World;person:
   {id:'service',label:'统属',icon:'influence',contacts:unique(service)}
  ];
  return <section className="person-connections" aria-label="人物关系">{groups.map(group=><div key={group.id} className="diplomacy-relation-row person-relation-row" role="group" aria-label={group.label+' · '+group.contacts.length+' 人'}>
-  <span><ArtIcon name={group.icon} size={24}/>{group.label}</span>
-  <div>{group.contacts.map(p=>{const name=getPerson(w,p.id)?.name??familyPersonOf(w,p.id)?.name??'未录人物',status=isDeceased(w,p.id)?'已故':lifeOf(w,p.id)?ageLabel(w,p.id):'';return <HoverHint key={p.id} label={name+' · '+p.label} content={<><strong>{name}</strong><p>{p.label}</p>{status&&<p>{status}</p>}</>}><button type="button" onClick={()=>onPerson(p.id)} className="connection-person" aria-label={'查看'+name+' · '+p.label+(status?' · '+status:'')}><CharacterPortrait characterId={p.id} name={name} world={w} compact/></button></HoverHint>;})}{!group.contacts.length&&<small className="person-relation-empty">暂无</small>}</div>
+  <span><ArtIcon name={group.icon} size={24}/>{group.label}<small className="connection-count">{group.contacts.length}</small></span>
+  <div>{group.contacts.map(p=>{const name=getPerson(w,p.id)?.name??familyPersonOf(w,p.id)?.name??'未录人物',status=isDeceased(w,p.id)?'已故':lifeOf(w,p.id)?ageLabel(w,p.id):'';return <HoverHint key={p.id} label={name+' · '+p.label} content={<><strong>{name}</strong><p>{p.label}</p>{status&&<p>{status}</p>}</>}><button type="button" onClick={()=>onPerson(p.id)} className="connection-person" aria-label={'查看'+name+' · '+p.label+(status?' · '+status:'')}><CharacterPortrait characterId={p.id} name={name} world={w} compact/><span className="connection-copy"><strong>{name}</strong><small>{p.label}</small></span></button></HoverHint>;})}{!group.contacts.length&&<small className="person-relation-empty">暂无</small>}</div>
  </div>)}</section>;
 }
 export function PersonDomains({world,person,onCity}:{world:World;person:string;onCity:(id:string)=>void}){

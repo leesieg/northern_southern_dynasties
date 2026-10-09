@@ -100,3 +100,95 @@ dialog.person-ink-dialog::before{content:"";position:absolute;inset:0;z-index:-1
 @media(max-width:600px){dialog.person-ink-dialog{width:100vw;--person-height:98svh;padding:19px 18px}.person-ink-dialog .person-sheet--ink{display:block}.person-ink-dialog .person-portrait-stage{position:absolute;top:40px;left:0;width:95px;height:165px;z-index:3}.person-ink-dialog .person-hero-portrait{inset:0;mask-image:linear-gradient(0deg,transparent,#000 16%)}.person-ink-dialog .person-portrait-hall{display:none}.person-ink-dialog .person-portrait-shortcuts{display:flex;flex-direction:row;top:-40px;bottom:auto;left:0;gap:9px}.person-ink-dialog .person-portrait-shortcuts button{font-size:10px;gap:0;min-width:40px}.person-ink-dialog .person-portrait-shortcuts .art-icon{width:24px!important;height:24px!important;margin:0 0 5px;outline-offset:1px;box-shadow:none}.person-ink-dialog .person-information{height:100%;box-sizing:border-box;padding:48px 0 0}.person-ink-dialog .person-window-chrome{top:18px;right:20px;gap:8px}.person-ink-dialog .person-window-chrome button{width:36px;height:36px;padding:6px}.person-ink-dialog .person-dossier-heading{padding-left:102px;min-height:122px;grid-template-columns:minmax(0,1fr) auto;gap:4px}.person-ink-dialog .person-dossier-heading h2{font-size:37px;letter-spacing:2px}.person-ink-dialog .person-heraldry .realm-badge-seal>svg{width:43px;height:43px}.person-ink-dialog .person-clan .family-crest{width:26px;min-width:26px;height:43px;font-size:17px}.person-ink-dialog .person-heraldry{gap:3px;padding:0}.person-ink-dialog .person-demographics{gap:3px 8px;font-size:11px}.person-ink-dialog .person-ability-summary{padding:7px 0}.person-ink-dialog .ability-points{gap:5px}.person-ink-dialog .ability-point{gap:3px}.person-ink-dialog .ability-point small{font-size:11px}.person-ink-dialog .ability-point .art-icon{width:22px!important;height:22px!important;margin:1px}.person-ink-dialog .ability-point b{font-size:15px}.person-ink-dialog .person-standing small{font-size:10px}.person-ink-dialog .person-standing .hover-hint>span{gap:4px}.person-ink-dialog .person-standing b{font-size:14px}.person-ink-dialog .person-dossier-traits{gap:9px;min-height:40px}.person-ink-dialog .person-dossier-traits>div{gap:7px}.person-ink-dialog .person-dossier-traits .trait-badge{width:27px;height:27px;min-width:27px;min-height:27px;padding:1px}.person-ink-dialog .person-dossier-traits .art-icon{width:25px!important;height:25px!important}.person-ink-dialog .person-named-trait small{font-size:11px}.focused-shell .person-ink-dialog .person-information>.detail-tabs{padding-block:7px}.focused-shell .person-ink-dialog .person-information>.detail-tabs>button{font-size:13px;gap:3px}.focused-shell .person-ink-dialog .person-information>.detail-tabs>button .art-icon{width:18px!important;height:18px!important}.person-ink-dialog .person-page-content{padding-right:7px}.person-ink-dialog .person-office-painting{flex-basis:40%}.person-ink-dialog .person-current-summary>div{gap:8px}.person-ink-dialog .person-current-summary>div>span{font-size:12px}.person-ink-dialog .person-picker-list{position:static;max-height:50px;width:auto;margin:0 0 5px}.person-ink-dialog .person-sheet--ink:has(>.person-picker-list) .person-information{height:calc(100% - 60px)}}
 
 .focused-shell .person-ink-dialog .person-information>.detail-tabs>button[aria-pressed=true]:focus-visible{outline-offset:-4px}
+
+/* Chapter pages keep identity visible while giving the working area more room. */
+@media(min-width:901px){
+ .person-sheet--ink:not([data-person-tab=overview]) .person-dossier-heading h2{font-size:48px;line-height:1.05;margin:3px 0}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-heading-copy{padding-top:0}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-status-line{font-size:13px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-rank-line{font-size:15px;line-height:1.4}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-demographics{font-size:12px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-heraldry{padding-top:30px;align-self:start}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-heraldry .realm-badge-seal>svg{width:68px;height:68px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-clan .family-crest{width:34px;min-width:34px;height:68px;font-size:23px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-ability-summary{padding-block:6px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-ability-row{gap:5px}
+ .person-sheet--ink:not([data-person-tab=overview]) .ability-point small{font-size:15px}
+ .person-sheet--ink:not([data-person-tab=overview]) .ability-point .art-icon{width:26px!important;height:26px!important}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-standing small{font-size:13px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-standing b{font-size:17px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-dossier-traits{min-height:45px;padding-block:3px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-dossier-traits .trait-badge{width:32px;height:32px;min-width:32px;min-height:32px;padding:2px}
+ .person-sheet--ink:not([data-person-tab=overview]) .person-named-trait small{font-size:13px}
+}
+.person-ink-dialog .detail-tabs>button{transition:none}
+.focused-shell .person-ink-dialog .person-page-content .detail-tabs{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:repeat(var(--detail-tab-count),minmax(0,1fr));gap:4px;margin:0 0 10px;padding:8px 0;background:#0c100d;border-bottom:1px solid #b99a5855}
+.focused-shell .person-ink-dialog .person-page-content .detail-tabs>button{min-height:38px;padding:5px;flex-direction:row;gap:6px;background:transparent;color:#d8ccaf;border:1px solid transparent;font:14px/1.4 var(--serif)}
+.focused-shell .person-ink-dialog .person-page-content .detail-tabs>button[aria-pressed=true]{border-color:#b99a5877;background:#b99a5828;color:#eed49b;box-shadow:inset 0 -2px #b99a58}
+.person-ink-dialog .person-page-content{container-type:inline-size;container-name:person-chapter}
+.person-ink-dialog .family-panel{gap:10px}
+.person-ink-dialog .family-switch{gap:9px;font-size:13px}
+.person-ink-dialog .person-page-content :is(select,input.search){box-sizing:border-box;min-width:0;max-width:100%;min-height:32px;padding:4px 8px;border:1px solid #ae92594d;background:#18221b;color:#e6dac0;font:13px var(--serif);color-scheme:dark}
+.person-ink-dialog .family-banner.detail-landscape{min-height:0;padding:8px 12px;gap:12px;margin:0;background-position:center;border:1px solid #b99a5845}
+.person-ink-dialog .family-banner>.family-crest{width:44px;height:54px;border-width:2px;flex:none}
+.person-ink-dialog .family-banner>.family-crest>span{font-size:24px}
+.person-ink-dialog .family-banner h3{font:20px var(--person-script);margin:2px 0}
+.person-ink-dialog .family-banner p{margin:2px 0;font-size:12px;line-height:1.5}
+.person-ink-dialog .family-standing{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:8px 10px;margin:0}
+.person-ink-dialog .family-standing progress{grid-column:1/-1;height:4px;margin:0}
+.person-ink-dialog .family-standing p{font-size:12px;line-height:1.5;margin:0}
+.person-ink-dialog .family-buffs{gap:14px;margin:0;font-size:12px}
+.person-ink-dialog .family-standing>small{grid-column:1/-1;font-size:11px;line-height:1.5}
+.person-ink-dialog .family-tree{max-height:none;padding:5px;scrollbar-width:thin}
+.person-ink-dialog #family-tree>h3,.person-ink-dialog #family-contributions>h3{font-size:16px;margin:4px 0 8px}
+.person-ink-dialog #family-tree>h3>small{font-size:11px;margin-left:8px}
+.person-ink-dialog .family-tree ul{padding-left:17px}.person-ink-dialog .family-tree>ul{padding-left:0}
+.person-ink-dialog .family-tree li{padding-block:3px}
+.person-ink-dialog .family-tree .family-node{padding:5px 8px;gap:8px;min-width:145px}
+.person-ink-dialog .family-node strong{font-size:14px}.person-ink-dialog .family-node small{font-size:11px}
+.person-ink-dialog .family-person{padding:12px;margin-top:10px}
+.person-ink-dialog .person-connections{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.person-ink-dialog .person-relation-row{grid-column:1/-1;display:block;margin:0;padding:8px 0;border:0;border-bottom:1px solid #b99a5840;background:transparent}
+.person-ink-dialog .person-relation-row:has(.person-relation-empty){grid-column:auto;display:flex;gap:12px}
+.person-ink-dialog .person-relation-row>span{font-size:14px;gap:7px;margin-bottom:7px}
+.person-ink-dialog .person-relation-row .connection-count{font-size:12px;color:#bbae91}
+.person-ink-dialog .person-relation-row>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.person-ink-dialog .person-relation-row:has(.person-relation-empty)>div{display:block}
+.person-ink-dialog .person-relation-row .hover-hint{display:block;min-width:0}
+.person-ink-dialog .person-relation-row .connection-person{display:flex;align-items:center;gap:7px;width:100%;height:auto;min-height:54px;padding:5px;border:1px solid #b99a5840;background:#17221a;text-align:left}
+.person-ink-dialog .person-relation-row .connection-person .painted-portrait{width:40px;height:40px;min-width:40px;flex:none}
+.person-ink-dialog .connection-copy{display:block;min-width:0}
+.person-ink-dialog .connection-copy strong{display:block;font:14px/1.5 var(--serif);overflow-wrap:anywhere}
+.person-ink-dialog .connection-copy small{display:block;font:11px/1.5 var(--serif);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person-ink-dialog .person-page-content :is(.political-identity,.relationship-panel,.pact-request){margin-block:10px}
+.person-ink-dialog .person-page-content :is(.political-identity,.mobility-panel,.career-systems)>:is(h3,h4){margin:10px 0;font:16px var(--person-script)}
+.person-ink-dialog .person-page-content .political-note{margin:6px 0;font-size:13px}
+.person-ink-dialog .person-page-content :is(.political-identity,.pact-request,.relationship-panel)>.hover-hint:has(>.detail-action-entry){width:calc((100% - 14px)/3);margin:6px 0;min-width:140px}
+.focused-shell .person-ink-dialog .person-page-content :is(.interaction-options,.journey-options,.city-policy-grid){display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.person-ink-dialog .person-page-content .interaction-context{margin:10px 0;gap:14px}
+.person-ink-dialog .person-page-content .social-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.person-ink-dialog .person-page-content .social-cards article{padding:10px;min-width:0}
+.person-ink-dialog .person-page-content .lifestyle-current{padding-block:12px}
+.person-ink-dialog .person-page-content .lifestyle-current h3{font-size:21px}
+.person-ink-dialog .person-page-content .lifestyle-scene-entry{min-height:120px}
+@container person-chapter (max-width:450px){
+ .person-ink-dialog .family-standing{grid-template-columns:1fr}.person-ink-dialog .family-buffs{flex-wrap:wrap}
+ .person-ink-dialog .person-relation-row>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .focused-shell .person-ink-dialog .person-page-content :is(.interaction-options,.journey-options,.city-policy-grid){grid-template-columns:repeat(2,minmax(0,1fr))}
+ .person-ink-dialog .person-page-content .social-cards{grid-template-columns:1fr}
+}
+.person-ink-dialog .person-page-content .political-identity{gap:6px;padding-bottom:8px;border-bottom:1px solid #b99a5833}
+.person-ink-dialog .person-page-content .political-person-list:empty{display:none}
+.person-ink-dialog .person-page-content .political-identity:has(.political-person-list:empty){display:flex;align-items:center;flex-wrap:wrap;gap:6px 15px}
+.person-ink-dialog .person-page-content .political-identity>h3{margin:0;font-size:14px;flex:none}
+.person-ink-dialog .person-page-content .political-identity>h3>.art-icon{width:24px!important;height:24px!important}
+.person-ink-dialog .person-page-content .political-identity>.political-note{margin:0;font-size:12px}
+.person-ink-dialog .person-page-content .relationship-panel{padding-top:0}
+.person-ink-dialog .person-page-content .interaction-context{margin:6px 0;padding:0}
+.person-ink-dialog .person-page-content .interaction-options{margin:6px 0 12px}
+.person-ink-dialog .person-page-content .mobility-panel{margin:10px 0}
+.person-ink-dialog .person-page-content .mobility-panel>h3{margin:6px 0}
+.person-ink-dialog .person-page-content .career-systems{gap:6px;margin:10px 0}
+.person-ink-dialog .person-page-content .social-panel{gap:8px}
+.person-ink-dialog .person-page-content .social-panel>h3{margin:6px 0;font-size:17px}
+.person-ink-dialog .person-page-content .social-panel>p{margin:4px 0;font-size:12px}

@@ -1,7 +1,6 @@
 import {familyPersonOf,familyMembersOf,relativesOf,parentLinksOf} from '../core/personRegistry';
 import {CharacterPortrait} from './CharacterPortrait';
 import {ClanBadge} from './ClanRanking';
-import {DetailTabs} from './DetailTabs';
 import {lifeOf,ageLabel,isDeceased} from '../core/lifeState';
 import { RelationshipSummary } from './RelationshipSummary';
 import { useState } from 'react';
@@ -14,11 +13,11 @@ export function FamilyCrest({family,small=false}:{family:string;small?:boolean})
  const f=familyById[family];if(!f)return null;
  return <span className={'family-crest'+(small?' small':'')} style={{'--clan-color':f.color} as CSSProperties} aria-label={f.name+'族徽'}><span>{f.surname}</span></span>;
 }
-export function FamilyPanel({world,selected,onSelect,onPerson}:{world:World;selected:string;onSelect:(id:string)=>void;onPerson:(id:string)=>void}){
- const [query,setQuery]=useState(''),[chapter,setChapter]=useState<'tree'|'contributions'>('tree');
+export function FamilyPanel({world,selected,chapter,onSelect,onPerson}:{world:World;selected:string;chapter:'tree'|'contributions';onSelect:(id:string)=>void;onPerson:(id:string)=>void}){
+ const [query,setQuery]=useState('');
  const person=familyPersonOf(world,selected)!??familyPersonOf(world,world.characterId??'fictional')!,family=familyById[person.family],members=familyMembersOf(world,family.id),standing=familyStanding(world,person.id);
  const ancestors=relativesOf(world,person.id,'ancestors'),descendants=relativesOf(world,person.id,'descendants'),status={ancestor:'先人',roster:'族人',reference:'族人',fictional:'架空'};
- const choose=(id:string)=>{onSelect(id);setQuery('');setChapter('tree');};
+ const choose=(id:string)=>{onSelect(id);setQuery('');};
  const node=(id:string,seen=new Set<string>()):React.ReactNode=>{
   if(seen.has(id))return null;const p=familyPersonOf(world,id)!,next=new Set([...seen,id]),children=parentLinksOf(world).filter(r=>r.parent===id&&familyPersonOf(world,r.child)!.family===family.id);
   return <li key={id}><button aria-pressed={person.id===id} className={'family-node '+(person.id===id?'selected':'')} onClick={()=>choose(id)}><CharacterPortrait characterId={id} name={p.name} world={world} compact/><span className="family-node-copy"><strong>{p.name}</strong><small>{isDeceased(world,id)?'已故':status[p.status]}{lifeOf(world,id)?' · '+ageLabel(world,id):''}{id===world.characterId?' · 你':''}</small></span></button>{children.length>0&&<ul>{children.map(r=>node(r.child,next))}</ul>}</li>;
@@ -28,7 +27,6 @@ export function FamilyPanel({world,selected,onSelect,onPerson}:{world:World;sele
  <label className="family-switch">家族 <select aria-label="选择家族" value={family.id} onChange={e=>choose(familyMembersOf(world,e.target.value).find(p=>p.status==='roster')?.id??familyMembersOf(world,e.target.value)[0].id)}>{families.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
  <div className="family-banner detail-landscape detail-landscape--family"><FamilyCrest family={family.id}/><div><span className="eyebrow">{family.originKind==='设定'?'籍贯':family.originKind} · {family.origin.split('（')[0]}</span><h3>{family.name}</h3><ClanBadge world={world} person={person.id}/><p>{standing.rank.name} · 家族威望 <strong>{standing.total}</strong></p></div></div>
  <section className="family-standing" aria-label="家族威望加成"><progress aria-label="家族等级进度" value={standing.next?standing.total-standing.rank.threshold:1} max={standing.next?standing.next.threshold-standing.rank.threshold:1}/><p>{standing.next?`距「${standing.next.name}」还需 ${standing.next.threshold-standing.total} 威望`:'已达最高家族等级'}</p><div className="family-buffs"><span>外交 <b>+{standing.diplomacy}</b></span><span>每月 1 日压力恢复 <b>+{standing.calm}</b></span></div><small>家族成员共享加成，解锁世业不消耗累计威望。</small></section>
- <DetailTabs label="家族章节" value={chapter} onChange={setChapter} items={[{id:'tree',label:'族谱',icon:'person'},{id:'contributions',label:'威望',icon:'renown'}]}/>
  {chapter==='tree'&&<section id="family-tree"><h3>家族树 <small>世系 · 点击查看族人</small></h3><div className="family-tree" role="group" aria-label={family.name+'家族树'}><ul>{roots.map(p=>node(p.id))}</ul></div>{roots.length>1&&<p className="small-note">{roots.length} 条支系</p>}
  <article className="family-person"><div className="family-person-heading"><CharacterPortrait characterId={person.id} name={person.name} world={world} compact/><div><h3>{person.name}</h3><small>{isDeceased(world,person.id)?'已故':status[person.status]} · 个人累计贡献 {world.families?.prestige[person.id]??0}</small></div></div>{person.status!=='ancestor'&&<p>{person.description.split('。')[0]}。</p>}<RelationshipSummary world={world} person={person.id} onPerson={onPerson}/><button className="primary" onClick={()=>onPerson(person.id)}>人物详情 →</button>
  <h4>祖先 · {ancestors.length} 位</h4><div className="family-relatives">{ancestors.map(p=><button key={p.id} onClick={()=>onPerson(p.id)}><CharacterPortrait characterId={p.id} name={p.name} world={world} compact/><span>{p.name}</span></button>)}{!ancestors.length&&<small>父母不详。</small>}</div>
