@@ -136,3 +136,74 @@ dialog.territory-construction-dialog.territory-construction-dialog>header h2{mar
 @media(max-height:780px){.territory-construction-dialog.territory-construction-dialog .construction-levels .building-artwork{max-width:96px}.construction-art-summary>.building-artwork{width:125px}.construction-levels strong{font-size:17px}.construction-levels small{font-size:11px}.construction-quote-metrics{margin:5px 0}.construction-quote-metrics b{font-size:19px}.construction-live-quote{padding-top:6px}dialog.territory-construction-dialog.territory-construction-dialog>.action-detail-body{gap:20px}.territory-construction-dialog.territory-construction-dialog .construction-art-summary h3{font-size:22px}}
 
 .construction-live-quote>small{display:block;margin-top:7px}.construction-live-quote>small[role=status]{color:#dcc084!important}.construction-live-quote .estate-plot-cost{justify-content:flex-start;gap:12px}.construction-live-quote .estate-plot-cost b{font:23px var(--serif)}
+
+/* City craftsmanship: lacquer, woven ink and restrained bronze inlays. */
+.focused-shell .atlas-map .atlas-place.atlas-place{padding:3px;gap:0;background:linear-gradient(120deg,#34443a,#17281f 65%);border:1px solid #9f895e;border-radius:2px;box-shadow:0 3px 7px #07140db3,inset 0 0 0 1px #101e17,inset 0 0 0 2px #b69b5c3b;isolation:isolate}
+.focused-shell .atlas-map .atlas-place.atlas-place:has(.is-selected){border-color:#e4c985;box-shadow:0 3px 10px #07140dcc,0 0 0 2px #2d382a,inset 0 0 0 1px #e4c98560}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label{min-height:32px;margin:0;padding:3px 12px 3px 10px;border:0;border-left:1px solid #d1b87638;border-radius:0;background:linear-gradient(105deg,#e3d6b8,#f1e8d0 55%,#cec09b);box-shadow:inset 0 1px #fff7dfaa,inset 0 -1px #67583855;color:#303a2b;text-shadow:0 1px #fff4dc80;font-size:14px;font-weight:600;letter-spacing:2px;line-height:1.25;transition:background .15s,color .15s}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label small{font:10px/1.5 var(--serif);letter-spacing:1px;color:#6f6b50}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label.capital{font-size:17px;letter-spacing:3px;padding-inline:12px}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label:is(:hover,.is-selected){background:linear-gradient(110deg,#354737,#1c3025);color:#f3dfab;text-shadow:0 1px 2px #07160f;outline:none;box-shadow:inset 0 1px #c6ae6b55,inset 0 -1px #c6ae6b55}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label:is(:hover,.is-selected) small{color:#caba8d}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-city-realm{width:27px;flex-basis:27px;height:34px;background:none;border:0;margin-inline:2px;filter:drop-shadow(0 1px 1px #030b06)}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-city-realm img{width:25px;height:32px}
+.focused-shell .atlas-map .atlas-place.atlas-place .atlas-governor{border:1px solid #c4ad78;border-radius:1px;box-shadow:0 0 0 1px #111e18;margin-right:3px;overflow:hidden}
+.focused-shell .atlas-map .atlas-place.atlas-place>.atlas-estate-marker{width:30px;height:30px;flex-basis:30px;margin:0 1px 0 5px;border-color:#a68a53;background:radial-gradient(circle at 40% 30%,#4b533a,#14251c);box-shadow:inset 0 0 0 2px #16271e,inset 0 0 0 3px #a58b4c66}
+.focused-shell .atlas-map .atlas-place.atlas-place button:focus-visible{outline:2px solid #ffe1a1;outline-offset:3px;z-index:3}
+
+.focused-shell .place-panel.territory-window.territory-window{--territory-dock:280px;--craft-line:#ad915455;--craft-gold:#d5b778;--craft-muted:#b1ae99;padding-inline:30px}
+.territory-window.territory-window::before{background-image:linear-gradient(90deg,#293a2825,transparent 35%,#71613c0c),url('/art/interface/person-ink-panel.svg?v=3')}
+.territory-window.territory-window .location-development::after{content:'';position:absolute;inset:46px 30px auto;height:1px;background:linear-gradient(90deg,#b9a06a88,transparent 28%,#b9a06a55 31%,#b9a06a55 91%,transparent);pointer-events:none}
+.territory-window.territory-window .location-development>.city-summary{border:0;padding-top:13px;column-gap:5px}
+.territory-window.territory-window .city-identity-copy h2{font-weight:500;letter-spacing:3px;color:#ebd59c;text-shadow:0 1px 3px #000;margin-bottom:8px}
+.territory-window.territory-window .city-identity-meta{display:flex;flex-wrap:wrap;gap:2px 7px;color:#bdbba6}
+.territory-window.territory-window .city-summary-resources{padding:2px 0 0 12px;gap:4px 12px;border-left:1px solid var(--craft-line)}
+.focused-shell .territory-window.territory-window .city-summary-resource{min-height:49px;gap:6px}
+.territory-window.territory-window .city-summary-resource small{color:#aaa993;letter-spacing:.5px;font-size:10px}
+.territory-window.territory-window .city-summary-resource strong{font-size:21px;font-weight:400;line-height:1.5;font-variant-numeric:tabular-nums;color:#e7d8ad}
+.territory-window.territory-window .city-summary .position-image{border:1px solid #a98f5f;box-shadow:0 0 0 2px #141e16,inset 0 0 0 1px #eed49b44;border-radius:2px}
+.focused-shell .territory-window.territory-window .city-icon-tabs>button{position:relative;font-size:15px;gap:7px;border-right:0;margin-right:2px;transition:color .15s;letter-spacing:1px}
+.focused-shell .territory-window.territory-window .city-icon-tabs>button[aria-pressed=true]{background:linear-gradient(#e9dfc3,#c8b788);color:#273021;box-shadow:inset 0 1px #fff6d3,inset 0 -3px #9a7c40;text-shadow:0 1px #f9edc280}
+.focused-shell .territory-window.territory-window .city-icon-tabs>button[aria-pressed=false]:hover{color:#f1d99f!important;box-shadow:inset 0 -2px #b59659;background:#b09b5920!important}
+.territory-window.territory-window .territory-building-strip{gap:18px;padding-top:8px}
+.territory-window.territory-window .territory-building-strip>button{position:relative;padding:2px 15px 9px;flex-basis:240px;border:1px solid transparent;background:radial-gradient(ellipse at 50% 58%,#8a80421a,transparent 65%);transition:border-color .15s}
+.territory-window.territory-window .territory-building-strip>button:hover{border-color:#bda36355;background:radial-gradient(ellipse at 50% 58%,#b3a4652b,transparent 70%)}
+.territory-window.territory-window .territory-building-strip .building-artwork{height:calc(var(--territory-dock) - 116px);max-height:170px;mask-image:radial-gradient(ellipse,#000 53%,transparent 74%);filter:contrast(1.06) saturate(.82)}
+.territory-window.territory-window .territory-building-strip strong{font-size:20px;letter-spacing:4px;color:#e6d1a0;line-height:1.45}
+.territory-window.territory-window .territory-building-strip small{font:11px/1.7 var(--serif);letter-spacing:2px;color:#a7a48c;padding-bottom:0}
+.territory-window.territory-window .territory-building-strip button[aria-pressed=true]{border-color:#bda36388}
+.territory-window.territory-window .territory-building-strip button[aria-pressed=true] .building-artwork{border:0;box-shadow:none}
+.territory-window.territory-window .territory-image-card{padding:0 10px 8px;border:1px solid #a7905733;background:linear-gradient(0deg,#52613a15,transparent 72%);box-shadow:inset 0 -1px #c6b07822}
+.territory-window.territory-window .territory-image-card:hover{border-color:#bba066;background-color:#a5924c0c}
+.territory-window.territory-window .territory-image-card>strong{font-size:24px;letter-spacing:2px;margin-top:0}
+.territory-window.territory-window .territory-card-meta{color:#aaa791;font-size:11px;letter-spacing:.4px}
+.territory-window.territory-window .territory-card-foot{font-size:12px;color:#dfca98;border-color:#b19b5b44}
+.territory-window.territory-window .territory-card-art{min-height:75px;height:110px}
+.focused-shell .territory-window.territory-window .location-development:not([data-tab=finance]):not([data-tab=build])>.territory-page-content{background:linear-gradient(125deg,#31403122,transparent 50%),repeating-linear-gradient(0deg,#c2be9d03 0 1px,transparent 1px 4px),#111c17fa;border:1px solid #9c855866;box-shadow:inset 0 0 0 3px #0a1510,inset 0 0 0 4px #ac95552b,0 10px 30px #04110966;padding:27px 34px}
+
+/* Every territorial close target uses a drawn icon, not a font multiplication sign. */
+.territory-window.territory-window .territory-window-chrome>button,.territory-window.territory-window .territory-page-close,dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header>button,dialog.action-detail-dialog.paper-dialog.treasury-window-dialog>header>button{width:36px;height:36px;min-width:36px;min-height:36px;flex:none;padding:0;border:1px solid #a9915d;border-radius:50%;background:radial-gradient(circle at 35% 25%,#425040,#16291f 65%)!important;box-shadow:inset 0 0 0 2px #14241b,inset 0 0 0 3px #c5ad6b4d,0 2px 5px #020b0799;color:#e8d5a4;transition:box-shadow .15s,border-color .15s;line-height:1}
+.territory-window.territory-window .territory-window-chrome{top:4px;gap:9px;right:25px}
+.territory-window.territory-window .territory-window-chrome>button:hover,.territory-window.territory-window .territory-page-close:hover,dialog.territory-construction-dialog>header>button:hover,dialog.treasury-window-dialog>header>button:hover{border-color:#ead6a0;box-shadow:inset 0 0 0 2px #14241b,inset 0 0 0 3px #e9d2a188,0 0 8px #d3b76c33}
+.territory-window.territory-window button[aria-label="关闭辖区详情"],.territory-window.territory-window .territory-page-close,dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header>button,dialog.action-detail-dialog.paper-dialog.treasury-window-dialog>header>button{font-size:0!important;display:grid;place-items:center}
+.territory-window.territory-window button[aria-label="关闭辖区详情"]::after,.territory-window.territory-window .territory-page-close::after,dialog.territory-construction-dialog>header>button::after,dialog.treasury-window-dialog>header>button::after{content:'';display:block;width:15px;height:15px;background:#e8d5a4;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4 4l12 12M16 4L4 16' stroke='black' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat}
+dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header{display:flex;align-items:center;gap:20px}
+dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header h2{flex:1;text-align:left;font-size:27px;letter-spacing:3px;color:#ead9ac!important}
+dialog.territory-construction-dialog.territory-construction-dialog>.action-detail-body{background:radial-gradient(ellipse at 22% 50%,#4d5c3317,transparent 60%)}
+.territory-construction-dialog.territory-construction-dialog .construction-levels .building-artwork{border-color:#97814f;background-color:#131f17;box-shadow:0 0 0 3px #111a13,0 0 0 4px #a38b4930}
+.territory-construction-dialog.territory-construction-dialog .construction-levels .is-next .building-artwork{border:2px solid #ddc283;box-shadow:0 0 0 3px #17251a,0 0 0 4px #c6ae6466,0 4px 18px #0008}
+@media(max-height:780px){.focused-shell .place-panel.territory-window.territory-window{--territory-dock:235px}.territory-window.territory-window .territory-card-art{min-height:65px;height:85px}.territory-window.territory-window .city-summary-resource strong{font-size:19px}.territory-window.territory-window .territory-building-strip .building-artwork{height:113px}dialog.action-detail-dialog.paper-dialog.territory-construction-dialog{bottom:258px;height:calc(100svh - 360px)}}
+@media(max-width:1100px){.focused-shell .place-panel.territory-window.territory-window{padding-inline:16px}.territory-window.territory-window .city-summary-resources{padding-left:7px;gap:2px 5px}.focused-shell .territory-window.territory-window .city-icon-tabs>button{font-size:13px;gap:4px;letter-spacing:0}.territory-window.territory-window .territory-window-chrome{right:17px;gap:5px}}
+@media(max-width:720px){.focused-shell .place-panel.territory-window.territory-window{--territory-dock:260px}.territory-window.territory-window .territory-window-chrome{top:-37px}.territory-window.territory-window .location-development::after{display:none}.territory-window.territory-window .city-summary-resources{border:0}.territory-window.territory-window .city-summary-resource strong{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.territory-window.territory-window button,.focused-shell .atlas-map .atlas-place.atlas-place button{transition:none}}
+.territory-window.territory-window::before{background-image:url('/art/territory/ink-weave.svg'),linear-gradient(90deg,#293a2825,transparent 35%,#71613c0c),url('/art/interface/person-ink-panel.svg?v=3');background-size:96px 96px,100% 100%,100% 100%;background-repeat:repeat,no-repeat,no-repeat}
+dialog.territory-construction-dialog.territory-construction-dialog::before,.ink-treasury-book::before{background-image:url('/art/territory/ink-weave.svg'),url('/art/interface/person-ink-panel.svg?v=3');background-size:96px 96px,100% 100%;background-repeat:repeat,no-repeat}
+dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header>button,dialog.action-detail-dialog.paper-dialog.treasury-window-dialog>header>button{border-radius:50%!important}
+dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header{position:relative;padding-right:58px}
+dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header h2{width:auto;max-width:none}
+dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header>button{position:absolute;top:0;right:0}
+@media(min-height:781px){dialog.action-detail-dialog.paper-dialog.territory-construction-dialog{bottom:304px;height:min(570px,calc(100svh - 410px))}.territory-construction-dialog.territory-construction-dialog .construction-levels .building-artwork{max-width:150px}}
+.territory-window.territory-window .territory-building-strip .building-artwork{mix-blend-mode:lighten}
+.territory-window.territory-window .territory-building-strip>button{background:none}
+.territory-window.territory-window .territory-building-strip>button:hover{background:#b3a4650a}
+@media(max-height:780px){dialog.action-detail-dialog.paper-dialog.territory-construction-dialog{height:calc(100svh - 340px);padding-top:18px}.territory-construction-dialog.territory-construction-dialog .construction-levels .building-artwork{max-width:90px}}
