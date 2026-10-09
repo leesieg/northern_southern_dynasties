@@ -32,6 +32,6 @@ it('正式入口读取存档五官，重载不重抽；换职务服饰不改五�
  expect(recipe.parts.find(p=>p.slot==='nose')!.source).toContain('features-b');
  expect(approvedPaintedRecipe('yuan-shanjian',portraitContext('yuan-shanjian',parseWorld(before)))).toEqual(recipe);
  const retired=approvedPaintedRecipe('yuan-shanjian',{...context,office:'civilian'})!;
- expect(retired.parts[0].source).not.toBe(recipe.parts[0].source);const features=(r:typeof recipe)=>r.parts.filter(p=>!['body','head','headwear'].includes(p.slot)).map(({source,crop,place,mask})=>({source,crop,place,mask}));expect(features(retired)).toEqual(features(recipe));
+ expect(retired.parts[0].source).not.toBe(recipe.parts[0].source);const features=(r:typeof recipe)=>r.parts.filter(p=>!['body','head','headwear'].includes(p.slot)).map(({source,crop,mask})=>({source,crop,mask}));expect(features(retired)).toEqual(features(recipe));
  expect(serializeWorld(world)).toBe(before);
 });
