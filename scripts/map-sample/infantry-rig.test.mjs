@@ -18,6 +18,18 @@ beforeAll(async()=>{
  model.scene.traverse(o=>{if(o.isSkinnedMesh)mesh=o;});
 });
 
+it('relaxes the arms at rest and swings the hands opposite the advancing feet',()=>{
+ const mixer=new AnimationMixer(model.scene),hand=model.scene.getObjectByName('HandL'),foot=model.scene.getObjectByName('FootL');
+ const sample=(time)=>{mixer.setTime(time);model.scene.updateMatrixWorld(true);return {hand:hand.getWorldPosition(new Vector3()),foot:foot.getWorldPosition(new Vector3())};};
+ mixer.clipAction(model.animations.find(a=>a.name==='Idle')).play();
+ expect(Math.abs(sample(0).hand.x)).toBeLessThan(.30);
+ mixer.stopAllAction();mixer.clipAction(model.animations.find(a=>a.name==='Walk')).play();
+ const contact=sample(0),opposite=sample(.6);
+ expect(contact.foot.z-opposite.foot.z).toBeGreaterThan(.25);
+ expect(contact.hand.z-opposite.hand.z).toBeLessThan(-.15);
+ mixer.stopAllAction();mixer.uncacheRoot(model.scene);
+});
+
 it('preserves the low mesh, complete embedded PBR material and four normalized skin influences',()=>{
  expect(bytes.length).toBeLessThan(6_000_000);expect(doc.skins).toHaveLength(1);expect(doc.skins[0].joints).toHaveLength(29);
  expect(doc.images).toHaveLength(3);expect(doc.images.every(i=>i.bufferView!==undefined&&!i.uri)).toBe(true);

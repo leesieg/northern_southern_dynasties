@@ -105,7 +105,10 @@ modifier=mesh.modifiers.new('Infantry skin','ARMATURE');modifier.object=rig;mesh
 def local(name,translation=(0,0,0),rotation=(0,0,0)):
  pb=rig.pose.bones[name];pb.location=rest[name].to_quaternion().inverted() @ Vector(translation)
  from mathutils import Euler
- pb.rotation_quaternion=Euler(rotation,'XYZ').to_quaternion();pb.scale=(1,1,1)
+ # Author anatomical rotations in the character frame, not each bone's roll axes.
+ # In particular, arm swing must flex the shoulder rather than twist the humerus.
+ basis=rest[name].to_quaternion()
+ pb.rotation_quaternion=basis.inverted() @ Euler(rotation,'XYZ').to_quaternion() @ basis;pb.scale=(1,1,1)
 def world_pose():
  result={}
  for name,(_,_,parent) in bones.items():
@@ -120,36 +123,52 @@ def point_bone(name,head,tail,world):
  rig.pose.bones[name].matrix_basis=basis;world[name]=wanted
 
 def foot_path(phase):
- # 60% stance: foot travels backwards under a root controlled by the game.
- if phase<.60:return -.145+.29*phase/.60,0,0
- t=(phase-.60)/.40;s=t*t*(3-2*t)
- return .145-.29*s,.095*math.sin(math.pi*t)**1.25,.10*math.sin(math.pi*t)
+ # Constant-speed support prevents skating when the game translates the root.
+ # Hermite swing matches support velocity at both ends; lift eases in and out.
+ stance=.62;stride=.38;speed=stride/stance
+ if phase<stance:
+  pitch=-.16*(1-smooth(0,.10,phase))+.30*smooth(.46,stance,phase)
+  return -.19+speed*phase,0,pitch
+ u=(phase-stance)/(1-stance)
+ h00=2*u**3-3*u*u+1;h10=u**3-2*u*u+u;h01=-2*u**3+3*u*u;h11=u**3-u*u
+ y=h00*.19+h10*speed*(1-stance)+h01*(-.19)+h11*speed*(1-stance)
+ return y,.048*math.sin(math.pi*u)**2,.30*(1-smooth(0,.45,u))-.16*smooth(.38,1,u)
+
+# Contact heights use the actual boot sole, including its authored unevenness.
+sole={side:[v.co-Vector((sign*.112,0,.09)) for v in mesh.data.vertices if v.co.z<.06 and v.co.x*sign>0] for side,sign in [('L',1),('R',-1)]}
 def pose(kind,t):
  for n in bones:local(n)
  wave=math.sin(math.tau*t)
  if kind=='Idle':
-  local('Hips',(0,0,.0025*wave));local('Spine',rotation=(.008*wave,0,.005*wave));local('Chest',rotation=(.006*wave,0,0));local('Head',rotation=(0,.012*wave,.008*wave));local('Plume',rotation=(.015*wave,0,0))
+  # Offset breathing phases: chest, shoulders and head should not pulse in unison.
+  breath=math.sin(math.tau*t-.4)
+  local('Hips',(.002*wave,0,-.009+.0018*breath));local('Spine',rotation=(.003*breath,.002*wave,0));local('Chest',rotation=(.004*breath,0,.003*wave));local('Head',rotation=(-.002*breath,.004*math.sin(math.tau*t+.7),-.002*wave));local('Plume',rotation=(.008*math.sin(math.tau*t-.8),0,0))
   for side,sign in [('L',1),('R',-1)]:
-   local('UpperArm.'+side,rotation=(.007*wave,0,sign*.006*wave));local('Forearm.'+side,rotation=(.006*wave,0,0))
+   local('UpperArm.'+side,rotation=(.025+.004*breath,sign*.26,0));local('Forearm.'+side,rotation=(-.12+.004*math.sin(math.tau*t-.6),0,0));local('Hand.'+side,rotation=(.035,0,0))
  else:
-  local('Hips',(0,0,-.032+.006*math.cos(2*math.tau*t)),(.007*wave,0,.012*wave))
-  local('Spine',rotation=(.018,0,-.018*wave));local('Chest',rotation=(0,0,-.013*wave));local('Head',rotation=(-.018,0,.015*wave));local('Plume',rotation=(.035*math.sin(math.tau*t+.6),0,0))
+  # Low in double support, high when the torso passes over the planted foot.
+  # Lateral transfer follows the support leg; shoulders counter the pelvis turn.
+  turn=math.cos(math.tau*t)
+  local('Hips',(.014*wave,0,-.023-.013*math.cos(2*math.tau*t)),(.012,.018*wave,.032*turn))
+  local('Spine',rotation=(.012,-.014*wave,-.045*turn));local('Chest',rotation=(0,-.008*wave,-.022*turn));local('Head',rotation=(-.016,.004*wave,.027*turn));local('Plume',rotation=(.020*math.sin(2*math.tau*t-.7),0,0))
   for side,sign in [('L',1),('R',-1)]:
-   local('UpperArm.'+side,rotation=(sign*.19*wave,0,0));local('Forearm.'+side,rotation=(-.07+sign*.025*wave,0,0));local('Hand.'+side,rotation=(sign*.02*wave,0,0))
+   arm=sign*math.cos(math.tau*t-.10)
+   local('UpperArm.'+side,rotation=(.025+.24*arm,sign*.26,sign*.008*wave));local('Forearm.'+side,rotation=(-.14+.055*arm,0,0));local('Hand.'+side,rotation=(.035+.015*sign*math.cos(math.tau*t-.45),0,0))
    phase=(t+(0 if side=='L' else .5))%1
    for panel in ['Front','Back','Side']:
-    local('Skirt'+panel+'.'+side,rotation=(.08*math.sin(math.tau*phase-.4),0,sign*.018*math.sin(math.tau*phase)))
+    local('Skirt'+panel+'.'+side,rotation=(-.095*math.cos(math.tau*phase-.22),0,sign*.012*math.sin(math.tau*phase-.22)))
  world=world_pose()
  for side,sign in [('L',1),('R',-1)]:
   phase=(t+(0 if side=='L' else .5))%1
   y,lift,tilt=foot_path(phase) if kind=='Walk' else (0,0,0)
   hip=(world['Hips'] @ rest['Hips'].inverted()) @ bones['Thigh.'+side][0]
-  ankle=Vector((sign*.112,y,.09+lift));a=(bones['Thigh.'+side][1]-bones['Thigh.'+side][0]).length;b=(bones['Shin.'+side][1]-bones['Shin.'+side][0]).length
+  delta_rot=Quaternion((1,0,0),tilt)
+  sole_height=-min((delta_rot@p).z for p in sole[side])
+  ankle=Vector((sign*.112,y,sole_height+lift));a=(bones['Thigh.'+side][1]-bones['Thigh.'+side][0]).length;b=(bones['Shin.'+side][1]-bones['Shin.'+side][0]).length
   delta=ankle-hip;d=min(delta.length,a+b-.0001);axis=delta.normalized()
   along=(a*a-b*b+d*d)/(2*d);bend=math.sqrt(max(0,a*a-along*along));forward=Vector((0,-1,0));forward=(forward-axis*forward.dot(axis)).normalized();knee=hip+axis*along+forward*bend
   point_bone('Thigh.'+side,hip,knee,world);point_bone('Shin.'+side,knee,ankle,world)
-  # Keep the sole level throughout stance; small toe lift only during airborne swing.
-  delta_rot=Quaternion((1,0,0),-tilt)
+  # Heel contact rolls into full support, then toe-off, instead of a flat raised boot.
   foot_tail=ankle+delta_rot@(bones['Foot.'+side][1]-bones['Foot.'+side][0])
   point_bone('Foot.'+side,ankle,foot_tail,world)
   local('Toe.'+side)
