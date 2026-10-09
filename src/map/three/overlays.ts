@@ -1,5 +1,7 @@
 import {landscapeMaterial} from './landscapeMaterial';
 import {smoothGroundPath,pathSections} from './landscapePaths';
+import {bridgeGeometry,bridgeMaterial} from './bridgeGeometry';
+import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import clipping from 'polygon-clipping';
 import {BufferGeometry,CanvasTexture,Color,DoubleSide,Float32BufferAttribute,Group,Mesh,MeshBasicMaterial,ShapeUtils,Vector2,type Texture} from 'three';
 import {createExpression} from '@maplibre/maplibre-gl-style-spec';
@@ -26,7 +28,7 @@ export class CampaignOverlays{
    if(zoom>6.2&&layer.type==='fill'&&['territory-hover','territory-selected','hierarchy-selected'].includes(layer.id))continue;
    if(terrainFills&&layer.type==='fill')continue;
    const data=sources.get(layer.source!),paint=layer.paint??{};if(!data)continue;
-   const positions:number[]=[],colors:number[]=[];
+   const positions:number[]=[],colors:number[]=[],bridges:BufferGeometry[]=[];
    const vertex=(p:Position,color:Color,alpha:number,elevation?:number)=>{const xy=projectGround(p[0],p[1]);positions.push(xy.x,elevation??((this.height(p[0],p[1])??0)+(layer.source==='roads'?.045+order*.005:.15+order*.015)),xy.z);colors.push(color.r,color.g,color.b,alpha);};
    for(const f of data.features){const state=states.get(layer.source+':'+(f.id??f.properties?.id))??{};if(layer.filter&&!evaluate(layer.filter,f,zoom,state))continue;
     const opacity=Number(evaluate(paint[layer.type+'-opacity']??1,f,zoom,state));if(opacity<=.001)continue;
@@ -52,22 +54,25 @@ export class CampaignOverlays{
        const roadWidth=Math.min(width,.30),roadColor=flat?color:new Color('#96805a');
        const extent=bounds?[projectGround(bounds[0],bounds[1]),projectGround(bounds[2],bounds[3])]:null;
        const inView=(i:number)=>!extent||!(Math.max(sections[i-1].x,sections[i].x)<extent[0].x-3||Math.min(sections[i-1].x,sections[i].x)>extent[1].x+3||Math.max(sections[i-1].z,sections[i].z)<extent[1].z-3||Math.min(sections[i-1].z,sections[i].z)>extent[0].z+3);
-       const deck=new Map<number,number>();
+       const deck=new Set<number>();
        if(!flat){const water=sections.map(p=>this.riverHeight((p.x/WORLD_KM+ORIGIN.x)*360-180,Math.atan(Math.sinh(Math.PI*(1-2*(p.z/WORLD_KM+ORIGIN.y))))*180/Math.PI));
-        for(let i=0;i<water.length;i++){if(water[i]===null)continue;const start=i;while(i+1<water.length&&water[i+1]!==null)i++;if(sections[i].distance-sections[start].distance>8)continue;
-         const level=Math.max(...water.slice(start,i+1).filter((h):h is number=>h!==null))+.18;
-         for(let j=Math.max(0,start-1);j<=Math.min(sections.length-1,i+1);j++)deck.set(j,level);
+        const groundAt=(x:number,z:number)=>this.height((x/WORLD_KM+ORIGIN.x)*360-180,Math.atan(Math.sinh(Math.PI*(1-2*(z/WORLD_KM+ORIGIN.y))))*180/Math.PI);
+        for(let i=0;i<water.length;i++){if(water[i]===null)continue;const start=i;while(i+1<water.length&&water[i+1]!==null)i++;if(start===0||i===water.length-1||sections[i].distance-sections[start].distance>8)continue;
+         const first=water[start-2]===null?start-2:start-1,last=water[i+2]===null?i+2:i+1,a=sections[first],b=sections[last],ah=groundAt(a.x,a.z),bh=groundAt(b.x,b.z);
+         if(ah===null||bh===null)continue;
+         const level=Math.max(...water.slice(start,i+1).filter((h):h is number=>h!==null),ah,bh)+.27;
+         const stations=sections.slice(first,last+1).map((p,j)=>({...p,y:j===0?ah+.05:j===last-first?bh+.05:level+.035*Math.sin(Math.PI*j/(last-first))}));
+         for(let j=first+1;j<=last;j++)deck.add(j);
+         if(stations.some((_,j)=>j>0&&inView(first+j)))bridges.push(bridgeGeometry(stations,groundAt,Math.max(.42,roadWidth*1.65)));
         }
        }
        const bands=[-.88,-.53,-.29,-.10,.10,.29,.53,.88];
-       const rows=sections.map((p,index)=>bands.map((band,j)=>{
+       const rows=sections.map(p=>bands.map((band,j)=>{
         const wear=1+.10*Math.sin(p.distance*.6)+.06*Math.sin(p.distance*2.1),x=p.x+p.nx*roadWidth*band*wear,z=p.z+p.nz*roadWidth*band*wear;
         const c=roadColor.clone().multiplyScalar(j===2||j===5?.82:j===3||j===4?1.07:1);
-        return {ll:[(x/WORLD_KM+ORIGIN.x)*360-180,Math.atan(Math.sinh(Math.PI*(1-2*(z/WORLD_KM+ORIGIN.y))))*180/Math.PI],alpha:j===0||j===bands.length-1?0:opacity,color:c,elevation:deck.get(index)};
+        return {ll:[(x/WORLD_KM+ORIGIN.x)*360-180,Math.atan(Math.sinh(Math.PI*(1-2*(z/WORLD_KM+ORIGIN.y))))*180/Math.PI],alpha:j===0||j===bands.length-1?0:opacity,color:c};
        }));
-       for(let i=1;i<rows.length;i++)if(inView(i))for(let j=0;j<bands.length-1;j++)for(const p of [rows[i-1][j],rows[i][j],rows[i-1][j+1],rows[i-1][j+1],rows[i][j],rows[i][j+1]])vertex(p.ll,p.color,p.alpha,p.elevation);
-       // Timber rails along short road/river crossings; visual infrastructure only.
-       for(let i=1;i<rows.length;i++)if(inView(i)&&deck.has(i-1)&&deck.has(i)){for(const side of [1,6]){const a=rows[i-1][side],b=rows[i][side],y=deck.get(i)!;for(const [p,h] of [[a,y],[b,y],[a,y+.16],[a,y+.16],[b,y],[b,y+.16]] as const)vertex(p.ll,new Color('#62523b'),1,h);}}
+       for(let i=1;i<rows.length;i++)if(inView(i)&&!deck.has(i))for(let j=0;j<bands.length-1;j++)for(const p of [rows[i-1][j],rows[i][j],rows[i-1][j+1],rows[i-1][j+1],rows[i][j],rows[i][j+1]])vertex(p.ll,p.color,p.alpha);
       }
       continue;
      }
@@ -76,6 +81,7 @@ export class CampaignOverlays{
      }
     }else if(layer.type==='circle'&&f.geometry.type==='Point'){const p=f.geometry.coordinates,at=projectGround(p[0],p[1]),radius=Number(evaluate(paint['circle-radius']??4,f,zoom,state))*unitsPerPixel;for(let i=0;i<32;i++){for(const angle of [null,i*Math.PI/16,(i+1)*Math.PI/16]){const x=at.x+(angle===null?0:Math.cos(angle)*radius),z=at.z+(angle===null?0:Math.sin(angle)*radius);positions.push(x,(this.height(p[0],p[1])??0)+.4,z);colors.push(color.r,color.g,color.b,opacity);}}}
    }
+   if(bridges.length){const geometry=mergeGeometries(bridges)!;bridges.forEach(g=>g.dispose());const mesh=new Mesh(geometry,bridgeMaterial());mesh.name='Campaign timber bridges';mesh.castShadow=mesh.receiveShadow=true;this.root.add(mesh);}
    if(!positions.length)continue;const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(positions,3));geometry.setAttribute('color',new Float32BufferAttribute(colors,4));geometry.computeVertexNormals();const params={vertexColors:true,transparent:true,depthWrite:false,depthTest:!(flat&&zoom<=6.2),side:DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1};const material=layer.source==='roads'&&!flat?Object.assign(landscapeMaterial('Campaign earth trail',false,this.detailMap()),params):new MeshBasicMaterial(params);const mesh=new Mesh(geometry,material);mesh.receiveShadow=layer.source==='roads';mesh.renderOrder=order++;this.root.add(mesh);
   }
  }
