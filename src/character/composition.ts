@@ -1,5 +1,6 @@
 import {personCulture} from '../core/culture';
 import {armyCommander} from '../core/mobility';
+import {portraitRank} from './portraitRank';
 import {expandedPersonById} from '../data/expandedPeople';
 import {ageOf,ageAt,lifeOf} from '../core/lifeState';
 import type {PortraitLife} from './portraitLife';
@@ -20,9 +21,14 @@ export function portraitContext(id:string,world?:World):PortraitContext {
  const stored=world?.identities?.people[id]??fallback(),identity=stored.genome.facial?stored:{...stored,genome:applyPortraitProfile({...stored.genome,facial:fallback().genome.facial},id)};
  let office:PortraitOffice=c?.role==='ruler'?'ruler':(c?.role??expandedPersonById[id]?.role)==='commander'?'commander':c?.role==='regent'?'governor':'civilian';
  const retired=world?.social?.lineage.slice(0,-1).some(p=>p.id===id);
- if(world?.realm?.governments){const governments=Object.values(world.realm.governments.realms);office=governments.some(g=>g.ruler===id)?'ruler':world.realm.armies.some(a=>armyCommander(world,a)===id||a.owner===id)?'commander':governments.some(g=>g.executives.includes(id)||Object.values(g.court?.ministries??{}).includes(id))||Object.values(world.realm.cities).some(city=>city.governor===id)||Object.values(world.realm.local?.seats??{}).some(seat=>seat.holder===id)?'governor':'civilian';}
+ // Reuse active offices (including historical central seats) and the frame's
+ // precedence: a regent's army ownership must not replace their court dress.
+ if(world?.realm?.governments){
+  const rank=portraitRank(id,world),executive=Object.values(world.realm.governments.realms).some(g=>g.executives.includes(id));
+  office=rank==='sovereign'?'ruler':rank==='official'&&executive?'governor':rank==='commander'||world.realm.armies.some(a=>armyCommander(world,a)===id)?'commander':rank==='official'?'governor':'civilian';
+ }
  if(retired)office='civilian';
- else if(office==='civilian'&&world?.realm&&(Object.values(world.realm.cities).some(city=>city.governor===id)||Object.values(world.realm.local?.seats??{}).some(seat=>seat.holder===id)))office='governor';
+ else if(office==='civilian'&&world?.realm&&!world.realm.governments&&(Object.values(world.realm.cities).some(city=>city.governor===id)||Object.values(world.realm.local?.seats??{}).some(seat=>seat.holder===id)))office='governor';
  const age=ageOf(world,id),life=lifeOf(world,id);
  return {life:age===null?undefined:{age,baselineAge:ageAt(undefined,id)??0,sickness:life?.illness?.severity??0,deceased:!!life?.death,beard:identity.sex==='male'&&!!portraitProfiles[id]?.beard&&portraitProfiles[id].beard!=='none'},identity:{...identity,cultureId:personCulture(world,id)},office,headwear:portraitProfiles[id]?.headwear,maturity:age===null?portraitProfiles[id]?.maturity??.35:Math.max(0,Math.min(1,(age-12)/75)),beard:portraitProfiles[id]?.beard??'none',traits:world?.social?.traits[id]??defaultTraits(id),stress:world?.characterId===id?world.social?.stress??0:0};
 }

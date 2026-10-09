@@ -23,24 +23,24 @@ describe('完整成人底图与保留的儿童组合',()=>{
    expect(handX).toBeGreaterThan(0);expect(handX).toBeLessThan(1);
   }
  });
- it.each(['gao-huan','su-chuo','dugu-xin','wang-lingbin','guest-west','lou-zhaojun'])('%s 成人不再拆头换身，任职不改变整幅比例',id=>{
+ it.each(['gao-huan','su-chuo','dugu-xin','wang-lingbin','guest-west','lou-zhaojun'])('%s 常服与军旅保留原完整文化肖像',id=>{
   const c=portraitContext(id);
   for(const cultureId of ['han','xianbei'] as const){
    const civilian=approvedPaintedRecipe(id,{...c,office:'civilian',identity:{...c.identity,cultureId}});
-   for(const office of ['governor','commander'] as const)expect(approvedPaintedRecipe(id,{...c,office,identity:{...c.identity,cultureId}})).toEqual(civilian);
+   expect(approvedPaintedRecipe(id,{...c,office:'commander',identity:{...c.identity,cultureId}})).toEqual(civilian);
    expect(civilian.parts[0].place).toEqual({x:0,y:0,width:1,height:1});
    expect(civilian.parts.some(p=>p.slot==='headwear'||p.removePaper)).toBe(false);
    expect(civilian.parts.find(p=>p.slot==='head')!.mask).toBeUndefined();
    expect(()=>validatePaintedRecipe(civilian)).not.toThrow();
   }
  });
- it('汉式完整原画、君主礼服和其他文化保留，不以鲜卑图冒充',()=>{
+ it('汉式及其他文化常服保留原画，不以鲜卑图冒充；君主使用新礼服',()=>{
   for(const cultureId of ['han','gaoche','jie','unknown'] as const){
-   const c=portraitContext('gao-huan'),context={...c,identity:{...c.identity,cultureId}},raw=composePaintedRoster('gao-huan',context);
+   const c=portraitContext('gao-huan'),context={...c,office:'civilian' as const,identity:{...c.identity,cultureId}},raw=composePaintedRoster('gao-huan',context);
    expect(approvedPaintedRecipe('gao-huan',context)).toEqual(raw);
   }
   const c=portraitContext('gao-huan'),context={...c,office:'ruler' as const};
-  expect(approvedPaintedRecipe('gao-huan',context)).toEqual(composePaintedRoster('gao-huan',context));
+  expect(approvedPaintedRecipe('gao-huan',context).parts[0].source).toContain('court/gao-huan-court-v2.png');
  });
  it('新增文化图的源坐标映射保持原五官位置，头身均取完整同源画面',()=>{
   for(const id of xianbeiWholeRigs){
