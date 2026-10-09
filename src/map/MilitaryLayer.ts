@@ -7,7 +7,7 @@ import type {World} from '../core/types';
 import {roadHeading} from '../core/routeGeometry';
 import {CAMPAIGN_EXPOSURE} from './campaignTerrain';
 import {ARMY_MODEL_PIXELS,armyShowsModel,armyMapPosition,type ArmyMarkerPlacement} from './armyMapPresentation';
-import {militaryModelAssets,animateMilitaryModel,type MilitaryModel,type ArmyModelKind} from './MilitaryModels';
+import {militaryModelAssets,animateMilitaryModel,armyModelHeading,type MilitaryModel,type ArmyModelKind} from './MilitaryModels';
 import {addMilitaryLighting,militaryModelScale,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 // One shared MapLibre canvas/context; representative original military miniatures.
 export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;armyMotion:boolean},onFailure:(reason:string)=>void,onReady:()=>void,getPlacement:(id:number)=>ArmyMarkerPlacement|undefined):CustomLayerInterface{
@@ -25,16 +25,16 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
   if(failed||!map||!renderer||!assets)return;const state=getState(),armies=state.world.realm?.armies??[],zoom=map.getZoom();if(!armyShowsModel(zoom,state.militaryModels))return;
   try{
    if(displayedWorld!==state.world){displayedWorld=state.world;visualStates.clear();for(const a of armies)visualStates.set(a.id!,armyVisualState(state.world,a));}
-   const ids=new Set(armies.map(a=>a.id!));for(const [id,m] of models)if(!ids.has(id)){scene.remove(m.root);models.delete(id);}let animating=false;
+   const ids=new Set(armies.map(a=>a.id!));for(const [id,m] of models)if(!ids.has(id)){assets.release(m);models.delete(id);}let animating=false;
    for(const a of armies){
     if(!a.id)continue;const units=a.regiments??[],kind:ArmyModelKind=units.some(u=>u.kind==='heavyHorse'||u.kind==='lightHorse')?'horse':units.some(u=>u.kind==='siege')?'siege':'foot',name=regimeName(state.world,a.realm);let m=models.get(a.id);
-    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)scene.remove(m.root);m=assets.create(a,kind,name,state.world);scene.add(m.root);models.set(a.id,m);}
+    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)assets.release(m);m=assets.create(a,kind,name,state.world);scene.add(m.root);models.set(a.id,m);}
     const placement=getPlacement(a.id);m.root.visible=!!placement?.model;if(!placement?.model)continue;
     const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};
     const elevation=map.queryTerrainElevation(modelAnchor)??0,coord=MercatorCoordinate.fromLngLat(modelAnchor,elevation),scale=militaryModelScale(args.defaultProjectionData.mainMatrix,coord,map.getCanvas().clientWidth,ARMY_MODEL_PIXELS);
     positionMilitaryModel(m.root.matrix,coord,origin,scale);
-    const visual=visualStates.get(a.id)??'garrison',heading=a.journey?roadHeading(a.journey):-.18;m.body.rotation.y=heading;
-    m.detail.visible=zoom>=7.4;m.camp.visible=zoom>=7.4&&(visual==='garrison'||visual==='siege');animating=animateMilitaryModel(m,visual,performance.now()/210+a.id,state.armyMotion)||animating;m.banner.rotation.y-=heading;
+    const visual=visualStates.get(a.id)??'garrison',heading=a.journey?armyModelHeading(roadHeading(a.journey)):-.18;m.body.rotation.y=heading;
+    m.camp.visible=zoom>=7.4&&(visual==='garrison'||visual==='siege');animating=animateMilitaryModel(m,visual,performance.now()/1000,state.armyMotion)||animating;m.banner.rotation.y-=heading;
    }
    assets.pruneBanners(new Set([...models.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));
    updateMilitaryCamera(camera,args.projectionMatrix,args.defaultProjectionData.mainMatrix,anchor);renderer.resetState();renderer.render(scene,camera);renderer.resetState();if(animating)map.triggerRepaint();

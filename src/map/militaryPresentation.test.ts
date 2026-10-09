@@ -1,9 +1,12 @@
-import {afterEach,describe,expect,it,vi} from 'vitest';
+import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
 import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,MeshStandardMaterial,PerspectiveCamera,Scene,Texture,TextureLoader,Vector3} from 'three';
 import {ARMY_MODEL_PIXELS,anchoredArmyModels,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,armyShowsModel,dockMapMarker,layoutArmyCards,screenOverlap,type ScreenRect} from './armyMapPresentation';
 import {addMilitaryLighting,militaryModelScale,militarySurfaceMaterial,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
+import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
+import {readInfantryTestAsset} from './infantryAsset.testSupport';
+let infantry:GLTF;beforeAll(async()=>{infantry=await readInfantryTestAsset();});
 
 const viewport={width:1200,height:800},anchor={x:600,y:400};
 const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale:80,supply:500,siege:0,journey:null});
@@ -110,10 +113,12 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
   const depth=-new Vector3(0,0,0).applyMatrix4(camera.matrixWorldInverse).z,factor=1-Math.exp(-(fog.density**2*depth**2));
   expect(depth).toBeGreaterThan(1000);expect(factor).toBeGreaterThan(0);expect(factor).toBeLessThan(.1);
  });
- it.each(['foot','horse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',kind=>{
+ it.each(['foot','horse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
+  vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
   const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),kind,'梁'),size=armyMarkerFootprint(true),extent={width:0,above:0,below:0};
+  await assets.ready;expect(model.animation).toBeDefined();
   try{
    for(const heading of [0,Math.PI/2,Math.PI,-Math.PI/2])for(const pitch of [0,38,60])for(const height of [600,900]){
     const camera=new PerspectiveCamera(37,1.5,1,4000),distance=height/(2*Math.tan(37*Math.PI/360));camera.up.set(0,1,0);camera.position.set(0,-Math.sin(pitch*Math.PI/180)*distance,Math.cos(pitch*Math.PI/180)*distance);camera.lookAt(0,0,0);camera.updateMatrixWorld();
