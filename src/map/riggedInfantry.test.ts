@@ -5,8 +5,8 @@ import {animateMilitaryModel,armyModelHeading,armyModelKind,militaryModelAssets}
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
 import type {Army} from '../core/realm';
 
-let asset:GLTF,light:GLTF,heavy:GLTF;
-beforeAll(async()=>{[asset,light,heavy]=await Promise.all([readInfantryTestAsset(),readInfantryTestAsset('light-cavalry-v1.glb'),readInfantryTestAsset('heavy-cavalry-v1.glb')]);});
+let asset:GLTF,light:GLTF,heavy:GLTF,siege:GLTF;
+beforeAll(async()=>{[asset,light,heavy,siege]=await Promise.all([readInfantryTestAsset(),readInfantryTestAsset('light-cavalry-v1.glb'),readInfantryTestAsset('heavy-cavalry-v1.glb'),readInfantryTestAsset('siege-crew-v1.glb')]);});
 beforeEach(()=>{
  vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
@@ -16,13 +16,13 @@ const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale
 const skinned=(root:GLTF['scene'])=>{let result:SkinnedMesh|undefined;root.traverse(o=>{if(o instanceof SkinnedMesh)result=o;});return result!;};
 
 it('loads each requested type once with independent bones and shared geometry',async()=>{
- const load=vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>url.includes('light-cavalry')?light:url.includes('heavy-cavalry')?heavy:asset),repaint=vi.fn(),warn=vi.fn(),assets=militaryModelAssets(repaint,warn);
+ const load=vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>url.includes('light-cavalry')?light:url.includes('heavy-cavalry')?heavy:url.includes('siege-crew')?siege:asset),repaint=vi.fn(),warn=vi.fn(),assets=militaryModelAssets(repaint,warn);
  const models=(['foot','lightHorse','lightHorse','heavyHorse','siege'] as const).map((kind,i)=>assets.create(army(i+1),kind,'梁'));
  await assets.ready;
  try{
-  expect(load).toHaveBeenCalledTimes(3);expect(load.mock.calls[0][0]).toBe('/art/military/infantry-rigged-v1.glb');expect(repaint).toHaveBeenCalled();expect(warn).not.toHaveBeenCalled();
+  expect(load).toHaveBeenCalledTimes(4);expect(load.mock.calls[0][0]).toBe('/art/military/infantry-rigged-v1.glb');expect(repaint).toHaveBeenCalled();expect(warn).not.toHaveBeenCalled();
   const meshes=models.map(m=>skinned(m.animation!.root));
-  expect(meshes.map(m=>m.skeleton.bones.length)).toEqual([29,48,48,48,29]);expect(meshes.every(m=>m.castShadow&&m.receiveShadow)).toBe(true);
+  expect(meshes.map(m=>m.skeleton.bones.length)).toEqual([29,48,48,48,70]);expect(meshes.every(m=>m.castShadow&&m.receiveShadow)).toBe(true);
   expect(meshes[1].geometry).toBe(meshes[2].geometry);expect(meshes[1].skeleton.bones[0]).not.toBe(meshes[2].skeleton.bones[0]);expect(meshes[1].geometry).not.toBe(meshes[3].geometry);
   const other=meshes[1].skeleton.bones.map(b=>b.quaternion.clone());
   for(let i=0;i<30;i++)animateMilitaryModel(models[0],'marching',i/60,true);
@@ -49,7 +49,7 @@ it('blends marching and retreat into Walk, other states into Idle, and respects 
 
 it('does not attach disposed or removed armies when a delayed download completes',async()=>{
  let resolve!:(asset:GLTF)=>void;vi.spyOn(GLTFLoader.prototype,'loadAsync').mockReturnValue(new Promise(r=>{resolve=r;}));
- const repaint=vi.fn(),assets=militaryModelAssets(repaint,()=>{}),model=assets.create(army(),'siege','梁');assets.release(model);assets.dispose();resolve(asset);await assets.ready;
+ const repaint=vi.fn(),assets=militaryModelAssets(repaint,()=>{}),model=assets.create(army(),'foot','梁');assets.release(model);assets.dispose();resolve(asset);await assets.ready;
  expect(model.animation).toBeUndefined();expect(repaint).not.toHaveBeenCalled();
 });
 
@@ -87,4 +87,20 @@ it('does not resurrect a light cavalry model replaced while its asset was downlo
  assets.release(old);const replacement=assets.create(army(),'heavyHorse','梁');complete(light);await assets.ready;
  try{expect(old.animation).toBeUndefined();expect(old.root.parent).toBeNull();expect(replacement.animation?.root.name).toBe('Rigged campaign heavyHorse');}
  finally{assets.dispose();}
+});
+
+it('runs the siege firing cycle only during combat, blends states and resets at a new attack',async()=>{
+ vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>url.includes('siege-crew')?siege:asset);
+ const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),'siege','梁');await assets.ready;
+ try{
+  const animation=model.animation!;expect(animation.attack).toBeDefined();let clock=0;
+  for(const state of ['garrison','marching','siege','battle','retreat','training']){
+   for(let i=0;i<60;i++)animateMilitaryModel(model,state,clock+=1/60,true);
+   expect(animation.attackWeight).toBe(state==='siege'||state==='battle'?1:0);
+   expect(animation.weight).toBe(state==='marching'||state==='retreat'?1:0);
+   expect(animation.idle.getEffectiveWeight()+animation.walk.getEffectiveWeight()+animation.attack!.getEffectiveWeight()).toBeCloseTo(1,6);
+  }
+  animateMilitaryModel(model,'siege',clock+=1/60,true);expect(animation.attack!.time).toBeLessThan(.03);
+  animateMilitaryModel(model,'siege',clock+=1/60,false);expect(animation.attackWeight).toBe(0);expect(animation.weight).toBe(0);expect(animation.idle.getEffectiveWeight()).toBe(1);
+ }finally{assets.dispose();}
 });

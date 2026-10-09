@@ -3,14 +3,16 @@ import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {applyInfantryLighting} from './infantryLighting';
 
-export interface InfantryAnimation {root:Group;mixer:AnimationMixer;idle:AnimationAction;walk:AnimationAction;weight:number;lastTime?:number;}
+export interface InfantryAnimation {root:Group;mixer:AnimationMixer;idle:AnimationAction;walk:AnimationAction;attack?:AnimationAction;weight:number;attackWeight:number;attacking?:boolean;lastTime?:number;}
 export function createInfantryAnimation(asset:GLTF,seed:number):InfantryAnimation{
  const root=clone(asset.scene) as Group,mixer=new AnimationMixer(root);
  root.name='Rigged campaign infantry';
  root.traverse(o=>{if(o instanceof Mesh){o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;}});
  const idle=mixer.clipAction(asset.animations.find(a=>a.name==='Idle')!),walk=mixer.clipAction(asset.animations.find(a=>a.name==='Walk')!);
  idle.play();walk.play();idle.time=(seed*.173)%idle.getClip().duration;walk.time=(seed*.137)%walk.getClip().duration;walk.setEffectiveWeight(0);mixer.update(0);
- return {root,mixer,idle,walk,weight:0};
+ const clip=asset.animations.find(a=>a.name==='Attack'),attack=clip?mixer.clipAction(clip):undefined;
+ if(attack){attack.play();attack.setEffectiveWeight(0);}
+ return {root,mixer,idle,walk,attack,weight:0,attackWeight:0};
 }
 /** Clock is real seconds. Root translation remains exclusively owned by the map. */
 export function updateInfantryAnimation(a:InfantryAnimation,state:string,seconds:number,motion:boolean){
@@ -18,7 +20,11 @@ export function updateInfantryAnimation(a:InfantryAnimation,state:string,seconds
  const target=motion&&(state==='marching'||state==='retreat')?1:0;
  a.weight=motion?a.weight+(target-a.weight)*(1-Math.exp(-dt/.09)):0;
  if(Math.abs(target-a.weight)<.001)a.weight=target;
- a.idle.setEffectiveWeight(1-a.weight);a.walk.setEffectiveWeight(a.weight);a.mixer.update(motion?dt:0);
+ const attacking=!!a.attack&&motion&&(state==='siege'||state==='battle'),attackTarget=attacking?1:0;
+ if(attacking&&!a.attacking)a.attack!.reset().play();a.attacking=attacking;
+ a.attackWeight=motion?a.attackWeight+(attackTarget-a.attackWeight)*(1-Math.exp(-dt/.09)):0;
+ if(Math.abs(attackTarget-a.attackWeight)<.001)a.attackWeight=attackTarget;
+ a.idle.setEffectiveWeight(Math.max(0,1-a.weight-a.attackWeight));a.walk.setEffectiveWeight(a.weight);a.attack?.setEffectiveWeight(a.attackWeight);a.mixer.update(motion?dt:0);
  return motion;
 }
 export function disposeInfantryAnimation(a:InfantryAnimation){
@@ -34,7 +40,8 @@ export function disposeInfantryAsset(asset:GLTF){
 }
 export async function loadInfantryAsset(file='infantry-rigged-v1.glb'){
  const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/'+file);
- if(!['Idle','Walk'].every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少待机或行军动画');}
+ const required=file==='siege-crew-v1.glb'?['Idle','Walk','Attack']:['Idle','Walk'];
+ if(!required.every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少必要动画');}
  applyInfantryLighting(asset.scene);
  return asset;
 }

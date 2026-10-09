@@ -9,8 +9,8 @@ import {campaignActors,type ActorView} from './actors';
 import {projectGround} from './geography';
 
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
-it.each(['foot','lightHorse','heavyHorse'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
- const infantry=await readInfantryTestAsset(kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':'heavy-cavalry-v1.glb');vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
+it.each(['foot','lightHorse','heavyHorse','siege'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
+ const infantry=await readInfantryTestAsset(kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb');vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
  vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  // Only unrelated scenery and terrain inputs are substituted; infantry and its mixer are real.

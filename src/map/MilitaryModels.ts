@@ -17,14 +17,14 @@ export interface MilitaryModel {root:Group;body:Group;camp:Group;banner:Group;an
 /** Shared mesh/material per type, independent skeleton and mixer per army. */
 export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void){
  const geometries=new Map<string,BufferGeometry>(),materials=new Map<string,Material>(),textures:Texture[]=[],loader=new TextureLoader();
- type AssetKind='foot'|'lightHorse'|'heavyHorse';
+ type AssetKind=ArmyModelKind;
  const assets=new Map<AssetKind,GLTF>(),pending=new Map<AssetKind,Promise<void>>(),models=new Set<MilitaryModel>();let disposed=false;
- const key=(kind:ArmyModelKind):AssetKind=>kind==='siege'?'foot':kind;
- function attach(model:MilitaryModel){const asset=assets.get(key(model.kind));if(!asset||disposed||!models.has(model)||model.animation)return;model.animation=createInfantryAnimation(asset,model.seed);if(model.kind==='lightHorse'||model.kind==='heavyHorse'){model.animation.root.name='Rigged campaign '+model.kind;model.animation.root.scale.setScalar(.76);}model.body.add(model.animation.root);}
+ const key=(kind:ArmyModelKind):AssetKind=>kind;
+ function attach(model:MilitaryModel){const asset=assets.get(key(model.kind));if(!asset||disposed||!models.has(model)||model.animation)return;model.animation=createInfantryAnimation(asset,model.seed);if(model.kind!=='foot'){model.animation.root.name='Rigged campaign '+model.kind;model.animation.root.scale.setScalar(model.kind==='siege'?.68:.76);}model.body.add(model.animation.root);}
  function ensure(kind:AssetKind){
   if(pending.has(kind))return;
-  const file=kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':'heavy-cavalry-v1.glb';
-  pending.set(kind,loadInfantryAsset(file).then(loaded=>{if(disposed){disposeInfantryAsset(loaded);return;}assets.set(kind,loaded);models.forEach(m=>{if(key(m.kind)===kind)attach(m);});repaint();}).catch(()=>{if(!disposed)warn((kind==='foot'?'步兵':kind==='lightHorse'?'轻骑兵':'甲骑')+'兵模未能载入，保留军旗和军队操作。');}));
+  const file=kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb';
+  pending.set(kind,loadInfantryAsset(file).then(loaded=>{if(disposed){disposeInfantryAsset(loaded);return;}assets.set(kind,loaded);models.forEach(m=>{if(key(m.kind)===kind)attach(m);});repaint();}).catch(()=>{if(!disposed)warn((kind==='foot'?'步兵':kind==='lightHorse'?'轻骑兵':kind==='heavyHorse'?'甲骑':'攻城队')+'兵模未能载入，保留军旗和军队操作。');}));
  }
  ensure('foot');
  function release(model:MilitaryModel){models.delete(model);if(model.animation){disposeInfantryAnimation(model.animation);model.animation=undefined;}model.root.removeFromParent();}

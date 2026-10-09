@@ -1,13 +1,13 @@
 import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
-import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,MeshStandardMaterial,PerspectiveCamera,Scene,Texture,TextureLoader,Vector3} from 'three';
+import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,Mesh,MeshStandardMaterial,PerspectiveCamera,Scene,SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
 import {ARMY_MODEL_PIXELS,anchoredArmyModels,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,armyShowsModel,dockMapMarker,layoutArmyCards,screenOverlap,type ScreenRect} from './armyMapPresentation';
 import {addMilitaryLighting,militaryModelScale,militarySurfaceMaterial,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
-let infantry:GLTF,lightHorse:GLTF,heavyHorse:GLTF;
-beforeAll(async()=>{[infantry,lightHorse,heavyHorse]=await Promise.all(['infantry-rigged-v1.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb'].map(readInfantryTestAsset));});
+let infantry:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
+beforeAll(async()=>{[infantry,lightHorse,heavyHorse,siege]=await Promise.all(['infantry-rigged-v1.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb','siege-crew-v1.glb'].map(readInfantryTestAsset));});
 
 const viewport={width:1200,height:800},anchor={x:600,y:400};
 const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale:80,supply:500,siege:0,journey:null});
@@ -115,16 +115,20 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
   expect(depth).toBeGreaterThan(1000);expect(factor).toBeGreaterThan(0);expect(factor).toBeLessThan(.1);
  });
  it.each(['foot','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
-  vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>String(url).includes('light-cavalry')?lightHorse:String(url).includes('heavy-cavalry')?heavyHorse:infantry);
+  vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>String(url).includes('light-cavalry')?lightHorse:String(url).includes('heavy-cavalry')?heavyHorse:String(url).includes('siege-crew')?siege:infantry);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
   const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),kind,'梁'),size=armyMarkerFootprint(true),extent={width:0,above:0,below:0};
   await assets.ready;expect(model.animation).toBeDefined();
   try{
-   for(const heading of [0,Math.PI/2,Math.PI,-Math.PI/2])for(const pitch of [0,38,60])for(const height of [600,900]){
+   for(const seconds of kind==='siege'?[0,1.5,4.48,4.9,5.1]:[0])for(const heading of [0,Math.PI/2,Math.PI,-Math.PI/2])for(const pitch of [0,38,60])for(const height of [600,900]){
     const camera=new PerspectiveCamera(37,1.5,1,4000),distance=height/(2*Math.tan(37*Math.PI/360));camera.up.set(0,1,0);camera.position.set(0,-Math.sin(pitch*Math.PI/180)*distance,Math.cos(pitch*Math.PI/180)*distance);camera.lookAt(0,0,0);camera.updateMatrixWorld();
     const main=camera.projectionMatrix.clone().multiply(camera.matrixWorldInverse),scale=militaryModelScale(main.elements,new Vector3(),height*1.5,ARMY_MODEL_PIXELS);
-    animateMilitaryModel(model,'marching',1,true);model.body.rotation.y=heading;model.root.matrix.makeScale(scale,scale,scale).multiply(new Matrix4().makeRotationX(Math.PI/2));model.root.updateMatrixWorld(true);const bounds=new Box3().setFromObject(model.root);
+    animateMilitaryModel(model,'marching',1,true);
+    if(kind==='siege'){const a=model.animation!;a.idle.setEffectiveWeight(0);a.walk.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);a.mixer.setTime(seconds);}
+    model.body.rotation.y=heading;model.root.matrix.makeScale(scale,scale,scale).multiply(new Matrix4().makeRotationX(Math.PI/2));model.root.updateMatrixWorld(true);
+    // Flying ammunition is an effect, not part of the army's fixed clickable silhouette.
+    const bounds=new Box3();model.root.traverse(o=>{if(o instanceof SkinnedMesh){o.skeleton.update();o.computeBoundingBox();}if(o instanceof Mesh&&!o.name.startsWith('ProjectileMesh'))bounds.union(new Box3().setFromObject(o));});
     for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
      const p=new Vector3(x,y,z).project(camera),screen={x:p.x*height*1.5/2,y:-p.y*height/2};extent.width=Math.max(extent.width,Math.abs(screen.x)*2);extent.above=Math.max(extent.above,-screen.y);extent.below=Math.max(extent.below,screen.y);expect(screen.y).toBeLessThan(armyModelBadgeBottom(pitch)-29);
     }
