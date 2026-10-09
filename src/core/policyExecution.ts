@@ -1,3 +1,4 @@
+import {applyEstatePolicy} from './estates';
 import {governanceRules,type GovernanceRules} from './governanceRules';
 import type {Assignment} from './assignments';
 import type {AssignmentPlan} from '../data/assignments';
@@ -21,7 +22,7 @@ export function recordPolicyExecution(w:World,t:Assignment,recovered:number){
  if(!p||!t.result?.success||w.realm!.cities[t.site].owner!==t.realm||w.realm!.cities[t.site].controller!==t.realm)return;
  if(t.kind==='taxation'){
   const execution=policyExecution(w,t,t.plan!,t.quality),issuer=t.approvedBy??serviceApprover(w,t)??t.mandate?.issuer;
-  if(!issuer)return;(g.rules.reports??={})[t.site]={task:t.id,officer:t.officer,issuer,revision:p.revision,registration:p.registration,access:p.access,reportedDay:w.day,applied:execution.applied,quality:t.quality??100,recovered,checkedDay:null,inspector:null,inspectionTask:null};
+  if(!issuer)return;if(execution.applied)applyEstatePolicy(w,t.site,execution.rule,issuer);(g.rules.reports??={})[t.site]={task:t.id,officer:t.officer,issuer,revision:p.revision,registration:p.registration,access:p.access,reportedDay:w.day,applied:execution.applied,quality:t.quality??100,recovered,checkedDay:null,inspector:null,inspectionTask:null};
  }
  if(t.kind==='inspection'){
   const report=g.rules.reports?.[t.site];if(!report||report.checkedDay!==null||report.officer===t.officer||report.reportedDay>t.created||t.plan==='urgent'||(t.quality??100)<100)return;

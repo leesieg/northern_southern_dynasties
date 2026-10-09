@@ -1,3 +1,4 @@
+import {ownedEstates} from './estates';
 import {visibleSchemes,schemeNames} from './intrigue';
 import {lifeOngoingItems} from './lifeOngoing';
 import {demandNames} from './unrest';
@@ -21,7 +22,7 @@ import {lifestyleProgress,lifestylePoints,lifestylePerson} from './lifestyle';
 import {lifestyleBranches,lifestyleFocuses,type LifestyleBranch} from '../data/lifestyles';
 import {isAlive} from './lifeState';
 export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue'|'focus'|'skills'|'marriage'|'education'|'family'|'care';
-export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'|'overview'|'interaction';action?:PersonLifeEntry['action']}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'|'governance'}|{page:'estate'}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'|'intrigue'};
+export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'|'overview'|'interaction';action?:PersonLifeEntry['action']}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'|'governance'}|{page:'estate';estate?:string}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'|'intrigue'};
 export interface PersonLifeEntry {person:string;action:'marriage'|'education'}
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;
@@ -68,7 +69,7 @@ export function ongoingItems(w:World):OngoingItem[]{
   for(const army of w.realm!.armies)if(army.realm===r&&army.journey&&armyCommander(w,army)!==actor&&(chief||w.realm!.mandate))add({id:'army:'+(army.id??r),kind:'military',title:'行军 · '+siteById[army.journey.route.at(-1)!].name,started:army.journey.started,...journeyProgress(army.journey),clock:'remaining',status:army.withdrawalUntil?'依约撤离':'行军中',target:{page:'city',site:army.location,tab:'military'}});
  }
  for(const [site,h] of Object.entries(w.holdings.cities)){const p=h.project;if(p&&w.holdings.governedCities.includes(site))timed('city:'+site+':'+p.started,'construction',siteById[site].name+' · '+cityBuildings[p.building as keyof typeof cityBuildings].name,p.started,p.due,{page:'city',site,tab:'build'});}
- const p=w.holdings.estate.project;if(p)timed('estate:'+p.started,'construction',estateBuildings[p.building as keyof typeof estateBuildings].name,p.started,p.due,{page:'estate'});
+ for(const e of ownedEstates(w)){const p=e.project;if(p)timed('estate:'+e.id+':'+p.started,'construction',estateBuildings[p.building as keyof typeof estateBuildings].name,p.started,p.due,{page:'estate',estate:e.id});}
  for(const s of visibleSchemes(w))if(s.actor===actor&&s.status==='active')add({id:'intrigue:'+s.id,kind:'scheme',title:schemeNames[s.kind]+' · '+name(s.target,w),started:s.started!,progress:s.progress===null?null:s.progress/100,days:s.due===null?null:Math.max(0,s.due-w.day),clock:'estimate',status:s.reason||'秘密筹划',target:{page:'intrigue'}});
  for(const [key,s] of [['social',w.social?.scheme],['relationship',w.relationships?.scheme]] as const)if(s)timed('scheme:'+key+':'+s.started+':'+s.target,'scheme',('kind'in s&&s.kind==='control'?'挟制':'交好')+' · '+name(s.target,w),s.started,s.due,{page:'person',person:s.target});
  for(const [id,m] of Object.entries(w.retinue?.members??{})){const j=w.mobility?.residences[id]?.journey;if(m.host===actor&&j)add({id:'retinue:'+id+':'+j.started,kind:'retinue',title:name(id,w)+'赴任',started:j.started,...journeyProgress(j),clock:'remaining',status:'赴任途中',target:{page:'retinue'}});}

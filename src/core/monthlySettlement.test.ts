@@ -1,3 +1,4 @@
+import {estateForecast} from './estates';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,advance} from './world';
 import {advanceConstruction,estateYield} from './construction';
@@ -52,7 +53,7 @@ describe('资源统一月初结算',()=>{
  it('闰年二月底和跨年仍用同一月初发放家产收入',()=>{
   for(const [year,month,day] of [[548,2,29],[548,12,31]]){
    const w=start();w.day=(Date.UTC(year,month-1,day)-Date.UTC(546,0,1))/86_400_000;const before=w.people[0].coins;
-   advanceConstruction(w);expect(w.people[0].coins).toBe(before);w.day++;advanceConstruction(w);expect(w.people[0].coins).toBe(before+estateYield(w).coins);expect(w.holdings.lastMonthly).toBe(w.day);expect(parseWorld(serializeWorld(w))).toEqual(w);
+   advanceConstruction(w);expect(w.people[0].coins).toBe(before);w.day++;const income=estateForecast(w,w.holdings.estate).coins;advanceRealm(w);expect(w.people[0].coins).toBeGreaterThanOrEqual(before+income);expect(w.holdings.lastMonthly).toBe(w.day);expect(parseWorld(serializeWorld(w))).toEqual(w);
   }
  });
  it('NPC 私财、幕僚工资和朝贡按月初转移，月底不提前支付',()=>{

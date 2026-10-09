@@ -1,3 +1,4 @@
+import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {warObjectiveSites} from './warTerritories';
 import {localBalance,spendLocal,fiscalPath} from './treasury';
 import {governingAuthority} from './government';
@@ -33,8 +34,8 @@ export function advanceMilitaryAI(w:World){const s=w.realm;if(!s)return;for(cons
 
 /** Paid peacetime preparation uses the same population, grain and muster constraints. */
 export function mobilizeRealm(w:World,r:import('./realm').RealmId,site:string,localOnly=false){
- const s=w.realm!,c=s.cities[site],t=s.treasuries[r];if(!c||c.owner!==r||c.controller!==r||s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16||c.population-mobilizedTransportLabor(w,site)<700||(localOnly?localBalance(w,site):t.coins)<120||(!localOnly&&site===capital(r,w)?t.grain:c.grain)<120||governmentMusterReason(w,r))return false;
- if(localOnly)spendLocal(w,site,120,'地方守军实际征募');else t.coins-=120;if(!localOnly&&site===capital(r,w))t.grain-=120;else c.grain-=120;c.population-=600;spendGovernmentMuster(w,r);s.armies.push({realm:r,location:site,troops:600,morale:70,supply:120,journey:null,siege:0,...(localOnly?{payer:fiscalPath(w,site)[0]}:{}),automation:'delegated',trainingStarted:w.day,trainingUntil:w.day+30});ensureArmyOrganization(w);return true;
+ const s=w.realm!,c=s.cities[site],t=s.treasuries[r],sources=recruitmentSources(w,site,600);if(sources.reason||!c||c.owner!==r||c.controller!==r||s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16||c.population-mobilizedTransportLabor(w,site)<700||(localOnly?localBalance(w,site):t.coins)<120||(!localOnly&&site===capital(r,w)?t.grain:c.grain)<120||governmentMusterReason(w,r))return false;
+ if(localOnly)spendLocal(w,site,120,'地方守军实际征募');else t.coins-=120;if(!localOnly&&site===capital(r,w))t.grain-=120;else c.grain-=120;consumeManpower(w,site,sources.parts);spendGovernmentMuster(w,r);ensureArmyOrganization(w);const id=s.nextArmyId!++;s.armies.push({id,regiments:recruitmentRegiments(sources.parts,id,site),realm:r,location:site,troops:600,morale:70,supply:120,journey:null,siege:0,...(localOnly?{payer:fiscalPath(w,site)[0]}:{}),automation:'delegated',trainingStarted:w.day,trainingUntil:w.day+30});ensureArmyOrganization(w);return true;
 }
 
 export function defensiveReserve(w:World,r:import('./realm').RealmId){return w.realm!.armies.filter(a=>a.realm===r&&!a.owner&&!a.journey&&!(a.arrears??0)&&readyTroops(a,w.day)>=100).sort((a,b)=>Number(b.location===capital(r,w))-Number(a.location===capital(r,w))||a.id!-b.id!)[0];}

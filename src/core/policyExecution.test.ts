@@ -1,3 +1,4 @@
+import {actualEstatePolicy} from './estates';
 import {describe,it,expect} from 'vitest';
 import {newGovernedCampaignWorld} from './governedTestWorld';
 import {actService,advanceService,assignmentPlanQuote,serviceAttention,type Assignment} from './assignments';
@@ -29,9 +30,9 @@ function complete(w:World,t:Assignment){w.day+=5;t.progress=t.required;t.contrib
 describe('赋役规则、分层执行与真实结案',()=>{
  it('清税预估和结算同源，核籍须详办且质量达标；急办不能伪造完成',()=>{
   const w=start(),t=prepare(w);const q=policyExecution(w,t,'thorough',115),base=policyExecution(w,t,'balanced');
-  expect(q.recovered).toBeGreaterThan(base.recovered);expect(q.applied).toBe(true);expect(policyExecution(w,t,'urgent').applied).toBe(false);expect(policyExecution(w,t,'thorough',95).applied).toBe(false);
+  expect(actualEstatePolicy(w,'tianshui')).toBe('compact');expect(q.recovered).toBeGreaterThan(base.recovered);expect(q.applied).toBe(true);expect(policyExecution(w,t,'urgent').applied).toBe(false);expect(policyExecution(w,t,'thorough',95).applied).toBe(false);
   const money=w.realm!.treasuries.west.coins,order=w.realm!.cities.tianshui.order;complete(w,t);
-  expect(w.realm!.treasuries.west.coins-money).toBe(q.recovered);expect(w.realm!.cities.tianshui.order-order).toBe(q.order);
+  expect(actualEstatePolicy(w,'tianshui')).toBe('survey');expect(w.realm!.treasuries.west.coins-money).toBe(q.recovered);expect(w.realm!.cities.tianshui.order-order).toBe(q.order);
   expect(governanceRules(w,'west').reports!.tianshui).toMatchObject({task:t.id,issuer:'yuwen-tai',quality:115,recovered:q.recovered,applied:true,checkedDay:null});
   expect(parseWorld(serializeWorld(w))).toEqual(w);const settled=structuredClone(w);expect(()=>actService(w,{type:'service',action:'close',id:t.id},'yuwen-tai')).toThrow();expect(w).toEqual(settled);
  });

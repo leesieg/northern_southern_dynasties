@@ -13,7 +13,7 @@ export const assignmentTemplates={
  granaryworks:{name:'营建城仓',category:'economy',skill:'stewardship',coins:100,grain:20,work:200,icon:'grain',description:'由中枢或度支官员组织修建城仓。',effect:'城仓提升 1 级，最高 3 级'},
  hostelworks:{name:'营建驿舍',category:'economy',skill:'stewardship',coins:110,grain:20,work:210,icon:'city',description:'由中枢或度支官员组织修建驿舍。',effect:'驿舍提升 1 级，最高 3 级'},
  greatworks:{name:'兴修水利',category:'economy',skill:'stewardship',coins:180,grain:80,work:400,icon:'estate',description:'由中枢官员主持疏渠筑堰，组织大型水利工程。',effect:'繁荣 +20、秩序 +10、水利 +2'},
- recruitment:{name:'征募兵员',category:'military',skill:'martial',coins:100,grain:80,work:220,icon:'army',description:'由军务或选官职掌主持军户征募。',effect:'补充驻军 200 人；无驻军时组建 200 人军队，消耗对应人口与 5 秩序'},
+ recruitment:{name:'征募兵员',category:'military',skill:'martial',coins:100,grain:80,work:220,icon:'army',description:'由军务或选官职掌主持军户征募。',effect:'按公共同源额度最多征募 200 人，扣实际人口；训练三十日，消耗钱粮与 5 秩序'},
  taxation:{name:'清查征税',category:'economy',skill:'stewardship',coins:30,grain:0,work:180,icon:'coins',description:'由度支或监察官员清查欠赋，按本城人口与税制征收。',effect:'依现行赋役规则、人口与质量追征，收入及秩序负担随方案改变；每城每季限一次'},
 } as const;
 export type AssignmentKind=keyof typeof assignmentTemplates;
@@ -28,7 +28,7 @@ export const assignmentTradeoffs:Record<AssignmentKind,{condition:string;cost:st
  relief:{condition:'本国控制的城市，可用承办人',cost:'占用赈粮；先稳秩序与粮储，不提高长期水利产能'},
  agriculture:{condition:'本国控制的城市，可用管理人才',cost:'见效较慢；占用当地劳力，短期生产受影响'},
  commerce:{condition:'本国控制的城市，可用管理人才',cost:'收益在结案时到账；不能立即填补公库缺口，也不增加粮食产能'},
- training:{condition:'本城须有驻留军队',cost:'消耗钱粮；新增兵员从当地人口扣除，无法解决缺粮'},
+ training:{condition:'本城须有驻留军队',cost:'消耗钱粮，操练现有军伍；补员须另行征募，无法解决缺粮'},
  supply:{condition:'本城须有驻军，国都至本城道路可通行',cost:'占用中央粮储；补给有上限，军队离城或道路阻断会暂停'},
  inspection:{condition:'可用监察人才，承办人须在场',cost:'占用承办时间；清查积弊不直接增加公共收入'},
  envoy:{condition:'目标国未与本国交战',cost:'使团还须等待对方接纳；不能保证修好，也不授予通行权'},

@@ -1,3 +1,4 @@
+import {ownedEstates,estateAccessReason} from './estates';
 import {monthStart} from './calendar';
 import {armyControls,civilWar} from './civilWars';
 import {loadRoad,loadingDays} from './roadCapacity';
@@ -27,6 +28,7 @@ function advanceConvoy(w:World,a:Army){const c=a.convoy;if(!c)return;if(!convoyP
 }
 function dispatch(w:World,a:Army){if(a.convoy||a.troops<=0)return;a.logisticsReason='';const s=w.realm!,to=a.journey?a.journey.route.slice(a.journey.leg+1).reverse().find(id=>armyControls(w,a,id)):a.location;
  if(!to||!armyControls(w,a,to)){a.logisticsReason='前方无安全补给据点';return;}
+ if(a.owner&&!a.journey){let need=Math.max(0,armySupplyTarget(w,a)-a.supply);for(const e of ownedEstates(w,a.owner).filter(e=>e.location===a.location&&!estateAccessReason(w,e))){const n=Math.min(need,e.grain);e.grain-=n;a.supply+=n;need-=n;}if(!need)return;}
  const sources=Object.entries(s.cities).filter(([id])=>armyControls(w,a,id)).map(([id,c])=>({id,local:Math.max(0,c.grain-supplyReserve(w,id,a.realm)),bank:!a.owner&&id===capital(a.realm,w)&&!civilWar(w,a.realm)?.civil?.armies.includes(a.id!)?s.treasuries[a.realm].grain:0,path:id===to?{route:[id],durations:[],days:0}:planRoute(id,to,node=>canEnter(w,a.realm,s.cities[node].controller,undefined,true)&&(!civilWar(w,a.realm)||armyControls(w,a,node)))})).filter(v=>v.path&&v.local+v.bank>0).sort((x,y)=>x.path!.days-y.path!.days),source=sources[0];
  if(!source){a.logisticsReason='安全粮源不足或通路中断';return;}const lead=source.path!.days;if(a.journey&&!lead){a.logisticsReason='前方据点已有储粮，抵达后领取';return;}const need=Math.max(0,armySupplyTarget(w,a,lead)-a.supply-incomingArmySupply(w,a));if(!need)return;
  const city=s.cities[source.id],workers=Math.max(0,Math.floor(city.population*.1)-mobilizedTransportLabor(w,source.id)),mobilization=Math.max(.25,Math.min(1.5,((governmentOf(w,a.realm)?.support??60)+city.order)/120));

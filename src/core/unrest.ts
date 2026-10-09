@@ -1,3 +1,4 @@
+import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {allPeople,getPerson} from './personRegistry';
 import type {World} from './types';
 import type {RealmId} from './realm';
@@ -47,6 +48,7 @@ export function unrestBlock(w:World,q:LocalUnrest){const c=w.realm!.cities[q.sit
  if(w.militaryCampaigns?.items.some(t=>t.status==='active'&&w.realm!.armies.some(a=>a.id===t.army&&armyCommander(w,a)===q.organizer)))return '组织者的部队仍承担战役委任';
  if(w.realm!.armies.length>=48||w.realm!.armies.filter(a=>a.realm===q.realm).length>=16)return '军队编制已满';
  if(fiscalPath(w,q.site)[0].startsWith('central:'))return '当地缺少可独立控制的公库，诉求保留预警';
+ if(recruitmentSources(w,q.site,200).reason)return recruitmentSources(w,q.site,200).reason;
  if(c.population-mobilizedTransportLabor(w,q.site)<300||localBalance(w,q.site)<50)return '地方人口或兵装经费不足以组织起事';
  return '';
 }
@@ -55,8 +57,8 @@ function rise(w:World,q:LocalUnrest){if(unrestBlock(w,q))return;ensureWars(w);en
  const following=s.armies.filter(a=>a.realm===q.realm&&a.location===q.site&&!a.journey&&armyCommander(w,a)===q.organizer).map(a=>a.id!);
  const war={id:s.nextWarId!++,attacker:q.realm,defender:q.realm,target:capital(q.realm,w),started:w.day,score:0,battles:0,captureLosses:[],civil:{grievance:q.id,claimant:q.organizer!,loyalist:governingAuthority(w,q.realm),supporters:[q.organizer!],base:q.site,cities:[q.site],armies:[...following,id],name:'民变'}};
  for(const a of s.armies)if(following.includes(a.id!)&&!a.owner)a.payer=fiscalPath(w,q.site)[0];
- s.wars!.push(war);s.war=s.wars![0];spendLocal(w,q.site,50,'民变控制治所后置办兵装');c.population-=200;c.grain-=supply;
- s.armies.push({id,realm:q.realm,location:q.site,payer:fiscalPath(w,q.site)[0],troops:200,morale:50,supply,journey:null,siege:0,regiments:[{id:id+':1',kind:'spear',service:'levy',origin:q.site,troops:200,experience:0,institution:20,commanderLoyalty:70,loyalTo:q.organizer!,cohesion:40}]});
+ s.wars!.push(war);s.war=s.wars![0];spendLocal(w,q.site,50,'民变控制治所后置办兵装');const sources=recruitmentSources(w,q.site,200);consumeManpower(w,q.site,sources.parts);c.grain-=supply;
+ s.armies.push({id,realm:q.realm,location:q.site,payer:fiscalPath(w,q.site)[0],troops:200,morale:50,supply,journey:null,siege:0,regiments:recruitmentRegiments(sources.parts,id,q.site,'spear').map(u=>({...u,institution:20,commanderLoyalty:70,loyalTo:q.organizer!,cohesion:40}))});
  // A commander remains bound to the existing army; the new levy needs its own appointment.
  if(w.mobility&&!following.length)(w.mobility.armyCommanders??={})[id]=q.organizer!;
  q.stage='armed';q.war=war.id;q.deadline=null;log(w,siteById[q.site].name+'民变起事：'+demandNames[q.demand]+'；动员本地 200 人、支出已控制公款 50，取当地公粮 '+supply+'。');

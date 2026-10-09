@@ -53,6 +53,8 @@ import { DEFAULT_SCRIPT,getScript } from '../data/scripts';
 import { newSocial, applySocial, advanceSocial } from './social';
 import { characterById,historicalCharacters,startRules } from '../data/characters';
 import { commission,evaluateCampaign } from './campaign';
+import {initializeEstates,actEstate,advanceEstateAI} from './estates';
+import {migrateManpower} from './manpower';
 import { newHoldings, beginConstruction, advanceConstruction, provisionCost } from './construction';
 import { CONTENT_VERSION, roads, siteById, sites } from '../data/scenario';
 import type { ArmyBatchCommand, GameCommand, Person, RoutePlan, World } from './types';
@@ -121,7 +123,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
     if(!Object.hasOwn(characterById,characterId))throw new Error('请选择名录中的可玩人物。');
     const c=characterById[characterId],rules=startRules(c);w.characterId=c.id;w.social=newSocial(c.id);
     Object.assign(w.people[0],{name:c.name,home:c.home,location:c.home,coins:rules.coins,food:rules.food});
-    w.holdings.estate.family=c.family;w.holdings.estate.location=c.home;w.holdings.governedCities=[c.home];
+    w.holdings.estate.owner=c.id;w.holdings.estate.id='estate:'+c.id;w.holdings.estate.family=c.family;w.holdings.estate.location=c.home;w.holdings.governedCities=[c.home];
     w.campaign={id:'stewardship',deadline:120,appointed:true,status:'active',finishedDay:null};
     w.chronicle=[{day:0,person:'player',text:c.name+'以'+c.title+'身份启程，经营地方与家业。'}];
   }else w.campaign={id:'jiangzuo',deadline:120,appointed:false,status:'active',finishedDay:null};
@@ -132,6 +134,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   ensureLife(w);
   ensureMobility(w);ensureCustody(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);ensurePopulation(w);ensureLocalAdministration(w,true);
   if(w.realm){ensureClaims(w);ensureNobility(w);ensureRulerHistory(w);ensureIntrigue(w);}
+  initializeEstates(w,true);migrateManpower(w);
   return w;
 }
 function record(world: World, person: Person, text: string) {
@@ -177,6 +180,7 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   if(command.type==='travel'&&lifeOf(world,world.characterId??'fictional')?.illness?.severity===3)throw new Error('重病期间无法远行，请先延医休养。');
   if(world.campaign&&world.campaign.status!=='active')throw new Error('本局已结束，请返回主菜单开始新的一局。');
   if('site'in command&&typeof command.site==='string'&&['build','fiscal','service','population'].includes(command.type)&&!civilCanAdmin(world,world.characterId!,command.site))throw new Error('该地由内战对方控制，无法办理此项公务');
+  if(command.type==='estate'){actEstate(world,command);return;}
   if(command.type==='resign'){actResignation(world,command);return;}
   if(command.type==='appointments'){actAppointments(world,command);return;}
  if(command.type==='local'){actLocal(world,command);return;}
@@ -293,7 +297,7 @@ export function advance(world: World, days = 1): void {
     advancePacts(world);
     advanceSeparations(world);
     syncDiplomacy(world);
-    advanceLife(world);
+    advanceLife(world);advanceEstateAI(world);
     if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}
     advanceHouseholdLife(world);
     advanceRetinue(world);

@@ -36,7 +36,7 @@ export const activities:Record<ActivityKind,{name:string;icon:'person'|'gregario
  tour:{name:'巡察安抚',icon:'world',days:10,cost:35,effect:'改善当地秩序与繁荣；亲自巡察可取得个人功绩。'},
  family:{name:'归庄议亲',icon:'renown',days:7,cost:25,effect:'与亲族议事，改善关系、缓解压力并积累家族威望。'},
  succession:{name:'共理家业',icon:'estate',days:14,cost:30,effect:'与已指定继任者共理家业，继任者治理历练 +1，增进关系与家族威望。家业交接仍需另行确认。'},
- training:{name:'赴营督练',icon:'army',days:10,cost:25,effect:'提升驻军士气、补充兵员，取得军事功绩。'},
+ training:{name:'赴营督练',icon:'army',days:10,cost:25,effect:'提升现役士气，取得军事功绩；补员另走有钱粮和训练成本的征募。'},
 };
 const clamp=(n:number,min=0,max=100)=>Math.max(min,Math.min(max,n));
 const actor=(w:World)=>w.characterId??'fictional';
@@ -146,10 +146,10 @@ function resolve(w:World,a:Activity,choice:'measured'|'decisive'){
  if(a.target){const compatible=traitsFor(w,a.target).includes('wary')&&bold?-4:traitsFor(w,id).includes('generous')&&a.kind==='banquet'?4:0,delta=gain+compatible;changeRelationOpinion(w,id,a.target,delta);changeRelationOpinion(w,a.target,id,delta);result.push('双方交往 +'+delta);
  if(a.kind==='banquet'&&relationOpinion(w,id,a.target)>=40&&w.relationships){const key=bondKey(id,a.target),existing=w.relationships.bonds[key];if(!existing){w.relationships.bonds[key]={a:id,b:a.target,kind:'friend',since:w.day};result.push('结为朋友');}}
  }
- if(a.kind==='tour'&&city.order<100||a.kind==='training'&&w.realm!.armies.some(b=>b.realm===r&&b.location===a.site&&!b.journey&&(b.morale<100||b.troops<600))){const n=personal?6:3;awardDeed(w,r,id,'activity:'+a.id,n,activities[a.kind].name+'完成');result.push(politicalName(id,w)+'功绩 +'+n);}
+ if(a.kind==='tour'&&city.order<100||a.kind==='training'&&w.realm!.armies.some(b=>b.realm===r&&b.location===a.site&&!b.journey&&b.morale<100)){const n=personal?6:3;awardDeed(w,r,id,'activity:'+a.id,n,activities[a.kind].name+'完成');result.push(politicalName(id,w)+'功绩 +'+n);}
  if(a.kind==='tour'){const delta=Math.min(100-city.order,(bold?9:6)+Math.floor(score.stewardship/5));city.order+=delta;city.prosperity=clamp(city.prosperity+(bold?1:3));result.push('秩序 +'+delta+'，繁荣 +'+(bold?1:3));if(bold&&g.court){g.court.corruption=clamp(g.court.corruption-3);result.push('积弊 −3');}}
  if(a.kind==='succession'&&w.service&&a.target){const career=w.service.careers[a.target];if(career){career.economy=Math.min(100000,career.economy+1);result.push('继任者治理历练 +1');}}
- if(a.kind==='training'){const army=w.realm!.armies.find(b=>b.realm===r&&b.location===a.site&&!b.journey);if(army){const morale=Math.min(100-army.morale,gain),troops=Math.max(0,Math.min(600-army.troops,bold?30:15,city.population-100));army.morale+=morale;army.troops+=troops;city.population-=troops;result.push('士气 +'+morale+'，兵员 +'+Math.max(0,troops));}else result.push('驻军已离开，未产生军队增益');}
+ if(a.kind==='training'){const army=w.realm!.armies.find(b=>b.realm===r&&b.location===a.site&&!b.journey);if(army){const morale=Math.min(100-army.morale,gain);army.morale+=morale;result.push('操练不另行征兵；补员须通过征募支付兵装、粮食与训练费用');result.push('士气 +'+morale);}else result.push('驻军已离开，未产生军队增益');}
  if(['family','succession'].includes(a.kind)){for(const person of [id,a.target].filter((v):v is string=>!!v)){const before=w.families?.prestige[person]??0;awardPrestige(w,person,'friendship');const gain=(w.families?.prestige[person]??0)-before;if(gain)result.push(politicalName(person,w)+'家族威望 +'+gain);}}
  if(personal&&w.social){const delta=bold?6:-8;const before=w.social.stress;w.social.stress=clamp(before+delta);const actual=w.social.stress-before;result.push('压力 '+(actual>0?'+':'')+actual);}
  end(w,a,'done',result.join('；'));

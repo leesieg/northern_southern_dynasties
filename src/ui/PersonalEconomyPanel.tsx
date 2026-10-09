@@ -1,3 +1,5 @@
+import {ownedEstates,estateForecast} from '../core/estates';
+import {getPerson} from '../core/personRegistry';
 import {CommandButton} from './CommandButton';
 import {terrainSceneStyle,personTerrainSite} from './terrainScene';
 import {SingleChoiceCards} from './SingleChoiceCards';
@@ -5,7 +7,6 @@ import {ActionDialog} from './ActionDialog';
 import {economyCommandReason,type PersonalEconomyCommand} from '../core/personalEconomyAdapter';
 import {nextMonthStart} from '../core/calendar';
 import {estateYield} from '../core/construction';
-import {siteById} from '../data/scenario';
 import {EnterprisePanel} from './CareerSystems';
 import {useState} from 'react';
 import type {GameCommand, World} from '../core/types';
@@ -17,7 +18,7 @@ import {HoverHint} from './HoverHint';
 import {EconomyAction} from './EconomyAction';
 import './personalEconomy.css';
 type Props={world:World;pending:boolean;send:(c:GameCommand)=>void};
-export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEstate?:()=>void}){
+export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEstate?:(id?:string)=>void}){
  const [livingOpen,setLivingOpen]=useState(false);
  const [section,setSection]=useState<'overview'|'household'|'business'|'accounts'>('overview'),[transfer,setTransfer]=useState<{kind:'donate'|'embezzle';account:string}|null>(null);
  if(world.mode!=='sandbox'||!world.characterId||!world.realm)return null;
@@ -26,15 +27,15 @@ export function PersonalEconomyPanel({world,pending,send,onEstate}:Props&{onEsta
  const obligations=world.obligations?.items.filter(d=>d.remaining&&(d.from==='person:'+world.characterId||d.to==='person:'+world.characterId))??[];
  return <section className="personal-economy" aria-label="个人经济"><header className="detail-landscape" style={terrainSceneStyle(personTerrainSite(world,world.characterId))}><Resource name="coins" value={world.people[0].coins} label="个人现钱" caption/></header>
  <div className="private-budget" aria-label="每月 1 日基础收支预测">
-  <HoverHint label="庄园收入" content="家产每月 1 日收入 4 钱，作坊每级另收入 6 钱；自动存入个人现钱，任官或在途均可领取。"><span><ArtIcon name="estate" size={26}/><small>庄园 / 月</small><b>+{estate.coins}</b></span></HoverHint>
+  <HoverHint label="庄园收入" content="家产每月 1 日按庄户、田庄、作坊、租额与当地实际赋役结算；失守暂停提租。粮租存庄仓，远方收成不自动进入行粮。"><span><ArtIcon name="estate" size={26}/><small>庄园 / 月</small><b>+{estate.coins}</b></span></HoverHint>
   <HoverHint label="固定支出" content={`持家 ${living} 钱，幕府俸钱 ${staff} 钱；不含旧欠、研习、行动支出。`}><span><ArtIcon name="coins" size={26}/><small>常支 / 月</small><b>−{living+staff}</b></span></HoverHint>
   <HoverHint label="基础结余" content="庄园减去持家和幕俸的预测；官俸须公库有款才实付，事业合同与其他行动另计。"><span><ArtIcon name="frugal" size={26}/><small>基础结余</small><b>{net>=0?'+':''}{net}</b></span></HoverHint>
  </div>
  <DetailTabs label="经济章节" value={section} onChange={setSection} items={[{id:'overview',label:'概览',icon:'coins'},{id:'household',label:'持家',icon:'estate'},{id:'business',label:'事业',icon:'city'},{id:'accounts',label:'公库',icon:'coins'}]}/>
  <div key={section} className="economy-page">
  {section==='overview'&&<>
- <article className="private-estate detail-landscape" style={terrainSceneStyle(world.holdings.estate.location)}><ArtIcon name="estate" size={64}/><div><h4>{siteById[world.holdings.estate.location]?.name} · 家族庄园</h4><small>下期余 {nextMonthStart(world.day,world.scriptId)-world.day} 日 · 行粮 +{estate.food} 日份</small><small>作坊 {world.holdings.estate.levels.workshop} 级 · 每级增收 6 钱／月</small></div>{onEstate&&<button onClick={onEstate}><ArtIcon name="estate" size={22}/>营建</button>}</article>
- {world.chronicle.filter(e=>e.person==='player'&&e.text.startsWith('家产收入结算')).slice(-1).map(e=><p className="private-receipt" key={e.day}>第 {e.day} 日 · {e.text}</p>)}
+ <article className="private-estate detail-landscape" style={terrainSceneStyle(ownedEstates(world)[0]?.location??world.holdings.estate.location)}><ArtIcon name="estate" size={64}/><div><h4>本人家产 · {ownedEstates(world).length} 处庄园</h4><small>下期余 {nextMonthStart(world.day,world.scriptId)-world.day} 日 · 庄粮 {ownedEstates(world).reduce((n,e)=>n+e.grain,0)}</small><small>月租钱 +{estate.coins} · 粮租 +{ownedEstates(world).reduce((n,e)=>n+estateForecast(world,e).grain,0)} 留在各庄仓；人物外出照常经营，失守暂停提租。</small></div>{onEstate&&<button onClick={()=>onEstate?.()}><ArtIcon name="estate" size={22}/>经营</button>}</article>
+ {world.chronicle.filter(e=>e.person==='player'&&(e.text.startsWith('家产收入结算')||e.text.startsWith((getPerson(world,world.characterId??'fictional')?.name??'')+'庄园月结'))).slice(-1).map(e=><p className="private-receipt" key={e.day}>第 {e.day} 日 · {e.text}</p>)}
  <small>官俸按实际任职与公库余款发放；事业须承接并完成合同，收入归个人。</small>
  </>}
  {section==='household'&&<><article className="living-summary"><ArtIcon name="estate" size={36}/><div><h4>{livingStandards[b?.standard??'modest'].name}</h4><p>每月 {living} 钱 · 缓解压力 {livingStandards[b?.standard??'modest'].relief}</p></div><CommandButton label="调整持家" icon="estate" pending={pending} hint="比较每月私财支出与减压效果，预览后确认生活标准。" onClick={()=>setLivingOpen(true)}/></article>{b&&b.lastBill>0&&<small>最近一期：应付 {b.lastBill} ／ 实付 {b.lastPaid} 钱</small>}<article><h4><ArtIcon name="diligent" size={24}/>延师研习</h4><p>每三期管理 +1，最多 +3；当前 {b?.courses??0}/9 期。</p><EconomyAction {...props} label="研习 · 30 钱／30 日" icon="diligent" consequence="先付私财 30 钱，驻留学习 30 日完成一期；每三期管理 +1，最多 +3。公务或出行顺延，久延未成则费用不退。" command={{type:'economy',action:'programme',kind:'study'}}/>{p.view.programmes.filter(a=>a.status==='active').map(a=><small key={a.id}>{a.kind==='study'?'研习':'宴请'}余 {Math.max(0,a.due-world.day)} 日；公务、出行期间顺延</small>)}</article><ol className="economy-records">{p.view.entries.slice(-12).reverse().map(e=><li key={e.id}><small>第 {e.day} 日</small> {e.reason} <b>{e.delta>0?'+':''}{e.delta||''}{e.delta?' 钱':''}</b></li>)}</ol></>}

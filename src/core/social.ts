@@ -1,3 +1,4 @@
+import {inheritEstates} from './estates';
 import {getCharacter,getPerson} from './personRegistry';
 import {allegianceRealm} from './officeEligibility';
 import {isMonthStart} from './calendar';
@@ -147,7 +148,7 @@ export function applySocial(w:World,command:SocialCommand){
       p.coins=own+inherited;w.relationships.reserves[c.id]=0;
     }
     if(w.life)delete w.life.autoCare;
-    const former=snapshotInfluence(w);w.characterId=c.id;p.name=c.name;p.home=c.home;s.lineage.push({id:c.id,day:w.day});s.heir=null;s.advisor=null;s.scheme=null;s.stress=20;handoverOffice(w);syncRelationships(w);ensureLifestyle(w);restoreInfluence(w,former);return;
+    inheritEstates(w,w.characterId,c.id);const former=snapshotInfluence(w);w.characterId=c.id;p.name=c.name;p.home=c.home;s.lineage.push({id:c.id,day:w.day});s.heir=null;s.advisor=null;s.scheme=null;s.stress=20;handoverOffice(w);syncRelationships(w);ensureLifestyle(w);restoreInfluence(w,former);return;
   }
 }
 export function advanceSocial(w:World){

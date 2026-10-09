@@ -1,3 +1,4 @@
+import {ownedEstates} from '../core/estates';
 import {annotationDensity} from './annotationDensity';
 import {waterMaskContains} from './campaignTerrain';
 import {campaignDomains,controlledSite,domainSignature} from './campaignDomains';
@@ -116,12 +117,12 @@ export function WorldMap(props:Props){
       container.parentElement?.style.setProperty('--atlas-paper-strength',String(presentation.paper));
       container.parentElement?.setAttribute('data-scale',strategicView?'strategic':zoom>=CITY_DETAIL_ZOOM?'close':'landscape');
       const occupied:{x:number;y:number;width:number}[]=[];
-      const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===current.current.world.holdings.estate.location)-Number(a.id===current.current.world.holdings.estate.location)||Number(b.capital)-Number(a.capital));
-      const cityIds=annotationDensity(list.filter(i=>controlledSite(current.current.world,i.id)).map(i=>({key:i.id,point:map!.project(map!.cityCoordinate(i.id,[siteById[i.id].lon,siteById[i.id].lat])),priority:i.capital?2:siteById[i.id].rank==='county'?0:1,required:i.id===current.current.selected||i.id===current.current.world.holdings.estate.location})),{width:w,height:h},zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
+      const list=[...places].sort((a,b)=>Number(b.id===current.current.selected)-Number(a.id===current.current.selected)||Number(b.id===(ownedEstates(current.current.world)[0]?.location??''))-Number(a.id===(ownedEstates(current.current.world)[0]?.location??''))||Number(b.capital)-Number(a.capital));
+      const cityIds=annotationDensity(list.filter(i=>controlledSite(current.current.world,i.id)).map(i=>({key:i.id,point:map!.project(map!.cityCoordinate(i.id,[siteById[i.id].lon,siteById[i.id].lat])),priority:i.capital?2:siteById[i.id].rank==='county'?0:1,required:i.id===current.current.selected||i.id===(ownedEstates(current.current.world)[0]?.location??'')})),{width:w,height:h},zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
       const widths=new Map(list.map(item=>[item.id,item.marker.getElement().offsetWidth]));
       for(const item of list){
         const s=siteById[item.id],coordinate=map.cityCoordinate(s.id,[s.lon,s.lat]),p=map.project(coordinate);item.marker.setLngLat(coordinate);
-        const selected=current.current.selectionActive!==false&&item.id===current.current.selected,estate=item.id===current.current.world.holdings.estate.location;
+        const selected=current.current.selectionActive!==false&&item.id===current.current.selected,estate=item.id===(ownedEstates(current.current.world)[0]?.location??'');
         const width=Math.max(widths.get(item.id)??0,s.name.length*14+38+(selected||item.capital&&zoom>=9?28:0)+(estate?34:0));
         const visible=!strategicView&&cityIds.has(item.id)&&controlledSite(current.current.world,item.id)&&p.x>10&&p.x<w-10&&p.y>15&&p.y<h-30&&(selected||estate||item.capital||zoom>=(s.rank==='county'?6:4.5))&&!occupied.some(v=>Math.abs(v.x-p.x)<(width+v.width)/2+12&&Math.abs(v.y-p.y)<36);
         item.marker.getElement().hidden=!visible;item.portrait.hidden=!(selected||item.capital&&zoom>=9);
@@ -229,12 +230,12 @@ export function WorldMap(props:Props){
       const selectedArmy=p.world.realm?.armies.find(a=>p.selectedArmies.includes(a.id!)),routeKey=p.route.join(',')+'|'+(selectedArmy?.id??'');
       if(lastWorld!==p.world||lastRoute!==routeKey){
         (map.getSource('route') as GeoJSONSource).setData(activeRoute(p.world,p.route,selectedArmy));
-        const estate=p.world.holdings.estate,estateSite=siteById[estate.location];
-        if(estateButton&&estateSite){
+        const estate=ownedEstates(p.world)[0],estateSite=estate?siteById[estate.location]:undefined;
+        if(estateButton&&estateSite&&estate){estateButton.hidden=false;
           places.find(item=>item.id===estate.location)?.marker.getElement().append(estateButton);
           estateButton.setAttribute('aria-label','查看'+estateName(estate.family)+'，位于'+estateSite.name);
           estateButton.title=estateSite.name+' · '+estateName(estate.family);
-        }
+        }else if(estateButton)estateButton.hidden=true;
         const travelers=mapTravelers(p.world);travelingIds=new Set(travelers.filter(person=>person.journey).map(person=>person.id));
         for(const person of travelers){
           const entry=people.get(person.id),pos=position(person);

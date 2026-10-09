@@ -1,3 +1,4 @@
+import {inheritEstates} from './estates';
 import {accountWallet} from './obligations';
 import {personResidence} from './residence';
 import {worldRealms} from './polityRuntime';
@@ -58,6 +59,7 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
  const wasPlayer=id===(w.characterId??'fictional'),next=wasPlayer?heirs(w).find(c=>c.id===w.social?.heir)??heirs(w)[0]:undefined;
  if(w.realm?.governments)ensureRulerHistory(w);
  if(w.custody){delete w.custody.records[id];for(const q of w.custody.warrants)if(q.person===id&&q.status==='pending')q.status='cancelled';}if(id===w.characterId&&w.mobility)w.mobility.captivity=null;
+ inheritEstates(w,id,next?.id);
  p.health=0;p.death={day:w.day,cause};p.careUntil=0;delete p.injuryUntil;
  for(const title of w.nobility?.titles??[])if(title.person===id&&title.until===null)title.until=w.day;
  for(const claim of w.claims?.records??[])if(claim.person===id&&claim.until===null)claim.until=w.day;

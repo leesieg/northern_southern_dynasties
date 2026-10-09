@@ -1,3 +1,5 @@
+import {validEstates,migrateEstates} from './estates';
+import {migrateManpower} from './manpower';
 import {cancelInvalidClaimantWars} from './realm';
 import {syncRulerHistory} from './rulerHistory';
 import {ensureFortifications} from './fortifications';
@@ -115,7 +117,8 @@ export function validateWorld(value: unknown): asserts value is World {
     }
     return true;
   };
-  if(!checkHolding(h.estate,'estate'))return fail();
+  if(!checkHolding(h.estate,'estate')||!validEstates(value as unknown as World))return fail();
+  for(const e of Object.values(h.estates??{}))if(!e||typeof e!=='object'||!checkHolding(e,'estate')||!Object.hasOwn(familyById,String((e as {family?:string}).family)))return fail();
   for(const [id,holding] of Object.entries(h.cities))if(!site(id)||!checkHolding(holding,'city'))return fail();
   const expected = ['player','merchant','messenger','traveler'];
   for (const [index, person] of value.people.entries()) {
@@ -140,7 +143,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.characterId!==undefined){
     if(typeof value.characterId!=='string'||!getCharacter(value as unknown as World,value.characterId))return fail();
     const c=getCharacter(value as unknown as World,value.characterId)!,p=value.people[0],founder=getCharacter(value as unknown as World,(value as unknown as World).social?.founder??value.characterId)!;
-    if(p.name!==c.name||p.home!==c.home||h.estate.family!==c.family||h.estate.location!==founder.home||!value.realm&&!h.governedCities.includes(founder.home))return fail();
+    if(p.name!==c.name||p.home!==c.home||!value.realm&&(h.estate.family!==c.family||h.estate.location!==founder.home)||!value.realm&&!h.governedCities.includes(founder.home))return fail();
     if(!obj(value.campaign)||value.campaign.id!=='stewardship')return fail();
   }else if(h.estate.family!=='shen')return fail();
   if(value.campaign!==undefined){
@@ -171,7 +174,7 @@ function checksum(value: string): string {
   return (hash >>> 0).toString(16);
 }
 export function serializeWorld(world: World): string {
-  upgradeContent(world);
+  upgradeContent(world);migrateEstates(world);migrateManpower(world);
   validateWorld(world);
   const payload = JSON.stringify(world);
   return JSON.stringify({ format:'fynbc-save', version:1, checksum:checksum(payload), payload });
@@ -187,7 +190,7 @@ export function parseWorld(source: string): World {
     if(Object.hasOwn(world,'holdings'))throw new Error('旧版存档含不合法的家产字段。');
     world={...world,version:2,holdings:newHoldings()};
   }
-  upgradeContent(world);
+  upgradeContent(world);migrateEstates(world);
   validateWorld(world);
   if(world.characterId&&!world.social)world.social=newSocial(world.characterId);
   world.scriptId??=DEFAULT_SCRIPT;
@@ -205,7 +208,7 @@ export function parseWorld(source: string): World {
   ensureDiplomacy(world);
   migrateLifestyles(world);if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
-  ensureMobility(world);ensureCustody(world);migrateArmyFood(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
+  ensureMobility(world);ensureCustody(world);migrateArmyFood(world);migrateManpower(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
   if(world.realm){ensureClaims(world);ensureNobility(world);ensureRulerHistory(world);ensureIntrigue(world);cancelInvalidClaimantWars(world);syncRulerHistory(world);}
   const renamed=normalizeLegacyDynastyNames(world);
   if(repairLegacyWestDynastyName(world)||renamed)validateWorld(world);

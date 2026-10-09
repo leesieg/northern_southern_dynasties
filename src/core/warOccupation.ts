@@ -1,3 +1,4 @@
+import {removeCountyPopulation} from './estates';
 import type {World} from './types';
 import type {War} from './wars';
 import {activeWars,warOccupationSites,warRealmSide} from './wars';
@@ -18,6 +19,6 @@ export function captureLossQuote(w:World,war:War,site:string,side:'attack'|'defe
 /** Run only when actual control changes. Civilian deaths never enter military casualty pools. */
 export function settleCaptureLoss(w:World,war:War,site:string,side:'attack'|'defend',cause:CaptureCause){
  migrateCaptureLosses(w);const q=captureLossQuote(w,war,site,side,cause);if(q.seen)return 0;
- war.captureLosses??=[];war.captureLosses.push({site,side,day:w.day,deaths:q.deaths,cause});w.realm!.cities[site].population-=q.deaths;
+ war.captureLosses??=[];war.captureLosses.push({site,side,day:w.day,deaths:q.deaths,cause});removeCountyPopulation(w,site,q.deaths);
  w.chronicle.push({day:w.day,person:'player',text:siteById[site].name+(cause==='surrender'?'议降交城':'战斗夺城')+'，战乱死亡 '+q.deaths+' 名居民（本场同城同方向仅结算一次）。'});w.chronicle=w.chronicle.slice(-100);return q.deaths;
 }
