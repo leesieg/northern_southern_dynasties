@@ -29,6 +29,8 @@ export function sampleCampaignAssets(models:Map<string,Group>){
  for(const [name,model] of models){
   model.updateMatrixWorld(true);const pieces:BufferGeometry[]=[],scaffolds:BufferGeometry[]=[];
   model.traverse(o=>{if(!(o instanceof Mesh))return;const m=(Array.isArray(o.material)?o.material[0]:o.material) as MeshStandardMaterial;
+   // The adaptive terrain apron supplies the city floor; retire the rectangular exported slab.
+   if(name==='city'&&m.name.startsWith('Courtyard earth'))return;
    const g=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrixWorld),position=g.getAttribute('position'),old=g.getAttribute('color'),values:number[]=[],ground:number[]=[],surfaces:number[]=[];
    for(let i=0;i<position.count;i++){
     const c=m.color.clone();if(old)c.multiply(new Color().setRGB(old.getX(i),old.getY(i),old.getZ(i)));values.push(c.r,c.g,c.b);surfaces.push(...architectureSurface(m.name,m.roughness));

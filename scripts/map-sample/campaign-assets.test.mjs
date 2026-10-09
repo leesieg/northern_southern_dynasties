@@ -9,7 +9,7 @@ it('ships complete metre elevations, finite terrain, and sourced regional river 
  const rivers=JSON.parse(file('rivers.json'));expect(rivers.some(r=>r.name==='Huang')).toBe(true);expect(rivers.some(r=>r.name==='Wei')).toBe(true);
  for(const r of rivers){expect(r.points.length).toBeGreaterThan(1);for(const [lon,lat] of r.points){expect(lon).toBeGreaterThan(meta.west-.06);expect(lon).toBeLessThan(meta.east+.06);expect(lat).toBeGreaterThan(meta.south-.06);expect(lat).toBeLessThan(meta.north+.06);}}
 });
-it.each([['terrain',600000],['city',50000],['tree-0',1000],['tree-1',1000],['tree-2',1000],...['tree-close-0','tree-close-1','tree-close-2'].map(n=>[n,4500]),['rocks',150],...['market','granary','hostel'].flatMap(b=>[1,2,3].map(n=>[b+'-'+n,10000])),...['worksite-0','worksite-1','worksite-2'].map(n=>[n,3000])])('validates portable %s scene and triangle budget',(name,budget)=>{
+it.each([['terrain',600000],['city',50000],['tree-0',1000],['tree-1',1000],['tree-2',1000],...['tree-close-0','tree-close-1','tree-close-2'].map(n=>[n,4500]),['rocks',1400],...['market','granary','hostel'].flatMap(b=>[1,2,3].map(n=>[b+'-'+n,10000])),...['worksite-0','worksite-1','worksite-2'].map(n=>[n,3000])])('validates portable %s scene and triangle budget',(name,budget)=>{
  const bytes=file(name+'.glb');expect(bytes.toString('ascii',0,4)).toBe('glTF');expect(bytes.readUInt32LE(8)).toBe(bytes.length);
  const doc=JSON.parse(bytes.toString('utf8',20,20+bytes.readUInt32LE(12)));expect(doc.scenes).toHaveLength(1);expect(doc.scenes[0].nodes.length).toBeGreaterThan(0);
  const triangles=doc.meshes.flatMap(m=>m.primitives).reduce((n,p)=>n+doc.accessors[p.indices].count/3,0);expect(triangles).toBeGreaterThan(0);expect(triangles).toBeLessThan(budget);

@@ -1,11 +1,20 @@
 import {Box3,BufferGeometry,Float32BufferAttribute} from 'three';
 
-/** An earth platform and ground-reaching sides inside the existing city footprint. */
-export function cityFoundationGeometry(bounds:Box3,at:{x:number;y:number;z:number},scale:number,height:(x:number,z:number)=>number|null){
- const corners=[[bounds.min.x,bounds.min.z],[bounds.max.x,bounds.min.z],[bounds.max.x,bounds.max.z],[bounds.min.x,bounds.max.z]],rim:number[][]=[];
- for(let side=0;side<4;side++)for(let i=0;i<8;i++){const a=corners[side],b=corners[(side+1)%4],t=i/8;rim.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
- const top=bounds.min.y-.015/scale,vertices=[(bounds.min.x+bounds.max.x)/2,top,(bounds.min.z+bounds.max.z)/2],indices:number[]=[];
- for(const [x,z] of rim){const ground=height(at.x+x*scale,at.z+z*scale);vertices.push(x,top,z,x,Math.min(top,((ground??at.y)-at.y-.05)/scale),z);}
- for(let i=0;i<rim.length;i++){const a=1+i*2,b=1+(i+1)%rim.length*2;indices.push(0,b,a,a,b,b+1,a,b+1,a+1);}
- const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
+/** A graded earthen apron: level under the walls, irregular toes buried in actual terrain. */
+export function cityFoundationGeometry(bounds:Box3,at:{x:number;y:number;z:number},scale:number,height:(x:number,z:number)=>number|null,clear:(x:number,z:number)=>boolean=()=>true){
+ const cx=(bounds.min.x+bounds.max.x)/2,cz=(bounds.min.z+bounds.max.z)/2,hx=(bounds.max.x-bounds.min.x)/2,hz=(bounds.max.z-bounds.min.z)/2;
+ const top=bounds.min.y-.015/scale,vertices=[cx,top,cz],colors=[.32,.27,.17,1],indices:number[]=[],segments=64,rings=6;
+ for(let ring=0;ring<rings;ring++)for(let i=0;i<segments;i++){
+  const angle=i/segments*Math.PI*2,dx=Math.cos(angle),dz=Math.sin(angle),r=1/Math.max(Math.abs(dx)/hx,Math.abs(dz)/hz);
+  const x=cx+dx*r,z=cz+dz*r,ground=height(at.x+x*scale,at.z+z*scale)??at.y,drop=Math.max(0,at.y+top*scale-ground);
+  const spread=Math.min(Math.min(hx,hz)*.48,Math.max(1.4,drop/scale*1.8))*(1+.12*Math.sin(angle*7)+.07*Math.cos(angle*11));
+  let reach=spread;for(let s=1;s<=4;s++)if(!clear(at.x+(x+dx*spread*s/4)*scale,at.z+(z+dz*spread*s/4)*scale)){reach=spread*(s-1)/4;break;}
+  const t=ring/(rings-1),px=x+dx*reach*t,pz=z+dz*reach*t,base=((height(at.x+px*scale,at.z+pz*scale)??ground)-at.y)/scale;
+  const blend=t*t*(3-2*t),y=top+(base-top)*blend-(ring===rings-1?.035/scale:0);
+  vertices.push(px,y,pz);const grass=blend*.75,grain=.96+.04*Math.sin(i*2.3+ring);
+  colors.push((.32*(1-grass)+.22*grass)*grain,(.27*(1-grass)+.28*grass)*grain,(.17*(1-grass)+.105*grass)*grain,1-Math.pow(t,3));
+  if(ring===0)indices.push(0,1+(i+1)%segments,1+i);
+  if(ring){const a=1+(ring-1)*segments+i,b=1+(ring-1)*segments+(i+1)%segments,c=1+ring*segments+i,d=1+ring*segments+(i+1)%segments;indices.push(a,b,c,b,d,c);}
+ }
+ const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(vertices,3));geometry.setAttribute('color',new Float32BufferAttribute(colors,4));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
 }

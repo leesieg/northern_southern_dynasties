@@ -1,8 +1,8 @@
 import {Color,Mesh,MeshStandardMaterial,type Scene} from 'three';
 
 export const seasons={
- spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.24,.34,.07],high:[.48,.55,.19],forest:[.07,.14,.035],field:[.32,.40,.09],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#cbd0ce',sun:'#fff0cf',sky:'#c5d6e5',intensity:2.8,water:'#326c75'},
- summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.26,.34,.065],high:[.49,.53,.18],forest:[.055,.115,.035],field:[.34,.39,.12],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#ccd1d2',sun:'#ffedc4',sky:'#c5d5e6',intensity:2.9,water:'#285d6b'},
+ spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.14,.23,.055],high:[.34,.43,.14],forest:[.07,.14,.035],field:[.32,.40,.09],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#cbd0ce',sun:'#fff0cf',sky:'#c5d6e5',intensity:2.8,water:'#326c75'},
+ summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.12,.19,.045],high:[.32,.36,.12],forest:[.055,.115,.035],field:[.34,.39,.12],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#ccd1d2',sun:'#ffedc4',sky:'#c5d5e6',intensity:2.9,water:'#285d6b'},
  autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.32,.25,.08],high:[.56,.43,.19],forest:[.21,.15,.045],field:[.48,.37,.14],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#cfc9c2',sun:'#ffe0ac',sky:'#c8d4e4',intensity:2.7,water:'#355e68'},
  winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:[.20,.22,.16],high:[.34,.35,.26],forest:[.09,.13,.11],field:[.29,.27,.20],leaf:'#777a64',pine:'#50655b',snow:.92,fog:'#ced8dc',sun:'#e4edff',sky:'#d5e5f3',intensity:2.15,water:'#678b9c'},
 } as const;
@@ -24,7 +24,9 @@ export function createSeasonState(up:'y'|'z'='y'){
      compile.call(m,s,renderer);
      s.uniforms.seasonSnow=uniforms.seasonSnow;
      s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying float seasonFacing;').replace('#include <defaultnormal_vertex>',`#include <defaultnormal_vertex>\nseasonFacing=inverseTransformDirection(transformedNormal,viewMatrix).${up};`);
-     s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform float seasonSnow; varying float seasonFacing;').replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(.78,.83,.85),seasonSnow*smoothstep(.18,.75,seasonFacing));');
+     const apron=m.name==='Courtyard earth apron'||m.name==='River silt and reed edge';
+     const snow=apron?'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.55,.62,.62),seasonSnow*smoothstep(.4,.78,landscapeNoise(landscapePoint*.32))*.52);':'diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.78,.83,.85),seasonSnow*smoothstep(.18,.75,seasonFacing));';
+     s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform float seasonSnow; varying float seasonFacing;').replace('#include <color_fragment>','#include <color_fragment>\n'+snow);
     };
     m.customProgramCacheKey=()=> programKey+'-campaign-season-surface-v2-'+up;m.needsUpdate=true;
    }
