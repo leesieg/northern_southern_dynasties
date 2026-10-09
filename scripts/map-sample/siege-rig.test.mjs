@@ -58,3 +58,29 @@ it('loads, throws in +Z, and rewinds without moving the army anchor',()=>{
  pose(mixer,4.8);expect(world('Projectile').z-first.z).toBeGreaterThan(.5);pose(mixer,6);expect(joint('Projectile').scale.x).toBeLessThan(.001);pose(mixer,7.9);expect(initial.angleTo(joint('ThrowArm').quaternion)).toBeLessThan(.01);
  mixer.stopAllAction();mixer.uncacheRoot(gltf.scene);
 });
+it('swings the loaded pouch counterclockwise about the arm tip through release',()=>{
+ const mixer=new AnimationMixer(gltf.scene);mixer.clipAction(gltf.animations.find(c=>c.name==='Attack')).play();let previous;
+ for(const t of [3.9,4.0,4.15,4.3,4.48]){
+  pose(mixer,t);const tip=world('SlingL').add(world('SlingR')).multiplyScalar(.5),v=world('Pouch').sub(tip);
+  // Between baked 30fps keys, linear interpolation shortens the arc by under 2mm.
+  expect(Math.abs(v.length()-.56)).toBeLessThan(.002);
+  // View from the cart's +X side: screen right is -Z, screen up is +Y.
+  // A positive signed turn is counterclockwise, independent of the arm's own movement.
+  if(previous)expect((-previous.z)*v.y-previous.y*(-v.z),`pouch turn at ${t}s`).toBeGreaterThan(.0001);
+  previous=v;
+ }
+ pose(mixer,4.46);expect(world('Projectile').distanceTo(world('Pouch'))).toBeLessThan(.002);
+ pose(mixer,4.47);const before=world('Projectile');pose(mixer,4.49);expect(world('Projectile').distanceTo(before)).toBeLessThan(.15);
+ // The reversed sling must stay clear of the timber, including the return stroke.
+ for(let t=3.9;t<=7.8;t+=.1){
+  pose(mixer,t);const pivot=world('ThrowArm'),tip=world('SlingL').add(world('SlingR')).multiplyScalar(.5),pouch=world('Pouch'),shaft=tip.clone().sub(pivot);
+  const fraction=Math.max(0,Math.min(1,pouch.clone().sub(pivot).dot(shaft)/shaft.lengthSq()));
+  expect(pouch.distanceTo(pivot.addScaledVector(shaft,fraction)),`sling/beam clearance at ${t}s`).toBeGreaterThan(.18);
+ }
+ for(let t=4.48;t<4.9;t+=.02){
+  pose(mixer,t);const pivot=world('ThrowArm'),tip=world('SlingL').add(world('SlingR')).multiplyScalar(.5),rock=world('Projectile').add(new Vector3(0,.045,0)),shaft=tip.clone().sub(pivot);
+  const fraction=Math.max(0,Math.min(1,rock.clone().sub(pivot).dot(shaft)/shaft.lengthSq()));
+  expect(rock.distanceTo(pivot.addScaledVector(shaft,fraction)),`stone/beam clearance at ${t}s`).toBeGreaterThan(.14);
+ }
+ mixer.stopAllAction();mixer.uncacheRoot(gltf.scene);
+});

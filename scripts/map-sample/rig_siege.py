@@ -143,6 +143,11 @@ for prefix,shift in shifts.items():
 scene=bpy.context.scene;scene.render.fps=30;rig.animation_data_create();actions={}
 def smooth(a,b,t):
  u=max(0,min(1,(t-a)/(b-a)));return u*u*(3-2*u)
+def sling_swing(t):
+ # From the +X side, +Y screen-right turns the hanging pouch counterclockwise.
+ # Keep that direction throughout the loaded throw, then ease back only after release.
+ # Carry the sling clear of the beam; return it after the arm passes back through vertical.
+ return 1.2*smooth(3.9,4.48,t)*(1-smooth(6.4,7.7,t))
 def pose_world(n,matrix):
  p=arm.bones[n].parent
  parent=rig.pose.bones[p.name].matrix if p else Matrix.Identity(4)
@@ -173,10 +178,10 @@ for name,last in [('Idle',73),('Walk',109),('Attack',241)]:
   if name=='Attack':
    # Load 0.5–2.2s, tension 2.2–4.0s, release 4.0–4.6s, settle and rewind 4.6–8s.
    fire=smooth(3.9,4.55,t);rewind=smooth(5.2,7.7,t);angle+=math.radians(124)*fire*(1-rewind)
-   release=smooth(4.25,4.5,t)*(1-smooth(5.0,6.4,t))
+   release=smooth(4.48,4.7,t)*(1-smooth(5.0,6.4,t))
   rotate('ThrowArm',angle);bpy.context.view_layer.update();arm_matrix=rig.pose.bones['ThrowArm'].matrix@rest['ThrowArm'].inverted();tip_at=arm_matrix@tip
   # Gravity-hanging loaded sling; it trails behind the accelerating arm and opens at release.
-  sling_angle=-.42*math.sin(math.pi*smooth(3.9,4.7,t)) if name=='Attack' else .025*math.sin(math.tau*u)
+  sling_angle=sling_swing(t) if name=='Attack' else .025*math.sin(math.tau*u)
   pouch_at=tip_at+Vector((0,.56*math.sin(sling_angle),-.56*math.cos(sling_angle)))
   pose_world('Pouch',Matrix.Translation(pouch_at-pouch)@rest['Pouch'])
   targets={p:[Vector(v) for v in grips[p]] for p in shifts}
@@ -190,7 +195,7 @@ for name,last in [('Idle',73),('Walk',109),('Attack',241)]:
   for prefix in shifts:hands(prefix,[v+Vector((0,.06,0)) for v in targets[prefix]])
   for side,sign in [('L',1),('R',-1)]:
    start=tip_at+Vector((sign*.07,0,0));end=pouch_at+Vector((sign*.12,0,.03))
-   if side=='R':end+=Vector((0,-.45*release,.12*release))
+   if side=='R':end+=Vector((0,.45*release,.12*release))
    stretch('Sling'+side,start,end)
   stretch('HaulRope',arm_matrix@haul,targets['CrewL'][0])
   rock=pouch_at+Vector((0,0,.045));visible=1
@@ -200,8 +205,8 @@ for name,last in [('Idle',73),('Walk',109),('Attack',241)]:
     # Actual loading stone follows the loader's wrist, then settles in the sling.
     wrist=rig.pose.bones['CrewR_Hand.L'].head.copy();rock=wrist.lerp(pouch_at+Vector((0,0,.045)),smooth(1.8,2.05,t))
    elif t>=4.48 and t<5.18:
-    v=t-4.48;release_angle=-math.radians(35)+math.radians(124)*smooth(3.9,4.55,4.48);release_swing=-.42*math.sin(math.pi*smooth(3.9,4.7,4.48))
-    launch=pivot+Quaternion((1,0,0),release_angle)@(tip-pivot)+Vector((0,.56*math.sin(release_swing),-.56*math.cos(release_swing)+.045));rock=launch+Vector((0,-3.4*v,1.2*v-2.8*v*v));visible=1-smooth(4.95,5.18,t)
+    v=t-4.48;release_angle=-math.radians(35)+math.radians(124)*smooth(3.9,4.55,4.48);release_swing=sling_swing(4.48)
+    launch=pivot+Quaternion((1,0,0),release_angle)@(tip-pivot)+Vector((0,.56*math.sin(release_swing),-.56*math.cos(release_swing)+.045));rock=launch+Vector((0,-3.4*v,2.0*v-2.8*v*v));visible=1-smooth(4.95,5.18,t)
    elif t>=5.18:visible=0
   pose_world('Projectile',Matrix.Translation(rock-(pouch+Vector((0,0,.045))))@rest['Projectile']);rig.pose.bones['Projectile'].scale=(max(.0001,visible),)*3
   for pb in rig.pose.bones:
