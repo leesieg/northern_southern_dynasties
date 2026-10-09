@@ -6,14 +6,27 @@ import {armyHeraldry} from './ArmyHeraldry';
 import {militarySurfaceMaterial} from './militaryRendering';
 import {createInfantryAnimation,disposeInfantryAnimation,disposeInfantryAsset,loadInfantryAsset,updateInfantryAnimation,type InfantryAnimation} from './RiggedInfantry';
 import type {GLTF} from 'three/addons/loaders/GLTFLoader.js';
-export type ArmyModelKind='foot'|'horse'|'siege';
+export type ArmyModelKind='foot'|'lightHorse'|'heavyHorse'|'siege';
+/** A mixed army uses its largest surviving visual group; ties stay stable in this order. */
+export function armyModelKind(army:Army):ArmyModelKind{
+ const counts:Record<ArmyModelKind,number>={foot:0,lightHorse:0,heavyHorse:0,siege:0};
+ for(const unit of army.regiments??[]){const kind=unit.kind==='lightHorse'||unit.kind==='heavyHorse'||unit.kind==='siege'?unit.kind:'foot';counts[kind]+=Math.max(0,unit.troops);}
+ return (Object.keys(counts) as ArmyModelKind[]).reduce((best,kind)=>counts[kind]>counts[best]?kind:best,'foot');
+}
 export interface MilitaryModel {root:Group;body:Group;camp:Group;banner:Group;animation?:InfantryAnimation;seed:number;kind:ArmyModelKind;realm:Army['realm'];origin:ReturnType<typeof realmOrigin>;bannerName:string}
-/** One shared infantry asset for every regiment kind; independent skeletons per army. */
+/** Shared mesh/material per type, independent skeleton and mixer per army. */
 export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void){
  const geometries=new Map<string,BufferGeometry>(),materials=new Map<string,Material>(),textures:Texture[]=[],loader=new TextureLoader();
- let asset:GLTF|undefined,disposed=false;const models=new Set<MilitaryModel>();
- function attach(model:MilitaryModel){if(!asset)return;model.animation=createInfantryAnimation(asset,model.seed);model.body.add(model.animation.root);}
- const ready=loadInfantryAsset().then(loaded=>{if(disposed){disposeInfantryAsset(loaded);return;}asset=loaded;models.forEach(attach);repaint();}).catch(()=>{if(!disposed)warn('军队兵模未能载入，保留军旗和军队操作。');});
+ type AssetKind='foot'|'lightHorse'|'heavyHorse';
+ const assets=new Map<AssetKind,GLTF>(),pending=new Map<AssetKind,Promise<void>>(),models=new Set<MilitaryModel>();let disposed=false;
+ const key=(kind:ArmyModelKind):AssetKind=>kind==='siege'?'foot':kind;
+ function attach(model:MilitaryModel){const asset=assets.get(key(model.kind));if(!asset||disposed||!models.has(model)||model.animation)return;model.animation=createInfantryAnimation(asset,model.seed);if(model.kind==='lightHorse'||model.kind==='heavyHorse'){model.animation.root.name='Rigged campaign '+model.kind;model.animation.root.scale.setScalar(.76);}model.body.add(model.animation.root);}
+ function ensure(kind:AssetKind){
+  if(pending.has(kind))return;
+  const file=kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':'heavy-cavalry-v1.glb';
+  pending.set(kind,loadInfantryAsset(file).then(loaded=>{if(disposed){disposeInfantryAsset(loaded);return;}assets.set(kind,loaded);models.forEach(m=>{if(key(m.kind)===kind)attach(m);});repaint();}).catch(()=>{if(!disposed)warn((kind==='foot'?'步兵':kind==='lightHorse'?'轻骑兵':'甲骑')+'兵模未能载入，保留军旗和军队操作。');}));
+ }
+ ensure('foot');
  function release(model:MilitaryModel){models.delete(model);if(model.animation){disposeInfantryAnimation(model.animation);model.animation=undefined;}model.root.removeFromParent();}
  function geo(key:string,create:()=>BufferGeometry){let g=geometries.get(key);if(!g){g=create();geometries.set(key,g);}return g;}
  const ball=()=>geo('ball',()=>new SphereGeometry(.5,14,10)),cylinder=()=>geo('cylinder',()=>new CylinderGeometry(.5,.5,1,16));
@@ -29,14 +42,14 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function camp(parent:Group){const group=new Group();parent.add(group);group.position.set(-.55,0,-.58);group.scale.setScalar(.46);const shape=geo('tent',()=>{const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute([-.6,0,-.6,.6,0,-.6,0,.7,-.6,-.6,0,.6,.6,0,.6,0,.7,.6],3));g.setAttribute('uv',new Float32BufferAttribute([0,0,1,0,.5,1,0,0,1,0,.5,1],2));g.setIndex([0,3,2,2,3,5,2,5,1,1,5,4,0,2,1,3,4,5]);g.computeVertexNormals();return g;});mesh(group,shape,linen,0,0,0);for(const side of [-1,1])for(const z of [-1,1])beam(group,linen,[side*.5,.1,z*.5],[side*.8,.02,z*.85],.018);return group;}
  function shadow(parent:Group){let m=materials.get('shadow');if(!m){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;const c=canvas.getContext('2d')!,g=c.createRadialGradient(64,64,8,64,64,63);g.addColorStop(0,'rgba(16,23,18,.38)');g.addColorStop(.6,'rgba(16,23,18,.20)');g.addColorStop(1,'rgba(16,23,18,0)');c.fillStyle=g;c.fillRect(0,0,128,128);const map=new CanvasTexture(canvas);textures.push(map);m=new MeshBasicMaterial({map,transparent:true,depthWrite:false,side:DoubleSide});materials.set('shadow',m);}const o=mesh(parent,geo('shadow',()=>new PlaneGeometry(1,1)),m,0,.012,0,1.20,1.10,1);o.rotation.x=-Math.PI/2;}
  return {
-  ready,release,
+  get ready(){return Promise.all(pending.values());},release,
   create(a:Army,kind:ArmyModelKind,name:string,world?:World):MilitaryModel{
    const root=new Group(),body=new Group();root.matrixAutoUpdate=false;root.add(body);shadow(body);
    const model:MilitaryModel={root,body,camp:camp(body),banner:banner(body,a.realm,name,world),kind,realm:a.realm,origin:realmOrigin(world,a.realm),bannerName:name,seed:a.id??0};
-   models.add(model);attach(model);return model;
+   models.add(model);ensure(key(kind));attach(model);return model;
   },
   pruneBanners(active:Set<string>){for(const [key,m] of materials)if(key.startsWith('banner|')&&!active.has(key)){const t=(m as MeshStandardMaterial).map;if(t){t.dispose();const i=textures.indexOf(t);if(i>=0)textures.splice(i,1);}m.dispose();materials.delete(key);}},
-  dispose(){disposed=true;models.forEach(release);if(asset)disposeInfantryAsset(asset);asset=undefined;geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());geometries.clear();materials.clear();textures.length=0;}
+  dispose(){disposed=true;models.forEach(release);assets.forEach(disposeInfantryAsset);assets.clear();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());geometries.clear();materials.clear();textures.length=0;}
  };
 }
 export function animateMilitaryModel(m:MilitaryModel,state:string,seconds:number,motion:boolean){

@@ -14,7 +14,7 @@ import {campaignCityAppearance,campaignCityKey,campaignCityMeters,campaignCityRa
 import {loadCampaignSampleAssets} from '../CampaignSampleAssets';
 import {armyHeraldry} from '../ArmyHeraldry';
 import {armyMapPosition,ARMY_MODEL_PIXELS,type ArmyMarkerPlacement} from '../armyMapPresentation';
-import {militaryModelAssets,animateMilitaryModel,armyModelHeading,type MilitaryModel,type ArmyModelKind} from '../MilitaryModels';
+import {militaryModelAssets,animateMilitaryModel,armyModelHeading,armyModelKind,type MilitaryModel} from '../MilitaryModels';
 import {vegetationCandidates} from './vegetation';
 import {projectGround} from './geography';
 import {landscapeMaterial} from './landscapeMaterial';
@@ -66,7 +66,7 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
   const zoom=view.getZoom();forests.forEach(t=>{t.visible=zoom>=6.2&&state.sceneryDetail&&state.tilted;});
   for(const city of cities.values())city.root.visible=zoom>=6.2&&state.tilted&&city.root.userData.grounded===true;
   const list=state.world.realm?.armies??[],ids=new Set(list.map(a=>a.id));for(const [id,m] of armies)if(!ids.has(id)){military.release(m);armies.delete(id);}let moving=false;if(knownWorld!==state.world){knownWorld=state.world;known=campaignCoverage(state.world);}
-  for(const a of list){if(a.id===undefined)continue;const kind:ArmyModelKind=a.regiments?.some(u=>u.kind==='heavyHorse'||u.kind==='lightHorse')?'horse':a.regiments?.some(u=>u.kind==='siege')?'siege':'foot',name=regimeName(state.world,a.realm);let m=armies.get(a.id);
+  for(const a of list){if(a.id===undefined)continue;const kind=armyModelKind(a),name=regimeName(state.world,a.realm);let m=armies.get(a.id);
    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)military.release(m);m=military.create(a,kind,name,state.world);m.root.matrixAutoUpdate=true;m.root.traverse(o=>{if(o instanceof Mesh){o.castShadow=true;o.receiveShadow=true;}});armies.set(a.id,m);root.add(m.root);}
    const at=armyMapPosition(a),h=view.height(at.lon,at.lat);m.root.visible=view.getZoom()>4.8&&state.tilted&&state.militaryModels&&!!placement(a.id)?.model&&h!==null&&known(at.lon,at.lat);if(!m.root.visible)continue;
    const p=projectGround(at.lon,at.lat);m.root.position.set(p.x,h!+.08,p.z);m.root.scale.setScalar(view.unitsPerPixelAt(at.lon,at.lat)*ARMY_MODEL_PIXELS);const visual=armyVisualState(state.world,a);m.body.rotation.y=a.journey?armyModelHeading(roadHeading(a.journey)):-.18;m.camp.visible=view.getZoom()>=7.4&&(visual==='garrison'||visual==='siege');moving=animateMilitaryModel(m,visual,now/1000,state.armyMotion)||moving;

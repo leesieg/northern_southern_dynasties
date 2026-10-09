@@ -32,8 +32,8 @@ export function disposeInfantryAsset(asset:GLTF){
  for(const m of mats){for(const value of Object.values(m))if(value instanceof Texture)textures.add(value);m.dispose();}
  geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());
 }
-export async function loadInfantryAsset(){
- const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/infantry-rigged-v1.glb');
+export async function loadInfantryAsset(file='infantry-rigged-v1.glb'){
+ const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/'+file);
  if(!['Idle','Walk'].every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少待机或行军动画');}
  applyInfantryLighting(asset.scene);
  return asset;

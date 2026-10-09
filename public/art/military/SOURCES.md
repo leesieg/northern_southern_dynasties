@@ -51,3 +51,12 @@ Style: high-quality art-directed realistic material texture work suitable for a 
 - 可编辑源：`art/military/light-cavalry-v1.blend`、`heavy-cavalry-v1.blend`。生成脚本 `scripts/map-sample/rig_cavalry.py`，在 Blender 后台使用 `--python-exit-code 1 --python` 运行、`--` 后传入战马目录；重新导入实际 GLB 的离线预览脚本为 `scripts/map-sample/render_cavalry_preview.py`，预览输出到忽略目录 `.cache/cavalry-rig/`。
 - 验证：`npx vitest run scripts/map-sample/cavalry-rig.test.mjs` 使用 Three.js 读取实际 GLB，检查网格与文件预算、内嵌贴图、骑手／马体、全部权重、零起点与循环端点、根骨、逐帧有限形变、落地范围、四拍支撑及尾部／胸腹网格的局部拉伸；共 3 项资产测试通过。生产构建通过。未进行浏览器 UI 自动验收、正式地图性能测试或全量游戏回归；骑乘自然度及近景穿插仍由用户看动态预览确认。
 - 本轮只补齐并交付两套骑兵资产，尚未接入 `MilitaryModels` 或改变正式地图的兵种映射。后续接入需要分别缓存轻重骑、保持独立动画混合器，并复用兵模补光、实际军队坐标和资源释放机制；投石车仍需拆件和制作动画。
+
+## 骑兵正式接入与攻城队准备（2026-10-10）
+
+- 轻骑与甲骑已分别接入正式 Three.js 地图和共用地图兵模入口。混编军队按现存人数最多的展示组选择代表模型：刀盾／长矛／弓弩合计为步兵组，轻骑、甲骑、攻城各自统计；同人数按步兵、轻骑、甲骑、攻城顺序稳定选择，零兵力不影响选择。仅影响美术，不改兵种属性、人数或战斗结算。
+- 各兵种按需加载、每类共享一份网格／贴图，军队各自克隆骨架与混合器；骑兵使用 0.76 的展示缩放，兼容现有军旗与点击范围。继承日光补光、实际军队坐标、行军／撤退 Walk、其他状态 Idle、关闭动态、失败提示及资源释放。重编／伤亡引起主兵种变化时重新选模；攻城暂保留现有单兵展示。
+- `siege-crew-v1.glb` 为尚未接入游戏的准备资产：用户当前投石车 60,796 面，保留原轮廓简化至 20,000 面，加两名现有单兵后共 31,728 面、60 个关节、约 9.85 MiB；车体贴图缩至 1K，6 张内嵌 PBR 图。源文件 SHA-256：`910945f6a3233bf84e96cbf3f73c244694ed5a84c62f9a338ad3caed3df1826a`。来源及授权沿用用户的 Tripo 资产，iCloud 原文件未修改。
+- 攻城队 `Idle` 2.4 秒、`Walk` 1.2 秒，均仅包含两名军士的现有动作，根骨与车体固定。源模型的轮轴／轮面与车架连成一体，按空间区域切割会破面，因此准备版保留完整车体；车轮转动、推动／牵引、装填、投臂与绳索抛射仍待专门拆件、绑定和动画，不能作为完成的攻城动画交付。此资产为游戏演绎，未声称南北朝器械的考古复原。
+- 可编辑准备源 `art/military/siege-crew-v1.blend`；复现脚本 `scripts/map-sample/rig_siege.py`，Blender 后台 `--python-exit-code 1 --python` 后传脚本、`--` 后传投石车 GLB。仅覆盖项目内准备资产，离线预览与统计输出在 `.cache/siege-rig/`。
+- 本次局部验证：`src/map/riggedInfantry.test.ts`、`src/map/three/armyActors.test.ts`、`src/map/militaryPresentation.test.ts`、`src/map/militaryLayer.test.ts`、`scripts/map-sample/siege-rig.test.mjs`，连同其直接依赖测试共 9 文件 80 项通过。覆盖实际轻重骑 GLB 的缓存、独立动画、迟到下载与换模、失败隔离、军队坐标、投影点击范围与释放，以及攻城准备资产的预算、权重、循环、落地、军士运动和车体无形变。生产构建通过，保留既有大包体提示。未做浏览器 UI 自动验收、正式地图帧率测量或全量回归；用户在正式游戏人工确认骑兵外观、方向和动画自然度。

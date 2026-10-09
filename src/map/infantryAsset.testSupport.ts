@@ -1,10 +1,10 @@
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 /** Actual shipping mesh, rig and clips; omit only image decoding unavailable in Node. */
-export async function readInfantryTestAsset(){
+export async function readInfantryTestAsset(file='infantry-rigged-v1.glb'){
  // Match other CPU fixtures without adding Node declarations to the browser project.
  const filesystemModule='node:fs/promises';
  const {readFile}=await import(/* @vite-ignore */ filesystemModule) as {readFile(path:string):Promise<Uint8Array<ArrayBuffer>>};
- const bytes=await readFile('public/art/military/infantry-rigged-v1.glb'),header=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),length=header.getUint32(12,true),doc=JSON.parse(new TextDecoder().decode(bytes.subarray(20,20+length)));
+ const bytes=await readFile('public/art/military/'+file),header=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),length=header.getUint32(12,true),doc=JSON.parse(new TextDecoder().decode(bytes.subarray(20,20+length)));
  delete doc.materials;delete doc.textures;delete doc.images;
  for(const mesh of doc.meshes)for(const primitive of mesh.primitives)delete primitive.material;
  const json=new TextEncoder().encode(JSON.stringify(doc)),padded=new Uint8Array(Math.ceil(json.length/4)*4).fill(32);padded.set(json);

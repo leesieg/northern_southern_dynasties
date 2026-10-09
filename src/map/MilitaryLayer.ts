@@ -7,7 +7,7 @@ import type {World} from '../core/types';
 import {roadHeading} from '../core/routeGeometry';
 import {CAMPAIGN_EXPOSURE} from './campaignTerrain';
 import {ARMY_MODEL_PIXELS,armyShowsModel,armyMapPosition,type ArmyMarkerPlacement} from './armyMapPresentation';
-import {militaryModelAssets,animateMilitaryModel,armyModelHeading,type MilitaryModel,type ArmyModelKind} from './MilitaryModels';
+import {militaryModelAssets,animateMilitaryModel,armyModelHeading,armyModelKind,type MilitaryModel} from './MilitaryModels';
 import {addMilitaryLighting,militaryModelScale,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 // One shared MapLibre canvas/context; representative original military miniatures.
 export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;armyMotion:boolean},onFailure:(reason:string)=>void,onReady:()=>void,getPlacement:(id:number)=>ArmyMarkerPlacement|undefined):CustomLayerInterface{
@@ -27,7 +27,7 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
    if(displayedWorld!==state.world){displayedWorld=state.world;visualStates.clear();for(const a of armies)visualStates.set(a.id!,armyVisualState(state.world,a));}
    const ids=new Set(armies.map(a=>a.id!));for(const [id,m] of models)if(!ids.has(id)){assets.release(m);models.delete(id);}let animating=false;
    for(const a of armies){
-    if(!a.id)continue;const units=a.regiments??[],kind:ArmyModelKind=units.some(u=>u.kind==='heavyHorse'||u.kind==='lightHorse')?'horse':units.some(u=>u.kind==='siege')?'siege':'foot',name=regimeName(state.world,a.realm);let m=models.get(a.id);
+    if(!a.id)continue;const kind=armyModelKind(a),name=regimeName(state.world,a.realm);let m=models.get(a.id);
     if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)assets.release(m);m=assets.create(a,kind,name,state.world);scene.add(m.root);models.set(a.id,m);}
     const placement=getPlacement(a.id);m.root.visible=!!placement?.model;if(!placement?.model)continue;
     const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};

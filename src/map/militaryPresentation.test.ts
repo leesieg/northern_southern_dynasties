@@ -6,7 +6,8 @@ import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
-let infantry:GLTF;beforeAll(async()=>{infantry=await readInfantryTestAsset();});
+let infantry:GLTF,lightHorse:GLTF,heavyHorse:GLTF;
+beforeAll(async()=>{[infantry,lightHorse,heavyHorse]=await Promise.all(['infantry-rigged-v1.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb'].map(readInfantryTestAsset));});
 
 const viewport={width:1200,height:800},anchor={x:600,y:400};
 const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale:80,supply:500,siege:0,journey:null});
@@ -113,8 +114,8 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
   const depth=-new Vector3(0,0,0).applyMatrix4(camera.matrixWorldInverse).z,factor=1-Math.exp(-(fog.density**2*depth**2));
   expect(depth).toBeGreaterThan(1000);expect(factor).toBeGreaterThan(0);expect(factor).toBeLessThan(.1);
  });
- it.each(['foot','horse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
-  vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
+ it.each(['foot','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
+  vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>String(url).includes('light-cavalry')?lightHorse:String(url).includes('heavy-cavalry')?heavyHorse:infantry);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
   const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),kind,'梁'),size=armyMarkerFootprint(true),extent={width:0,above:0,below:0};
