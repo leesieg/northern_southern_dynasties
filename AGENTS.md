@@ -24,6 +24,7 @@
 - 旧城池挤出模型退役，不作为缩放、加载或故障回退；优化模型未就绪、数量／密度预算不足或渲染失败时保留城邑铭牌与操作，不重新启用旧模型。
 - 领地层级是有稳定 ID、父子关系的独立实体；行政隶属、军事控制、城市建设分别建模。历史边界／关系版本须带有效日期与出处；城市易手不自动转移全州郡，生成邻域不冒充历史县界，资料覆盖不足须在产品及交付中标明。
 - 线上入口 `https://siegtrack.com/games/fengyun-nanbeichao/`，构建参数 `--base /games/fengyun-nanbeichao/`，静态目录 `/srv/inourname/site/fynbc/`。线上复用鲤世界账号，存档经 `/agent-api/fynbc/saves` 按服务端会话归属；本地用 IndexedDB。主页游戏室入口与账号 API 由主页项目维护；部署兼顾三处版本及原游戏 `/game/`。
+- 游戏发布仅在 `/srv/inourname/site/fynbc/releases/` 创建版本，并原子切换 `/srv/inourname/site/fynbc/current`，链接使用相对路径 `releases/<release>`。主页 `/srv/inourname/site/current` 与 `/srv/inourname/site/releases/` 由主页项目维护，游戏构建不得写入或切换这两处。发布前记录主页指针，发布后确认其未变、公开首页与引用资源正常，并在 Caddy 容器内确认游戏入口及资源可读；匿名登录跳转不能证明静态文件可用。
 
 ## 4. 机制与数值正确性
 
