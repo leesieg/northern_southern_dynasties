@@ -1,6 +1,7 @@
 import {AnimationMixer,Mesh,SkinnedMesh,Texture,type AnimationAction,type Group} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
+import {applyInfantryLighting} from './infantryLighting';
 
 export interface InfantryAnimation {root:Group;mixer:AnimationMixer;idle:AnimationAction;walk:AnimationAction;weight:number;lastTime?:number;}
 export function createInfantryAnimation(asset:GLTF,seed:number):InfantryAnimation{
@@ -34,5 +35,6 @@ export function disposeInfantryAsset(asset:GLTF){
 export async function loadInfantryAsset(){
  const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/infantry-rigged-v1.glb');
  if(!['Idle','Walk'].every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少待机或行军动画');}
+ applyInfantryLighting(asset.scene);
  return asset;
 }
