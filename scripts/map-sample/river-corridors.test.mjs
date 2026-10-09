@@ -4,7 +4,7 @@ import {Box3} from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {projectGround} from '../../src/map/three/geography';
 import {smoothGroundPath,riverSafeCity,nearestOnSegment} from '../../src/map/three/landscapePaths';
-import {campaignCityRadius} from '../../src/map/campaignScenery';
+import {campaignCityRadius,campaignCityMeters} from '../../src/map/campaignScenery';
 import {siteById} from '../../src/data/scenario';
 const data=JSON.parse(readFileSync(new URL('../../public/art/campaign/river-corridors.geojson',import.meta.url)));
 it('ships sourced detailed Yangtze bends and keeps the full Jiankang footprint south of every local river segment',async()=>{
@@ -16,8 +16,8 @@ it('ships sourced detailed Yangtze bends and keeps the full Jiankang footprint s
  const site=siteById.jiankang,original=projectGround(site.lon,site.lat),radius=campaignCityRadius(site,true)*1.12,c=riverSafeCity(original,radius,segs,true);
  expect(c.scale).toBeGreaterThan(0);expect(c.clearance).toBeGreaterThanOrEqual(c.radius+1.2);
  const nearest=segs.map(s=>nearestOnSegment(c,s.a,s.b)).sort((a,b)=>a.distance-b.distance)[0];expect(c.z).toBeGreaterThan(nearest.z);
- const bytes=readFileSync(new URL('../../public/art/campaign/city.glb',import.meta.url)),model=(await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene,bounds=new Box3().setFromObject(model);
- const worldScale=17/(bounds.max.x-bounds.min.x)*19500/17000/Math.cos(site.lat*Math.PI/180)*c.scale;
+ const bytes=readFileSync(new URL('../../public/art/campaign/city-v2.glb',import.meta.url)),model=(await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'')).scene,bounds=new Box3().setFromObject(model);
+ const worldScale=17/(bounds.max.x-bounds.min.x)*campaignCityMeters(site,true)/17000/Math.cos(site.lat*Math.PI/180)*c.scale;
  for(const x of [bounds.min.x,bounds.max.x])for(const z of [bounds.min.z,bounds.max.z])expect(Math.hypot(x*worldScale,z*worldScale)).toBeLessThan(c.radius);
  expect(site.lon).toBe(118.78);expect(site.lat).toBe(32.05);
 });

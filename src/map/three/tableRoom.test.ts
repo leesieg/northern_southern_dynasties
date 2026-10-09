@@ -8,6 +8,6 @@ it('aligns the physical desktop with the authoritative geographic map center',()
 });
 it('reveals the study only at the outermost scale and keeps the paper map flat',()=>{
  expect(tableRoomStrength(3)).toBe(0);expect(tableRoomStrength(2)).toBe(1);expect(tableRoomStrength(2.35)).toBeCloseTo(.5);
- expect(atlasPresentation(1.1,true)).toEqual({paper:1,strategic:true,terrain:false,pitch:30});
+ expect(atlasPresentation(1.1,true)).toEqual({paper:1,strategic:true,terrain:false,pitch:40});
  expect(atlasPresentation(2.2,true).pitch).toBe(0);
 });

@@ -6,7 +6,7 @@ export type CameraAction='home'|'player'|'selected'|'in'|'out'|'left'|'right'|'n
 export function atlasPresentation(zoom:number,tilted:boolean){
   const landscape=Math.max(0,Math.min(1,(zoom-PAPER_ZOOM)/(LANDSCAPE_ZOOM-PAPER_ZOOM)));
   const close=Math.max(0,Math.min(1,(zoom-8.2)/(CITY_VIEW_ZOOM-8.2)));
-  return {paper:1-landscape,strategic:zoom<=PAPER_ZOOM,terrain:tilted&&landscape>0,pitch:zoom<2.2?30*Math.min(1,(2.2-zoom)/1.1):tilted?44*landscape+22*close:0};
+  return {paper:1-landscape,strategic:zoom<=PAPER_ZOOM,terrain:tilted&&landscape>0,pitch:zoom<2.2?40*Math.min(1,(2.2-zoom)/1.1):tilted?44*landscape+22*close:0};
 }
 
 /** Paper gives way to real relief before the middle campaign view. */

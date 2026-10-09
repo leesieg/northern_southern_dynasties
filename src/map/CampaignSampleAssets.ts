@@ -10,7 +10,7 @@ const modules=['city','tree-0','tree-1','tree-2','tree-close-0','tree-close-1','
 let modelData:Promise<(readonly [string,ArrayBuffer])[]>|undefined;
 export function prefetchCampaignSampleAssets(){
  if(!modelData){const pending=Promise.all(modules.map(async name=>{
-  const response=await fetch(import.meta.env.BASE_URL+'art/campaign/'+name+'.glb',{signal:AbortSignal.timeout(20000)});
+  const response=await fetch(import.meta.env.BASE_URL+'art/campaign/'+(name==='city'?'city-v2':name)+'.glb',{signal:AbortSignal.timeout(20000)});
   if(!response.ok)throw new Error(`${name} 模型加载失败（${response.status}）`);
   return [name,await response.arrayBuffer()] as const;
  }));modelData=pending;void pending.catch(()=>{if(modelData===pending)modelData=undefined;});}

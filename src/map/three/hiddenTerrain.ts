@@ -15,7 +15,7 @@ export function hiddenTerrainMaterial(){
   float alpha=1.-smoothstep(.05,.7,known);if(alpha<.002)discard;
   vec3 paper=texture2D(parchment,(uv-paperExtent.xy)/paperExtent.zw).rgb;
   // A narrow brown ink wash softens the paper edge without revealing hidden entities.
-  float ink=dot(paper,vec3(.2126,.7152,.0722));paper=vec3(mix(.96,ink,.38));
+  float ink=dot(paper,vec3(.2126,.7152,.0722));paper=vec3(.77,.69,.51)*mix(.92,ink,.30);
   gl_FragColor=vec4(mix(fogColor*(.91+cloud*.15),paper,strategic),alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
