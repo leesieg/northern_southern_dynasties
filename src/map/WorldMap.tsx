@@ -380,7 +380,7 @@ export function WorldMap(props:Props){
         const id=hit(event.point),model=id&&sceneryLayer?.siteAt(event.point);
         if(id!==hoveredId){clearHover();if(id){map?.setFeatureState({source:'territories',id},{hover:true});const p=current.current,a=p.world.realm?.armies.find(a=>p.selectedArmies.includes(a.id!));if(a){const order=armyOrderPreview(p.world,a,id);if(map&&!order.reason&&order.route.length)(map.getSource('route') as GeoJSONSource).setData(previewArmyRoute(a,order.route));}}hoveredId=id;}
         if(map)map.getCanvas().style.cursor=id?'pointer':'';
-        setHover(id?{id,city:!!model,x:Math.max(8,Math.min(event.point.x+18,container.clientWidth-240)),y:Math.max(8,Math.min(event.point.y+18,container.clientHeight-(current.current.selectedArmies.length?310:235)))}:null);
+        setHover(id&&model?{id,city:true,x:Math.max(8,Math.min(event.point.x+18,container.clientWidth-240)),y:Math.max(8,Math.min(event.point.y+18,container.clientHeight-(current.current.selectedArmies.length?310:235)))}:null);
       });
       map.getCanvas().addEventListener('mouseleave',clearHover);
       map.on('movestart',()=>{clearHover();setMenu(null);});
