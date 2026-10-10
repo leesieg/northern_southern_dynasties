@@ -16,12 +16,19 @@ const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale
 const inViewport=(r:ScreenRect)=>{expect(r.left).toBeGreaterThanOrEqual(8);expect(r.top).toBeGreaterThanOrEqual(8);expect(r.right).toBeLessThanOrEqual(viewport.width-8);expect(r.bottom).toBeLessThanOrEqual(viewport.height-8);};
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
 
-it('animates concealed combat silhouettes without attaching or revealing a troop weapon',async()=>{
+it('equips concealed silhouettes with a generic kit while preserving combat motion and hidden troop kinds',async()=>{
  vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);const attached=vi.spyOn(equipment,'attachMilitaryEquipment');
  vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),'foot','梁',undefined,true);
- try{await assets.ready;let skin!:SkinnedMesh;model.animation!.root.traverse(o=>{if(o instanceof SkinnedMesh&&!skin)skin=o;});const hand=skin.skeleton.bones.find(b=>b.name.replaceAll('.','')==='HandR')!;animateMilitaryModel(model,'garrison',0,true);const before=hand.getWorldPosition(new Vector3());for(let i=1;i<=35;i++)animateMilitaryModel(model,'battle',i/60,true);expect(hand.getWorldPosition(new Vector3()).distanceTo(before)).toBeGreaterThan(.05);expect(attached).not.toHaveBeenCalled();expect(model.root.position.toArray()).toEqual([0,0,0]);}finally{assets.dispose();}
+ try{await assets.ready;let skin!:SkinnedMesh;model.animation!.root.traverse(o=>{if(o instanceof SkinnedMesh&&!skin)skin=o;});const hand=skin.skeleton.bones.find(b=>b.name.replaceAll('.','')==='HandR')!;animateMilitaryModel(model,'garrison',0,true);const before=hand.getWorldPosition(new Vector3());for(let i=1;i<=35;i++)animateMilitaryModel(model,'battle',i/60,true);expect(hand.getWorldPosition(new Vector3()).distanceTo(before)).toBeGreaterThan(.05);expect(attached).toHaveBeenCalledWith(model.animation!.root,kit,'foot');expect(model.animation!.root.getObjectByName('Equipment Sword')?.parent).toBe(hand);expect(model.animation!.root.getObjectByName('Equipment Shield')).toBeDefined();expect(model.animation!.root.getObjectByName('Equipment Spear')).toBeUndefined();expect(model.root.position.toArray()).toEqual([0,0,0]);}finally{assets.dispose();}
+});
+
+it('attaches late-arriving weapons to known and concealed models exactly once',async()=>{
+ let resolveKit!:(kit:GLTF)=>void;vi.spyOn(equipment,'loadMilitaryEquipment').mockImplementation(()=>new Promise<GLTF>(resolve=>{resolveKit=resolve;}));vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
+ vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
+ const assets=militaryModelAssets(()=>{},()=>{}),known=assets.create(army(1),'spear','梁'),concealed=assets.create(army(2),'foot','梁',undefined,true);concealed.root.userData.castShadow=false;
+ try{await vi.waitFor(()=>expect(concealed.animation).toBeDefined());expect(concealed.equipped).not.toBe(true);expect(known.equipped).not.toBe(true);resolveKit(kit);await assets.ready;expect(known.animation!.root.getObjectByName('Equipment Spear')).toBeDefined();expect(known.animation!.root.getObjectByName('Equipment Sword')).toBeUndefined();expect(concealed.animation!.root.getObjectByName('Equipment Sword')).toBeDefined();expect(concealed.animation!.root.getObjectByName('Equipment Shield')).toBeDefined();let props=0;concealed.animation!.root.traverse(o=>{if(o.name.startsWith('Equipment '))props++;if(o instanceof Mesh)expect(o.castShadow).toBe(false);});expect(props).toBe(2);assets.retry();expect(concealed.equipped).toBe(true);}finally{assets.dispose();}
 });
 
 describe('anchored models and map annotations (no UI)',()=>{
