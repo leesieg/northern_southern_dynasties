@@ -1,3 +1,4 @@
+import {armyBattle,liveBattleArmies,armyDisplayState} from '../core/combatPresentation';
 import {ArmyMotion} from './ArmyMotion';
 import {ownedEstates} from '../core/estates';
 import {annotationDensity} from './annotationDensity';
@@ -12,7 +13,6 @@ import {atlasPresentation,CITY_VIEW_ZOOM,type CameraAction} from './atlasPresent
 import {CITY_DETAIL_ZOOM} from './campaignScenery';
 import {getPerson} from '../core/personRegistry';
 import {armyHeraldry} from './ArmyHeraldry';
-import {armyVisualState} from '../core/armyPresentation';
 import {militaryArmyView} from '../core/militaryView';
 import {civilWar} from '../core/civilWars';
 import {mapActivities} from '../core/mapActivities';
@@ -102,7 +102,7 @@ export function WorldMap(props:Props){
     let estateButton:HTMLButtonElement|undefined;
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
     const motion=new ArmyMotion();
-    const armyPosition=(a:Army)=>{const w=current.current.world;motion.sync(w,performance.now(),current.current.speed>0&&current.current.armyMotion);const battle=w.militaryAftermath?.battles.find(b=>b.contact&&b.ended===undefined&&w.day-b.last<=1&&(b.attackers?.includes(a.id!)||b.defenders?.includes(a.id!)));return !a.withdrawalUntil&&a.troops>=100&&battle?.contact?battle.contact:motion.position(a,performance.now());};
+    const armyPosition=(a:Army)=>{const w=current.current.world;motion.sync(w,performance.now(),current.current.speed>0&&current.current.armyMotion);const battle=armyBattle(w,a);return !a.withdrawalUntil&&a.troops>=100&&battle?.contact?battle.contact:motion.position(a,performance.now());};
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
     let sceneryLayer:Pick<CampaignSceneryLayer,'siteAt'|'showsSite'>|undefined;
@@ -160,8 +160,8 @@ export function WorldMap(props:Props){
         const rect=element.getBoundingClientRect();if(!rect.width||!rect.height)continue;const previous=marker.getOffset(),dx=previous.x-offset[0],dy=previous.y-offset[1];
         const bounds={left:rect.left-viewport.left-dx-6,top:rect.top-viewport.top-dy-6,right:rect.right-viewport.left-dx+6,bottom:rect.bottom-viewport.top-dy+6};if(bounds.right>0&&bounds.left<w&&bounds.bottom>0&&bounds.top<h){mapMarkers.push({marker,offset,bounds});}
       }
-      const anchors=armies.map((a,i)=>{const pos=armyPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,combatSide:current.current.world.militaryAftermath?.battles.find(b=>b.ended===undefined&&b.last===current.current.world.day&&(b.attackers?.includes(a.id!)||b.defenders?.includes(a.id!)))?.attackers?.includes(a.id!)?'attack':armyVisualState(current.current.world,a)==='battle'?'defend':undefined,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
-      const armyIds=annotationDensity(anchors.map((a,i)=>({...a,priority:armyVisualState(current.current.world,armies[i])==='battle'?3:militaryArmyView(current.current.world,armies[i]).command?2:0,required:current.current.selectedArmies.includes(Number(a.key))})),view,zoom<6.2?4:zoom<9?8:12,90);
+      const anchors=armies.map((a,i)=>{const pos=armyPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,combatSide:(()=>{const b=armyBattle(current.current.world,a);return b?liveBattleArmies(current.current.world,b,'attack').some(v=>v.id===a.id)?'attack':'defend':undefined;})(),available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
+      const armyIds=annotationDensity(anchors.map((a,i)=>({...a,priority:armyDisplayState(current.current.world,armies[i])==='battle'?3:militaryArmyView(current.current.world,armies[i]).command?2:0,required:current.current.selectedArmies.includes(Number(a.key))})),view,zoom<6.2?4:zoom<9?8:12,90);
       const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available&&(armyIds.has(a.key)||a.combatSide)),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
       // Place settlement groups first, then cards against their final bounds. Models never move.
       const placed:ScreenRect[]=[];
@@ -278,7 +278,7 @@ export function WorldMap(props:Props){
           }
           const {lon,lat}=armyPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
-          item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyVisualState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
+          item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyDisplayState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
           item.button.style.setProperty('--army-morale',view.exact?Math.max(0,Math.min(100,a.morale))+'%':'0%');
           item.button.title=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
           item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人，士气 '+a.morale:''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);

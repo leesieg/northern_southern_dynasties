@@ -1,7 +1,7 @@
 import type {World,Journey} from '../core/types';
 import type {Army} from '../core/realm';
 import {armyMapPosition} from './armyMapPresentation';
-import {armyVisualState} from '../core/armyPresentation';
+import {armyCombatVisual} from '../core/combatPresentation';
 import {sampleRoad,roadHeading} from '../core/routeGeometry';
 interface Segment {route:string[];durations:number[];from:number;to:number;at:number}
 const progress=(j:Journey)=>j.durations.slice(0,j.leg).reduce((n,d)=>n+d,0)+j.elapsed;
@@ -12,7 +12,7 @@ export class ArmyMotion {
  sync(w:World,now:number,running:boolean){
   if(this.world===w){if(!running)this.segments.clear();return;}
   const armies=w.realm?.armies??[];
-  for(const a of armies){if(a.id===undefined)continue;const old=this.previous.get(a.id),j=old?.journey,visual=armyVisualState(w,a);
+  for(const a of armies){if(a.id===undefined)continue;const old=this.previous.get(a.id),j=old?.journey,visual=armyCombatVisual(w,a,'foot').state;
    this.segments.delete(a.id);
    if(running&&this.world&&w.day>this.day&&w.day-this.day<=7&&j&&(visual==='marching'||visual==='retreat'||!a.journey&&a.location===j.route.at(-1))){
     const same=a.journey&&signature(a.journey)===signature(j),to=same?progress(a.journey!):!a.journey&&a.location===j.route.at(-1)?j.durations.reduce((n,d)=>n+d,0):0,from=progress(j);
