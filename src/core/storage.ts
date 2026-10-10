@@ -1,5 +1,6 @@
 import { DEFAULT_SCRIPT } from '../data/scripts';
 import { parseWorld, serializeWorld } from './save';
+import {assertSaveSize} from './saveCapacity';
 import type { SaveInfo, World } from './types';
 
 interface SaveRecord extends SaveInfo { data: string }
@@ -52,6 +53,7 @@ export async function listSaves(): Promise<SaveInfo[]> {
 }
 export async function saveWorld(world: World, auto = false, backup?:'previous-run'): Promise<number> {
   const data = serializeWorld(world);
+  assertSaveSize(data,'保存');
   if (REMOTE) return (await remote('',{method:'POST',headers:{'Content-Type':'application/json','X-Li-Client':'1'},body:JSON.stringify({slot:backup??(auto?'auto':'manual'),data})})).savedAt!;
   const db = await database();
   return new Promise((resolve,reject) => {

@@ -7,7 +7,8 @@ beforeEach(async()=>{await new Promise<void>((resolve,reject)=>{const request=in
 describe('transactional local saves',()=>{
   it('saves and restores world state including an active journey',async()=>{
     const w=newWorld();act(w,{type:'travel',destination:'changan'});advance(w,3);await saveWorld(w);
-    expect(await loadWorld('manual')).toEqual(w);expect((await listSaves())[0].day).toBe(3);
+    // The bare-world fixture uses lifestyle v2; loading applies the existing v4 migration.
+    expect(await loadWorld('manual')).toEqual({...w,lifestyles:{...w.lifestyles,version:4}});expect((await listSaves())[0].day).toBe(3);
   });
   it('rotates exactly three automatic slots and keeps manual saves',async()=>{
     const w=newWorld();await saveWorld(w);

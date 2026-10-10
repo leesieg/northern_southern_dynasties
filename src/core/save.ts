@@ -1,3 +1,4 @@
+import {assertSaveSize} from './saveCapacity';
 import {validEstates,migrateEstates} from './estates';
 import {migrateManpower} from './manpower';
 import {cancelInvalidClaimantWars} from './realm';
@@ -180,7 +181,7 @@ export function serializeWorld(world: World): string {
   return JSON.stringify({ format:'fynbc-save', version:1, checksum:checksum(payload), payload });
 }
 export function parseWorld(source: string): World {
-  if (source.length > 2_000_000) throw new Error('存档超过 2 MB，无法导入。');
+  assertSaveSize(source);
   let envelope: unknown;
   try { envelope = JSON.parse(source); } catch { throw new Error('无法读取这个存档文件。'); }
   if (!obj(envelope) || envelope.format !== 'fynbc-save' || envelope.version !== 1 || typeof envelope.payload !== 'string' || checksum(envelope.payload) !== envelope.checksum) throw new Error('存档格式或校验值错误，当前进度未改变。');
