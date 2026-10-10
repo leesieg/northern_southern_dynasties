@@ -171,7 +171,7 @@ export class ThreeCampaignMap{
  }
  triggerRepaint(){this.dirty=true;}
  private render=(now:number)=>{
-  if(this.stopped)return;this.frame=requestAnimationFrame(this.render);if(!this.ready)return;
+  if(this.stopped)return;this.frame=requestAnimationFrame(this.render);if(!this.ready||document.documentElement.dataset.combatScene==='open')return;
   const elapsed=this.motionFrame?now-this.motionFrame:16;this.motionFrame=now;
   if(this.zoomMotion.target!==undefined){
    this.applyZoom(this.zoomMotion.step(this.getZoom(),elapsed,this.reducedMotion.matches));this.dirty=true;
@@ -204,7 +204,7 @@ export class ThreeCampaignMap{
    let deferred=actorsChanged;
    if(this.overlaysDirty&&!this.isMoving()&&!actorsChanged){const range=this.unitsPerPixel()*Math.max(this.container.clientWidth,this.container.clientHeight)*1.4,a=unprojectGround(this.controls.target.x-range,this.controls.target.z+range),b=unprojectGround(this.controls.target.x+range,this.controls.target.z-range);const extent:[number,number,number,number]=[this.controls.target.x-range,this.controls.target.z-range,range*2,range*2];const strategic=paper>=.999;if(!strategic)this.tint.update(this.layers,this.sources,this.getZoom(),this.states,extent);this.surface!.setTint(this.tint.texture,extent,!strategic);this.overlays.rebuild(this.layers,this.sources,this.getZoom(),this.unitsPerPixel(),this.states,[a.lng,a.lat,b.lng,b.lat],strategic,!strategic);this.overlaysFlat=strategic;this.overlays.root.visible=true;this.overlaysDirty=false;deferred=true;}
    if(!deferred&&!this.isMoving()&&this.actors&&this.farmsRevision!==this.actors.revision()){this.surface!.setFarms(this.actors.farmCenters());this.farmsRevision=this.actors.revision();}
-   this.camera.updateMatrixWorld();this.renderer.shadowMap.needsUpdate=this.getZoom()>=6.2&&(this.dirty||animate)&&!this.isMoving();this.renderer.render(this.scene,this.camera);for(const marker of this.markers)marker.render();this.dirty=animate||deferred;if(!this.isMoving()&&!deferred)this.emit('idle');
+   this.camera.updateMatrixWorld();this.renderer.shadowMap.needsUpdate=this.getZoom()>=6.2&&(this.dirty||animate)&&!this.isMoving();this.renderer.render(this.scene,this.camera);for(const marker of this.markers)marker.render();this.emit('render');this.dirty=animate||deferred;if(!this.isMoving()&&!deferred)this.emit('idle');
   }catch(error){this.stopped=true;cancelAnimationFrame(this.frame);this.emit('error',{error:error instanceof Error?error:new Error(String(error))});}
  };
  remove(){this.stopped=true;this.loading.abort();cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);if(this.roomTimer)clearTimeout(this.roomTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.tint.dispose();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}

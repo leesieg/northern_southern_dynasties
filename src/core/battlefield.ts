@@ -1,3 +1,5 @@
+import {sampleRoad} from './routeGeometry';
+import type {CombatContact} from './combatSnapshots';
 import type {World,Journey} from './types';
 import type {Army} from './realm';
 import {armiesHostile,warArmySide} from './civilWars';
@@ -18,9 +20,9 @@ export function roadEncounters(w:World){
  return pairs;
 }
 /** Collect each battlefield once, including units arriving at a defended city this day. */
-export function fieldBattles(w:World,war:War,meetings:[Army,Army][]){const armies=w.realm?.armies??[],groups=new Map<string,{site:string;attack:Set<Army>;defend:Set<Army>}>();
- const add=(key:string,site:string,a:Army,b:Army)=>{const sideA=warArmySide(w,war,a),sideB=warArmySide(w,war,b);if(!sideA||!sideB||sideA===sideB||a.troops<100||b.troops<100||a.withdrawalUntil||b.withdrawalUntil)return;let group=groups.get(key);if(!group){group={site,attack:new Set(),defend:new Set()};groups.set(key,group);}group[sideA].add(a);group[sideB].add(b);};
+export function fieldBattles(w:World,war:War,meetings:[Army,Army][]){const armies=w.realm?.armies??[],groups=new Map<string,{contact?:CombatContact;site:string;attack:Set<Army>;defend:Set<Army>}>();
+ const add=(key:string,site:string,a:Army,b:Army,contact?:CombatContact)=>{const sideA=warArmySide(w,war,a),sideB=warArmySide(w,war,b);if(!sideA||!sideB||sideA===sideB||a.troops<100||b.troops<100||a.withdrawalUntil||b.withdrawalUntil)return;let group=groups.get(key);if(!group){group={site,contact,attack:new Set(),defend:new Set()};groups.set(key,group);}group[sideA].add(a);group[sideB].add(b);};
  for(const site of new Set(armies.filter(a=>!a.journey).map(a=>a.location))){const local=armies.filter(a=>!a.journey&&a.location===site);for(let i=0;i<local.length;i++)for(const b of local.slice(i+1))add('city:'+site,site,local[i],b);}
- for(const [a,b] of meetings){const stationary=!a.journey?a:!b.journey?b:null,edge=a.journey?[a.journey.route[a.journey.leg],a.journey.route[a.journey.leg+1]]:[],site=stationary?.location??edge[1],key=stationary?'city:'+site:'road:'+edge.sort().join('|');add(key,site,a,b);}
- return [...groups.values()].map(group=>({site:group.site,attack:[...group.attack],defend:[...group.defend]}));
+ for(const [a,b] of meetings){const stationary=!a.journey?a:!b.journey?b:null,edge=a.journey?[a.journey.route[a.journey.leg],a.journey.route[a.journey.leg+1]]:[],site=stationary?.location??edge[1],key=stationary?'city:'+site:'road:'+edge.sort().join('|');const j=a.journey??b.journey,other=b.journey,x=j?j.elapsed/j.durations[j.leg]:0,y=other?other.elapsed/other.durations[other.leg]:0,step=j?1/j.durations[j.leg]:0,meeting=other?x+Math.max(0,1-x-y)*step/(step+1/other.durations[other.leg]):x,contact=!stationary&&j?{key,...sampleRoad(j.route[j.leg],j.route[j.leg+1],meeting)}:undefined;add(key,site,a,b,contact);}
+ return [...groups.values()].map(group=>({contact:group.contact,site:group.site,attack:[...group.attack],defend:[...group.defend]}));
 }

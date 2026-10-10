@@ -19,7 +19,7 @@ export function armyModelKind(army:Army):ArmyModelKind{
  const foot={shield:0,spear:0,archer:0};for(const unit of army.regiments??[])if(unit.kind in foot)foot[unit.kind as keyof typeof foot]+=Math.max(0,unit.troops);
  const variant=(Object.keys(foot) as (keyof typeof foot)[]).reduce((best,kind)=>foot[kind]>foot[best]?kind:best,'shield');return variant==='shield'?'foot':variant;
 }
-export interface MilitaryModel {root:Group;body:Group;camp:Group;banner:Group;animation?:InfantryAnimation;equipped?:boolean;seed:number;kind:ArmyModelKind;realm:Army['realm'];origin:ReturnType<typeof realmOrigin>;bannerName:string}
+export interface MilitaryModel {root:Group;body:Group;camp:Group;banner:Group;animation?:InfantryAnimation;concealed?:boolean;equipped?:boolean;seed:number;kind:ArmyModelKind;realm:Army['realm'];origin:ReturnType<typeof realmOrigin>;bannerName:string}
 /** Shared mesh/material per type, independent skeleton and mixer per army. */
 export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void,signal?:AbortSignal){
  const geometries=new Map<string,BufferGeometry>(),materials=new Map<string,Material>(),textures:Texture[]=[],loader=new TextureLoader();
@@ -28,9 +28,9 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  let equipment:GLTF|undefined,equipmentPending:Promise<void>|undefined;const failed=new Set<AssetKind|'equipment'>();
  const recovered=(kind:AssetKind|'equipment')=>{if(failed.delete(kind)&&!failed.size)warn('');};
  const key=(kind:ArmyModelKind):AssetKind=>kind==='spear'||kind==='archer'?'foot':kind;
- function equip(model:MilitaryModel){if(equipment&&model.animation&&!model.equipped&&model.kind!=='siege'){model.animation.carryPose=createMilitaryCarryPose(model.animation.root,model.kind);model.animation.carryPose();attachMilitaryEquipment(model.animation.root,equipment,model.kind);model.equipped=true;}}
+ function equip(model:MilitaryModel){if(model.concealed){model.equipped=true;return;}if(equipment&&model.animation&&!model.equipped&&model.kind!=='siege'){model.animation.carryPose=createMilitaryCarryPose(model.animation.root,model.kind);model.animation.carryPose();attachMilitaryEquipment(model.animation.root,equipment,model.kind);model.equipped=true;}}
  function ensureEquipment(){if(equipment||equipmentPending)return;equipmentPending=loadMilitaryEquipment(signal).then(loaded=>{if(disposed){disposeInfantryAsset(loaded);return;}equipment=loaded;models.forEach(equip);recovered('equipment');repaint();}).catch(error=>{if(!disposed&&!signal?.aborted){failed.add('equipment');warn(error instanceof MapResourceError&&error.kind==='auth'?error.message:'兵器未能载入，保留军士和军队操作。');}}).finally(()=>{equipmentPending=undefined;});}
- function attach(model:MilitaryModel){const asset=assets.get(key(model.kind));if(!asset||disposed||!models.has(model)||model.animation)return;model.animation=createInfantryAnimation(asset,model.seed);if(key(model.kind)!=='foot'){model.animation.root.name='Rigged campaign '+model.kind;model.animation.root.scale.setScalar(model.kind==='siege'?.68:.76);}model.body.add(model.animation.root);equip(model);}
+ function attach(model:MilitaryModel){const asset=assets.get(key(model.kind));if(!asset||disposed||!models.has(model)||model.animation)return;model.animation=createInfantryAnimation(asset,model.seed);model.animation.mounted=model.kind==='lightHorse'||model.kind==='heavyHorse';if(key(model.kind)!=='foot'){model.animation.root.name='Rigged campaign '+model.kind;model.animation.root.scale.setScalar(model.kind==='siege'?.68:.76);}model.body.add(model.animation.root);equip(model);}
  function ensure(kind:AssetKind){
   if(assets.has(kind)||pending.has(kind))return;
   const file=kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb';
@@ -53,9 +53,9 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function shadow(parent:Group){let m=materials.get('shadow');if(!m){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=128;const c=canvas.getContext('2d')!,g=c.createRadialGradient(64,64,8,64,64,63);g.addColorStop(0,'rgba(16,23,18,.38)');g.addColorStop(.6,'rgba(16,23,18,.20)');g.addColorStop(1,'rgba(16,23,18,0)');c.fillStyle=g;c.fillRect(0,0,128,128);const map=new CanvasTexture(canvas);textures.push(map);m=new MeshBasicMaterial({map,transparent:true,depthWrite:false,side:DoubleSide});materials.set('shadow',m);}const o=mesh(parent,geo('shadow',()=>new PlaneGeometry(1,1)),m,0,.012,0,1.20,1.10,1);o.rotation.x=-Math.PI/2;}
  return {
   get ready(){return Promise.all([...pending.values(),equipmentPending]);},retry(){if(failed.has('equipment'))ensureEquipment();for(const kind of failed)if(kind!=='equipment')ensure(kind);},release,
-  create(a:Army,kind:ArmyModelKind,name:string,world?:World):MilitaryModel{
+  create(a:Pick<Army,'id'|'realm'>,kind:ArmyModelKind,name:string,world?:World,concealed=false):MilitaryModel{
    const root=new Group(),body=new Group();root.matrixAutoUpdate=false;root.add(body);shadow(body);
-   const model:MilitaryModel={root,body,camp:camp(body),banner:banner(body,a.realm,name,world),kind,realm:a.realm,origin:realmOrigin(world,a.realm),bannerName:name,seed:a.id??0};
+   const model:MilitaryModel={concealed,root,body,camp:camp(body),banner:banner(body,a.realm,name,world),kind,realm:a.realm,origin:realmOrigin(world,a.realm),bannerName:name,seed:a.id??0};
    models.add(model);if(kind!=='siege')ensureEquipment();ensure(key(kind));attach(model);return model;
   },
   pruneBanners(active:Set<string>){for(const [key,m] of materials)if(key.startsWith('banner|')&&!active.has(key)){const t=(m as MeshStandardMaterial).map;if(t){t.dispose();const i=textures.indexOf(t);if(i>=0)textures.splice(i,1);}m.dispose();materials.delete(key);}},

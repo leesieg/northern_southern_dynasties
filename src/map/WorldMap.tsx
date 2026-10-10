@@ -1,3 +1,4 @@
+import {ArmyMotion} from './ArmyMotion';
 import {ownedEstates} from '../core/estates';
 import {annotationDensity} from './annotationDensity';
 import {waterMaskContains} from './campaignTerrain';
@@ -41,13 +42,13 @@ import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
 import { territoryHit } from './territories';
 import type {CampaignSceneryLayer} from './CampaignLayer';
-import {armyShowsModel,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
+import {armyShowsModel,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
 
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
   onMapReady?:(map:AtlasMap|null)=>void;
-  militaryModels:boolean;armyMotion:boolean;sceneryDetail:boolean;
+  speed:number;militaryModels:boolean;armyMotion:boolean;sceneryDetail:boolean;
   onActivity:(item:OngoingItem)=>void;
   onEngagement:(selected:EngagementRef)=>void;
   onBrowseActivities:()=>void;
@@ -100,6 +101,8 @@ export function WorldMap(props:Props){
     const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     let estateButton:HTMLButtonElement|undefined;
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
+    const motion=new ArmyMotion();
+    const armyPosition=(a:Army)=>{const w=current.current.world;motion.sync(w,performance.now(),current.current.speed>0&&current.current.armyMotion);const battle=w.militaryAftermath?.battles.find(b=>b.contact&&b.ended===undefined&&w.day-b.last<=1&&(b.attackers?.includes(a.id!)||b.defenders?.includes(a.id!)));return !a.withdrawalUntil&&a.troops>=100&&battle?.contact?battle.contact:motion.position(a,performance.now());};
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
     let sceneryLayer:Pick<CampaignSceneryLayer,'siteAt'|'showsSite'>|undefined;
@@ -157,9 +160,9 @@ export function WorldMap(props:Props){
         const rect=element.getBoundingClientRect();if(!rect.width||!rect.height)continue;const previous=marker.getOffset(),dx=previous.x-offset[0],dy=previous.y-offset[1];
         const bounds={left:rect.left-viewport.left-dx-6,top:rect.top-viewport.top-dy-6,right:rect.right-viewport.left-dx+6,bottom:rect.bottom-viewport.top-dy+6};if(bounds.right>0&&bounds.left<w&&bounds.bottom>0&&bounds.top<h){mapMarkers.push({marker,offset,bounds});}
       }
-      const anchors=armies.map((a,i)=>{const pos=armyMapPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
+      const anchors=armies.map((a,i)=>{const pos=armyPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,combatSide:current.current.world.militaryAftermath?.battles.find(b=>b.ended===undefined&&b.last===current.current.world.day&&(b.attackers?.includes(a.id!)||b.defenders?.includes(a.id!)))?.attackers?.includes(a.id!)?'attack':armyVisualState(current.current.world,a)==='battle'?'defend':undefined,available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
       const armyIds=annotationDensity(anchors.map((a,i)=>({...a,priority:armyVisualState(current.current.world,armies[i])==='battle'?3:militaryArmyView(current.current.world,armies[i]).command?2:0,required:current.current.selectedArmies.includes(Number(a.key))})),view,zoom<6.2?4:zoom<9?8:12,90);
-      const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available&&armyIds.has(a.key)),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
+      const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available&&(armyIds.has(a.key)||a.combatSide)),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
       // Place settlement groups first, then cards against their final bounds. Models never move.
       const placed:ScreenRect[]=[];
       for(const item of mapMarkers){
@@ -176,10 +179,10 @@ export function WorldMap(props:Props){
         const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=strategicView||!placement;if(strategicView||!placement)continue;
         const {offset,model}=placement,size=armyMarkerFootprint(model,strategicView);
         item.button.dataset.presentation=model?'model':'card';
-        item.button.style.setProperty('--army-target-width',size.width+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
+        item.button.style.setProperty('--army-target-width',(placement.combat?100:size.width)+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
         item.button.style.setProperty('--army-badge-bottom',armyModelBadgeBottom(map.getPitch())+'px');
         item.button.style.setProperty('--army-link-length',Math.hypot(offset.x,offset.y)>12?Math.hypot(offset.x,offset.y)+'px':'0px');item.button.style.setProperty('--army-link-angle',Math.atan2(-offset.y,-offset.x)+'rad');
-        const pos=armyMapPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);
+        const pos=armyPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);
       }
       if(knownDomains){
         const outside=(marker:Marker)=>{const p=marker.getLngLat();return !knownDomains!.features.some(f=>waterMaskContains([p.lng,p.lat],f.geometry));};
@@ -273,7 +276,7 @@ export function WorldMap(props:Props){
             button.onclick=event=>{event.stopPropagation();const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(!army)return;if(army.id&&militaryArmyView(current.current.world,army).command)current.current.onSelectArmy(army.id,event.shiftKey);else current.current.onSelect(army.location);};
             const marker=new Marker({element:button,anchor:'bottom',offset:[0,68]}).setLngLat([105,34]).addTo(map);item={marker,button,flag,strength,label};armyMarkers.set(key,item);
           }
-          const {lon,lat}=armyMapPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
+          const {lon,lat}=armyPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
           item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyVisualState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
           item.button.style.setProperty('--army-morale',view.exact?Math.max(0,Math.min(100,a.morale))+'%':'0%');
@@ -332,7 +335,7 @@ export function WorldMap(props:Props){
         if(!map||disposed)return;
         styleReady=true;current.current.onMapReady?.(map);
         sceneryLayer={siteAt:point=>map?.siteAt(point)??null,showsSite:id=>map?.showsSite(id)??false};
-        map.attachWorld(()=>({...current.current,selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},message=>setNotices(value=>message?[...clearMapNotice(value,'models-runtime'),{source:'models-runtime',message,auth:message.includes('登录')}]:clearMapNotice(value,'models-runtime')));
+        map.attachWorld(()=>({...current.current,armyPosition,armyMoving:(a:Army)=>motion.moving(a,performance.now()),selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},message=>setNotices(value=>message?[...clearMapNotice(value,'models-runtime'),{source:'models-runtime',message,auth:message.includes('登录')}]:clearMapNotice(value,'models-runtime')));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
           const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;element.style.setProperty('--city-realm',polities[s.polity].color);button.setAttribute('aria-label',`选择${s.name}`);
@@ -404,7 +407,7 @@ export function WorldMap(props:Props){
       map.on('resourceinactive',event=>{if(!disposed&&event.sourceId)setNotices(value=>clearMapNotice(value,event.sourceId!));});
       map.on('webglcontextlost',()=>setError('图形上下文中断。重新载入地图可恢复，游戏进度仍保留。'));
       map.on('zoomend',syncPerspective);
-      map.on('move',scheduleLabels);map.on('moveend',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId)setNotices(value=>clearMapNotice(value,event.sourceId!));});
+      map.on('render',()=>{if((current.current.world.realm?.armies??[]).some(a=>motion.moving(a,performance.now())))scheduleLabels();});map.on('move',scheduleLabels);map.on('moveend',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId)setNotices(value=>clearMapNotice(value,event.sourceId!));});
       map.once('idle',()=>{setReady(true);setNotices(value=>clearMapNotice(value,'slow'));if(slowLoad)clearTimeout(slowLoad);});
       slowLoad=setTimeout(()=>{if(!disposed&&map&&!map.areTilesLoaded())setNotices(value=>[...clearMapNotice(value,'slow'),{source:'slow',message:'连接较慢，正在继续读取底图。'}]);},20000);
       observer=new ResizeObserver(()=>{map?.resize();scheduleLabels();});observer.observe(container);

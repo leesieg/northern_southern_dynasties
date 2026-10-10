@@ -8,7 +8,7 @@ export function createMilitaryCarryPose(root:Group,kind:ArmyModelKind){
  const skeleton=mesh.skeleton;
  const get=(name:string)=>{const i=skeleton.bones.findIndex(b=>b.name.replaceAll('.','')===name);if(i<0)throw new Error('缺少持握骨骼 '+name);return {bone:skeleton.bones[i],bind:skeleton.boneInverses[i].clone().invert()};};
  const chest=get('Chest'),mounted=kind==='lightHorse'||kind==='heavyHorse';
- const sides=kind==='foot'?['R','L']:kind==='archer'?['L']:['R'];
+ const sides=kind==='foot'?['R','L']:kind==='archer'?['L','R']:['R'];
  const arms=sides.map(side=>{
   const upper=get('UpperArm'+side),fore=get('Forearm'+side),hand=get('Hand'+side),sign=side==='R'?-1:1;
   const point=(m:Matrix4)=>new Vector3().setFromMatrixPosition(m);
@@ -24,18 +24,23 @@ export function createMilitaryCarryPose(root:Group,kind:ArmyModelKind){
   const q=new Quaternion().setFromRotationMatrix(bind),axis=new Vector3(0,1,0).applyQuaternion(q);
   setPose(bone,from,new Quaternion().setFromUnitVectors(axis,to.clone().sub(from).normalize()).multiply(q));
  }
- return ()=>{
+ return (seconds=0,attackWeight=0)=>{
   root.updateWorldMatrix(true,true);inverse.copy(root.matrixWorld).invert();
   chestDelta.multiplyMatrices(inverse,chest.bone.matrixWorld).multiply(chest.bind.clone().invert());
   for(const {upper,fore,hand,sign,a,b,target} of arms){
-   const shoulder=upper.bone.getWorldPosition(new Vector3()).applyMatrix4(inverse),wrist=target.clone().applyMatrix4(chestDelta);
+   const shoulder=upper.bone.getWorldPosition(new Vector3()).applyMatrix4(inverse),wrist=target.clone();
+   const t=(seconds%2.4)/2.4,wave=Math.sin(t*Math.PI*2),strike=Math.max(0,Math.sin(t*Math.PI*2));
+   if(attackWeight>0){const combat=target.clone();if(kind==='archer'){combat.set(sign*.33,mounted?1.85:1.42,sign>0?.58:.28-strike*.30);}else if(kind==='spear'||kind==='heavyHorse'){combat.z+=strike*.40;combat.y+=.12;}else if(sign<0){combat.y+=.32+wave*.28;combat.z+=strike*.26;combat.x+=wave*.10;}else{combat.y+=.20;combat.z+=.16;}wrist.lerp(combat,attackWeight);}
+   wrist.applyMatrix4(chestDelta);
    const axis=wrist.clone().sub(shoulder),d=Math.min(axis.length(),a+b-.0001);axis.normalize();wrist.copy(shoulder).addScaledVector(axis,d);
    const along=(a*a-b*b+d*d)/(2*d),height=Math.sqrt(Math.max(0,a*a-along*along));
    const bend=new Vector3(sign*.25,-1,-.15).transformDirection(chestDelta);bend.addScaledVector(axis,-bend.dot(axis)).normalize();
    const elbow=shoulder.clone().addScaledVector(axis,along).addScaledVector(bend,height);
    point(upper.bone,upper.bind,shoulder,elbow);point(fore.bone,fore.bind,elbow,wrist);
    const palm=new Matrix4().makeBasis(new Vector3(0,-sign,0),new Vector3(0,0,1),new Vector3(-sign,0,0));
-   const turn=new Quaternion().setFromRotationMatrix(chestDelta);setPose(hand.bone,wrist,turn.multiply(new Quaternion().setFromRotationMatrix(palm)));
+   const turn=new Quaternion().setFromRotationMatrix(chestDelta).multiply(new Quaternion().setFromRotationMatrix(palm));
+   if(attackWeight>0&&sign<0&&(kind==='foot'||kind==='lightHorse'))turn.multiply(new Quaternion().setFromAxisAngle(new Vector3(1,0,0),(wave*.9-.25)*attackWeight));
+   setPose(hand.bone,wrist,turn);
   }
  };
 }

@@ -1,3 +1,4 @@
+import * as mapResources from './resourceLoader';
 import * as equipment from './MilitaryEquipment';
 import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
 import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,Mesh,MeshStandardMaterial,PerspectiveCamera,Scene,SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
@@ -117,7 +118,7 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
  });
  it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
   vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);
-  vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>String(url).includes('light-cavalry')?lightHorse:String(url).includes('heavy-cavalry')?heavyHorse:String(url).includes('siege-crew')?siege:infantry);
+  const asset=kind==='lightHorse'?lightHorse:kind==='heavyHorse'?heavyHorse:kind==='siege'?siege:infantry;vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(asset);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
   const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),kind,'梁'),size=armyMarkerFootprint(true),extent={width:0,above:0,below:0};

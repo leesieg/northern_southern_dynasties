@@ -7,7 +7,7 @@ import {activeWars,warOccupationSites} from '../core/wars';
 import {armyMapPosition} from '../map/armyMapPresentation';
 import {siteById} from '../data/scenario';
 
-export type EngagementRef={kind:'battle';key:string}|{kind:'siege';war:number;site:string;side:'attack'|'defend'};
+export type EngagementRef={kind:'battle';key:string}|{kind:'siege';event?:number;war:number;site:string;side:'attack'|'defend'};
 import {battleKey} from '../core/battleReports';
 export {battleKey} from '../core/battleReports';
 export function warBattles(w:World,war:War){return (w.militaryAftermath?.battles??[]).filter(b=>war.id!==undefined&&b.war===war.id).sort((a,b)=>b.day-a.day);}
@@ -19,7 +19,7 @@ export function engagementMarkers(w:World){
   if(b.ended!==undefined||w.day-b.last>1||b.war===undefined||!wars.some(v=>v.id===b.war))continue;
   const army=w.realm?.armies.find(a=>a.id===b.a),site=b.site?siteById[b.site]:undefined;
   // Road encounters keep the actual army projection, rather than the endpoint city.
-  const pos=army?.journey?armyMapPosition(army):site??(army?armyMapPosition(army):null);if(!pos)continue;
+  const pos=b.contact??(army?.journey?armyMapPosition(army):site??(army?armyMapPosition(army):null));if(!pos)continue;
   const war=wars.find(v=>v.id===b.war)!,sides=(['attack','defend'] as const).map(side=>{const report=battleReportSide(b,side),armies=(side==='attack'?b.attackers??[b.a]:b.defenders??[b.b]).map(id=>w.realm?.armies.find(a=>a.id===id)),known=armies.length>0&&armies.every(a=>a&&militaryArmyView(w,a).exact);return {realm:report.participants[0]?.realm??(side==='attack'?war.attacker:war.defender),strength:known?armies.reduce((n,a)=>n+a!.troops,0).toLocaleString():'未详'};});
   const key=battleKey(b);markers.push({key:'battle:'+key,ref:{kind:'battle',key},lon:pos.lon,lat:pos.lat,sides,label:(site?.name??'道路')+'战役 · 第 '+b.round+' 轮'});
  }
