@@ -7,3 +7,11 @@ dist/
 !.env.example
 *.save.json
 *.tsbuildinfo
+
+# Local diagnostics and agent workspace
+/.tmp/
+/.workbuddy/
+/.workbuddy-ai/
+
+# Local design preview package; retain the source proposal
+/chat/fengyun_nanbeichao_personal_economy_preview_dd7bcfa.zip
