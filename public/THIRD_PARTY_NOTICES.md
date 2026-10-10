@@ -108,7 +108,7 @@ THE SOFTWARE.
 
 `/art/portraits/painted-c/` 的 `base.png`、`features-a.png`、`features-b.png`、`robe-b.png` 为内置 OpenAI ImageGen 为本项目原创生成。参考为项目自有 C 风格元善见原画，未使用商业游戏素材。图片原样保留，运行时通过 Canvas 裁切、遮罩和定位组合。组合样板经用户人工验收通过，已首批接入元善见正式肖像，其余规格仍待制作。衣冠与容貌为美术演绎，不代表考古复原或真实人类遗传规律。生成提示词及源文件对应关系保存于 `output/portrait-direction/style-c/parts-v2-prompts.md`。
 
-`/art/portraits/layers/heads-male.png`、`heads-female.png` 和 `clothes.png` 为内置 OpenAI ImageGen 原创生成（2026-09-22）。两张男女面容图集各四种脸型，一张南北文武衣装图集四种衣装，均为透明 PNG。原图保留，游戏通过 CSS 分区叠放，未用商业游戏资产。职位佩饰和特质物件为项目原生 SVG 绘制。生成提示词保存在 `docs/人物分层素材提示词.md`。衣冠、面容、性别表现和遗传参数都是游戏美术设计，不作为真实历史容貌、民族血统或生物遗传结论。
+`/art/portraits/layers/heads-male.png`、`heads-female.png` 和 `clothes.png` 为内置 OpenAI ImageGen 原创生成（2026-09-22）。两张男女面容图集各四种脸型，一张南北文武衣装图集四种衣装，均为透明 PNG。原图保留，游戏通过 CSS 分区叠放，未用商业游戏资产。职位佩饰和特质物件为项目原生 SVG 绘制。生成提示词保存在 `docs/art-direction/人物分层素材提示词.md`。衣冠、面容、性别表现和遗传参数都是游戏美术设计，不作为真实历史容貌、民族血统或生物遗传结论。
 
 
 ### 梁武帝形象参考

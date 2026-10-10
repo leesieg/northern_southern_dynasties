@@ -11,5 +11,5 @@ for(const root of ['src/core','src/data'])for(const name of fs.readdirSync(root)
  }
 }
 const out='# 数值字段声明清单\n\n由 `node scripts/audit-numeric-types.mjs` 从 src/core 与 src/data 的接口、类型声明提取。含嵌套数值、数值字面量及数值容器；版本、ID、日期、随机种子也列入，不能都视为可花费资源。运行时派生公式和配置常量的用途见《数值资源与机制影响审计》，此表不等于机制正确性证明。\n\n声明条目：'+rows.length+'。\n\n| 文件 | 类型 | 字段 | 声明 | 行 |\n| --- | --- | --- | --- | --- |\n'+rows.map(r=>'| '+r.join(' | ')+' |').join('\n')+'\n';
-fs.writeFileSync('docs/数值字段清单.md',out);
+fs.writeFileSync('docs/数值审计/数值字段清单.md',out);
 console.log(`Indexed ${rows.length} numeric declarations.`);

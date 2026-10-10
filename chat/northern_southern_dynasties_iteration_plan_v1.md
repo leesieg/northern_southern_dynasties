@@ -524,7 +524,7 @@ NPC 的候选行为用效用评分选择：个人目标收益＋财富/关系/�
 
 以下为源码事实来源；设计章节的新增机制并不声称已存在。所有路径均相对于基线仓库，固定提交为 `dd7bcfa8626a1409e6419d5e6bdd8d8ea949dfd4`。
 
-- **R1** `docs/数值资源与机制影响审计.md`：公私资源、库存、来源与消费端、现有数值边界。
+- **R1** `docs/数值审计/数值资源与机制影响审计.md`：公私资源、库存、来源与消费端、现有数值边界。
 - **R2** `src/core/social.ts`、`src/core/construction.ts`、`src/core/retinue.ts`、`src/core/relationships.ts`：性格、庄园、交往、幕僚与钱包。
 - **R3** `src/core/government.ts`、`src/core/court.ts`：直接考课功绩、中央职掌与政治资格。
 - **R4** `src/core/realm.ts`：现有军队、单场战争、动员、补给消耗、战斗与议和。
@@ -532,7 +532,7 @@ NPC 的候选行为用效用评分选择：个人目标收益＋财富/关系/�
 - **R6** `src/core/population.ts`：民食、公粮、征调与掠夺人口运输。
 - **R7** `src/core/diplomacy.ts`：联盟、通行、外交任务、现有钱粮军援。
 - **R8** `src/core/assignments.ts`、`src/data/assignments.ts`：差事阶段、方案、审批权限与固定阻碍。
-- **R9** `src/core/localAdministration.ts`、`src/core/relationships.ts`、`src/core/court.ts`、`docs/地方官制与县域治理.md`：州郡席位、权限与评价接口。
+- **R9** `src/core/localAdministration.ts`、`src/core/relationships.ts`、`src/core/court.ts`、`docs/机制设计/地方官制与县域治理.md`：州郡席位、权限与评价接口。
 - **R10** `src/core/life.ts`、`src/core/publicSuccession.ts`、`src/ui/GameEntry.tsx`、`src/ui/CharacterPicker.tsx`：公共继承、家业接续与角色入口。
 
 核对采用 GitHub 连接读取，不涉及代码提交、部署、实机试玩或性能测试。后续实施应先核验分支是否仍与此基线一致。
