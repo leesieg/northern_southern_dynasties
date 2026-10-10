@@ -1,6 +1,6 @@
 # 项目文档
 
-[游戏首页](../README.md) · [文档规范](文档规范.md) · [项目约定](../AGENTS.md) · [产品落地方案](../落地方案.md)
+[游戏首页](../README.md) · [文档规范](文档规范.md) · [项目约定](../AGENTS.md) · [产品落地方案](规划/落地方案.md)
 
 查最近变化，从实施记录开始；理解某项规则，进入机制设计；核对数值与来源，进入对应审计或资料。专题中保留了分期记录，开篇日期、完成清单或测试数量只代表其标注范围，不能据此推定当前全部功能已验收。
 
@@ -8,6 +8,8 @@
 
 | 目录 | 收录内容 | 主要入口 |
 | --- | --- | --- |
+| `规划/` | 产品目标、整体范围与路线 | [落地方案](规划/落地方案.md) |
+| `外部输入/` | 需保留来源与基线的外部设计输入 | [完整迭代方案](外部输入/northern_southern_dynasties_iteration_plan_v1.md) |
 | `机制设计/` | 人物、官制、经济、战争与政权的专题规则及分期变更 | [专题目录](#机制设计) |
 | `数值审计/` | 数值口径、影响关系和自动生成的字段清单 | [机制影响审计](数值审计/数值资源与机制影响审计.md) |
 | `历史资料/` | 剧本资料、区划、人物、人口与考据边界 | [546 年内容扩充](历史资料/546年区划人物与人口扩充.md) |
@@ -50,6 +52,7 @@
 | 地形纹理 | [地图图集提示词](art-direction/terrain-atlas-prompt.txt) |
 | 山水目标 | [目标提示词](art-direction/landscape-target-prompt.txt)、[目标图](art-direction/landscape-target.png) |
 | 地图书房目标 | [目标说明](art-direction/atlas-study-target-v2.md)、[目标图](art-direction/atlas-study-target-v2.png) |
+| 肖像历史样板 | [A／B／C 方向](art-direction/portrait-studies/index.html)、[C 方向](art-direction/portrait-studies/style-c/index.html)、[人物组合](art-direction/portrait-studies/style-c/composer.html)、[人物名单](art-direction/portrait-studies/style-c/roster.html) |
 | 游戏实机截图 | [地图](images/campaign-map.png)、[人物](images/character.png)、[生活重心](images/lifestyle.png)、[庄园](images/estate.png) |
 
 目标图是美术参考，实机截图是指定版本的画面记录。两类图像分别存放、分别标注，均不自动证明当前版本已验收。
@@ -60,10 +63,23 @@
 
 - [迭代整合进度](实施记录/迭代整合进度.md)：最近实施事实、验证边界和未完成项。
 - [逐轮更新日志](更新日志/README.md)：已有 001—086 轮日志，077 轮缺失，不补造内容；轮次不是发行版本号。
+- [前端评估 · 2026-09-26](历史归档/前端评估-2026-09-26.md)：早期评估记录，结论仅适用于当时核对范围。
 - [历史开发记录](历史归档/历史开发记录.md)：从原 README 归档的完整开发正文，含已被后续替换的方案。
-- [完整游戏迭代方案 v1](../chat/northern_southern_dynasties_iteration_plan_v1.md)：外部设计输入，留在 `chat/`；实现情况见实施记录。
+- [完整游戏迭代方案 v1](外部输入/northern_southern_dynasties_iteration_plan_v1.md)：外部设计输入，留在 `docs/外部输入/`；实现情况见实施记录。
 
-## 仓库目录
+## 仓库根目录
+
+根目录按职责保留以下入口与目录，项目文档、外部输入、历史样板集中在 `docs/`。
+
+| 根目录文件 | 用途 |
+| --- | --- |
+| `README.md` | 面向玩家的首页、线上入口与开发入口 |
+| `AGENTS.md` | 项目协作、权限与工程规则 |
+| `index.html`、`map-sample.html` | 游戏与独立地图样板的 Vite 入口 |
+| `package.json`、`package-lock.json` | 项目命令、依赖与锁定版本 |
+| `tsconfig.json`、`vite.config.ts` | TypeScript 与构建配置 |
+| `.gitignore` | 本地产物与敏感文件的忽略规则 |
+
 
 | 路径 | 用途 |
 | --- | --- |
@@ -78,7 +94,7 @@
 | `scripts/`、`tests/` | 数据与美术生成脚本、资产验证；其他测试就近存放 |
 | `docs/` | 专题设计、实施记录、数值审计与日志 |
 | `docs/images/` | README 精选实机截图；不进入游戏构建 |
-| `chat/` | 外部设计输入；本地预览压缩包不提交 |
-| `output/` | 已保留的美术方向样板与评估资料 |
 
-`node_modules/`、`dist/`、`.cache/`、`.tmp/` 与 WorkBuddy 工作目录为本地产物，不提交。临时诊断日志、预览与截图放入已忽略目录；README 精选实机截图保存在 `docs/images/`；需要保留的源素材、来源说明和设计文档按对应目录归档。缓存中的实机验收证据不随日常整理自动删除。
+`node_modules/`、`dist/`、`.cache/`、`.tmp/` 与 WorkBuddy 工作目录为本地产物，不提交。TypeScript 增量状态写入 `.cache/tsc/tsconfig.tsbuildinfo`，不在根目录生成。临时诊断日志、预览与截图放入已忽略目录；README 精选实机截图保存在 `docs/images/`；需要保留的源素材、来源说明和设计文档按对应目录归档。缓存中的实机验收证据不随日常整理自动删除。
+
+历史肖像样板仅作设计追溯，不属于正式游戏入口或构建输出。纯静态样板可通过本地开发服务查看；组合与名单样板依赖 `/src/` 源码入口，需在开发服务中使用，文件迁移不代表重新验收。
