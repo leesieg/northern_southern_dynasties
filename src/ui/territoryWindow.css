@@ -210,3 +210,42 @@ dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header>bu
 
 /* Remove the icon from the grid: the hidden text node still creates an anonymous row. */
 .territory-window.territory-window button[aria-label="关闭辖区详情"],dialog.action-detail-dialog.paper-dialog.treasury-window-dialog>header>button{position:relative}
+
+/* Compact account window, shared by the local and court treasury entries. */
+@media(min-width:721px){
+ .territory-window.territory-window .location-development[data-tab=finance]>.territory-page-content{height:min(560px,calc(100svh - 150px));bottom:65px}
+ .ink-treasury{width:min(940px,92vw);max-width:100%;margin-inline:auto;gap:28px;padding:0}
+ .territory-window.territory-window .ink-treasury-book{padding:20px 28px 16px;max-width:none}
+ .territory-window.territory-window .ink-fiscal-columns{min-height:72px;max-height:170px}
+ .ink-fiscal-rules>button{position:absolute;right:0;bottom:12px;margin:0}
+ .ink-treasury-jurisdictions{flex:0 0 260px;min-width:0;padding:20px 16px 16px;max-height:82%}
+ .territory-window.territory-window .location-development[data-tab=finance]>.territory-page-content>.territory-page-close{right:calc((100% - min(940px,92vw))/2 + 264px);top:12px}
+ dialog.action-detail-dialog.treasury-window-dialog{width:min(960px,92vw);height:min(600px,calc(100svh - 96px))}
+ dialog.treasury-window-dialog .ink-treasury{padding:0;gap:28px}
+ dialog.action-detail-dialog.paper-dialog.treasury-window-dialog>header{right:12px;top:8px}
+}
+.ink-treasury-title{padding-bottom:8px}
+.ink-treasury-title h2{font-size:24px;margin-top:4px}
+.ink-treasury-balance{padding:12px 0;gap:10px}
+.ink-treasury-balance>.art-icon{width:36px!important;height:36px!important}
+.ink-treasury-balance strong{font-size:30px}
+.ink-treasury-balance strong small{font-size:14px}
+.ink-fiscal-period{padding-left:12px;font-size:12px}
+.ink-fiscal-period b{font-size:16px}
+.ink-fiscal-columns{gap:16px}
+.ink-fiscal-columns>section+section{padding-left:16px}
+.ink-fiscal-columns h3{font-size:18px}
+.ink-fiscal-rows button{font-size:13px}
+.ink-fiscal-rules{padding:9px 0}
+.ink-fiscal-rules h3{font-size:16px}
+.ink-fiscal-rules p{font-size:12px}
+.ink-fiscal-petitions{font-size:13px;padding-block:10px}
+.ink-fiscal-petitions b{font-size:17px}
+.ink-fiscal-actions button{font-size:13px;min-height:44px}
+.ink-fiscal-actions .art-icon{width:23px!important;height:23px!important}
+.ink-treasury-jurisdictions h3{font-size:20px}
+.ink-treasury-jurisdictions>small{font-size:12px}
+.ink-treasury-jurisdictions button{min-height:60px;gap:7px}
+.territory-window.territory-window .ink-treasury-jurisdictions .county-artwork{width:44px;height:44px}
+.ink-treasury-jurisdictions button>strong{font-size:14px}
+.ink-treasury-jurisdictions button b{font-size:16px}

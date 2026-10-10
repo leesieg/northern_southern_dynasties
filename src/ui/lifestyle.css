@@ -37,3 +37,59 @@ dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-n
 
 /* Keep the compact desktop's final row inside the scene and long effects above the action. */
 @media(max-width:1300px),(max-height:820px){.lifestyle-node-seal{width:64px;height:64px}.lifestyle-node-seal .lifestyle-glyph{transform:scale(.9)}dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-arbor .lifestyle-arbor-scene .lifestyle-tree-node{transform:translate(-50%,-32px);gap:5px}.lifestyle-tree-node strong{font-size:16px;line-height:22px}dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail .lifestyle-selected-effect{margin:12px 0 10px;padding-top:12px}.lifestyle-branches button{transition:none}.lifestyle-node-seal{transition:none}}
+
+/* Keep the illustrated tree at the same reading scale as other details. */
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog{width:min(1200px,calc(100vw - 48px));height:min(760px,calc(100dvh - 64px));max-height:calc(100dvh - 64px)}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>header{height:52px;min-height:52px;padding-block:6px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>header h2{font-size:26px;gap:12px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>header h2::after{font-size:12px;width:20px;height:32px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>header button{width:36px;min-height:36px;top:7px;right:16px;font-size:30px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>.action-detail-body{padding-bottom:12px}
+.lifestyle-scene-toolbar,.lifestyle-branches{height:46px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-branches button{font-size:16px;min-height:42px;padding:4px 10px;gap:8px}
+.lifestyle-branches .lifestyle-glyph{width:28px;height:28px}
+.lifestyle-scene-summary{font-size:12px;gap:10px}
+.lifestyle-scene-summary>span{padding-left:10px}
+.lifestyle-arbor{grid-template-columns:minmax(0,1fr) 300px;gap:12px}
+.lifestyle-focus-choice{height:106px;margin-bottom:10px;gap:10px}
+.lifestyle-focus-choice label{padding:10px 12px 10px 33%}
+.lifestyle-focus-choice label::before{background:linear-gradient(90deg,transparent 14%,#e6ddcb99 28%,#e6ddcbe6 42%,#e6ddcbf2)}
+.lifestyle-focus-choice label:has(input:checked){padding:8px 10px 8px calc(33% - 2px)}
+.lifestyle-focus-choice label:has(input:checked)::after{right:8px;top:8px;width:18px;height:18px;font-size:14px}
+.lifestyle-focus-choice strong{font-size:20px;gap:6px;letter-spacing:0}
+.lifestyle-focus-choice em{font-size:16px}
+.lifestyle-focus-choice small{font-size:12px;letter-spacing:0;margin-top:4px}
+.lifestyle-focus-intent{font-size:11px!important;margin-top:5px!important}
+.lifestyle-focus-benefit{font-size:11px!important;line-height:1.5!important}
+.lifestyle-node-seal{width:52px;height:52px}
+.lifestyle-node-seal .lifestyle-glyph{transform:scale(.72)}
+.lifestyle-node-seal i{width:16px;height:16px;font-size:11px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-arbor .lifestyle-arbor-scene .lifestyle-tree-node{transform:translate(-50%,-26px);width:86px;gap:4px}
+.lifestyle-tree-node strong{font-size:13px;line-height:18px}
+.lifestyle-path-label{font-size:18px;height:28px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail{padding:16px 18px!important}
+.lifestyle-node-detail>header{min-height:66px;gap:12px}
+.lifestyle-detail-seal{width:58px;height:58px}
+.lifestyle-detail-seal .lifestyle-glyph{width:44px;height:44px}
+.lifestyle-node-detail h4{font-size:22px;margin-bottom:6px}
+.lifestyle-node-detail>header small{font-size:12px;letter-spacing:1px;padding:2px 9px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail .lifestyle-selected-effect,dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail.has-long-effect .lifestyle-selected-effect{font-size:15px;line-height:1.6;margin:12px 0 10px;padding-top:12px}
+.lifestyle-effect-target{font-size:12px;grid-template-columns:60px minmax(0,1fr);gap:6px 8px;padding:7px 0}
+.lifestyle-plan,.lifestyle-node-detail.has-long-effect .lifestyle-plan{margin-top:14px;padding-top:12px}
+.lifestyle-plan h5{font-size:17px;letter-spacing:1px;margin-bottom:10px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-plan label{font-size:13px;min-height:32px;gap:8px}
+.lifestyle-plan input{width:18px;height:18px}
+.lifestyle-plan-facts{font-size:13px;grid-template-columns:72px minmax(0,1fr);margin-top:8px;padding:6px 0}
+.lifestyle-plan .lifestyle-queue-title{font-size:12px;letter-spacing:1px;margin:10px 0 7px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-plan button{font-size:14px;min-height:38px;margin-top:14px;padding:7px 8px}
+.lifestyle-margin-motto{font-size:13px;letter-spacing:5px;left:calc(100% + 10px)}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>footer{height:60px;gap:14px;padding-block:8px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>footer>button:first-child{font-size:14px;min-height:40px;gap:8px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>footer>button:first-child::before{font-size:26px}
+.lifestyle-confirm-preview{font-size:12px;max-height:42px}
+dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>footer .primary{width:160px;min-height:40px;padding:6px 12px;font-size:16px}
+@media(min-width:801px) and (min-height:651px){
+ .lifestyle-focus-choice{height:106px}
+ .lifestyle-arbor-scene{min-height:320px}
+ dialog.paper-dialog.paper-dialog.paper-dialog.lifestyle-tree-dialog>.action-detail-body{overflow:auto}
+}
