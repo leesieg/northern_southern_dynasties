@@ -1,3 +1,4 @@
+import {mapResource} from './resourceLoader';
 import {prepareMilitaryHands} from './MilitaryCarryPose';
 import {AnimationMixer,Mesh,SkinnedMesh,Texture,type AnimationAction,type Group} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
@@ -39,8 +40,8 @@ export function disposeInfantryAsset(asset:GLTF){
  for(const m of mats){for(const value of Object.values(m))if(value instanceof Texture)textures.add(value);m.dispose();}
  geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());
 }
-export async function loadInfantryAsset(file='infantry-rigged-v1.glb'){
- const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/'+file);
+export async function loadInfantryAsset(file='infantry-rigged-v1.glb',signal?:AbortSignal){
+ const response=await mapResource('art/military/'+file,{signal,priority:3}),asset=await new GLTFLoader().parseAsync(await response.arrayBuffer(),'');
  const required=file==='siege-crew-v1.glb'?['Idle','Walk','Attack']:['Idle','Walk'];
  if(!required.every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少必要动画');}
  if(file!=='siege-crew-v1.glb')prepareMilitaryHands(asset.scene);

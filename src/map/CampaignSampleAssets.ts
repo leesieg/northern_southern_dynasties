@@ -5,21 +5,26 @@ import {Box3,BufferGeometry,Color,CylinderGeometry,DoubleSide,Float32BufferAttri
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {campaignCityKey,MAX_CITY_GEOMETRIES,type CampaignCityAppearance,type CityDetail} from './campaignScenery';
+import {mapResource} from './resourceLoader';
 
 const modules=['city','tree-0','tree-1','tree-2','tree-close-0','tree-close-1','tree-close-2','rocks',...['market','granary','hostel'].flatMap(b=>[1,2,3].map(level=>`${b}-${level}`)),...['worksite-0','worksite-1','worksite-2']];
-let modelData:Promise<(readonly [string,ArrayBuffer])[]>|undefined;
-export function prefetchCampaignSampleAssets(){
- if(!modelData){const pending=Promise.all(modules.map(async name=>{
-  const response=await fetch(import.meta.env.BASE_URL+'art/campaign/'+(name==='city'?'city-v2':name)+'.glb',{signal:AbortSignal.timeout(20000)});
-  if(!response.ok)throw new Error(`${name} 模型加载失败（${response.status}）`);
-  return [name,await response.arrayBuffer()] as const;
- }));modelData=pending;void pending.catch(()=>{if(modelData===pending)modelData=undefined;});}
- return modelData;
+const modelBuffers=new Map<string,ArrayBuffer>();
+const modelTransfers=new Map<string,{signal?:AbortSignal;promise:Promise<ArrayBuffer>}>();
+function modelBuffer(name:string,signal?:AbortSignal){
+ const cached=modelBuffers.get(name);if(cached)return Promise.resolve(cached);const existing=modelTransfers.get(name);if(existing&&!existing.signal?.aborted)return existing.promise;
+ const promise=mapResource('art/campaign/'+(name==='city'?'city-v2':name)+'.glb',{signal,priority:3}).then(r=>r.arrayBuffer()).then(buffer=>{modelBuffers.set(name,buffer);return buffer;}).finally(()=>{if(modelTransfers.get(name)?.promise===promise)modelTransfers.delete(name);});modelTransfers.set(name,{signal,promise});return promise;
 }
-export async function loadCampaignSampleAssets(){
- const loader=new GLTFLoader(),data=await prefetchCampaignSampleAssets();
+export function prefetchCampaignSampleAssets(signal?:AbortSignal,progress?:(completed:number,total:number)=>void){
+ let completed=0;
+ return Promise.all(modules.map(async name=>{
+  const buffer=await modelBuffer(name,signal);
+  progress?.(++completed,modules.length);return [name,buffer] as const;
+ }));
+}
+export async function loadCampaignSampleAssets(signal?:AbortSignal,progress?:(completed:number,total:number)=>void){
+ const loader=new GLTFLoader(),data=await prefetchCampaignSampleAssets(signal,progress);
  const models=await Promise.all(data.map(async([name,buffer])=>[name,(await loader.parseAsync(buffer,'')).scene] as const));
- return sampleCampaignAssets(new Map(models));
+ const assets=sampleCampaignAssets(new Map(models));if(signal?.aborted){assets.dispose();throw new DOMException('地图读取已取消','AbortError');}return assets;
 }
 /** Bake the approved Blender modules to one draw call per settlement; no legacy city fallback. */
 export function sampleCampaignAssets(models:Map<string,Group>){

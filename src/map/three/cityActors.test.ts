@@ -1,6 +1,6 @@
 import {afterEach,expect,it,vi} from 'vitest';
 import {BoxGeometry,Group,InstancedMesh,Matrix4,Mesh,MeshStandardMaterial,Scene,Vector3} from 'three';
-import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import * as mapResources from '../resourceLoader';
 import {newCampaignWorld} from '../../core/world';
 import {siteById} from '../../data/scenario';
 import * as campaignAssets from '../CampaignSampleAssets';
@@ -11,7 +11,7 @@ import * as vegetation from './vegetation';
 afterEach(()=>vi.restoreAllMocks());
 it('grounds the complete city above the footprint peak and updates its foundation after terrain refinement',async()=>{
  // Isolate placement from asset downloads; the box has a deliberately non-zero base height.
- vi.spyOn(GLTFLoader.prototype,'loadAsync').mockReturnValue(new Promise(()=>{}));
+ vi.spyOn(mapResources,'mapResource').mockReturnValue(new Promise(()=>{}));
  const geometry=new BoxGeometry(17,3,17),material=new MeshStandardMaterial();
  vi.spyOn(campaignAssets,'loadCampaignSampleAssets').mockResolvedValue({city:()=>new Group().add(new Mesh(geometry,material)),prune:()=>{},dispose:()=>{geometry.dispose();material.dispose();},tree:geometry,trees:[],closeTrees:[],rocks:geometry});
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');world.realm!.armies=[];
@@ -28,7 +28,7 @@ it('grounds the complete city above the footprint peak and updates its foundatio
 });
 
 it('roots forest instances on rendered terrain without stacking a rock layer below them',async()=>{
- vi.spyOn(GLTFLoader.prototype,'loadAsync').mockReturnValue(new Promise(()=>{}));
+ vi.spyOn(mapResources,'mapResource').mockReturnValue(new Promise(()=>{}));
  const geometry=new BoxGeometry(1,1,1);
  vi.spyOn(campaignAssets,'loadCampaignSampleAssets').mockResolvedValue({city:()=>new Group(),prune:()=>{},dispose:()=>geometry.dispose(),tree:geometry,trees:[geometry,geometry,geometry],closeTrees:[geometry,geometry,geometry],rocks:geometry});
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');world.realm!.armies=[];

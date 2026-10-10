@@ -30,6 +30,9 @@ import { useEffect, useRef, useState } from 'react';
 import type {GeoJSONSource} from 'maplibre-gl';
 import {ThreeCampaignMap as AtlasMap,ThreeMarker as Marker} from './three/ThreeCampaignMap';
 import './atlas.css';
+import {MapLoading,MapDetailLoading} from './MapLoading';
+import {clearMapNotice,type MapNotice,type MapLoadProgress,type MapLoadStage} from './mapLoadState';
+import {MapResourceError,mapResourceDiagnostics} from './resourceLoader';
 import { polities, siteById, sites } from '../data/scenario';
 import { position,planRoute } from '../core/world';
 import type { World } from '../core/types';
@@ -57,7 +60,7 @@ interface Props {
   world:World; selected:string; selectionActive?:boolean; onClearSelection?:()=>void; route:string[]; mode:MapMode; showTravelers:boolean; tilted:boolean;
   cameraAction:{type:CameraAction;seq:number}; onSelect:(id:string)=>void; onPreviewRoute:(id:string)=>void;
 }
-interface MapAPI {update:()=>void;camera:(type:Props['cameraAction']['type'])=>void}
+interface MapAPI {retryResource:(source:string)=>void;update:()=>void;camera:(type:Props['cameraAction']['type'])=>void}
 function armyOrderPreview(w:World,a:Army,id:string){const reason=realmReason(w,{type:'realm',action:'march',army:a.id,site:id}),j=a.journey,from=j?.route[j.leg+1]??a.location,path=from===id?{route:[id],days:0}:planRoute(from,id,node=>canMarchThrough(w,a.realm,node,id));return {reason,route:path?.route??[],days:path?path.days+(j?j.durations[j.leg]-j.elapsed:0):null};}
 
 export function WorldMap(props:Props){
@@ -65,7 +68,9 @@ export function WorldMap(props:Props){
   current.current=props;
   const [combatGroupKey,setCombatGroupKey]=useState<string|null>(null);
   const [activitySite,setActivitySite]=useState<string|null>(null);
-  const [error,setError]=useState(''),[warning,setWarning]=useState(''),[ready,setReady]=useState(false),[retry,setRetry]=useState(0);
+  const [error,setError]=useState(''),[errorAuth,setErrorAuth]=useState(false),[notices,setNotices]=useState<MapNotice[]>([]),[progress,setProgress]=useState<Partial<Record<MapLoadStage,MapLoadProgress>>>({}),[ready,setReady]=useState(false),[retry,setRetry]=useState(0);
+  const detailProgress=progress.detail?.busy?progress.detail:progress.art?.busy?progress.art:progress.models?.busy?progress.models:undefined;
+  function downloadDiagnostics(){const url=URL.createObjectURL(new Blob([JSON.stringify(mapResourceDiagnostics(),null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='fengyun-map-diagnostics.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   const [hover,setHover]=useState<{id:string;x:number;y:number;city:boolean}|null>(null);
   const [menu,setMenu]=useState<{id:string;x:number;y:number}|null>(null);
   const menuButton=useRef<HTMLButtonElement>(null);
@@ -103,7 +108,7 @@ export function WorldMap(props:Props){
     const labels:{marker:Marker;data:typeof atlasLabels[number]}[]=[];
     const realmLabels=new globalThis.Map<RealmId,Marker>();
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    setReady(false);setError('');setWarning('');setHover(null);setMenu(null);
+    setReady(false);setError('');setErrorAuth(false);setNotices([]);setProgress({});setHover(null);setMenu(null);
 
     function home(){
       if(!map)return;
@@ -327,7 +332,7 @@ export function WorldMap(props:Props){
         if(!map||disposed)return;
         styleReady=true;current.current.onMapReady?.(map);
         sceneryLayer={siteAt:point=>map?.siteAt(point)??null,showsSite:id=>map?.showsSite(id)??false};
-        map.attachWorld(()=>({...current.current,selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},reason=>setWarning(reason));
+        map.attachWorld(()=>({...current.current,selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},message=>setNotices(value=>message?[...clearMapNotice(value,'models-runtime'),{source:'models-runtime',message,auth:message.includes('登录')}]:clearMapNotice(value,'models-runtime')));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
           const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;element.style.setProperty('--city-realm',polities[s.polity].color);button.setAttribute('aria-label',`选择${s.name}`);
@@ -387,23 +392,23 @@ export function WorldMap(props:Props){
       map.on('click',event=>{const p=current.current,id=hit(event.point),model=id&&sceneryLayer?.siteAt(event.point),node=id?nodeForSite(id,p.territoryLevel):null;if(!id||!model&&p.selectionActive!==false&&node?.id===p.territory){clearHover();p.onClearSelection?.();}else if(model)p.onSelect(id);else if(node)p.onSelectTerritory(node.id);setMenu(null);});
       map.on('dblclick',event=>{const id=hit(event.point);if(id){current.current.onSelect(id);focusSite(id);}});
       map.on('contextmenu',event=>{event.preventDefault();event.originalEvent.preventDefault();const id=hit(event.point);if(id)openMenu(id,event.point.x,event.point.y);});
+      map.on('loadprogress',event=>{if(!disposed&&event.progress)setProgress(value=>({...value,[event.progress!.stage]:event.progress}));});
       map.on('error',event=>{
         if(disposed)return;
         console.error('[Atlas]',event.error);
-        const id=(event as typeof event&{sourceId?:string}).sourceId;
-        if(id==='national-dem')setError('全国真实地形无法载入，请重新载入地图：'+event.error.message);
-        else if(id==='detail-dem')setWarning(event.error.message);
-        else if(id==='land')setWarning('备用陆地底图未能载入。请重新载入地图。');
-        else if(id||/fetch|network|tile|http|ajax/i.test(event.error.message))setWarning('部分在线地形或水系未能载入，当前显示可用图层。');
-        else setError(`地图初始化异常：${event.error.message}`);
+        const source=event.sourceId??'map',auth=event.error instanceof MapResourceError&&event.error.kind==='auth';
+        const message=auth?event.error.message:source==='detail-dem'?'近景细化暂未完成，当前保留真实全国底图。':source==='art'?'部分山色尚未载入，底图和地点操作仍可使用。':source==='models'?'城邑模型暂未载入，可继续使用地点铭牌。':source==='atlas-study'?'舆图室暂未载入，地图仍可使用。':event.error.message;
+        if(source==='national-dem'||source==='map'){setError(auth?message:'地图暂未就绪：'+message);setErrorAuth(auth);}
+        else setNotices(value=>[...clearMapNotice(value,source),{source,message,auth}]);
       });
+      map.on('resourceinactive',event=>{if(!disposed&&event.sourceId)setNotices(value=>clearMapNotice(value,event.sourceId!));});
       map.on('webglcontextlost',()=>setError('图形上下文中断。重新载入地图可恢复，游戏进度仍保留。'));
       map.on('zoomend',syncPerspective);
-      map.on('move',scheduleLabels);map.on('moveend',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId==='detail-dem')setWarning(value=>value.startsWith('近景高程')?'':value);});
-      map.once('idle',()=>{setReady(true);if(slowLoad)clearTimeout(slowLoad);});
-      slowLoad=setTimeout(()=>{if(!disposed&&map&&!map.areTilesLoaded())setWarning('高清地形仍在加载；可以继续操作，或稍后重试。');},20000);
+      map.on('move',scheduleLabels);map.on('moveend',scheduleLabels);map.on('sourcedata',event=>{scheduleLabels();if(event.sourceId)setNotices(value=>clearMapNotice(value,event.sourceId!));});
+      map.once('idle',()=>{setReady(true);setNotices(value=>clearMapNotice(value,'slow'));if(slowLoad)clearTimeout(slowLoad);});
+      slowLoad=setTimeout(()=>{if(!disposed&&map&&!map.areTilesLoaded())setNotices(value=>[...clearMapNotice(value,'slow'),{source:'slow',message:'连接较慢，正在继续读取底图。'}]);},20000);
       observer=new ResizeObserver(()=>{map?.resize();scheduleLabels();});observer.observe(container);
-      api.current={update,camera(type){
+      api.current={update,retryResource:source=>map?.retryResource(source),camera(type){
         if(!map)return;
         const duration=reduced?0:450;
         if(type==='home')home();
@@ -438,7 +443,7 @@ export function WorldMap(props:Props){
   const hoverOrder=hoverSite&&hoverArmy?armyOrderPreview(props.world,hoverArmy,hoverSite.id):null;
   const combatGroup=combatGroupKey?engagementGroups(props.world).find(g=>g.key===combatGroupKey):undefined;
   const activityGroup=activitySite?mapActivities(props.world).find(group=>group.site===activitySite):undefined;
-  return <div className="world-map atlas-map">
+  return <div className={`world-map atlas-map${ready?' is-ready':''}`}>
     <div className="map-canvas atlas-canvas" ref={host}/>
     <div className="atlas-paper" aria-hidden="true"/>
     {combatGroupKey&&<ActionDialog title="此地战事" cancelLabel="返回地图" onClose={()=>setCombatGroupKey(null)} actions={null}><div className="war-event-list">{combatGroup?combatGroup.items.map(item=><button key={item.key} onClick={()=>{setCombatGroupKey(null);props.onEngagement(item.ref);}}><ArtIcon name={item.ref.kind==='battle'?'army':'city'} size={26}/><span>{item.label}</span><b>查看 ›</b></button>):<p>此地已无进行中的战事。</p>}</div></ActionDialog>}
@@ -458,8 +463,9 @@ export function WorldMap(props:Props){
       <button disabled={!!player.journey||player.location===menu.id} onClick={()=>{props.onPreviewRoute(menu.id);setMenu(null);}}>预览前往路线 <span>→</span></button>
       <small>{player.journey?'行旅途中，抵达后可规划新路线':'预览后，在左侧出行页确认启程'}</small>
     </div>}
-    {!ready&&!error&&<div className="map-status">正在铺展山河<span>载入真实高程与矢量水系</span></div>}
-    {warning&&!error&&<div className="atlas-network-notice" role="status"><span>{warning}</span><button onClick={()=>setRetry(n=>n+1)}>重试</button></div>}
-    {error&&<div className="map-status error" role="alert">{error}<button onClick={()=>setRetry(n=>n+1)}>重新载入地图</button></div>}
+    {!error&&<MapLoading ready={ready} progress={progress.terrain}/>}
+    {ready&&!error&&detailProgress&&<MapDetailLoading progress={detailProgress}/>}
+    {!!notices.length&&!error&&<div className="atlas-network-notice" role="status"><div className="map-notice-text">{notices.map(notice=><span key={notice.source}>{notice.message}</span>)}</div><div className="map-notice-actions">{notices.some(n=>n.auth)&&<a href="/?login=games" target="_blank" rel="noopener">重新登录</a>}{notices.some(n=>['detail-dem','art','models','models-runtime','atlas-study'].includes(n.source))&&<button onClick={()=>notices.forEach(n=>api.current?.retryResource(n.source))}>重试未完成部分</button>}<button onClick={downloadDiagnostics}>下载诊断</button></div></div>}
+    {error&&<div className="map-status error" role="alert">{error}{errorAuth&&<a href="/?login=games" target="_blank" rel="noopener">重新登录</a>}<button onClick={()=>setRetry(n=>n+1)}>{errorAuth?'登录后重试':'重新载入地图'}</button><button onClick={downloadDiagnostics}>下载诊断</button></div>}
   </div>;
 }

@@ -8,7 +8,7 @@ import {ACESFilmicToneMapping,Color,DirectionalLight,Fog,Group,HemisphereLight,P
 import {MapControls} from 'three/addons/controls/MapControls.js';
 import type {FeatureCollection,Geometry} from 'geojson';
 import type {MapOptions,StyleSpecification} from 'maplibre-gl';
-import {prefetchCampaignSampleAssets} from '../CampaignSampleAssets';
+import type {MapLoadProgress} from '../mapLoadState';
 import {hiddenTerrainMaterial} from './hiddenTerrain';
 import {countrySurface} from './surface';
 import {CampaignOverlays,coverageTexture,evaluate,type OverlayLayer} from './overlays';
@@ -21,7 +21,7 @@ import {sites} from '../../data/scenario';
 import type {ArmyMarkerPlacement} from '../armyMapPresentation';
 
 type Point={x:number;y:number};
-type AtlasEvent={point:Point;originalEvent:MouseEvent;error:Error;sourceId?:string;preventDefault:()=>void};
+type AtlasEvent={point:Point;originalEvent:MouseEvent;error:Error;sourceId?:string;progress?:MapLoadProgress;preventDefault:()=>void};
 const empty:FeatureCollection={type:'FeatureCollection',features:[]};
 /** Actual standalone renderer. Map-compatible event/data adapters retain existing game actions only. */
 export class ThreeCampaignMap{
@@ -31,6 +31,7 @@ export class ThreeCampaignMap{
  private season=createSeasonState();private surface?:Awaited<ReturnType<typeof countrySurface>>;private actors?:Awaited<ReturnType<typeof campaignActors>>;
  private sun=new DirectionalLight('#ffe1ad',2.7);private sky=new HemisphereLight('#c5d5e6','#49432c',.66);private overlays:CampaignOverlays;private clouds=new Group();private cloudMaterial:ShaderMaterial;private coverage?:Texture;
  private listeners=new Map<string,Set<(event:AtlasEvent)=>void>>();private sources=new Map<string,FeatureCollection>();private layers:OverlayLayer[];private states=new Map<string,Record<string,unknown>>();
+ private readonly loading=new AbortController();private retryActors?:()=>void;private actorsLoading=false;
  private stopped=false;private ready=false;private frame=0;private dirty=true;private overlaysDirty=true;private moving=false;private settlingUntil=0;private lastCameraMotion=-Infinity;private lastZoom=0;private lastSeason='';private lastSeasonSync='';private flat=false;private lastFrame=0;private lastRefine='';private refineTimer?:ReturnType<typeof setTimeout>;
  private zoomMotion:CampaignZoomMotion;private zoomBearing=0;private zoomOrigin=new Vector3();private zoomAnchorReady=false;private motionFrame=0;private reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
  private flight?:{start:number;duration:number;from:Vector3;to:Vector3;fromTarget:Vector3;toTarget:Vector3;autoPitch:boolean};
@@ -67,10 +68,10 @@ export class ThreeCampaignMap{
   bind('keydown',event=>{const e=event as KeyboardEvent;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();this.zoomMotion.cancel();this.flight=undefined;const d=this.unitsPerPixel()*60,shift=new Vector3(e.key==='ArrowLeft'?-d:e.key==='ArrowRight'?d:0,0,e.key==='ArrowUp'?-d:e.key==='ArrowDown'?d:0);this.controls.target.add(shift);this.camera.position.add(shift);this.changedView();}else if(e.key==='+'||e.key==='=')this.zoomIn();else if(e.key==='-')this.zoomOut();else if(e.key.toLowerCase()==='q'||e.key.toLowerCase()==='e')this.easeTo({bearing:this.getBearing()+(e.key.toLowerCase()==='q'?-20:20)});});
   const attribution=document.createElement('details');attribution.className='three-map-attribution';attribution.innerHTML='<summary>地图资料</summary><p>地形：<a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Mapzen / AWS</a>，SRTM 与 GMTED2010 courtesy USGS，ETOPO1 courtesy NOAA。水系与陆地：<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>（公共领域）。雾外为本局已建模政权范围，非完整历史疆界；近景高程从本地全国分块按需细化。</p>';this.container.append(attribution);this.cleanup.push(()=>attribution.remove());
   this.resize();this.easeTo({center:(options.center as [number,number])??[110,32],zoom:options.zoom??4,pitch:options.pitch??0});
-  void prefetchCampaignSampleAssets().catch(()=>{});void this.load();this.frame=requestAnimationFrame(this.render);
+  void this.load();this.frame=requestAnimationFrame(this.render);
  }
- private async load(){try{const surface=await countrySurface(this.season);if(this.stopped){surface.dispose();return;}this.surface=surface;this.cloudMaterial.uniforms.parchment.value=surface.hiddenPaper;this.cloudMaterial.uniforms.paperExtent.value.fromArray(surface.parchment.userData.extent);surface.setFlat(this.flat);this.sources.set('land',surface.land);this.sources.set('local-rivers',surface.rivers);this.scene.add(surface.root);this.ready=true;this.overlaysDirty=true;this.updateClouds();this.emit('style.load');this.changedView();this.emit('sourcedata',{sourceId:'national-dem'});this.triggerRepaint();}catch(error){if(!this.stopped)this.emit('error',{sourceId:'national-dem',error:error instanceof Error?error:new Error(String(error))});}}
- attachWorld(state:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined,ready:()=>void,warning:(message:string)=>void){this.state=state;this.getPlacement=placement;void campaignActors({scene:this.scene,detailMap:this.surface?.detailMap,sceneryHeight:(lon,lat)=>{const h=this.surface?.renderedHeight(lon,lat);return h==null?null:h*(this.surface?.root.scale.y??1);},footprintHeight:bounds=>this.surface?.footprintHeight(bounds)??null,cityLayout:id=>this.surface?.cityLayout(id),height:(lon,lat)=>this.height(lon,lat),isRiver:(lon,lat)=>this.surface?.isRiver(lon,lat)??false,isLand:(lon,lat)=>this.surface?.isLand(lon,lat)??false,isMoving:()=>this.isMoving(),project:ll=>this.project(ll),getZoom:()=>this.getZoom(),getSize:()=>({width:this.container.clientWidth,height:this.container.clientHeight}),unitsPerPixel:()=>this.unitsPerPixel(),unitsPerPixelAt:(lon,lat)=>{const p=projectGround(lon,lat),v=new Vector3(p.x,this.height(lon,lat)??0,p.z).applyMatrix4(this.camera.matrixWorldInverse);return Math.max(0,-v.z)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);},getTarget:()=>this.controls.target,getViewKey:()=>[this.container.clientWidth,this.container.clientHeight,...this.camera.quaternion.toArray().map(n=>n.toFixed(2))].join(":"),repaint:()=>this.triggerRepaint(),warning},state,id=>this.getPlacement(id)).then(actors=>{if(this.stopped){actors.dispose();return;}this.actors=actors;ready();this.triggerRepaint();this.prepareRoom();}).catch(e=>warning('模型加载失败，保留铭牌操作：'+String(e)));}
+ private async load(){try{const surface=await countrySurface(this.season,{signal:this.loading.signal,progress:progress=>{if(!this.stopped)this.emit("loadprogress",{progress});}});if(this.stopped){surface.dispose();return;}this.surface=surface;this.cloudMaterial.uniforms.parchment.value=surface.hiddenPaper;this.cloudMaterial.uniforms.paperExtent.value.fromArray(surface.parchment.userData.extent);surface.setFlat(this.flat);this.sources.set('land',surface.land);this.sources.set('local-rivers',surface.rivers);this.scene.add(surface.root);this.ready=true;this.overlaysDirty=true;this.updateClouds();this.loadArtwork();this.emit('style.load');this.changedView();this.emit('sourcedata',{sourceId:'national-dem'});this.triggerRepaint();}catch(error){if(!this.stopped)this.emit('error',{sourceId:'national-dem',error:error instanceof Error?error:new Error(String(error))});}}
+ attachWorld(state:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined,ready:()=>void,warning:(message:string)=>void){this.state=state;this.getPlacement=placement;this.retryActors=()=>{if(this.actorsLoading||this.actors||this.stopped)return;this.actorsLoading=true;this.emit("loadprogress",{progress:{stage:"models",completed:0,total:20,busy:true}});void campaignActors({scene:this.scene,detailMap:this.surface?.detailMap,sceneryHeight:(lon,lat)=>{const h=this.surface?.renderedHeight(lon,lat);return h==null?null:h*(this.surface?.root.scale.y??1);},footprintHeight:bounds=>this.surface?.footprintHeight(bounds)??null,cityLayout:id=>this.surface?.cityLayout(id),height:(lon,lat)=>this.height(lon,lat),isRiver:(lon,lat)=>this.surface?.isRiver(lon,lat)??false,isLand:(lon,lat)=>this.surface?.isLand(lon,lat)??false,isMoving:()=>this.isMoving(),project:ll=>this.project(ll),getZoom:()=>this.getZoom(),getSize:()=>({width:this.container.clientWidth,height:this.container.clientHeight}),unitsPerPixel:()=>this.unitsPerPixel(),unitsPerPixelAt:(lon,lat)=>{const p=projectGround(lon,lat),v=new Vector3(p.x,this.height(lon,lat)??0,p.z).applyMatrix4(this.camera.matrixWorldInverse);return Math.max(0,-v.z)*2*Math.tan(this.camera.fov*Math.PI/360)/Math.max(1,this.container.clientHeight);},getTarget:()=>this.controls.target,getViewKey:()=>[this.container.clientWidth,this.container.clientHeight,...this.camera.quaternion.toArray().map(n=>n.toFixed(2))].join(":"),repaint:()=>this.triggerRepaint(),warning:message=>{if(!this.stopped)warning(message);}},state,id=>this.getPlacement(id),this.loading.signal,(completed,total)=>{if(!this.stopped)this.emit("loadprogress",{progress:{stage:"models",completed,total,busy:true}});}).then(actors=>{if(this.stopped){actors.dispose();return;}this.actors=actors;this.emit("sourcedata",{sourceId:"models"});ready();this.triggerRepaint();this.prepareRoom();}).catch(error=>{if(!this.stopped)this.emit('error',{sourceId:'models',error:error instanceof Error?error:new Error(String(error))});}).finally(()=>{this.actorsLoading=false;if(!this.stopped)this.emit('loadprogress',{progress:{stage:'models',completed:this.actors?20:0,total:20,busy:false}});});};this.retryActors();}
  cityCoordinate(id:string,fallback:[number,number]):[number,number]{const layout=this.surface?.cityLayout(id);if(!layout||!layout.scale||this.getZoom()<6.2||this.flat)return fallback;const ll=unprojectGround(layout.x,layout.z);return [ll.lng,ll.lat];}
  showsSite(id:string){return this.actors?.showsSite(id)??false;}
  siteAt(point:Point){if(!this.actors)return null;const ray=this.ray(point),hits=ray.intersectObjects(this.actors.cityRoots(),true);let root:Object3D|undefined=hits[0]?.object;while(root&&!root.userData.site)root=root.parent??undefined;const ground=this.groundAt(point);if(ground&&hits[0]&&hits[0].distance>ground.distance+1)return null;return root?.userData.site as string??null;}
@@ -144,21 +145,30 @@ export class ThreeCampaignMap{
  }
  private updateClouds(rebuildCoverage=false){if(!this.coverage||rebuildCoverage){this.coverage?.dispose();this.coverage=coverageTexture(this.sources.get('realms')??empty,2048);this.cloudMaterial.uniforms.coverage.value=this.coverage;}this.clouds.clear();if(this.surface)for(const mesh of this.surface.fogMaterialMeshes(this.cloudMaterial)){mesh.renderOrder=1000;this.clouds.add(mesh);}}
  private prepareRoom(){
-  if(this.stopped||this.roomRequested||!this.surface)return;
+  if(this.stopped||this.roomRequested||!this.surface||this.getZoom()>=3.2)return;
   if(this.roomTimer)clearTimeout(this.roomTimer);
   if(this.isMoving()){this.roomTimer=setTimeout(()=>this.prepareRoom(),180);return;}
   this.roomRequested=true;
-  void loadTableRoom(this.surface.hiddenPaper).then(async room=>{
+  void loadTableRoom(this.surface.hiddenPaper,undefined,this.loading.signal).then(async room=>{
    if(this.stopped){room.dispose();return;}
    try{
     // Compile against the real lights before the room enters the moving view.
     await this.renderer.compileAsync(room.root,this.camera,this.scene);
     if(this.stopped){room.dispose();return;}
-    room.update(this.getZoom());this.room=room;this.scene.add(room.root);this.triggerRepaint();
+    room.update(this.getZoom());this.emit('sourcedata',{sourceId:'atlas-study'});this.room=room;this.scene.add(room.root);this.triggerRepaint();
    }catch(error){room.dispose();throw error;}
-  }).catch(error=>{if(!this.stopped)this.emit('error',{sourceId:'atlas-study',error:new Error(String(error))});});
+  }).catch(error=>{if(!this.stopped)this.emit('error',{sourceId:'atlas-study',error:error instanceof Error?error:new Error(String(error))});});
  }
- private changedView(){this.dirty=true;this.overlaysDirty=true;this.emit('move');this.emit('moveend');const z=Math.round(this.getZoom()*5);if(z!==this.lastZoom){this.lastZoom=z;this.overlaysDirty=true;this.emit('zoomend');}if(this.refineTimer)clearTimeout(this.refineTimer);if(this.ready&&this.getZoom()>5.4&&!this.flat){const ll=unprojectGround(this.controls.target.x,this.controls.target.z),key=Math.floor((ll.lng+180)/360*128)+':'+Math.floor((1-Math.asinh(Math.tan(ll.lat*Math.PI/180))/Math.PI)/2*128);if(key!==this.lastRefine)this.refineTimer=setTimeout(()=>{this.lastRefine=key;void this.surface!.refine(ll.lng,ll.lat,()=>!this.isMoving()).then(changed=>{if(!changed||this.stopped)return;this.updateClouds();this.overlaysDirty=true;this.actors?.refresh();this.emit('sourcedata',{sourceId:'detail-dem'});this.triggerRepaint();}).catch(error=>{if(!this.stopped){this.lastRefine='';this.emit('error',{sourceId:'detail-dem',error:new Error('本地近景高程加载失败，保留真实全国底图：'+String(error))});}});},400);}this.triggerRepaint();}
+ private loadArtwork(){if(!this.surface||this.stopped)return;void this.surface.loadArt(()=>this.triggerRepaint()).then(()=>{if(!this.stopped)this.emit('sourcedata',{sourceId:'art'});}).catch(error=>{if(!this.stopped)this.emit('error',{sourceId:'art',error:error instanceof Error?error:new Error(String(error))});});}
+ retryResource(source:string){if(this.stopped)return;if(source==='detail-dem'){this.lastRefine='';this.changedView();}else if(source==='art')this.loadArtwork();else if(source==='models')this.retryActors?.();else if(source==='models-runtime')this.actors?.retryAssets();else if(source==='atlas-study'){this.roomRequested=false;this.prepareRoom();}}
+ private changedView(){
+  this.dirty=true;this.overlaysDirty=true;this.emit('move');this.emit('moveend');const z=Math.round(this.getZoom()*5);if(z!==this.lastZoom){this.lastZoom=z;this.overlaysDirty=true;this.emit('zoomend');}
+  if(this.refineTimer)clearTimeout(this.refineTimer);
+  if(this.ready&&this.getZoom()>5.4&&!this.flat){const ll=unprojectGround(this.controls.target.x,this.controls.target.z),key=Math.floor((ll.lng+180)/360*128)+':'+Math.floor((1-Math.asinh(Math.tan(ll.lat*Math.PI/180))/Math.PI)/2*128);
+   if(key!==this.lastRefine)this.refineTimer=setTimeout(()=>{this.lastRefine=key;void this.surface!.refine(ll.lng,ll.lat,()=>!this.isMoving()).then(changed=>{if(!changed||this.stopped)return;this.updateClouds();this.overlaysDirty=true;this.actors?.refresh();this.emit('sourcedata',{sourceId:'detail-dem'});this.triggerRepaint();}).catch(error=>{if(!this.stopped&&this.lastRefine===key){this.lastRefine='';this.emit('loadprogress',{progress:{stage:'detail',completed:0,total:9,busy:false}});this.emit('error',{sourceId:'detail-dem',error:error instanceof Error?error:new Error(String(error))});}});},400);
+  }else{this.surface?.cancelRefine();this.lastRefine='';this.emit('resourceinactive',{sourceId:'detail-dem'});this.emit('loadprogress',{progress:{stage:'detail',completed:0,total:9,busy:false}});}
+  this.triggerRepaint();
+ }
  triggerRepaint(){this.dirty=true;}
  private render=(now:number)=>{
   if(this.stopped)return;this.frame=requestAnimationFrame(this.render);if(!this.ready)return;
@@ -197,7 +207,7 @@ export class ThreeCampaignMap{
    this.camera.updateMatrixWorld();this.renderer.shadowMap.needsUpdate=this.getZoom()>=6.2&&(this.dirty||animate)&&!this.isMoving();this.renderer.render(this.scene,this.camera);for(const marker of this.markers)marker.render();this.dirty=animate||deferred;if(!this.isMoving()&&!deferred)this.emit('idle');
   }catch(error){this.stopped=true;cancelAnimationFrame(this.frame);this.emit('error',{error:error instanceof Error?error:new Error(String(error))});}
  };
- remove(){this.stopped=true;cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);if(this.roomTimer)clearTimeout(this.roomTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.tint.dispose();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}
+ remove(){this.stopped=true;this.loading.abort();cancelAnimationFrame(this.frame);if(this.refineTimer)clearTimeout(this.refineTimer);if(this.roomTimer)clearTimeout(this.roomTimer);this.cleanup.forEach(f=>f());this.controls.dispose();this.room?.dispose();this.actors?.dispose();this.overlays.clear();this.tint.dispose();this.coverage?.dispose();this.cloudMaterial.dispose();this.surface?.dispose();this.renderer.dispose();this.renderer.domElement.remove();this.listeners.clear();}
 }
 export class ThreeMarker{
  private ll:[number,number]=[0,0];private offset:[number,number]=[0,0];private map?:ThreeCampaignMap;private element:HTMLElement;private anchor:string;private transform='';

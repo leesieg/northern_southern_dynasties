@@ -6,13 +6,14 @@ import {newCampaignWorld} from '../../core/world';
 import * as campaignAssets from '../CampaignSampleAssets';
 import {readInfantryTestAsset} from '../infantryAsset.testSupport';
 import {armyMapPosition} from '../armyMapPresentation';
+import * as mapResources from '../resourceLoader';
 import {campaignActors,type ActorView} from './actors';
 import {projectGround} from './geography';
 
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
 it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
  vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(await readInfantryTestAsset('weapons-v1.glb'));
- const infantry=await readInfantryTestAsset(['foot','spear','archer'].includes(kind)?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb');vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
+ const infantry=await readInfantryTestAsset(['foot','spear','archer'].includes(kind)?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb');vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);
  vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  // Only unrelated scenery and terrain inputs are substituted; infantry and its mixer are real.

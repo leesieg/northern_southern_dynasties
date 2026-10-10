@@ -1,0 +1,35 @@
+.map-loading-veil{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:#e9dfcce8;pointer-events:none;opacity:1;transition:opacity .38s ease-out}
+.map-loading-veil.is-ready{opacity:0}
+.map-loading-sheet{box-sizing:border-box;width:min(340px,calc(100% - 48px));padding:26px 30px 22px;text-align:center;color:#273d34;background:#ede4d1;border:1px solid #a28c5e66;box-shadow:0 8px 35px #26382b16,inset 0 0 0 5px #f4ecdc;display:grid;justify-items:center;gap:12px}
+.map-loading-sheet>strong{font:24px var(--serif);letter-spacing:6px;margin-left:6px}
+.map-loading-sheet>span{font-size:12px;line-height:1.7;color:#5a675c}
+.map-loading-sheet>small{color:#687268;font-size:11px;font-variant-numeric:tabular-nums}
+.map-loading-ink{width:240px;max-width:100%;height:86px;fill:none;stroke:#3c594b;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.map-loading-ink path{stroke-dasharray:500;stroke-dashoffset:500;animation:map-ink-trace 3.6s ease-in-out infinite}
+.map-loading-ink path:nth-child(2){stroke:#718575;stroke-width:1.2;animation-delay:.3s}
+.map-loading-ink path:nth-child(3){stroke:#9d8558;stroke-width:1;animation-delay:.5s}
+.map-loading-sheet progress,.map-detail-loading progress{appearance:none;border:0;height:3px;width:100%;background:#a6ad9433;color:#657c59;border-radius:0}
+.map-loading-sheet progress::-webkit-progress-bar,.map-detail-loading progress::-webkit-progress-bar{background:#a6ad9433}
+.map-loading-sheet progress::-webkit-progress-value,.map-detail-loading progress::-webkit-progress-value{background:#657c59;transition:width .25s ease}
+.map-loading-sheet progress::-moz-progress-bar,.map-detail-loading progress::-moz-progress-bar{background:#657c59}
+.map-detail-loading{position:absolute;left:20px;bottom:100px;z-index:4;display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid #aa97666b;background:#243b30ed;color:#e9dcc0;font-size:11px;pointer-events:none;animation:map-loading-arrive .2s ease-out}
+.map-detail-loading i{width:5px;height:5px;background:#c1aa73;border-radius:50%;animation:map-loading-dot 1.8s ease-in-out infinite}
+.map-detail-loading progress{width:64px;background:#e5d6b126;color:#b4c39a}
+.map-detail-loading progress::-webkit-progress-value{background:#b4c39a}
+.map-detail-loading progress::-moz-progress-bar{background:#b4c39a}
+.map-detail-loading small{font-size:10px;font-variant-numeric:tabular-nums;color:#c9d1bb}
+.atlas-map.is-ready>.atlas-canvas{animation:map-canvas-reveal .38s ease-out}
+.atlas-map .atlas-network-notice{max-width:560px;right:auto;width:calc(100% - 40px);box-sizing:border-box;align-items:flex-start;animation:map-loading-arrive .2s ease-out}
+.atlas-network-notice .map-notice-text{flex:1;display:grid;gap:5px}
+.atlas-network-notice .map-notice-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+.atlas-network-notice a{color:#f2ddb1;text-decoration:underline;text-underline-offset:3px}
+.atlas-network-notice button,.atlas-network-notice a{min-height:32px;display:inline-flex;align-items:center;padding:5px 9px}
+.atlas-map .map-status.error{background:#263a31;color:#ede0bf;max-width:440px;width:calc(100% - 48px);padding:24px;box-sizing:border-box;font:14px/1.8 var(--serif)}
+.map-status.error a{display:inline-block;color:#f2ddb1;text-decoration:underline}
+.map-status.error button{min-height:36px}
+@keyframes map-ink-trace{0%{stroke-dashoffset:500;opacity:.35}55%,85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:.25}}
+@keyframes map-loading-dot{50%{opacity:.4}}
+@keyframes map-loading-arrive{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@keyframes map-canvas-reveal{from{opacity:.65}to{opacity:1}}
+@media(max-width:700px){.map-detail-loading{left:12px;bottom:110px}.atlas-map .atlas-network-notice{left:12px;width:calc(100% - 24px);flex-wrap:wrap}.map-loading-sheet{padding-inline:20px}}
+@media(prefers-reduced-motion:reduce){.map-loading-veil{transition:none}.map-loading-ink path{animation:none;stroke-dashoffset:0}.map-detail-loading,.map-detail-loading i,.atlas-map.is-ready>.atlas-canvas,.atlas-map .atlas-network-notice{animation:none}.map-loading-sheet progress::-webkit-progress-value,.map-detail-loading progress::-webkit-progress-value{transition:none}}

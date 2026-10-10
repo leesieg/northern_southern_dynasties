@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { ProxyAgent } from 'proxy-agent';
+import {mapResourcesPlugin} from './scripts/mapResourcesPlugin.mjs';
 
 const agent = new ProxyAgent();
 const tileProxy = {
@@ -9,7 +10,7 @@ const tileProxy = {
 };
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(),mapResourcesPlugin()],
   server: { port: 5173, strictPort: true, proxy:tileProxy, watch:{ignored:['**/.cache/**']} },
   preview: {proxy:tileProxy},
   build: { rollupOptions: { input:{game:'index.html',mapSample:'map-sample.html'},output: { manualChunks: (id) => id.includes('/node_modules/maplibre-gl/') ? 'maplibre' : undefined } } },

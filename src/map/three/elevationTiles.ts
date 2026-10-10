@@ -12,9 +12,9 @@ export function elevationTiles(manifest:ElevationManifest,read:(x:number,y:numbe
   const pending=read(x,y).then(data=>{if(data.length!==manifest.tileSize**2)throw new Error('本地高程分块不完整：'+key);return data;}).catch(error=>{if(cache.get(key)===pending)cache.delete(key);throw error;});cache.set(key,pending);
   while(cache.size>48)cache.delete(cache.keys().next().value!);return pending;
  }
- return {window:(lon:number,lat:number)=>elevationWindow(lon,lat,manifest),async load(lon:number,lat:number){
+ return {window:(lon:number,lat:number)=>elevationWindow(lon,lat,manifest),async load(lon:number,lat:number,progress?:(completed:number)=>void){
   const area=elevationWindow(lon,lat,manifest),size=manifest.tileSize,values=new Float32Array(size*size*9);
-  const tiles=await Promise.all(Array.from({length:9},(_,i)=>tile(area.x+i%3,area.y+Math.floor(i/3))));
+  let completed=0;const tiles=await Promise.all(Array.from({length:9},(_,i)=>tile(area.x+i%3,area.y+Math.floor(i/3)).then(value=>{progress?.(++completed);return value;})));
   tiles.forEach((data,i)=>{for(let row=0;row<size;row++)values.set(data.subarray(row*size,(row+1)*size),(Math.floor(i/3)*size+row)*size*3+i%3*size);});
   return {meta:area.meta,values,key:area.key};
  },clear(){cache.clear();}};

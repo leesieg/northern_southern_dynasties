@@ -1,3 +1,4 @@
+import {mapResource} from './resourceLoader';
 import {Mesh,SkinnedMesh,Vector3,Quaternion,Matrix4,type Group} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {applyInfantryLighting} from './infantryLighting';
@@ -5,8 +6,8 @@ import {disposeInfantryAsset} from './RiggedInfantry';
 import type {ArmyModelKind} from './MilitaryModels';
 
 const equipment={foot:['Sword','Shield'],spear:['Spear'],archer:['Bow','Quiver'],lightHorse:['Sword'],heavyHorse:['Spear'],siege:[]} as const;
-export async function loadMilitaryEquipment(){
- const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/weapons-v1.glb');
+export async function loadMilitaryEquipment(signal?:AbortSignal){
+ const response=await mapResource('art/military/weapons-v1.glb',{signal,priority:3}),asset=await new GLTFLoader().parseAsync(await response.arrayBuffer(),'');
  if(!['Sword','Shield','Spear','Bow','Quiver'].every(name=>asset.scene.getObjectByName(name))){disposeInfantryAsset(asset);throw new Error('兵器资源不完整');}
  applyInfantryLighting(asset.scene);return asset;
 }

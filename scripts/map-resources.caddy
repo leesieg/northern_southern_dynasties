@@ -1,0 +1,14 @@
+# Import inside the existing game route, keeping its authentication and file_server.
+# This snippet adds headers only; it never publishes assets or changes login routing.
+(fynbc_map_resource_headers) {
+ @fynbc_map_assets path /games/fengyun-nanbeichao/map-assets/*
+ header @fynbc_map_assets {
+  Cache-Control "private, max-age=31536000, immutable"
+  match status 200 206 304
+ }
+ @fynbc_game_entry path /games/fengyun-nanbeichao/ /games/fengyun-nanbeichao/index.html /games/fengyun-nanbeichao/map-resources.json
+ header @fynbc_game_entry {
+  Cache-Control "private, no-cache"
+  match status 200 304
+ }
+}

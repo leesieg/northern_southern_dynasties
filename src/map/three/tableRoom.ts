@@ -1,15 +1,18 @@
-import {Group,Mesh,MeshStandardMaterial,PointLight,TextureLoader,RepeatWrapping,SRGBColorSpace,type Texture} from 'three';
+import {Group,Mesh,MeshStandardMaterial,PointLight,RepeatWrapping,SRGBColorSpace,type Texture} from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {mapResource} from '../resourceLoader';
+import {resourceTexture} from './resourceTexture';
 import {WORLD_KM,ORIGIN,geographic} from './geography';
 // Same physical extent as national-terrain.json; model units are 1000 projected kilometres.
 export const TABLE_CENTER={x:(.78125-ORIGIN.x)*WORLD_KM,z:(.375-ORIGIN.y)*WORLD_KM};
 export const TABLE_COORDINATE=geographic(.78125,.375);
 export function tableRoomStrength(zoom:number){const t=Math.max(0,Math.min(1,(2.7-zoom)/.7));return t*t*(3-2*t);}
-export async function loadTableRoom(painting:Texture,wood?:Texture){
- const response=await fetch(import.meta.env.BASE_URL+'art/campaign/atlas-study-v2.glb',{signal:AbortSignal.timeout(20000)});
+export async function loadTableRoom(painting:Texture,wood?:Texture,signal?:AbortSignal){
+ const response=await mapResource('art/campaign/atlas-study-v2.glb',{signal,priority:3});
  if(!response.ok)throw new Error('室内舆图模型加载失败（'+response.status+'）');
- const model=(await new GLTFLoader().parseAsync(await response.arrayBuffer(),'')).scene;
- const timber=wood??await new TextureLoader().loadAsync(import.meta.env.BASE_URL+'art/campaign/study-walnut-v2.jpg');timber.wrapS=timber.wrapT=RepeatWrapping;timber.colorSpace=SRGBColorSpace;timber.anisotropy=4;
+ const buffer=await response.arrayBuffer();
+ const timber=wood??await resourceTexture('art/campaign/study-walnut-v2.jpg',signal,true);timber.flipY=true;timber.wrapS=timber.wrapT=RepeatWrapping;timber.colorSpace=SRGBColorSpace;timber.anisotropy=4;
+ let model:Group;try{model=(await new GLTFLoader().parseAsync(buffer,'')).scene;}catch(error){if(!wood)timber.dispose();throw error;}
  const root=new Group();root.add(model);root.scale.setScalar(1000);root.position.set(TABLE_CENTER.x,0,TABLE_CENTER.z);model.visible=false;
  const materials=new Set<MeshStandardMaterial>();model.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial){m.fog=false;m.transparent=true;
  if(m.name==='Study window silk'){m.emissive.set('#cbd8dc');m.emissiveIntensity=.35;}
