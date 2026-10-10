@@ -7,7 +7,7 @@ import type {World} from '../core/types';
 import {roadHeading} from '../core/routeGeometry';
 import {CAMPAIGN_EXPOSURE} from './campaignTerrain';
 import {ARMY_MODEL_PIXELS,armyShowsModel,armyMapPosition,type ArmyMarkerPlacement} from './armyMapPresentation';
-import {militaryModelAssets,animateMilitaryModel,armyModelHeading,armyModelKind,type MilitaryModel} from './MilitaryModels';
+import {militaryModelAssets,animateMilitaryModel,armyModelKind,type MilitaryModel} from './MilitaryModels';
 import {addMilitaryLighting,militaryModelScale,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 // One shared MapLibre canvas/context; representative original military miniatures.
 export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;armyMotion:boolean},onFailure:(reason:string)=>void,onReady:()=>void,getPlacement:(id:number)=>ArmyMarkerPlacement|undefined):CustomLayerInterface{
@@ -33,7 +33,7 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
     const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};
     const elevation=map.queryTerrainElevation(modelAnchor)??0,coord=MercatorCoordinate.fromLngLat(modelAnchor,elevation),scale=militaryModelScale(args.defaultProjectionData.mainMatrix,coord,map.getCanvas().clientWidth,ARMY_MODEL_PIXELS);
     positionMilitaryModel(m.root.matrix,coord,origin,scale);
-    const visual=visualStates.get(a.id)??'garrison',heading=a.journey?armyModelHeading(roadHeading(a.journey)):-.18;m.body.rotation.y=heading;
+    const visual=visualStates.get(a.id)??'garrison',heading=a.journey?roadHeading(a.journey):-.18;m.body.rotation.y=heading;
     m.camp.visible=zoom>=7.4&&(visual==='garrison'||visual==='siege');animating=animateMilitaryModel(m,visual,performance.now()/1000,state.armyMotion)||animating;m.banner.rotation.y-=heading;
    }
    assets.pruneBanners(new Set([...models.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));

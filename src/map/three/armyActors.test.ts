@@ -9,6 +9,7 @@ import {armyMapPosition} from '../armyMapPresentation';
 import * as mapResources from '../resourceLoader';
 import {campaignActors,type ActorView} from './actors';
 import {projectGround} from './geography';
+import {sampleRoad} from '../../core/routeGeometry';
 
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
 it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
@@ -27,9 +28,14 @@ it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('u
   const rigName=['foot','spear','archer'].includes(kind)?'Rigged campaign infantry':'Rigged campaign '+kind;await vi.waitFor(()=>expect(scene.getObjectByName(rigName)).toBeDefined());expect(actors.update(1)).toBe(true);
   const rig=scene.getObjectByName(rigName)!,root=rig.parent!.parent!,at=armyMapPosition(army),p=projectGround(at.lon,at.lat);
   expect(root.visible).toBe(true);expect(root.position.toArray()).toEqual([p.x,7.38,p.z]);
-  let mesh!:SkinnedMesh;rig.traverse(o=>{if(o instanceof SkinnedMesh)mesh=o;});const initial=mesh.skeleton.bones.map(b=>b.quaternion.clone());
+  let mesh!:SkinnedMesh;rig.traverse(o=>{if(o instanceof SkinnedMesh)mesh=o;});expect(mesh.castShadow).toBe(false);const initial=mesh.skeleton.bones.map(b=>b.quaternion.clone());
   for(let i=1;i<=30;i++)actors.update(i*1000/60);
   expect(mesh.skeleton.bones.some((b,i)=>!b.quaternion.equals(initial[i]))).toBe(true);
+  // Arrival remains at its buffered road pose until the confirmed final stretch finishes.
+  const roadA=sampleRoad('jiankang','jingkou',.4),roadB=sampleRoad('jiankang','jingkou',.40001),groundA=projectGround(roadA.lon,roadA.lat),groundB=projectGround(roadB.lon,roadB.lat),heading=Math.atan2(groundB.x-groundA.x,groundA.z-groundB.z);
+  Object.assign(state,{armyPosition:()=>({...roadA,heading}),armyMoving:()=>true});actors.update(550);
+  const forward=new Vector3(0,0,1).applyAxisAngle(new Vector3(0,1,0),rig.parent!.rotation.y),direction=new Vector3(groundB.x-groundA.x,0,groundB.z-groundA.z).normalize();expect(forward.dot(direction)).toBeGreaterThan(.99999);expect(root.position.x).toBeCloseTo(groundA.x);expect(root.position.z).toBeCloseTo(groundA.z);
+  Object.assign(state,{armyMoving:()=>false});
   state.armyMotion=false;expect(actors.update(600)).toBe(false);
   const dispose=vi.spyOn(mesh.skeleton,'dispose');world.realm!.armies=[];actors.update(700);
   expect(dispose).toHaveBeenCalledOnce();expect(scene.getObjectByName(rigName)).toBeUndefined();expect(warning).not.toHaveBeenCalled();

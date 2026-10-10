@@ -4,6 +4,12 @@ import type {FeatureCollection} from 'geojson';
 import {CampaignOverlays} from './overlays';
 import {projectGround} from './geography';
 const road:FeatureCollection={type:'FeatureCollection',features:[{type:'Feature',geometry:{type:'LineString',coordinates:[[110,32],[110.05,32],[110.1,32]]},properties:{}}]};
+it('updates a marching route without rebuilding static roads and releases replaced geometry',()=>{
+ const overlay=new CampaignOverlays(()=>0),layers=[{id:'trails',type:'line',source:'roads',paint:{'line-width':3}},{id:'march',type:'line',source:'route',paint:{'line-width':3}}],sources=new Map([['roads',road],['route',structuredClone(road)]]);
+ overlay.rebuild(layers,sources,12,.1,new Map());const trail=overlay.root.children.find(m=>m.userData.overlaySource==='roads') as Mesh,route=overlay.root.children.find(m=>m.userData.overlaySource==='route') as Mesh,trailDispose=vi.spyOn(trail.geometry,'dispose'),routeDispose=vi.spyOn(route.geometry,'dispose');
+ const advanced=structuredClone(road);(advanced.features[0].geometry as {coordinates:number[][]}).coordinates[0]=[110.02,32];sources.set('route',advanced);overlay.rebuild(layers,sources,12,.1,new Map(),undefined,false,false,new Set(['route']));expect(overlay.root.children).toContain(trail);expect(trailDispose).not.toHaveBeenCalled();expect(routeDispose).toHaveBeenCalledOnce();expect(overlay.root.children).not.toContain(route);expect(overlay.root.children).toHaveLength(2);
+ const changed=overlay.root.children.find(m=>m.userData.overlaySource==='route') as Mesh;expect(changed.renderOrder).toBe(route.renderOrder);overlay.clear();expect(trailDispose).toHaveBeenCalledOnce();
+});
 it('keeps a short river crossing above water and releases its geometry on rebuild',()=>{
  const overlay=new CampaignOverlays(()=>1,undefined,(lon)=>lon>110.04&&lon<110.06?3:null);
  const layer={id:'campaign-trails',type:'line',source:'roads',paint:{'line-width':3,'line-opacity':.8}};

@@ -206,7 +206,7 @@ export function WorldMap(props:Props){
       setMenu({id,x:Math.max(8,Math.min(x,container.clientWidth-220)),y:Math.max(8,Math.min(y,container.clientHeight-190))});
     }
     let lastLabelUpdate=-Infinity;
-    const scheduleLabels=()=>{if(!frame)frame=requestAnimationFrame(now=>{frame=0;if(map?.isMoving()&&now-lastLabelUpdate<50){scheduleLabels();return;}lastLabelUpdate=now;updateLabels();});};
+    const scheduleLabels=()=>{if(!frame)frame=requestAnimationFrame(now=>{frame=0;const cadence=map?.isMoving()?50:(current.current.world.realm?.armies??[]).some(a=>motion.moving(a,now))?1000/30:0;if(now-lastLabelUpdate<cadence){scheduleLabels();return;}lastLabelUpdate=now;updateLabels();});};
     function update(){
       if(!map||!styleReady||disposed)return;
       const p=current.current;

@@ -26,4 +26,5 @@ export function remainingRouteCoordinates(j:Journey):RoutePoint[]{
  const from=j.route[j.leg],to=j.route[j.leg+1],p=sampleRoad(from,to,j.elapsed/j.durations[j.leg]);
  return [[p.lon,p.lat],...roadCoordinates(from,to).slice(p.segment+1),...routeCoordinates(j.route.slice(j.leg+1)).slice(1)];
 }
-export function roadHeading(j:Journey){const p=sampleRoad(j.route[j.leg],j.route[j.leg+1],j.elapsed/j.durations[j.leg]),points=roadCoordinates(j.route[j.leg],j.route[j.leg+1]),a=points[p.segment],b=points[p.segment+1];return Math.atan2(b[0]-a[0],a[1]-b[1]);}
+/** Clockwise from north, using the same Mercator proportions as the formal map. */
+export function roadHeading(j:Journey){const p=sampleRoad(j.route[j.leg],j.route[j.leg+1],j.elapsed/j.durations[j.leg]),points=roadCoordinates(j.route[j.leg],j.route[j.leg+1]),a=points[p.segment],b=points[p.segment+1],north=(Math.log(Math.tan(Math.PI/4+b[1]*Math.PI/360))-Math.log(Math.tan(Math.PI/4+a[1]*Math.PI/360)))*180/Math.PI;return Math.atan2(b[0]-a[0],north);}
