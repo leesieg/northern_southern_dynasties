@@ -1,3 +1,4 @@
+import {createMilitaryCarryPose} from './MilitaryCarryPose';
 import {attachMilitaryEquipment,loadMilitaryEquipment} from './MilitaryEquipment';
 import {realmOrigin} from '../core/polityRuntime';
 import type {World} from '../core/types';
@@ -25,7 +26,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  const assets=new Map<AssetKind,GLTF>(),pending=new Map<AssetKind,Promise<void>>(),models=new Set<MilitaryModel>();let disposed=false;
  let equipment:GLTF|undefined,equipmentPending:Promise<void>|undefined;
  const key=(kind:ArmyModelKind):AssetKind=>kind==='spear'||kind==='archer'?'foot':kind;
- function equip(model:MilitaryModel){if(equipment&&model.animation&&!model.equipped&&model.kind!=='siege'){attachMilitaryEquipment(model.animation.root,equipment,model.kind);model.equipped=true;}}
+ function equip(model:MilitaryModel){if(equipment&&model.animation&&!model.equipped&&model.kind!=='siege'){model.animation.carryPose=createMilitaryCarryPose(model.animation.root,model.kind);model.animation.carryPose();attachMilitaryEquipment(model.animation.root,equipment,model.kind);model.equipped=true;}}
  function ensureEquipment(){equipmentPending??=loadMilitaryEquipment().then(loaded=>{if(disposed){disposeInfantryAsset(loaded);return;}equipment=loaded;models.forEach(equip);repaint();}).catch(()=>{if(!disposed)warn('兵器未能载入，保留军士和军队操作。');});}
  function attach(model:MilitaryModel){const asset=assets.get(key(model.kind));if(!asset||disposed||!models.has(model)||model.animation)return;model.animation=createInfantryAnimation(asset,model.seed);if(key(model.kind)!=='foot'){model.animation.root.name='Rigged campaign '+model.kind;model.animation.root.scale.setScalar(model.kind==='siege'?.68:.76);}model.body.add(model.animation.root);equip(model);}
  function ensure(kind:AssetKind){

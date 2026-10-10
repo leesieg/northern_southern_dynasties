@@ -1,4 +1,4 @@
-import {Mesh,SkinnedMesh,Vector3,Quaternion,type Group} from 'three';
+import {Mesh,SkinnedMesh,Vector3,Quaternion,Matrix4,type Group} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {applyInfantryLighting} from './infantryLighting';
 import {disposeInfantryAsset} from './RiggedInfantry';
@@ -19,17 +19,18 @@ export function attachMilitaryEquipment(root:Group,kit:GLTF,kind:ArmyModelKind){
   const template=kit.scene.getObjectByName(name),joint=name==='Quiver'?'Chest':name==='Bow'||name==='Shield'?'HandL':'HandR';
   const index=skin!.skeleton.bones.findIndex(b=>b.name.replaceAll('.','')===joint);
   if(!template||index<0)throw new Error('兵模缺少装备挂点：'+name);
-  return {name,template,index};
+  return {name,template,index,joint};
  });
- for(const {name,template,index} of mounts){
-  const bone=skin.skeleton.bones[index],bind=skin.skeleton.boneInverses[index].clone().invert();
+ for(const {name,template,index,joint} of mounts){
+  const bone=skin.skeleton.bones[index];
+  const posed=new Matrix4().multiplyMatrices(root.matrixWorld.clone().invert(),bone.matrixWorld);
   const prop=template.clone(true);prop.name='Equipment '+name;
   // Canonical kit grips are at the origin, +Y up; put them inside the palm.
-  prop.position.set(0,.065,0);prop.quaternion.copy(new Quaternion().setFromRotationMatrix(bind).invert());
+  prop.position.set(joint==='HandL'?.05:-.05,.048,-.037);prop.quaternion.copy(new Quaternion().setFromRotationMatrix(posed).invert());
   if(name==='Sword')prop.quaternion.multiply(new Quaternion().setFromAxisAngle(new Vector3(1,0,0),.4));
-  if(name==='Shield')prop.position.add(new Vector3(0,0,1).transformDirection(skin.skeleton.boneInverses[index]).multiplyScalar(.045));
+  if(name==='Shield')prop.position.add(new Vector3(0,0,1).transformDirection(posed.clone().invert()).multiplyScalar(.055));
   if(name==='Quiver'){
-   const back=new Vector3(.12,1.20,-.19);prop.position.copy(back.applyMatrix4(skin.skeleton.boneInverses[index]));
+   const back=new Vector3(.12,1.20,-.27);prop.position.copy(back.applyMatrix4(skin.skeleton.boneInverses[index]));
   }
   prop.traverse(o=>{if(o instanceof Mesh){o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;}});bone.add(prop);
  }

@@ -1,9 +1,10 @@
+import {prepareMilitaryHands} from './MilitaryCarryPose';
 import {AnimationMixer,Mesh,SkinnedMesh,Texture,type AnimationAction,type Group} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {applyInfantryLighting} from './infantryLighting';
 
-export interface InfantryAnimation {root:Group;mixer:AnimationMixer;idle:AnimationAction;walk:AnimationAction;attack?:AnimationAction;weight:number;attackWeight:number;attacking?:boolean;lastTime?:number;}
+export interface InfantryAnimation {root:Group;mixer:AnimationMixer;idle:AnimationAction;walk:AnimationAction;attack?:AnimationAction;weight:number;attackWeight:number;attacking?:boolean;lastTime?:number;carryPose?:()=>void;}
 export function createInfantryAnimation(asset:GLTF,seed:number):InfantryAnimation{
  const root=clone(asset.scene) as Group,mixer=new AnimationMixer(root);
  root.name='Rigged campaign infantry';
@@ -24,7 +25,7 @@ export function updateInfantryAnimation(a:InfantryAnimation,state:string,seconds
  if(attacking&&!a.attacking)a.attack!.reset().play();a.attacking=attacking;
  a.attackWeight=motion?a.attackWeight+(attackTarget-a.attackWeight)*(1-Math.exp(-dt/.09)):0;
  if(Math.abs(attackTarget-a.attackWeight)<.001)a.attackWeight=attackTarget;
- a.idle.setEffectiveWeight(Math.max(0,1-a.weight-a.attackWeight));a.walk.setEffectiveWeight(a.weight);a.attack?.setEffectiveWeight(a.attackWeight);a.mixer.update(motion?dt:0);
+ a.idle.setEffectiveWeight(Math.max(0,1-a.weight-a.attackWeight));a.walk.setEffectiveWeight(a.weight);a.attack?.setEffectiveWeight(a.attackWeight);a.mixer.update(motion?dt:0);a.carryPose?.();
  return motion;
 }
 export function disposeInfantryAnimation(a:InfantryAnimation){
@@ -42,6 +43,7 @@ export async function loadInfantryAsset(file='infantry-rigged-v1.glb'){
  const asset=await new GLTFLoader().loadAsync(import.meta.env.BASE_URL+'art/military/'+file);
  const required=file==='siege-crew-v1.glb'?['Idle','Walk','Attack']:['Idle','Walk'];
  if(!required.every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少必要动画');}
+ if(file!=='siege-crew-v1.glb')prepareMilitaryHands(asset.scene);
  applyInfantryLighting(asset.scene);
  return asset;
 }
