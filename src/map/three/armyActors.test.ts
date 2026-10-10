@@ -1,3 +1,4 @@
+import * as equipment from '../MilitaryEquipment';
 import {afterEach,expect,it,vi} from 'vitest';
 import {BoxGeometry,Group,Scene,SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
@@ -9,8 +10,9 @@ import {campaignActors,type ActorView} from './actors';
 import {projectGround} from './geography';
 
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
-it.each(['foot','lightHorse','heavyHorse','siege'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
- const infantry=await readInfantryTestAsset(kind==='foot'?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb');vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
+it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
+ vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(await readInfantryTestAsset('weapons-v1.glb'));
+ const infantry=await readInfantryTestAsset(['foot','spear','archer'].includes(kind)?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb');vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(infantry);
  vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  // Only unrelated scenery and terrain inputs are substituted; infantry and its mixer are real.
@@ -21,7 +23,7 @@ it.each(['foot','lightHorse','heavyHorse','siege'] as const)('uses %s at the rea
  const actors=await campaignActors(view,()=>state,()=>({model:true,offset:{x:500,y:-200},bounds:{left:0,top:0,right:200,bottom:400}}));
  try{
   await vi.waitFor(()=>expect(repaint).toHaveBeenCalled());actors.update(0);
-  const rigName=kind==='foot'?'Rigged campaign infantry':'Rigged campaign '+kind;await vi.waitFor(()=>expect(scene.getObjectByName(rigName)).toBeDefined());expect(actors.update(1)).toBe(true);
+  const rigName=['foot','spear','archer'].includes(kind)?'Rigged campaign infantry':'Rigged campaign '+kind;await vi.waitFor(()=>expect(scene.getObjectByName(rigName)).toBeDefined());expect(actors.update(1)).toBe(true);
   const rig=scene.getObjectByName(rigName)!,root=rig.parent!.parent!,at=armyMapPosition(army),p=projectGround(at.lon,at.lat);
   expect(root.visible).toBe(true);expect(root.position.toArray()).toEqual([p.x,7.38,p.z]);
   let mesh!:SkinnedMesh;rig.traverse(o=>{if(o instanceof SkinnedMesh)mesh=o;});const initial=mesh.skeleton.bones.map(b=>b.quaternion.clone());

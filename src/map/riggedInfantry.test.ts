@@ -1,13 +1,15 @@
+import * as equipment from './MilitaryEquipment';
 import {afterEach,beforeAll,beforeEach,expect,it,vi} from 'vitest';
-import {SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
+import {Box3,SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {animateMilitaryModel,armyModelHeading,armyModelKind,militaryModelAssets} from './MilitaryModels';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
 import type {Army} from '../core/realm';
 
-let asset:GLTF,light:GLTF,heavy:GLTF,siege:GLTF;
-beforeAll(async()=>{[asset,light,heavy,siege]=await Promise.all([readInfantryTestAsset(),readInfantryTestAsset('light-cavalry-v1.glb'),readInfantryTestAsset('heavy-cavalry-v1.glb'),readInfantryTestAsset('siege-crew-v1.glb')]);});
+let kit:GLTF,asset:GLTF,light:GLTF,heavy:GLTF,siege:GLTF;
+beforeAll(async()=>{[kit,asset,light,heavy,siege]=await Promise.all([readInfantryTestAsset('weapons-v1.glb'),readInfantryTestAsset(),readInfantryTestAsset('light-cavalry-v1.glb'),readInfantryTestAsset('heavy-cavalry-v1.glb'),readInfantryTestAsset('siege-crew-v1.glb')]);});
 beforeEach(()=>{
+ vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);
  vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
 });
@@ -103,4 +105,41 @@ it('runs the siege firing cycle only during combat, blends states and resets at 
   animateMilitaryModel(model,'siege',clock+=1/60,true);expect(animation.attack!.time).toBeLessThan(.03);
   animateMilitaryModel(model,'siege',clock+=1/60,false);expect(animation.attackWeight).toBe(0);expect(animation.weight).toBe(0);expect(animation.idle.getEffectiveWeight()).toBe(1);
  }finally{assets.dispose();}
+});
+
+it('selects infantry equipment by surviving subtypes without splitting the infantry visual group',()=>{
+ const a=army(),reg=(kind:'shield'|'spear'|'archer'|'heavyHorse',troops:number)=>({id:kind,kind,troops,service:'standing' as const,origin:'jiankang',experience:0});
+ a.regiments=[reg('spear',300),reg('shield',200),reg('heavyHorse',400)];expect(armyModelKind(a)).toBe('spear');
+ a.regiments=[reg('archer',300),reg('spear',200)];expect(armyModelKind(a)).toBe('archer');
+ a.regiments=[reg('archer',0),reg('spear',0)];expect(armyModelKind(a)).toBe('foot');
+ a.regiments=[reg('spear',200),reg('shield',200)];expect(armyModelKind(a)).toBe('foot');
+});
+it('shares one kit while attaching the correct weapons to each independent animated skeleton',async()=>{
+ vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>url.includes('light-cavalry')?light:url.includes('heavy-cavalry')?heavy:asset);
+ const warn=vi.fn(),assets=militaryModelAssets(()=>{},warn);
+ const kinds=['foot','spear','archer','lightHorse','heavyHorse'] as const;
+ const expected=[['Sword','Shield'],['Spear'],['Bow','Quiver'],['Sword'],['Spear']];
+ const models=kinds.map((kind,i)=>assets.create(army(i+1),kind,'梁'));await assets.ready;
+ try{
+  expect(equipment.loadMilitaryEquipment).toHaveBeenCalledOnce();expect(warn).not.toHaveBeenCalled();
+  for(const [i,m] of models.entries()){
+   const props:import('three').Object3D[]=[];m.animation!.root.traverse(o=>{if(o.name.startsWith('Equipment '))props.push(o);});
+   expect(props.map(o=>o.name.replace('Equipment ','')).sort()).toEqual([...expected[i]].sort());
+   const mounts=props.map(o=>{o.updateMatrix();return o.matrix.clone();});
+   for(let frame=0;frame<144;frame++){animateMilitaryModel(m,frame<72?'garrison':'marching',frame/60,true);m.root.updateMatrixWorld(true);props.forEach((o,k)=>{expect(o.parent!.type).toBe('Bone');expect(new Box3().setFromObject(o).min.y).toBeGreaterThan(-.025);expect(o.matrix.equals(mounts[k])).toBe(true);expect(o.getWorldPosition(new Vector3()).toArray().every(Number.isFinite)).toBe(true);});}
+  }
+  expect(models[0].animation!.root.getObjectByName('Equipment Sword')).not.toBe(models[3].animation!.root.getObjectByName('Equipment Sword'));
+ }finally{assets.dispose();}
+});
+it('does not equip a released model when the weapon download finishes late',async()=>{
+ let resolve!:(v:GLTF)=>void;vi.mocked(equipment.loadMilitaryEquipment).mockImplementation(()=>new Promise<GLTF>(r=>{resolve=r;}));
+ vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(asset);
+ const assets=militaryModelAssets(()=>{},()=>{}),old=assets.create(army(),'spear','梁');assets.release(old);
+ const current=assets.create(army(),'archer','梁');resolve(kit);await assets.ready;
+ try{expect(old.animation).toBeUndefined();expect(current.animation!.root.getObjectByName('Equipment Bow')).toBeDefined();expect(current.animation!.root.getObjectByName('Equipment Spear')).toBeUndefined();}finally{assets.dispose();}
+});
+it('keeps the army and operations when the equipment download fails',async()=>{
+ vi.mocked(equipment.loadMilitaryEquipment).mockRejectedValue(new Error('offline'));vi.spyOn(GLTFLoader.prototype,'loadAsync').mockResolvedValue(asset);
+ const warn=vi.fn(),assets=militaryModelAssets(()=>{},warn),m=assets.create(army(),'archer','梁');await assets.ready;
+ try{expect(m.animation).toBeDefined();expect(m.banner.parent).toBe(m.body);expect(warn).toHaveBeenCalledOnce();}finally{assets.dispose();}
 });

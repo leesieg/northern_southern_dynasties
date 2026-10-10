@@ -1,3 +1,4 @@
+import * as equipment from './MilitaryEquipment';
 import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
 import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,Mesh,MeshStandardMaterial,PerspectiveCamera,Scene,SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
 import {ARMY_MODEL_PIXELS,anchoredArmyModels,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,armyShowsModel,dockMapMarker,layoutArmyCards,screenOverlap,type ScreenRect} from './armyMapPresentation';
@@ -6,8 +7,8 @@ import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
-let infantry:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
-beforeAll(async()=>{[infantry,lightHorse,heavyHorse,siege]=await Promise.all(['infantry-rigged-v1.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb','siege-crew-v1.glb'].map(readInfantryTestAsset));});
+let kit:GLTF,infantry:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
+beforeAll(async()=>{[kit,infantry,lightHorse,heavyHorse,siege]=await Promise.all(['weapons-v1.glb','infantry-rigged-v1.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb','siege-crew-v1.glb'].map(readInfantryTestAsset));});
 
 const viewport={width:1200,height:800},anchor={x:600,y:400};
 const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale:80,supply:500,siege:0,journey:null});
@@ -114,7 +115,8 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
   const depth=-new Vector3(0,0,0).applyMatrix4(camera.matrixWorldInverse).z,factor=1-Math.exp(-(fog.density**2*depth**2));
   expect(depth).toBeGreaterThan(1000);expect(factor).toBeGreaterThan(0);expect(factor).toBeLessThan(.1);
  });
- it.each(['foot','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
+ it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
+  vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);
   vi.spyOn(GLTFLoader.prototype,'loadAsync').mockImplementation(async url=>String(url).includes('light-cavalry')?lightHorse:String(url).includes('heavy-cavalry')?heavyHorse:String(url).includes('siege-crew')?siege:infantry);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
