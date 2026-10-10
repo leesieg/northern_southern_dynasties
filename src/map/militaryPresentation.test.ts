@@ -8,8 +8,8 @@ import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
-let kit:GLTF,infantry:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
-beforeAll(async()=>{[kit,infantry,lightHorse,heavyHorse,siege]=await Promise.all(['weapons-v1.glb','infantry-rigged-v1.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb','siege-crew-v1.glb'].map(readInfantryTestAsset));});
+let kit:GLTF,infantry:GLTF,shield:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
+beforeAll(async()=>{[kit,infantry,shield,lightHorse,heavyHorse,siege]=await Promise.all(['weapons-v1.glb','infantry-rigged-v1.glb','infantry-sword-shield-v2.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb','siege-crew-v1.glb'].map(readInfantryTestAsset));});
 
 const viewport={width:1200,height:800},anchor={x:600,y:400};
 const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale:80,supply:500,siege:0,journey:null});
@@ -18,14 +18,14 @@ afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
 
 it('equips concealed silhouettes with a generic kit while preserving combat motion and hidden troop kinds',async()=>{
  vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);const attached=vi.spyOn(equipment,'attachMilitaryEquipment');
- vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
+ vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(shield);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),'foot','梁',undefined,true);
- try{await assets.ready;let skin!:SkinnedMesh;model.animation!.root.traverse(o=>{if(o instanceof SkinnedMesh&&!skin)skin=o;});const hand=skin.skeleton.bones.find(b=>b.name.replaceAll('.','')==='HandR')!;animateMilitaryModel(model,'garrison',0,true);const before=hand.getWorldPosition(new Vector3());for(let i=1;i<=35;i++)animateMilitaryModel(model,'battle',i/60,true);expect(hand.getWorldPosition(new Vector3()).distanceTo(before)).toBeGreaterThan(.05);expect(attached).toHaveBeenCalledWith(model.animation!.root,kit,'foot');expect(model.animation!.root.getObjectByName('Equipment Sword')?.parent).toBe(hand);expect(model.animation!.root.getObjectByName('Equipment Shield')).toBeDefined();expect(model.animation!.root.getObjectByName('Equipment Spear')).toBeUndefined();expect(model.root.position.toArray()).toEqual([0,0,0]);}finally{assets.dispose();}
+ try{await assets.ready;let skin!:SkinnedMesh;model.animation!.root.traverse(o=>{if(o instanceof SkinnedMesh&&!skin)skin=o;});const hand=skin.skeleton.bones.find(b=>b.name.replaceAll('.','')==='HandR')!;animateMilitaryModel(model,'garrison',0,true);const before=hand.getWorldPosition(new Vector3());for(let i=1;i<=35;i++)animateMilitaryModel(model,'battle',i/60,true);expect(hand.getWorldPosition(new Vector3()).distanceTo(before)).toBeGreaterThan(.05);expect(attached).toHaveBeenCalledWith(model.animation!.root,kit,'foot');expect(model.animation!.root.getObjectByName('Equipment Sword')?.parent?.parent).toBe(hand);expect(model.animation!.root.getObjectByName('Equipment Shield')).toBeDefined();expect(model.animation!.root.getObjectByName('Equipment Spear')).toBeUndefined();expect(model.root.position.toArray()).toEqual([0,0,0]);}finally{assets.dispose();}
 });
 
 it('attaches late-arriving weapons to known and concealed models exactly once',async()=>{
- let resolveKit!:(kit:GLTF)=>void;vi.spyOn(equipment,'loadMilitaryEquipment').mockImplementation(()=>new Promise<GLTF>(resolve=>{resolveKit=resolve;}));vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
+ let resolveKit!:(kit:GLTF)=>void;vi.spyOn(equipment,'loadMilitaryEquipment').mockImplementation(()=>new Promise<GLTF>(resolve=>{resolveKit=resolve;}));vi.spyOn(mapResources,'mapResource').mockImplementation(async path=>new Response(new Uint8Array([path.includes('sword-shield')?1:0])));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockImplementation(async data=>new Uint8Array(data as ArrayBuffer)[0]?shield:infantry);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  const assets=militaryModelAssets(()=>{},()=>{}),known=assets.create(army(1),'spear','梁'),concealed=assets.create(army(2),'foot','梁',undefined,true);concealed.root.userData.castShadow=false;
  try{await vi.waitFor(()=>expect(concealed.animation).toBeDefined());expect(concealed.equipped).not.toBe(true);expect(known.equipped).not.toBe(true);resolveKit(kit);await assets.ready;expect(known.animation!.root.getObjectByName('Equipment Spear')).toBeDefined();expect(known.animation!.root.getObjectByName('Equipment Sword')).toBeUndefined();expect(concealed.animation!.root.getObjectByName('Equipment Sword')).toBeDefined();expect(concealed.animation!.root.getObjectByName('Equipment Shield')).toBeDefined();let props=0;concealed.animation!.root.traverse(o=>{if(o.name.startsWith('Equipment '))props++;if(o instanceof Mesh)expect(o.castShadow).toBe(false);});expect(props).toBe(2);assets.retry();expect(concealed.equipped).toBe(true);}finally{assets.dispose();}
@@ -133,7 +133,7 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
  });
  it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
   vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);
-  const asset=kind==='lightHorse'?lightHorse:kind==='heavyHorse'?heavyHorse:kind==='siege'?siege:infantry;vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(asset);
+  const asset=kind==='foot'?shield:kind==='lightHorse'?lightHorse:kind==='heavyHorse'?heavyHorse:kind==='siege'?siege:infantry;vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(asset);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
   const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),kind,'梁'),size=armyMarkerFootprint(true),extent={width:0,above:0,below:0};

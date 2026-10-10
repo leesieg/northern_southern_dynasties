@@ -100,3 +100,11 @@ Style: high-quality art-directed realistic material texture work suitable for a 
 - `battle-surface-atlas-v2.png`：使用 OpenAI imagegen 原创生成的四格漫反射图集，按左上夯土／右上踩实土壤／左下陶瓦／右下木材使用。题材演绎材质，不是史料照片或真实地形；没有建筑、人物、数值或文字。原图 1254×1254，直接复制保存，未通过裁切修改游戏场景或伪造实机画面。
 - 完整提示词：[battle-surface-atlas-v2.prompt.txt](../../../art/military/battle-surface-atlas-v2.prompt.txt)。Three.js 按象限内部世界坐标重复采样，留边避免串色；真实灯光提供照明和阴影。载入失败保留军阵、城防和操作，并显示材质提示。
 - 纹理的 1×1 载入占位和完整图集尺寸不同，替换前释放旧 GPU 存储，避免 WebGL 不可变存储的尺寸溢出；弹窗关闭释放图集及 ImageBitmap。
+
+### 刀盾兵专用握姿样板（2026-10-11，待用户自然度确认）
+
+- `infantry-sword-shield-v2.glb` 从保留的 `infantry-rigged-v1.blend` 制作，继续使用用户 Tripo 单兵的身体、衣甲及内嵌 PBR 贴图。只在原皮肤手部区域替换 109 个面片，加入四指包握、拇指对握与圆润指尖；新手部 UV 取原手部贴图区域，保持单材质。旧源文件及旧 GLB 不覆盖；新可编辑源 `art/military/infantry-sword-shield-v2.blend`，复现脚本 `scripts/map-sample/build_sword_shield_grip.py`。
+- 最终 9,899 三角面、31 个骨骼、5,099,820 字节；较旧骨架只增加 GripSword／GripShield 两个非变形挂点，没有增加指节骨骼。刀柄竖握、盾后横把横握分别制作，掌面与前臂旋转协调；Idle 2.4 秒、Walk 1.2 秒沿用原下肢步态，新增 Attack 2.4 秒展示准备、挥砍、收势与防御。资产烘焙后播放，不是动作捕捉或独立伤害来源。
+- 只有刀盾兵及未详部队的通用刀盾代表采用新资产；长矛、弓及骑兵保留原实现。源能力由实际握持挂点识别；新资产不再执行运行时卷指或持械 IK 覆盖，武器刚性挂于各自固定挂点。资源按实际需要载入，保留独立骨骼、共享几何／材质及释放规则。
+- QA 使用游戏同一实现导出的真实变形网格及浏览器实际 GLB。67 项局部检查覆盖原身体／面部／衣甲三角面及朝向、实际刀柄／盾把接触、刀盾代表线段穿插、三个状态完整循环、切换与暂停、腕部中立范围、攻击相位错开、异步挂载和地图点击／朝向。代表线段与接触采样不等同于全部面片的连续碰撞证明。实机同镜头对照 `.cache/grip-v2/full-comparison.png`、`hand-comparison.png`、`shield-comparison.png`；手形仍为固定握持，最终自然度由用户确认。
+- 离线导出：`CARRY_PREVIEW=1 CARRY_BASELINE=1 CARRY_OUT=.cache/grip-v2/before npx vitest run scripts/map-sample/export_carry_preview.test.mjs`；新资产省略 CARRY_BASELINE 并改输出路径。保持旧资产用于对照，未通过的中间模型未作为最终结果。

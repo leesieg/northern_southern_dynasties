@@ -47,8 +47,9 @@ export function createMilitaryCarryPose(root:Group,kind:ArmyModelKind){
 
 /** Close the source's open fingers once, in hand bind space; retain UVs and skin weights. */
 export function prepareMilitaryHands(root:Group){
+ if(root.getObjectByName('GripSword')&&root.getObjectByName('GripShield'))return;
  root.traverse(o=>{
-  if(!(o instanceof SkinnedMesh)||o.geometry.userData.carryGrip)return;
+  if(!(o instanceof SkinnedMesh)||o.geometry.userData.carryGrip||o.userData.authoredCarry==='sword-shield-v2')return;
   const p=o.geometry.getAttribute('position'),weights=o.geometry.getAttribute('skinWeight'),indices=o.geometry.getAttribute('skinIndex');
   let changed=false;
   // The original proximity rig assigned outer skirt plates to nearby empty hands.
