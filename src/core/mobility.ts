@@ -31,7 +31,7 @@ import {type Activity,type ActivityKind,type MobilityCommand} from './mobilitySt
 export const activities:Record<ActivityKind,{name:string;icon:'person'|'gregarious'|'diligent'|'influence'|'world'|'renown'|'estate'|'army';days:number;cost:number;effect:string}>={
  visit:{name:'拜访会面',icon:'person',days:3,cost:10,effect:'交往加深，双方好感增加；同城可进一步协商婚姻或盟誓。'},
  banquet:{name:'宴谈结交',icon:'gregarious',days:5,cost:35,effect:'增进私人交往；已有交情且接受款待者可成为朋友。'},
- mentor:{name:'随师研习',icon:'diligent',days:12,cost:25,effect:'与能力更高者共处；驻留期间生活重心每日额外经验 +1，改善关系并舒缓压力。'},
+ mentor:{name:'随师研习',icon:'diligent',days:12,cost:25,effect:'与能力更高者共处；驻留期间月度契合／勤勉／指导合计最多 +2 经验，改善关系并舒缓压力。'},
  audience:{name:'入朝求仕',icon:'influence',days:5,cost:20,effect:'当面陈述志向，取得功绩与执政者好感，仍须正式请任。'},
  tour:{name:'巡察安抚',icon:'world',days:10,cost:35,effect:'改善当地秩序与繁荣；亲自巡察可取得个人功绩。'},
  family:{name:'归庄议亲',icon:'renown',days:7,cost:25,effect:'与亲族议事，改善关系、缓解压力并积累家族威望。'},

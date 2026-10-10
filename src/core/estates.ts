@@ -1,4 +1,5 @@
 import {buildQuote,beginConstruction} from './construction';
+import {lifestyleEffects,recordLifestylePractice} from './lifestyle';
 import type {World} from './types';
 import type {Project,EstateBuilding} from './construction';
 import type {RegistrationPolicy} from '../data/governancePolicies';
@@ -73,7 +74,7 @@ export function estateEconomy(w:World,site:string,grossGrain:number,agricultural
  const rows=estatesAt(w,site).map(e=>{
   const employed=Math.min(e.population,estateCapacity(e)),share=employed/population,rent=estateRents[e.rent].share;
   // Cash rents are from agricultural cash output; grain rents never get sold and credited a second time.
-  const coins=Math.floor(agriculturalBase*share*(2-policy.tax)*rent+employed/200*e.levels.workshop*rent);
+  const coins=Math.floor(agriculturalBase*share*(2-policy.tax)*rent+employed/200*e.levels.workshop*rent*(100+lifestyleEffects(w,{kind:'estate',site},e.owner).estateWorkshop)/100);
   const grain=Math.floor(surplus*share*(1-policy.tax*.5)*rent);
   return {id:e.id,coins,grain};
  });
@@ -82,12 +83,13 @@ export function estateEconomy(w:World,site:string,grossGrain:number,agricultural
 }
 export function estateForecast(w:World,e:Estate){
  if(!w.realm)return {coins:4+e.levels.workshop*6,grain:e.levels.fields*6+e.levels.storehouse*3,loss:0};
- const row=cityYield(w,e.location).estates.find(v=>v.id===e.id),before=e.grain+(row?.grain??0),loss=Math.floor(before*(e.levels.storehouse?Math.max(.005,.03-e.levels.storehouse*.008):.03));
+ const row=cityYield(w,e.location).estates.find(v=>v.id===e.id),before=e.grain+(row?.grain??0),loss=estateStorageLoss(w,e,before);
  return {coins:estateAccessReason(w,e)?0:row?.coins??0,grain:row?.grain??0,loss:loss+Math.max(0,before-loss-estateGrainCapacity(e))};
 }
+export function estateStorageLoss(w:World,e:Estate,grain:number){const base=Math.floor(grain*Math.max(.005,.03-e.levels.storehouse*.008)),bonus=lifestyleEffects(w,{kind:'estate',site:e.location},e.owner);return Math.floor(base*(100-bonus.estateLoss)/100);}
 export function settleEstateIncome(w:World,rows:ReturnType<typeof estateEconomy>['rows']){
  for(const row of rows){const e=estateById(w,row.id)!;if(e.disposed!==undefined)continue;const wallet=accountWallet(w,'person:'+e.owner),coins=estateAccessReason(w,e)||!wallet?0:Math.min(row.coins,wallet.capacity-wallet.read());if(wallet&&coins)wallet.write(wallet.read()+coins);
-  const before=e.grain+row.grain,loss=Math.floor(before*Math.max(.005,.03-e.levels.storehouse*.008));e.grain=Math.min(estateGrainCapacity(e),before-loss);
+  const before=e.grain+row.grain,loss=estateStorageLoss(w,e,before);e.grain=Math.min(estateGrainCapacity(e),before-loss);
   if(e.owner===w.characterId||loss||before-loss>e.grain)log(w,`${getPerson(w,e.owner)?.name??'庄主'}庄园月结：租入 ${coins} 钱、粮租 ${row.grain}，庄粮 ${e.grain}，保管及溢出损耗 ${before-e.grain}。`);
  }
 }
@@ -101,7 +103,7 @@ export function restoreEstatePopulation(w:World,id:string|undefined,site:string,
 
 export type EstateCommand={type:'estate';action:'found';site:string}|{type:'estate';action:'tenants'|'relief'|'withdraw';estate:string;amount:number}|{type:'estate';action:'rent';estate:string;rent:EstateRent};
 export function estateQuote(w:World,c:EstateCommand,actor=w.characterId??'fictional'){
- const e='estate'in c?estateById(w,c.estate):undefined,wallet=accountWallet(w,'person:'+actor),amount='amount'in c?c.amount:0,coins=c.action==='found'?120:c.action==='tenants'?Math.ceil(amount/10):0,grain=c.action==='tenants'?Math.ceil(amount/100):c.action==='relief'||c.action==='withdraw'?amount:0;
+ const e='estate'in c?estateById(w,c.estate):undefined,wallet=accountWallet(w,'person:'+actor),amount='amount'in c?c.amount:0,coins=c.action==='found'?120:c.action==='tenants'?Math.ceil(amount/10*(100-lifestyleEffects(w,{kind:'estate',site:e?.location},actor).estateSettleCost)/100):0,grain=c.action==='tenants'?Math.ceil(amount/100):c.action==='relief'||c.action==='withdraw'?amount:0;
  let reason=!['found','tenants','rent','relief','withdraw'].includes(c.action)?'无效庄园行动':!w.realm?'完整庄园经营仅在沙盒中开放':!isAlive(w,actor)||(ageAt(w,actor)??0)<16?'须由在世成年庄主决定':!wallet?'没有可用私人钱包':'';
  if(!reason&&c.action==='found'){
   const city=w.realm!.cities[c.site];reason=!siteById[c.site]||!city?'无效地点':city.owner!==city.controller||city.controller!==allegianceRealm(w,actor)?'仅可在本国实际控制的县域置业':allEstates(w).length>=128?'庄园登记已满':estatesAt(w,c.site).reduce((n,e)=>n+estateCommittedCapacity(e),0)+2000>regionalEconomy(c.site).capacity?'本县经营容量不足':ownedEstates(w,actor).some(e=>e.location===c.site)?'本县已有本人庄园，请扩建田庄':'';
@@ -120,6 +122,7 @@ export function actEstate(w:World,c:EstateCommand,actor=w.characterId??'fictiona
  const q=estateQuote(w,c,actor);if(q.reason)throw new Error(q.reason);const wallet=accountWallet(w,'person:'+actor)!;wallet.write(wallet.read()-q.coins);
  if(c.action==='found'){const p=getPerson(w,actor)!,id='estate:'+actor+':'+c.site;w.holdings.estates??={};w.holdings.estates[id]={id,owner:actor,family:p.family,location:c.site,population:0,grain:0,rent:'normal',rentChanged:w.day,lastDecision:w.day,levels:{hall:1,fields:0,workshop:0,storehouse:0},project:{building:'fields',level:1,started:w.day,due:w.day+10,cost:40}};log(w,`${p.name}在${siteById[c.site].name}置业，民间置业 80 钱、田庄营建 40 钱，需十日，尚无庄户。`);return;}
  const e=estateById(w,c.estate)!;
+ if(c.action==='tenants'||c.action==='relief')recordLifestylePractice(w,actor,'stewardship');
  if(c.action==='rent'){e.rent=c.rent;e.rentChanged=w.day;}
  else {e.grain-=q.grain;if(c.action==='tenants')e.population+=c.amount;else if(c.action==='relief')w.realm!.cities[e.location].grain+=c.amount;else w.people[0].food+=c.amount;}
  log(w,`${getPerson(w,actor)?.name??'庄主'}：${c.action==='tenants'?'安置 '+c.amount+' 名本县编户，县域人口未增加':c.action==='rent'?'租额改为'+estateRents[c.rent].name:c.action==='relief'?'庄粮 '+c.amount+' 转入本县民食公仓':'本人提取 '+c.amount+' 行粮'}。`);
@@ -132,7 +135,7 @@ export function inheritEstates(w:World,owner:string,successor?:string){
 export function advanceEstateTenants(w:World){
  if(!w.realm)return;
  for(const site of Object.keys(w.realm.cities)){const c=w.realm.cities[site],estates=estatesAt(w,site).filter(e=>!estateAccessReason(w,e)),cap=Math.floor(c.population*.01);let left=cap;
-  const losses=estates.map(e=>({e,want:c.order<45||c.grain+e.grain<Math.ceil(c.population/150)?Math.min(e.population,Math.ceil(e.population*(e.rent==='heavy'?.03:e.rent==='normal'?.01:.003))):0})),totalLoss=losses.reduce((n,v)=>n+v.want,0);
+  const losses=estates.map(e=>({e,want:c.order<45||c.grain+e.grain<Math.ceil(c.population/150)?Math.min(e.population,Math.ceil(e.population*(e.rent==='heavy'?.03:e.rent==='normal'?.01:.003)*(e.rent==='lenient'?(100-lifestyleEffects(w,{kind:'estate',site},e.owner).estateRetention)/100:1))):0})),totalLoss=losses.reduce((n,v)=>n+v.want,0);
   for(const {e,want} of losses){const lost=totalLoss?Math.floor(Math.min(cap,totalLoss)*want/totalLoss):0;e.population-=lost;left-=lost;}
   const wants=estates.map(e=>({e,want:e.rent==='lenient'&&c.order>=60&&c.grain>0?Math.max(0,Math.min(20,estateCapacity(e)-e.population-sourceOccupied(w,site,e.id).total)):0})),total=wants.reduce((n,v)=>n+v.want,0),pool=Math.min(left,ordinaryPopulation(w,site),total);
   for(const {e,want} of wants)if(total)e.population+=Math.floor(pool*want/total);

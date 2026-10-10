@@ -18,7 +18,7 @@ import {nobleRanks,nobleTitle,nobilityReason,actNobility,type NobleRank} from '.
 import {rulerEligibility} from './claims';
 import {worldRealms} from './polityRuntime';
 import {monthStart} from './calendar';
-import {lifestyleBonuses} from './lifestyle';
+import {lifestyleEffects,lifestylePublicOffice,recordLifestylePractice} from './lifestyle';
 import {accountWallet} from './obligations';
 import {fiscalRecord} from './treasury';
 
@@ -100,10 +100,14 @@ function specificReason(w:World,c:IntrigueStart,actor:string){
  }
  return '';
 }
+export function intrigueDefense(w:World,actor:string,target:string,kind:SchemeKind){
+ if(['befriend','woo','favor'].includes(kind))return 0;const own=lifestyleEffects(w,{kind:'defense',public:lifestylePublicOffice(w,target)},target),r=allegianceRealm(w,target),g=r?governmentOf(w,r):undefined,protectors=lifestylePublicOffice(w,target)?[g?.court?.ministries.censorate,g?.court?.ministries.secretariat].filter((id):id is string=>!!id&&id!==target&&id!==actor&&isAlive(w,id)&&!detained(w,id)&&allegianceRealm(w,id)===r&&together(w,id,target)):[];
+ const guard=Math.max(0,...protectors.map(id=>lifestyleEffects(w,{kind:'defense',public:true},id).counterIntrigue));return Math.max(own.counterIntrigue,guard)+(['abduct','murder'].includes(kind)?own.personalDefense:0);
+}
 export function intrigueQuote(w:World,c:IntrigueCommand,actor=w.characterId??'fictional'){
- const kind=c.action==='start'?c.kind:'befriend',rule=Object.hasOwn(rules,kind)?rules[kind]:rules.befriend,bonus=lifestyleBonuses(w,actor),target=c.action==='start'?c.target:actor,a=attributes(w,actor),b=attributes(w,target);
- const parts=[{label:'行动基础',value:rule.base},{label:'发起者能力',value:Math.round((rule.slot==='personal'?a.diplomacy:a.intrigue)*2)},{label:'目标谋略',value:-b.intrigue},{label:'交往基础',value:rule.slot==='personal'?Math.round(relationOpinion(w,actor,target)/5):0},{label:'生活重心与技能',value:bonus.intrigueSuccess+(rule.slot==='personal'?bonus.personalSuccess:bonus.hostileSuccess)+(kind==='befriend'?bonus.scheme:0)}];
- const chance=cap(parts.reduce((n,p)=>n+p.value,0),5,95),exposure=cap(rule.exposure+Math.round(b.intrigue-a.intrigue)-bonus.intrigueSecrecy,5,95),gift=c.action==='start'&&kind==='recruit'&&c.promise==='gift'?40:0,cost=rule.cost+gift;
+ const kind=c.action==='start'?c.kind:'befriend',rule=Object.hasOwn(rules,kind)?rules[kind]:rules.befriend,target=c.action==='start'?c.target:actor,r=c.action==='start'&&c.kind==='recruit'?c.realm:undefined,g=r?governmentOf(w,r):undefined,publicWork=c.action==='start'&&c.kind==='recruit'&&c.powerGoal==='executive'&&!!g&&g.ruler===c.beneficiary&&g.executives.includes(actor)&&g.executives.includes(c.executive!),bonus=lifestyleEffects(w,{kind:'scheme',public:!!publicWork},actor),a=attributes(w,actor,publicWork?'public':'private'),b=attributes(w,target),defense=intrigueDefense(w,actor,target,kind);
+ const parts=[{label:'行动基础',value:rule.base},{label:'发起者能力',value:Math.round((rule.slot==='personal'?a.diplomacy:a.intrigue)*2)},{label:'目标谋略',value:-b.intrigue},{label:'交往基础',value:rule.slot==='personal'?Math.round(relationOpinion(w,actor,target)/5):0},{label:'生活重心与技能',value:publicWork?bonus.publicIntrigue:bonus.intrigueSuccess+(rule.slot==='personal'?bonus.personalSuccess:bonus.hostileSuccess)+(kind==='befriend'?lifestyleEffects(w,{kind:'personal'},actor).scheme:0)},{label:'目标与有效保护者反制',value:defense?-defense:0}];
+ const chance=cap(parts.reduce((n,p)=>n+p.value,0),5,95),exposure=cap(rule.exposure+Math.round(b.intrigue-a.intrigue)-bonus.intrigueSecrecy+defense,5,95),gift=c.action==='start'&&kind==='recruit'&&c.promise==='gift'?40:0,cost=rule.cost+gift;
  const reason=(()=>{
   if(c.action==='cancel'){const s=w.intrigue?.schemes.find(s=>s.id===c.scheme);return !s||s.status!=='active'?'计谋已结束':s.actor!==actor?'只能撤回自己的计谋':'';}
   if(w.campaign?.status!=='active'||!w.realm||!w.relationships)return '需在进行中的历史沙盒安排计谋';
@@ -155,7 +159,7 @@ function resolve(w:World,s:Scheme){
   case 'abduct':{if(!detainPerson(w,s.target,s.realm!,personResidence(w,s.target).site,'abduction','scheme:'+s.id,null,s.actor)){end(w,s,'invalid','目标已无法收押');return;}break;}
   case 'murder':die(w,s.target,'murder');break;
  }
- end(w,s,'succeeded','已奏效'+(s.exposed?'，发起者已暴露':''));
+ recordLifestylePractice(w,s.actor,s.kind==='befriend'?'diplomacy':'intrigue');end(w,s,'succeeded','已奏效'+(s.exposed?'，发起者已暴露':''));
 }
 function keepsPromise(w:World,s:SchemeSupport){
  if(s.promise==='title'){if(!s.applied)return s.nobleGrantor===intendedRuler(w,s.realm,s.goal,s.beneficiary);const t=nobleTitle(w,s.person,s.realm);return !!t&&t.grantor===s.nobleGrantor&&nobleRanks[t.rank].weight>=nobleRanks[s.nobleRank!].weight&&t.name===s.nobleName&&(!s.nobleRites||t.rites)&&t.since>=(s.appliedDay??s.since);}

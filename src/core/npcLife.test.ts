@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance} from './world';
-import {advanceLifestyle,ensureLifestyle,actLifestyle,lifestyleProgress,lifestylePoints,lifestyleLearning,lifestyleBonuses} from './lifestyle';
-import {branchPerks,lifestyleFocuses,LIFESTYLE_XP_PER_POINT} from '../data/lifestyles';
+import {advanceLifestyle,ensureLifestyle,actLifestyle,lifestyleProgress,lifestylePoints,lifestyleLearning,lifestyleBonuses,lifestyleQueue} from './lifestyle';
+import {lifestyleFocuses,LIFESTYLE_XP_PER_POINT} from '../data/lifestyles';
 import {allPeople} from './personRegistry';
 import {ageAt} from './lifeState';
 import {attributes,traitsFor} from './social';
@@ -35,22 +35,22 @@ describe('NPC 自主生活与成长节奏',()=>{
   const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.life!.people['yuan-qin'].death={day:0,cause:'illness'};w.social!.lineage.unshift({id:'xiao-gang',day:0});w.custody!.records['gao-cheng']={person:'gao-cheng',captor:'liang',captorPerson:null,army:null,site:'jiankang',since:0,origin:'east',cause:'battle',source:'test',treatment:'guarded',talked:null,terms:'',escapeAfter:0,ransom:80,offer:null};
   w.day=1;advanceLifestyle(w);for(const id of ['yuan-qin','yuwen-jue','xiao-gang','gao-cheng'])expect(lifestyleProgress(w,id)).toBeUndefined();
  });
- it('settles daily XP and monthly NPC study once, keeping the player’s pending study and stress intact',()=>{
-  const w=newCampaignWorld('gao-huan',undefined,'sandbox');actLifestyle(w,{type:'lifestyle',action:'focus',focus:'strategy'});w.day=1;advanceLifestyle(w);const npc=lifestyleProgress(w,'yuan-qin')!,before=npc.xp[lifestyleFocuses[npc.focus!].branch];w.day=31;const rate=lifestyleLearning(w,'yuan-qin').total;advanceLifestyle(w);expect(npc.study).toBeNull();expect(npc.xp[lifestyleFocuses[npc.focus!].branch]).toBe(before+rate+30);
-  expect(lifestyleProgress(w)!.study).not.toBeNull();const snapshot=serializeWorld(w);advanceLifestyle(w);expect(serializeWorld(w)).toBe(snapshot);expect(w.social!.stress).toBe(0);
+ it('settles the same monthly XP budget for NPCs and players without a study prompt or player resource cost',()=>{
+  const w=newCampaignWorld('gao-huan',undefined,'sandbox');actLifestyle(w,{type:'lifestyle',action:'focus',focus:'public_martial'});w.day=1;advanceLifestyle(w);const npc=lifestyleProgress(w,'yuan-qin')!,branch=lifestyleFocuses[npc.focus!].branch,before=npc.xp[branch],coins=w.people[0].coins;
+  for(let day=2;day<=31;day++){w.day=day;advanceLifestyle(w);}expect(npc.study).toBeNull();expect(npc.xp[branch]-before).toBeGreaterThan(0);expect(npc.xp[branch]-before).toBeLessThanOrEqual(22);expect(lifestyleProgress(w)!.study).toBeNull();const snapshot=serializeWorld(w);advanceLifestyle(w);expect(serializeWorld(w)).toBe(snapshot);expect(w.social!.stress).toBe(0);expect(w.people[0].coins).toBe(coins);expect(lifestyleLearning(w,'yuan-qin').total).toBeLessThanOrEqual(20);
  });
  it('charges 360 XP per point so a month of daily growth and study cannot fill the tree',()=>{
   const w=newCampaignWorld('gao-huan',undefined,'sandbox');actLifestyle(w,{type:'lifestyle',action:'focus',focus:'strategy'});actLifestyle(w,{type:'lifestyle',action:'unlock',perk:'drill'});
-  for(let day=1;day<=31;day++){w.day=day;advanceLifestyle(w);}actLifestyle(w,{type:'lifestyle',action:'study',choice:'practice'});
+  for(let day=1;day<=31;day++){w.day=day;advanceLifestyle(w);}
   expect(LIFESTYLE_XP_PER_POINT).toBe(360);expect(lifestylePoints(ensureLifestyle(w),'martial')).toBe(0);expect(ensureLifestyle(w).perks).toEqual(['drill']);expect(ensureLifestyle(w).xp.martial).toBeLessThan(720);
  });
  it('keeps a completed branch and changes to an unfinished route after the shared cooldown without another starter point',()=>{
-  const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.day=1;advanceLifestyle(w);const p=ensureLifestyle(w,'yuan-qin'),branch=lifestyleFocuses[p.focus!].branch;p.xp[branch]=5*LIFESTYLE_XP_PER_POINT;p.perks=branchPerks(branch).map(([id])=>id);const oldFocus=p.focus;w.day=100;advanceLifestyle(w);
-  expect(p.focus).not.toBe(oldFocus);expect(p.xp[branch]).toBe(1800);expect(p.xp[lifestyleFocuses[p.focus!].branch]).toBeLessThan(360);expect(p.perks).toHaveLength(5);expect(parseWorld(serializeWorld(w))).toEqual(w);
+  const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.day=1;advanceLifestyle(w);const p=ensureLifestyle(w,'yuan-qin'),branch=lifestyleFocuses[p.focus!].branch;p.xp[branch]=20*LIFESTYLE_XP_PER_POINT;p.perks=[];p.perks=lifestyleQueue(w,branch,'yuan-qin');const oldFocus=p.focus;w.day=12000;advanceLifestyle(w);
+  expect(p.focus).not.toBe(oldFocus);expect(p.xp[branch]).toBe(7200);expect(p.xp[lifestyleFocuses[p.focus!].branch]).toBeLessThan(360);expect(p.perks).toHaveLength(20);expect(parseWorld(serializeWorld(w))).toEqual(w);
  });
  it('migrates legacy XP units once while retaining learned skills, available points, fractional progress and private balances',()=>{
   const w=newCampaignWorld('gao-huan',undefined,'sandbox');w.day=200;const p=ensureLifestyle(w);p.focus='strategy';p.xp.martial=270;p.perks=['drill'];delete p.lastAdvanced;delete (p.xp as Partial<Record<string,number>>).intrigue;w.lifestyles!.version=1;const reserves=structuredClone(w.relationships!.reserves),coins=w.people[0].coins;
-  const loaded=parseWorld(serializeWorld(w)),q=ensureLifestyle(loaded);expect(loaded.lifestyles!.version).toBe(3);expect(q.xp.martial).toBe(810);expect(q.perks).toEqual(['drill']);expect(lifestylePoints(q,'martial')).toBe(1);expect(q.xp.martial%360).toBe(90);expect(loaded.relationships!.reserves).toEqual(reserves);expect(loaded.people[0].coins).toBe(coins);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
+  const loaded=parseWorld(serializeWorld(w)),q=ensureLifestyle(loaded);expect(loaded.lifestyles!.version).toBe(4);expect(q.xp.martial).toBe(810);expect(q.perks).toEqual(['drill']);expect(lifestylePoints(q,'martial')).toBe(1);expect(q.xp.martial%360).toBe(90);expect(loaded.relationships!.reserves).toEqual(reserves);expect(loaded.people[0].coins).toBe(coins);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
   p.xp.martial=601;expect(()=>serializeWorld(w)).toThrow('存档');
  });
  it('rejects invalid NPC growth records and preserves the successor’s own NPC learning on handover',()=>{
@@ -73,7 +73,7 @@ describe('NPC 自主生活与成长节奏',()=>{
  });
  it('applies a governor’s own focus and an assigned NPC commander’s own supply skills to actual outcomes',()=>{
   const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.realm!.cities.ye.governor='yuan-qin';const base=cityYield(w,'ye');actLifestyle(w,{type:'lifestyle',action:'focus',focus:'domain'},'yuan-qin');expect(cityYield(w,'ye').coins).toBeGreaterThan(base.coins);expect(marriageAcceptance(w,'guest-west','yuan-qin').parts.find(p=>p.label==='生活重心与技能')?.value).toBe(0);
-  actLifestyle(w,{type:'lifestyle',action:'focus',focus:'supply'},'yuwen-tai');const a:Army={id:90,realm:'west',location:'changan',troops:600,morale:80,supply:100,journey:null,siege:0};w.realm!.armies=[a];w.mobility!.armyCommanders??={};w.mobility!.armyCommanders[90]='yuwen-tai';expect(armyDailyFood(w,a)).toBeCloseTo(.19);expect(lifestyleBonuses(w).supply).toBe(0);
+  actLifestyle(w,{type:'lifestyle',action:'focus',focus:'supply'},'yuwen-tai');const a:Army={id:90,realm:'west',location:'changan',troops:600,morale:80,supply:100,journey:null,siege:0};w.realm!.armies=[a];w.mobility!.armyCommanders??={};w.mobility!.armyCommanders[90]='yuwen-tai';expect(armyDailyFood(w,a)).toBeCloseTo(.194);expect(lifestyleBonuses(w).supply).toBe(0);
  });
  it('generates and settles a real NPC childhood milestone on the monthly tick and handles self-directed choices without self-opinion entries',()=>{
   const {w,id}=child();school(w);w.day=nextMonthStart(w.day,w.scriptId);advanceHouseholdLife(w);const event=w.householdLife!.moments.find(e=>e.person===id&&e.kind==='childhood');expect(event).toMatchObject({actor:'yuan-qin',status:'resolved'});expect(w.social!.traits[id]).toContain(event!.choice==='encourage'?'gregarious':'diligent');expect(parseWorld(serializeWorld(w))).toEqual(w);

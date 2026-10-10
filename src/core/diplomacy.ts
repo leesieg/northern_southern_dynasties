@@ -1,3 +1,4 @@
+import {recordLifestylePractice} from './lifestyle';
 import {getCharacter} from './personRegistry';
 import {localBalance,spendLocal} from './treasury';
 import {worldRealms} from './polityRuntime';
@@ -91,7 +92,7 @@ function agreementReason(w:World,m:Envoy){const s=w.diplomacy!;
  return '';
 }
 function conclude(w:World,m:Envoy,accept:boolean){const s=w.diplomacy!,p=diplomaticPair(w,m.from,m.to)!;const blocked=agreementReason(w,m);accept=accept&&!blocked;
- if(accept){changeOpinion(p,m.action==='improve'?25:10,'agreement');s.credit[m.from]=clamp(s.credit[m.from]+2,0);
+ if(accept){if(m.envoy)recordLifestylePractice(w,m.envoy,'diplomacy');changeOpinion(p,m.action==='improve'?25:10,'agreement');s.credit[m.from]=clamp(s.credit[m.from]+2,0);
  if(['transit','safe','military','pact','alliance','meeting'].includes(m.action)){const kind=m.action==='meeting'?'safe':m.action as TreatyKind;p.treaties=p.treaties.filter(t=>!(t.kind===kind&&(kind==='pact'||kind==='alliance'||t.from===m.from)));p.treaties.push({kind,from:m.from,to:m.to,actor:kind==='safe'?m.actor:null,...(m.action==='meeting'?{meeting:'invited' as const}:{}),since:w.day,until:w.day+(kind==='safe'?240:720)});}
  if(m.action==='recognize'){p.recognized=true;for(const r of [m.from,m.to])governmentOf(w,r)!.legitimacy=clamp(governmentOf(w,r)!.legitimacy+5,0);}
  if(m.action==='submit')s.subjects[m.from]=m.to;

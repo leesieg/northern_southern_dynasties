@@ -17,6 +17,7 @@ import { governmentOf,governingExecutives,governingAuthority,currentRealm,govern
 import { type RealmId } from './realm';
 import { familyStanding } from './family';
 import { traitsFor,acceptance } from './social';
+import {lifestyleEffects} from './lifestyle';
 import type { World } from './types';
 import {personInfluence,awardInfluence} from './personalInfluence';
 import {governanceRules} from './governanceRules';
@@ -52,7 +53,7 @@ export function newCourt(w:World,r:RealmId):CourtState{
 }
 export function ensureCourts(w:World){if(!w.realm?.governments)return;for(const r of worldRealms(w)){governmentOf(w,r)!.rules??=governanceRules(w,r);governmentOf(w,r)!.court??=newCourt(w,r);}}
 function log(w:World,r:RealmId,text:string){const c=courtOf(w,r)!;c.history.push({day:w.day,text});c.history=c.history.slice(-60);}
-export function ministryPerformance(w:World,r:RealmId,m:MinistryId){const holder=courtOf(w,r)?.ministries[m];if(!holder)return {score:0,reason:'职位空缺'};if(w.custody?.records[holder])return {score:0,reason:'被拘押，履职暂停'};if(!isAlive(w,holder)||allegianceRealm(w,holder)!==r)return {score:0,reason:'任职身份失效'};if((lifeOf(w,holder)?.illness?.severity??0)>=3)return {score:0,reason:'重病，履职暂停'};if(!presentAt(w,holder,capital(r,w)))return {score:0,reason:'未在都城履职'};const ability=attributes(w,holder)[ministryAbility[m]],experience=Math.min(4,Math.floor((governmentOf(w,r)?.merit[holder]??0)/20)),score=ability+experience;return {score,reason:`对口能力 ${ability}＋履历经验 ${experience}；达到 10 称职`};}
+export function ministryPerformance(w:World,r:RealmId,m:MinistryId){const holder=courtOf(w,r)?.ministries[m];if(!holder)return {score:0,reason:'职位空缺'};if(w.custody?.records[holder])return {score:0,reason:'被拘押，履职暂停'};if(!isAlive(w,holder)||allegianceRealm(w,holder)!==r)return {score:0,reason:'任职身份失效'};if((lifeOf(w,holder)?.illness?.severity??0)>=3)return {score:0,reason:'重病，履职暂停'};if(!presentAt(w,holder,capital(r,w)))return {score:0,reason:'未在都城履职'};const ability=attributes(w,holder,'public')[ministryAbility[m]],experience=Math.min(4,Math.floor((governmentOf(w,r)?.merit[holder]??0)/20)),specialty=['secretariat','censorate'].includes(m)?Math.floor(lifestyleEffects(w,{kind:'scheme',public:true},holder).publicIntrigue/5):0,score=ability+experience+specialty;return {score,reason:`对口能力 ${ability}＋履历经验 ${experience}＋辅政专长 ${specialty}；达到 10 称职`};}
 export function ministryCompetent(w:World,r:RealmId,m:MinistryId){return ministryPerformance(w,r,m).score>=10;}
 export function movementPowerParts(w:World,r:RealmId,id:string){
  if(!isAlive(w,id)||(ageAt(w,id)??18)<16||governmentOf(w,r)?.ruler===id||allegianceRealm(w,id)!==r)return [];
@@ -184,7 +185,7 @@ export function courtCatalysts(w:World,r:RealmId,powers=movementPowers(w,r)){con
  if(gap)add('拟拨预算与月支出缺口 '+gap+' 钱',Math.min(10,Math.max(1,Math.ceil(gap/Math.max(1,forecast.expense+promised)*10))));
  if(capitalCity.owner!==r||capitalCity.controller!==r)add('都城失守冲击',c.capitalLost?0:8);const unpaid=s.armies.filter(a=>a.realm===r&&(a.arrears??0)>0);if(unpaid.length)add('军队实际欠饷',Math.min(8,unpaid.length*2));if(local.pressure)add('地方失序与民食缺口',local.pressure);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
  const incapable=ministryIds.filter(m=>c.ministries[m]&&!ministryCompetent(w,r,m));if(incapable.length)add('官署履职受阻',Math.min(5,incapable.length));
- const political=movementIds.reduce((n,group)=>n+movementMood(w,r,group,powers).tension,0),baseline=Math.min(35,15+Math.max(0,political)*2);if(c.tension<baseline&&political>0)add('集团分歧',Math.round(Math.min(political,baseline-c.tension)));else if(political<0)add('集团支持',Math.round(political));
+ const political=movementIds.reduce((n,group)=>n+movementMood(w,r,group,powers).tension,0),baseline=Math.min(35,15+Math.max(0,political)*2);if(c.tension<baseline&&political>0)add('集团分歧',Math.round(Math.min(political,baseline-c.tension)));else if(political<0)add('集团支持',Math.round(political)||0);
  if(!gap&&!unpaid.length)add('收支与军饷平稳',-2);if(!local.pressure&&capitalCity.controller===r)add('民食与地方秩序平稳',-2);if(ministryCompetent(w,r,'censorate'))add('监察履职',-2);
  return rows;
 }

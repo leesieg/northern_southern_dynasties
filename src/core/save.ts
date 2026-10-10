@@ -110,7 +110,7 @@ export function validateWorld(value: unknown): asserts value is World {
       if(!obj(p)||typeof p.building!=='string'||!Object.hasOwn(definitions,p.building)||!integer(p.level,1,3)||p.level!==Number(holding.levels[p.building])+1||!integer(p.started,0,Number(value.day))||!integer(p.due,Number(value.day)+1,365100))return false;
       const d=(definitions as Record<string,{cost:number;days:number}>)[p.building];
       let costRate=100,timeRate=100;
-      if(p.modifiers!==undefined){if((!value.social&&!value.lifestyles)||!obj(p.modifiers)||!integer(p.modifiers.costRate,45,100)||!integer(p.modifiers.timeRate,60,120)||![60,70,80,90,100,110,120].includes(Number(p.modifiers.timeRate)))return false;costRate=Number(p.modifiers.costRate);timeRate=Number(p.modifiers.timeRate);}
+      if(p.modifiers!==undefined){if((!value.social&&!value.lifestyles)||!obj(p.modifiers)||!integer(p.modifiers.costRate,45,100)||!integer(p.modifiers.timeRate,40,120))return false;costRate=Number(p.modifiers.costRate);timeRate=Number(p.modifiers.timeRate);}
       if(p.engineerBonus!==undefined){if(scope!=='city'||!integer(p.engineerBonus,0,10)||typeof p.supervisor!=='string'||!getPerson(value as unknown as World,p.supervisor))return false;timeRate=Math.max(40,timeRate-Number(p.engineerBonus));}else if(p.supervisor!==undefined)return false;
       if(p.cost!==Math.ceil(d.cost*p.level*costRate/100)||p.due!==p.started+Math.ceil(d.days*p.level*timeRate/100))return false;
       if(scope==='estate'&&p.building!=='hall'&&holding.levels[p.building]===0&&Object.entries(holding.levels).filter(([id,n])=>id!=='hall'&&Number(n)>0).length>=Number(holding.levels.hall))return false;

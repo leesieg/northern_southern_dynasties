@@ -1,4 +1,4 @@
-import {lifestyleBonuses} from './lifestyle';
+import {lifestyleEffects} from './lifestyle';
 import type {World} from './types';
 import {allPeople,getPerson,parentLinksOf} from './personRegistry';
 import {ageAt,isAlive,lifeOf} from './lifeState';
@@ -15,7 +15,7 @@ import {ensureHouseholdLife} from './householdLife';
 export type FamilyMarriageCommand={type:'familyMarriage';subject:string;target:string;coins:50|100|200;residence:string;family:string};
 export function marriageSubjects(w:World,actor=w.characterId){return actor?[actor,...parentLinksOf(w).filter(p=>p.parent===actor).map(p=>p.child)].filter((id,i,ids)=>ids.indexOf(id)===i&&isAlive(w,id)&&(ageAt(w,id)??0)>=18):[];}
 /** Acceptance is a current derived score, not a probability; dowry is a private transfer, not a bonus. */
-export function marriageAcceptance(w:World,person:string,partner:string){const parts=[{label:'基础',value:10},{label:'对对方好感',value:relationOpinion(w,partner,person)},{label:'对方外交',value:attributes(w,partner).diplomacy*2},{label:'政权关系',value:allegianceRealm(w,person)===allegianceRealm(w,partner)?15:-40},{label:'家族联姻',value:marriageClanBonus(w,person,partner)},{label:'生活重心与技能',value:lifestyleBonuses(w,partner).acceptance}];return {score:parts.reduce((n,p)=>n+p.value,0),parts};}
+export function marriageAcceptance(w:World,person:string,partner:string){const parts=[{label:'基础',value:10},{label:'对对方好感',value:relationOpinion(w,partner,person)},{label:'对方外交',value:attributes(w,partner).diplomacy*2},{label:'政权关系',value:allegianceRealm(w,person)===allegianceRealm(w,partner)?15:-40},{label:'家族联姻',value:marriageClanBonus(w,person,partner)},{label:'生活重心与技能',value:lifestyleEffects(w,{kind:'personal'},partner).acceptance}];return {score:parts.reduce((n,p)=>n+p.value,0),parts};}
 export function quoteFamilyMarriage(w:World,c:FamilyMarriageCommand,actor=w.characterId){
  const a=getPerson(w,c.subject),b=getPerson(w,c.target),left=marriageAcceptance(w,c.subject,c.target),right=marriageAcceptance(w,c.target,c.subject);
  const reason=()=>{

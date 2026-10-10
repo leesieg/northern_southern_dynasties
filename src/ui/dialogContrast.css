@@ -19,7 +19,7 @@ dialog.paper-dialog.paper-dialog .art-resource-value>b{color:var(--dialog-ink);t
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-arbor .lifestyle-arbor-scene .lifestyle-tree-node{--dialog-ink:#303c32;background:transparent;color:var(--dialog-ink);border:0}
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-tree-node[aria-pressed=true] strong{--dialog-ink:#f3ebd8;background:#2d372f}
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail{--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9}
-dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-branches button[aria-pressed=true]{--dialog-ink:#283925;background:#d7d1b8;border-color:#947b48}
+dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-branches button[aria-pressed=true]{--dialog-ink:#f0e8d0;--dialog-muted:#d3c39b;background:#192b24;color:var(--dialog-ink);border-color:#947b48}
 dialog.paper-dialog.lifestyle-tree-dialog .lifestyle-node-detail footer span{color:#d9cfb3}
 
 /* Embedded content keeps its surface ink when reused in a paper dialog. */

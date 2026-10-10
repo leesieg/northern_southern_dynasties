@@ -70,12 +70,12 @@ describe('NPC 计谋自主推进',()=>{
 });
 describe('第四条谋略生活路线',()=>{
  it('旧 v2 三路经验和节点完整保留，迁移不会重复增发成长',()=>{
-  const w=world();actLifestyle(w,{type:'lifestyle',action:'focus',focus:'architecture'});actLifestyle(w,{type:'lifestyle',action:'unlock',perk:'surveying'});w.lifestyles!.version=2;delete (w.lifestyles!.people[w.characterId!].xp as Partial<Record<string,number>>).intrigue;expect(validLifestyles(w)).toBe(true);const previous=w.lifestyles!.people[w.characterId!].xp.stewardship;migrateLifestyles(w);expect(w.lifestyles!.version).toBe(3);expect(ensureLifestyle(w).xp.stewardship).toBe(previous);expect(ensureLifestyle(w).perks).toEqual(['surveying']);expect(ensureLifestyle(w).xp.intrigue).toBe(0);const copy=structuredClone(w);migrateLifestyles(w);expect(w).toEqual(copy);
+  const w=world();actLifestyle(w,{type:'lifestyle',action:'focus',focus:'architecture'});actLifestyle(w,{type:'lifestyle',action:'unlock',perk:'surveying'});ensureLifestyle(w).focus='architecture';w.lifestyles!.version=2;delete (w.lifestyles!.people[w.characterId!].xp as Partial<Record<string,number>>).intrigue;expect(validLifestyles(w)).toBe(true);const previous=w.lifestyles!.people[w.characterId!].xp.stewardship;migrateLifestyles(w);expect(w.lifestyles!.version).toBe(4);expect(ensureLifestyle(w).xp.stewardship).toBe(previous);expect(ensureLifestyle(w).perks).toEqual(['surveying']);expect(ensureLifestyle(w).xp.intrigue).toBe(0);const copy=structuredClone(w);migrateLifestyles(w);expect(w).toEqual(copy);
  });
- it('所有五个节点的成功与隐秘加成进入真实计谋预估',()=>{
-  const w=world(),command:IntrigueStart={type:'intrigue',action:'start',kind:'murder',target:'xiao-yan'},base=intrigueQuote(w,command);actLifestyle(w,{type:'lifestyle',action:'focus',focus:'subterfuge'});const p=ensureLifestyle(w);p.xp.intrigue=1800;for(const perk of ['observers','cover','persuasion','leverage','schemer'])actLifestyle(w,{type:'lifestyle',action:'unlock',perk});const q=intrigueQuote(w,command);expect(q.chance).toBeGreaterThan(base.chance);expect(q.exposure).toBeLessThan(base.exposure);expect(lifestyleBonuses(w).personalSuccess).toBe(8);
+ it('保留的五个节点成功与隐秘加成进入真实计谋预估',()=>{
+  const w=world(),command:IntrigueStart={type:'intrigue',action:'start',kind:'murder',target:'xiao-yan'},base=intrigueQuote(w,command);actLifestyle(w,{type:'lifestyle',action:'focus',focus:'subterfuge'});const p=ensureLifestyle(w);p.xp.intrigue=1800;for(const perk of ['observers','cover','persuasion','leverage','schemer'])actLifestyle(w,{type:'lifestyle',action:'unlock',perk});const q=intrigueQuote(w,command);expect(q.chance).toBeGreaterThan(base.chance);expect(q.exposure).toBeLessThan(base.exposure);expect(lifestyleBonuses(w).personalSuccess).toBe(3);
  });
  it('NPC 可选择谋略、学习和解锁，同日不重复经验',()=>{
-  const w=world();actLifestyle(w,{type:'lifestyle',action:'focus',focus:'intelligence'},'xiao-yi');w.day++;advanceLifestyle(w);const before=structuredClone(ensureLifestyle(w,'xiao-yi'));expect(before.xp.intrigue).toBeGreaterThan(360);advanceLifestyle(w);expect(ensureLifestyle(w,'xiao-yi')).toEqual(before);
+  const w=world();actLifestyle(w,{type:'lifestyle',action:'focus',focus:'intelligence'},'xiao-yi');w.day++;advanceLifestyle(w);const before=structuredClone(ensureLifestyle(w,'xiao-yi'));expect(before.xp.intrigue).toBe(360);advanceLifestyle(w);expect(ensureLifestyle(w,'xiao-yi')).toEqual(before);
  });
 });

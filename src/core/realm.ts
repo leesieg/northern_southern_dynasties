@@ -48,7 +48,7 @@ import { foreignWarReason,diplomaticWar,canEnter } from './diplomacy';
 import { courtSalary } from './court';
 import { governmentExecutive,governingAuthority,governmentBonus,meritAccess,governmentMusterReason,spendGovernmentMuster,governmentOf,regimeName } from './government';
 import type { GovernmentState } from './government';
-import { lifestyleBonuses } from './lifestyle';
+import { lifestyleEffects } from './lifestyle';
 import { emptyLifestyleBonus } from '../data/lifestyles';
 
 import { roads,siteById,sites } from '../data/scenario';
@@ -99,12 +99,12 @@ export function newRealm(w:World):RealmState {
 }
 export function syncGovernance(w:World){if(w.realm)w.holdings.governedCities=Object.entries(w.realm.cities).filter(([,c])=>c.governor===w.characterId&&c.controller===playerRealm(w)).map(([id])=>id);if(w.rulerHistory)syncRulerHistory(w);}
 export function occupyCity(w:World,war:War,site:string,controller:RealmId,peaceful=false,cause:CaptureCause=peaceful?'surrender':'battle'){const before=w.realm!.cities[site].controller;if(before!==controller){const side=warRealmSide(war,controller);if(side)settleCaptureLoss(w,war,site,side,cause);}captureCityPeople(w,site,controller,'city:'+war.id+':'+site+':'+w.day,peaceful);const city=w.realm!.cities[site];if(city.controller!==controller&&war.id!==undefined){const leaders=new Set([governingAuthority(w,controller),...w.realm!.armies.filter(a=>a.realm===controller&&a.location===site&&!a.journey).map(a=>armyCommander(w,a))]);for(const id of leaders)if(id)awardDeed(w,controller,id,'siege:'+site+':'+war.id,5,'攻取城市，按本场战争与城池记录一次军功');}city.controller=controller;if(city.controller===city.owner){delete city.occupiedSince;delete city.occupiedByWar;}else{city.occupiedSince=w.day;city.occupiedByWar=war.id;}syncGovernance(w);}
-export const armyLifestyle=(w:World,realm:RealmId)=>w.realm?.mandate&&w.characterId&&playerRealm(w)===realm?lifestyleBonuses(w):emptyLifestyleBonus();
-const commandPower=(w:World,r:RealmId,army?:Army)=>{const id=army?armyCommander(w,army):w.mobility?.commanders[r];const war=civilWar(w,r);if(army&&war&&id&&(war.civil!.supporters.includes(id)!==(warArmySide(w,war,army)==='attack')))return 0;return id?Math.min(20,attributes(w,id).martial):0;};
+export const armyLifestyle=(w:World,realm:RealmId)=>{const army=w.realm?.armies.find(a=>a.realm===realm&&armyCommander(w,a)===w.characterId);return army?lifestyleEffects(w,{kind:'army',army},w.characterId):emptyLifestyleBonus();};
+const commandPower=(w:World,r:RealmId,army?:Army)=>{const id=army?armyCommander(w,army):w.mobility?.commanders[r];const war=civilWar(w,r);if(army&&war&&id&&(war.civil!.supporters.includes(id)!==(warArmySide(w,war,army)==='attack')))return 0;return id?Math.min(20,attributes(w,id,army?.owner?'private':'public').martial):0;};
 const tactic=(w:World,r:RealmId,a?:Army)=>(!a||playerCommandsArmy(w,a))&&(a?armyCommander(w,a):w.mobility?.commanders[r])===w.characterId?w.mobility?.stance??'balanced':'balanced';
 const offense=(w:World,r:RealmId,a?:Army)=>tactic(w,r,a)==='attack'?1.2:tactic(w,r,a)==='guard'?.8:1;
 const exposure=(w:World,r:RealmId,a?:Army)=>tactic(w,r,a)==='attack'?1.15:tactic(w,r,a)==='guard'?.8:1;
-const armyBonuses=(w:World,a:Army)=>{const commander=armyCommander(w,a);return playerCommandsArmy(w,a)?armyLifestyle(w,a.realm):commander&&!detained(w,commander)?lifestyleBonuses(w,commander):emptyLifestyleBonus();};
+const armyBonuses=(w:World,a:Army)=>{const commander=armyCommander(w,a);return lifestyleEffects(w,{kind:'army',army:a},commander??a.owner??'unassigned');};
 /** Campaign expenditure is derived from active participation; peace retains the base rate. */
 export const armyFoodRate=(w:World,a:Army)=>(100-armyBonuses(w,a).supply)*(realmAtWar(w,a.realm)?3:1);
 export const armyDailyFood=(w:World,a:Army)=>a.troops/4500*1.5*armyFoodRate(w,a)/100;
@@ -116,16 +116,16 @@ export function armyFieldStatus(w:World,a:Army){const visual=armyVisualState(w,a
 export function cityOperatingExpense(w:World,id:string){const c=w.realm!.cities[id];return Math.ceil(c.population/900)+(c.governor?4:0)+Math.max(0,fortificationLevel(w,id)-(isCapitalSite(w,id)?1:0))*2+(c.integration?8+Math.ceil((100-c.integration.progress)/20):Object.values(w.realm!.annexed??{}).filter(a=>a?.sites.includes(id)&&w.day-a.day<360).length*8);}
 export function cityYield(w:World,id:string){
  const c=w.realm!.cities[id],b=w.holdings.cities[id]?.levels,rate=c.tax==='light'?0.7:c.tax==='heavy'?1.4:1,region=regionalEconomy(id);
- const governor=c.owner===c.controller&&c.governor&&!detained(w,c.governor)?c.governor:null,bonus=governor?lifestyleBonuses(w,governor):emptyLifestyleBonus();
+ const governor=c.owner===c.controller&&c.governor&&!detained(w,c.governor)?c.governor:null,bonus=governor?lifestyleEffects(w,{kind:'governance',site:id},governor):emptyLifestyleBonus();
  const labor=Math.max(.5,1-mobilizedTransportLabor(w,id)/Math.max(1,c.population)*5-(w.service?.tasks.filter(t=>t.site===id&&t.phase==='working').length??0)*.08);
  const links=roads.filter(e=>!e.legacyOnly&&(e.from===id||e.to===id)),access=links.length?.5+.5*links.filter(e=>{const other=w.realm!.cities[e.from===id?e.to:e.from].controller;return other===c.controller||c.controller!=='frontier'&&canEnter(w,c.controller,other);}).length/links.length:.5;
- const management=governor?Math.max(-10,Math.min(20,(attributes(w,governor).stewardship-8)*2)):0;
+ const management=governor?Math.max(-10,Math.min(20,(attributes(w,governor,'common').stewardship-8)*2)):0;
  const capacity=region.capacity*(1+c.irrigation*.15),effective=Math.min(c.population,capacity)+Math.max(0,c.population-capacity)*.25;
  const blockade=Math.max(0,...(w.realm?.sieges??[]).filter(v=>v.site===id).map(v=>v.blockade??0))/100;
  const grain=Math.floor((1-blockade*.8)*effective/100*region.fertility*(1+c.irrigation*.1)*labor*(.75+c.order/400)*(100+bonus.grain+management)/100);
  const controlFactor=c.owner!==c.controller ? .5 : c.integration ? .5+c.integration.progress/200 : 1;
- const taxFactor=rate*c.order/100*(.5+c.prosperity/100)*(100+bonus.tax+management+localEfficiency(w,id)+governmentBonus(w,c.controller,id).tax)/100*controlFactor;
- const commercialTax=Math.floor((c.population/600*region.trade*access+(b?.market??0)*8*access)*taxFactor),economy=estateEconomy(w,id,grain,c.population/600*taxFactor);
+ const taxFactor=rate*c.order/100*(.5+c.prosperity/100)*(100+management+localEfficiency(w,id)+governmentBonus(w,c.controller,id).tax)/100*controlFactor;
+ const commercialTax=Math.floor((c.population/600*region.trade*access+(b?.market??0)*8*access)*taxFactor*(100+bonus.tax)/100),economy=estateEconomy(w,id,grain,c.population/600*taxFactor);economy.agriculturalTax=Math.floor(economy.agriculturalTax*(100+bonus.tax)/100);
  return {coins:economy.agriculturalTax+commercialTax,agriculturalTax:economy.agriculturalTax,commercialTax,estates:economy.rows,grossGrain:grain,grain:grain-economy.privateGrain,expense:cityOperatingExpense(w,id),food:civilianFood(w,id),labor,capacity,region,management,access};
 }
 export function integrationGain(w:World,id:string){const c=w.realm!.cities[id],r=c.owner;if(r==='frontier'||c.controller!==r)return {gain:0,connected:false,garrison:false,food:false};const connected=!!planRoute(capital(r,w),id,node=>w.realm!.cities[node].controller===r),garrison=w.realm!.armies.some(a=>a.realm===r&&a.location===id&&!a.journey&&a.troops>=100&&a.supply>0),food=c.grain>=civilianFood(w,id)*2;return {gain:!connected||c.order<40?0:2+(c.governor?5:0)+(garrison?4:0)+(food?2:0)+(c.tax==='light'?3:c.tax==='heavy'?-2:0),connected,garrison,food};}

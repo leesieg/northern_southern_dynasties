@@ -11,6 +11,7 @@ import {ageAt,isAlive,lifeOf} from './lifeState';
 import {serviceBusy} from './assignments';
 
 import {attributes} from './social';
+import {lifestyleEffects} from './lifestyle';
 import {planRoute} from './world';
 export const needsEnvoy=(action:string)=>!['insult','revoke','independence'].includes(action);
 export function envoyRoute(w:World,id:string,from:RealmId,to:RealmId,destination=capital(to,w)){
@@ -28,11 +29,12 @@ export function envoyReason(w:World,id:string,from:RealmId,to:RealmId,actor?:str
  if(!envoyRoute(w,id,from,to))return '没有可通行的使节路线';
  return '';
 }
-export function defaultEnvoy(w:World,from:RealmId,to:RealmId,actor?:string){return officeCandidates(w,from).find(p=>!envoyReason(w,p.id,from,to,actor))?.id;}
-export function envoyCandidates(w:World,from:RealmId,to:RealmId,actor?:string){return officeCandidates(w,from).map(p=>({id:p.id,score:attributes(w,p.id).diplomacy,reason:envoyReason(w,p.id,from,to,actor)})).sort((a,b)=>Number(!!a.reason)-Number(!!b.reason)||b.score-a.score);}
+const envoyScore=(w:World,id:string,from:RealmId)=>attributes(w,id,'public').diplomacy+lifestyleEffects(w,{kind:'envoy',realm:from},id).envoyScore;
+export function defaultEnvoy(w:World,from:RealmId,to:RealmId,actor?:string){return officeCandidates(w,from).map(p=>({id:p.id,score:envoyScore(w,p.id,from)})).sort((a,b)=>b.score-a.score).find(p=>!envoyReason(w,p.id,from,to,actor))?.id;}
+export function envoyCandidates(w:World,from:RealmId,to:RealmId,actor?:string){return officeCandidates(w,from).map(p=>({id:p.id,score:envoyScore(w,p.id,from),reason:envoyReason(w,p.id,from,to,actor)})).sort((a,b)=>Number(!!a.reason)-Number(!!b.reason)||b.score-a.score);}
 export function envoyEstimate(w:World,id:string,from:RealmId,to:RealmId,action:DiplomacyAction,threshold:number){
- const skill=attributes(w,id).diplomacy,days=envoyRoute(w,id,from,to)?.days??0,negotiation=Math.max(2,14-Math.floor(skill/2)),score=diplomaticScore(w,from,to).filter(p=>p.label!=='外交能力').reduce((n,p)=>n+p.value,0)+skill;
- return {skill,score,travel:days,negotiation,days:days+negotiation,chance:action==='improve'?100:Math.max(5,Math.min(95,50+(score-threshold)*2))};
+ const bonus=lifestyleEffects(w,{kind:'envoy',realm:from},id),skill=attributes(w,id,'public').diplomacy,days=envoyRoute(w,id,from,to)?.days??0,baseNegotiation=Math.max(2,14-Math.floor(skill/2)),negotiation=Math.max(2,Math.ceil(baseNegotiation*(100-bonus.envoyTime)/100)),parts=[...diplomaticScore(w,from,to).filter(p=>p.label!=='外交能力'),{label:'实际使者外交',value:skill},{label:'实际使者生活专长',value:bonus.envoyScore}],score=parts.reduce((n,p)=>n+p.value,0);
+ return {skill,score,parts,baseNegotiation,lifestyle:bonus.envoyScore,travel:days,negotiation,days:days+negotiation,chance:action==='improve'?100:Math.max(5,Math.min(95,50+(score-threshold)*2))};
 }
 export function missionJourney(w:World,id:string):Journey|null{return id===w.characterId?w.people[0].journey:w.mobility?.residences[id]?.journey??null;}
 function setJourney(w:World,id:string,j:Journey|null){if(id===w.characterId)w.people[0].journey=j;else if(w.mobility?.residences[id])w.mobility.residences[id].journey=j;}

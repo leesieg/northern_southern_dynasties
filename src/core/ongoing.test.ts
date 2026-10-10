@@ -58,8 +58,8 @@ describe('生活重心待办旗帜',()=>{
  });
  it('所有路线余点合计，优先当前路线，用完后直达仍有点数的旧路线，存读一致',()=>{
   const w=start();act(w,{type:'lifestyle',action:'focus',focus:'architecture'});ensureLifestyle(w).xp.stewardship=2*LIFESTYLE_XP_PER_POINT;act(w,{type:'lifestyle',action:'unlock',perk:'surveying'});
-  w.day+=90;act(w,{type:'lifestyle',action:'focus',focus:'etiquette'});ensureLifestyle(w).xp.diplomacy=LIFESTYLE_XP_PER_POINT;
-  const flags=ongoingItems(w),flag=flags.find(i=>i.kind==='skills');expect(flag?.title).toContain('2 点');expect(flag?.status).toContain('管理 1 点');expect(flag?.status).toContain('交游 1 点');expect(flag?.target).toEqual({page:'lifestyle',branch:'diplomacy'});expect(ongoingItems(parseWorld(serializeWorld(w)))).toEqual(flags);
+  w.day=1200;act(w,{type:'lifestyle',action:'focus',focus:'etiquette'});ensureLifestyle(w).xp.diplomacy=LIFESTYLE_XP_PER_POINT;
+  const flags=ongoingItems(w),flag=flags.find(i=>i.kind==='skills');expect(flag?.title).toContain('2 点');expect(flag?.status).toContain('管理 1 点');expect(flag?.status).toContain('外交 1 点');expect(flag?.target).toEqual({page:'lifestyle',branch:'diplomacy'});expect(ongoingItems(parseWorld(serializeWorld(w)))).toEqual(flags);
   act(w,{type:'lifestyle',action:'unlock',perk:'courtesy'});expect(ongoingItems(w).find(i=>i.kind==='skills')?.target).toEqual({page:'lifestyle',branch:'stewardship'});
   act(w,{type:'lifestyle',action:'unlock',perk:'crews'});expect(ongoingItems(w).some(i=>i.kind==='skills')).toBe(false);
  });
