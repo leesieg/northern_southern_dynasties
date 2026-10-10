@@ -7,7 +7,7 @@ export function ActionDialog({title,children,actions,onClose,className='',cancel
  useEffect(()=>{const dialog=ref.current,previous=document.activeElement instanceof HTMLElement?document.activeElement:null;if(!dialog)return;dialog.showModal();return()=>{if(dialog.open)dialog.close();if(previous?.isConnected)previous.focus();};},[]);
  if(typeof document==='undefined')return null;
  return createPortal(<dialog ref={ref} data-scene={scene} className={'action-detail-dialog paper-dialog '+className} aria-labelledby={titleId} onCancel={e=>{if(e.target!==e.currentTarget)return;e.preventDefault();onClose();}} onKeyDown={e=>e.stopPropagation()}>
-  <header><h2 id={titleId}>{title}</h2><button type="button" aria-label="关闭交互弹窗" onClick={onClose}>×</button></header>
+  <header><h2 id={titleId} aria-label={title}>{title}</h2><button type="button" aria-label="关闭交互弹窗" onClick={onClose}>×</button></header>
   <div className="action-detail-body">{children}</div>
   <footer><button type="button" onClick={onClose}>{cancelLabel}</button>{actions}</footer>
  </dialog>,document.body);

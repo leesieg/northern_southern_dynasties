@@ -50,6 +50,9 @@ describe('生活重心',()=>{
   const w=newCampaignWorld('xiao-gang');focus(w,'public_stewardship');actLifestyle(w,{type:'lifestyle',action:'plan',perk:'administrator'});expect(lifestyleQueue(w,'stewardship').slice(0,3)).toEqual(['husbandry','ledgers','administrator']);w.day=1;advanceLifestyle(w);expect(ensureLifestyle(w).perks).toEqual(['husbandry']);
   actLifestyle(w,{type:'lifestyle',action:'plan',auto:false});ensureLifestyle(w).xp.stewardship=720;w.day=1000;advanceLifestyle(w);expect(ensureLifestyle(w).perks).toEqual(['husbandry']);expect(lifestylePoints(ensureLifestyle(w),'stewardship')).toBe(1);expect(validLifestyles(w)).toBe(true);
  });
+ it('公私方向草稿同步预览队列，但不改变实际重心、资源或学习记录',()=>{
+  const w=newCampaignWorld('xiao-gang');focus(w,'public_stewardship');const before=structuredClone(w);expect(lifestyleQueue(w,'stewardship')[0]).toBe('ledgers');expect(lifestyleQueue(w,'stewardship',undefined,undefined,'private')[0]).toBe('household_accounts');expect(w).toEqual(before);
+ });
  it('完整技能树可合法兼修并保留两个独立专长',()=>{
   for(const branch of ['martial','stewardship','diplomacy','intrigue'] as const){const w=trained(branch);expect(lifestylePoints(ensureLifestyle(w),branch)).toBe(0);expect(lifestyleMasteries(w)).toHaveLength(2);expect(parseWorld(serializeWorld(w))).toEqual(w);for(const [id,p] of branchPerks(branch))expect(p.requires.every(req=>lifestylePerks[req].branch===p.branch&&req!==id)).toBe(true);}
  });

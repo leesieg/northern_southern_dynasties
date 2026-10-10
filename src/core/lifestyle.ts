@@ -81,8 +81,8 @@ export function lifestyleLearning(w:World,id=lifestylePerson(w)){
 export const lifestyleStudyXP=()=>0;
 function addXP(p:LifestyleProgress,branch:LifestyleBranch,amount:number){p.xp[branch]=Math.min(branchPerks(branch).length*LIFESTYLE_XP_PER_POINT,p.xp[branch]+amount);}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
-export function lifestyleQueue(w:World,branch:LifestyleBranch,id=lifestylePerson(w),priority?:string){
- const p=lifestyleProgress(w,id),owned=new Set(p?.perks??[]),focus=p?.focus?lifestyleFocuses[p.focus]:null,scope=focus?.branch===branch?focus.scope:'public';
+export function lifestyleQueue(w:World,branch:LifestyleBranch,id=lifestylePerson(w),priority?:string,scopeDraft?:'public'|'private'){
+ const p=lifestyleProgress(w,id),owned=new Set(p?.perks??[]),focus=p?.focus?lifestyleFocuses[p.focus]:null,scope=scopeDraft??(focus?.branch===branch?focus.scope:'public');
  const sorted=branchPerks(branch).sort(([,a],[,b])=>{const rank=(s:LifestyleScope)=>s===scope?0:s==='common'?1:2;return rank(a.scope)-rank(b.scope)||a.tier-b.tier;}),queue:string[]=[],seen=new Set<string>();
  const visit=(key:string)=>{if(owned.has(key)||seen.has(key))return;seen.add(key);for(const req of lifestylePerks[key].requires)visit(req);queue.push(key);};
  const preferred=priority??p?.priority?.[branch];if(preferred&&lifestylePerks[preferred]?.branch===branch)visit(preferred);for(const [key] of sorted)visit(key);return queue;
