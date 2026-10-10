@@ -1,6 +1,6 @@
 import {syncRulerHistory} from './rulerHistory';
 import {describe,it,expect} from 'vitest';
-import {act,newCampaignWorld,planRoute} from './world';
+import {act,newCampaignWorld} from './world';
 import {declareRealmWar,declareRealmWarReason,realmReason,settleWar,type Army} from './realm';
 import {ensureWars,peaceQuote,peaceLandCost,warOccupationSites,type War} from './wars';
 import {awardInfluence,personInfluence} from './personalInfluence';
@@ -10,12 +10,24 @@ import {advanceMilitaryAI} from './militaryAI';
 import {ensureArmyOrganization} from './armyOrganization';
 import {parseWorld,serializeWorld,validateWorld} from './save';
 import {descendantSites} from '../data/territorialHierarchy';
+import {territoryNeighbors} from '../data/territoryAdjacency';
 import type {World} from './types';
 
 function setup(person='xiao-yan'){const w=newCampaignWorld(person,undefined,'sandbox');w.realm!.armies=[];awardInfluence(w,person,500);return w;}
 function regional(w=setup(),territory='province:east:并州',site='jinyang'){return {w,war:declareRealmWar(w,w.characterId!,'liang',site,'territory',territory)};}
 function victory(w:World,defender='east'){for(const c of Object.values(w.realm!.cities))if(c.owner===defender){c.controller='liang';c.occupiedSince=w.day;}w.realm!.armies=w.realm!.armies.filter(a=>a.realm!==defender);}
 function objective(w:World,war:ReturnType<typeof declareRealmWar>){return warScoreBreakdown(w,war).parts.find(p=>p.key==='objective')!.value;}
+function ownApproach(w:World,war:War,targets=warObjectiveSites(war),protectedSites:string[]=[]){
+ const remaining=new Set(targets);
+ while(remaining.size){const first=remaining.values().next().value!,component=new Set([first]),members=[first];
+  for(const id of members)for(const next of territoryNeighbors(id))if(remaining.has(next)&&!component.has(next)){component.add(next);members.push(next);}for(const id of members)remaining.delete(id);
+  const roots=Object.entries(w.realm!.cities).filter(([,c])=>c.owner==='liang'&&c.controller==='liang').map(([id])=>id),previous=new Map<string,string|null>(roots.map(id=>[id,null])),queue=[...roots];let border:string|null=null;
+  search:for(const id of queue)for(const next of territoryNeighbors(id))if(!previous.has(next)&&!protectedSites.includes(next)&&w.realm!.cities[next].owner!=='frontier'){if(targets.includes(next)&&!component.has(next))continue;previous.set(next,id);if(component.has(next)){border=next;break search;}queue.push(next);}
+  if(!border)throw new Error('No modeled border to '+first);
+  for(let id:string|null=previous.get(border)??null;id;id=previous.get(id)??null){const c=w.realm!.cities[id];c.owner='liang';c.controller='liang';c.governor=null;delete c.occupiedSince;delete c.occupiedByWar;}
+ }
+ syncRulerHistory(w);
+}
 
 // These regional-clause cases explicitly return all other occupied counties under the new default.
 function returnOutside(w:World,war:War,claims:string[]=[]){const desired=new Set([...warObjectiveSites(war,w),...claims.flatMap(id=>w.realm!.cities[id]?[id]:warTerritorySites(w,id,war.defender))]);return warOccupationSites(w,war).filter(id=>!desired.has(id));}
@@ -43,7 +55,7 @@ describe('州郡战争目标与割地',()=>{
  });
  it('freezes only the defender-owned portion and never cedes a third state’s county',()=>{
   const w=setup();w.realm!.cities.yuci.owner='west';w.realm!.cities.yuci.controller='west';w.realm!.cities.yuci.governor=null;const {war}=regional(w);
-  expect(warObjectiveSites(war)).not.toContain('yuci');victory(w);expect(quoteRegionalPeace(w,war,'liang','demand').reason).toBe('');
+  expect(warObjectiveSites(war)).not.toContain('yuci');ownApproach(w,war,warObjectiveSites(war),['yuci']);victory(w);expect(quoteRegionalPeace(w,war,'liang','demand').reason).toBe('');
   settleRegionalPeace(w,war,'demand');expect(w.realm!.cities.yuci.owner).toBe('west');expect(w.realm!.cities.jinyang.owner).toBe('liang');validateWorld(w);
  });
  it('requires every county for objective scoring and resets sustained control after a loss',()=>{
@@ -54,11 +66,11 @@ describe('州郡战争目标与割地',()=>{
   w.day=151;w.realm!.cities.yuci.controller='liang';updateWarScore(w,war);expect(objective(w,war)).toBe(5);
  });
  it('settles a whole province once, preserving resources and private property and starting county integration',()=>{
-  const {w,war}=regional();victory(w);const lands=warObjectiveSites(war),untouched=w.realm!.cities.ye.owner;
+  const {w,war}=regional();ownApproach(w,war);victory(w);const lands=warObjectiveSites(war),untouched=Object.keys(w.realm!.cities).find(id=>w.realm!.cities[id].owner==='east'&&!lands.includes(id))!;
   w.realm!.cities.yuci.fortification={level:1,due:90};const resources=lands.map(id=>({population:w.realm!.cities[id].population,grain:w.realm!.cities[id].grain})),wallets=structuredClone(w.realm!.treasuries),privateCoins=w.people[0].coins;
   const quote=quoteRegionalPeace(w,war,'liang','demand');expect(quote.reason).toBe('');expect(quote.cost).toBeGreaterThan(peaceCostForCity(w,war,'jinyang'));settleRegionalPeace(w,war,'demand');
   for(const [i,id] of lands.entries()){expect(w.realm!.cities[id]).toMatchObject({owner:'liang',controller:'liang',governor:null,...resources[i],integration:{progress:0,funded:false}});}
-  expect(w.realm!.cities.yuci.fortification?.due).toBeNull();expect(w.realm!.cities.ye.owner).toBe(untouched);expect(w.realm!.cities.ye.controller).toBe('east');expect(w.realm!.treasuries).toEqual(wallets);expect(w.people[0].coins).toBe(privateCoins);
+  expect(w.realm!.cities.yuci.fortification?.due).toBeNull();expect(w.realm!.cities[untouched].owner).toBe('east');expect(w.realm!.cities[untouched].controller).toBe('east');expect(w.realm!.treasuries).toEqual(wallets);expect(w.people[0].coins).toBe(privateCoins);
   const settled=serializeWorld(w);settleRegionalPeace(w,war,'demand');expect(serializeWorld(w)).toBe(settled);expect(parseWorld(settled)).toEqual(w);
  });
  it('rejects a changed owner or reclaimed county before any partial cession',()=>{
@@ -79,15 +91,15 @@ describe('州郡战争目标与割地',()=>{
  it('upgrades an existing city goal to its whole prefecture or province without duplicate land or pricing',()=>{
   for(const id of ['prefecture:taiyuan','province:east:并州']){
    const w=setup(),war=declareRealmWar(w,w.characterId!,'liang','jinyang');victory(w);
-   // The additional corridor must be actually owned by the beneficiary, not just occupied elsewhere.
-   for(const site of planRoute('xiangyang','jinyang')!.route.filter(id=>!warTerritorySites(w,'province:east:并州','east').includes(id))){const c=w.realm!.cities[site];c.owner='liang';c.controller='liang';c.governor=null;delete c.occupiedSince;}
+   // The approach must be actual owned map neighbors, not a long road across another county.
+   ownApproach(w,war,warTerritorySites(w,id,'east'));
    const q=quoteRegionalPeace(w,war,'liang','demand',[id]);expect(q.reason).toBe('');expect(q.lands).toEqual(warTerritorySites(w,id,'east'));expect(new Set(q.lands).size).toBe(q.lands.length);
    expect(q.landCosts).toHaveLength(1);expect(q.cost).toBe(peaceLandCost(w,war,id,q.lands));expect(q.cost).toBeGreaterThan(peaceCostForCity(w,war,'jinyang'));
    settleRegionalPeace(w,war,'demand','liang',[id]);expect(w.realm!.cities.yuci.owner).toBe('liang');expect(parseWorld(serializeWorld(w))).toEqual(w);
   }
  });
  it('keeps the largest regional term reachable after decisive victory with unchanged fixed city values',()=>{
-  const {w,war}=regional(setup(),'province:east:司州','ye');victory(w);const costs=warObjectiveSites(war).map(id=>peaceCostForCity(w,war,id));
+  const {w,war}=regional(setup(),'province:east:司州','ye');ownApproach(w,war);victory(w);const costs=warObjectiveSites(war).map(id=>peaceCostForCity(w,war,id));
   expect(peaceLandCost(w,war,war.territory!.id,warObjectiveSites(war))).toBe(90);expect(quoteRegionalPeace(w,war,'liang','demand').reason).toBe('');expect(quoteRegionalPeace(w,war,'liang','demand').cost).toBeGreaterThan(Math.max(...costs));
   const before=quoteRegionalPeace(w,war,'liang','demand').cost;for(const id of warObjectiveSites(war))w.realm!.cities[id].population=100;expect(quoteRegionalPeace(w,war,'liang','demand').cost).toBe(before);
  });

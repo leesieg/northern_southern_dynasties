@@ -4,7 +4,8 @@ import {isMonthStart,nextMonthStart} from './calendar';
 import {incurObligation,advanceObligations} from './obligations';
 import {civilPeaceReason} from './civilWars';
 import {annexationReason} from './polityLifecycle';
-import {roads} from '../data/scenario';
+import {siteById} from '../data/scenario';
+import {territoryNeighbors} from '../data/territoryAdjacency';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import {peaceCostForCity,snapshotWarValues,warScoreFor,warWillToContinue} from './warScoring';
@@ -46,6 +47,26 @@ export function selectedWar(w:World,r:RealmId,id?:number){const relevant=activeW
 
 export type PeaceTerms='statusQuo'|'white'|'demand'|'yield'|'annex'|'enthrone';
 export interface LandCession {site:string;from:RealmId;to:RealmId}
+/** Use the current county map's shared borders and final treaty ownership; allied land is never a corridor. */
+export function disconnectedPeaceCessions(w:World,war:War,cessions:LandCession[]){
+ const destinations=new Map(cessions.map(c=>[c.site,c.to])),occupied=new Set(warOccupationSites(w,war)),disconnected:LandCession[]=[];
+ const controller=(id:string)=>destinations.get(id)??(occupied.has(id)?w.realm!.cities[id].owner:w.realm!.cities[id].controller);
+ for(const to of new Set(cessions.map(c=>c.to))){
+  const gained=cessions.filter(c=>c.to===to),retained=Object.entries(w.realm!.cities).filter(([id,c])=>c.owner===to&&!destinations.has(id));
+  const reached=new Set(retained.filter(([id])=>controller(id)===to).map(([id])=>id)),queue=[...reached];
+  const allowed=new Set([...retained.filter(([id])=>controller(id)===to||warRealmSide(war,controller(id) as RealmId)===warRealmSide(war,to)).map(([id])=>id),...gained.map(c=>c.site)]);
+  for(const id of queue)for(const next of territoryNeighbors(id))if(allowed.has(next)&&!reached.has(next)){reached.add(next);queue.push(next);}
+  disconnected.push(...gained.filter(c=>!reached.has(c.site)));
+ }
+ return disconnected;
+}
+/** NPC offers and initial player drafts return isolated occupation instead of creating an enclave. */
+export function defaultPeaceReturns(w:World,war:War,terms:PeaceTerms='statusQuo'){
+ if(war.civil||war.goal==='claimant'||['white','annex','enthrone'].includes(terms)||war.goal==='annexation'&&['demand','yield'].includes(terms))return [];
+ const cessions=warOccupationSites(w,war).map(site=>({site,from:w.realm!.cities[site].owner as RealmId,to:w.realm!.cities[site].controller as RealmId}));
+ return disconnectedPeaceCessions(w,war,cessions).map(c=>c.site);
+}
+export function defaultPeaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms){return peaceQuote(w,war,actor,terms,[],0,undefined,defaultPeaceReturns(w,war,terms));}
 /** Provenance is authoritative; legacy occupation is attributable only to one matching war. */
 export function warOccupationSites(w:World,war:War){return Object.entries(w.realm?.cities??{}).filter(([,c])=>{
  if(war.civil||c.owner==='frontier'||c.controller==='frontier'||c.owner===c.controller)return false;
@@ -81,13 +102,15 @@ export function peaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms,claims
  const cessions:LandCession[]=!annexes&&!war.civil&&war.goal!=='claimant'&&terms!=='white'?occupied.filter(id=>!returns.includes(id)).map(site=>{const c=w.realm!.cities[site];return {site,from:c.owner as RealmId,to:warRealmSide(war,c.controller as RealmId)===beneficiarySide&&(landRecipient!==undefined||explicitLands.includes(site))?landBeneficiary:c.controller as RealmId};}):[];
  const lands=[...new Set([...explicitLands,...cessions.filter(c=>c.to===landBeneficiary).map(c=>c.site)])],takesLand=lands.length>0;if(!reason&&landRecipient!==undefined&&(warRealmSide(war,landRecipient)!==beneficiarySide||war.civil||terms!=='demand'||landRecipient!==beneficiary&&!takesLand))reason='割地受益者须为胜方实际参战国，且仅用于提出割地要求';
  if(!reason&&extraCoins&&(terms!=='demand'||war.civil))reason='赔款须由提出要求的一方列入组合和约';
- if(!reason&&claims.length){if(war.civil||terms!=='demand'||claims.length>3||new Set(claims).size!==claims.length||claimGroups.some(c=>!c.sites.length)||new Set(explicitLands).size!==explicitLands.length||claimSites.some(id=>returns.includes(id))||claimSites.some(id=>!occupied.includes(id)||w.realm!.cities[id].owner!==loser||warRealmSide(war,w.realm!.cities[id].controller as RealmId)!==beneficiarySide))reason='附加割地须为至多三项互不重叠、受益方阵营全部已占领的敌方城市或州郡';else {const allowed=new Set(Object.entries(w.realm!.cities).filter(([id,c])=>warRealmSide(war,c.controller as RealmId)===beneficiarySide&&(c.owner===landBeneficiary||lands.includes(id))).map(([id])=>id)),reached=new Set(Object.entries(w.realm!.cities).filter(([,c])=>c.owner===landBeneficiary&&c.controller===landBeneficiary).map(([id])=>id)),queue=[...reached];for(const id of queue)for(const edge of roads)if(!edge.legacyOnly&&(edge.from===id||edge.to===id)){const next=edge.from===id?edge.to:edge.from;if(allowed.has(next)&&!reached.has(next)){reached.add(next);queue.push(next);}}if(lands.some(id=>!reached.has(id)))reason='割让县域须沿受益方控制道路形成连续廊道';}}
+ if(!reason&&claims.length&&(war.civil||terms!=='demand'||claims.length>3||new Set(claims).size!==claims.length||claimGroups.some(c=>!c.sites.length)||new Set(explicitLands).size!==explicitLands.length||claimSites.some(id=>returns.includes(id))||claimSites.some(id=>!occupied.includes(id)||w.realm!.cities[id].owner!==loser||warRealmSide(war,w.realm!.cities[id].controller as RealmId)!==beneficiarySide)))reason='附加割地须为至多三项互不重叠、受益方阵营全部已占领的敌方城市或州郡';
  if(!reason&&targetLand.filter(id=>!returns.includes(id)).some(id=>w.realm!.cities[id].owner!==loser||warRealmSide(war,w.realm!.cities[id].controller as RealmId)!==beneficiarySide||!occupied.includes(id)))reason='目标地须仍属败方且全部由受益方阵营实际控制，不能要求割让';
  if(!reason&&!annexes&&['demand','yield'].includes(terms)&&war.goal==='tributary'&&beneficiary===war.attacker){let next:RealmId|undefined=beneficiary;const seen=new Set<RealmId>();while(next){if(next===loser||seen.has(next)){reason='宗属关系会形成循环，须先重议外交关系';break;}seen.add(next);next=w.diplomacy?.subjects[next];}}
  if(!reason&&annexes&&(claims.length>0||extraCoins>0||returns.length>0||landRecipient!==undefined&&landRecipient!==beneficiary))reason='吞并接管全部领土与余额，不能另加割地赔款或指定其他受益国';
  if(!reason&&(terms==='white'||terms==='statusQuo')&&(claims.length||extraCoins||landRecipient!==undefined))reason='停战仅处理占领交割，不能附加赔款、区域要求或改派受益国';
  if(!reason&&war.civil&&(returns.length||terms==='statusQuo'))reason='内战沿用交权或赦免停战';
  if(!reason&&!annexes)for(const from of new Set(cessions.map(c=>c.from))){const owned=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===from);if(owned.length&&owned.every(id=>cessions.some(c=>c.site===id))){reason='割让全部县域须明确选择吞并政权，或归还部分县域';break;}}
+ const disconnectedCessions=disconnectedPeaceCessions(w,war,cessions);
+ if(!reason&&disconnectedCessions.length)reason='割让县域须与受让国现有领土接壤，或通过本次割地形成连续廊道；未接壤：'+disconnectedCessions.map(c=>siteById[c.site].name).join('、');
  if(!reason&&annexes)reason=annexationReason(w,beneficiary,loser);
  const explicitCosts=[...(baseLand.length?[{id:war.territory?.id??war.target,sites:baseLand}]:[]),...claimGroups].map(c=>({...c,cost:peaceLandCost(w,war,c.id,c.sites)}));
  const priced=new Set(explicitCosts.flatMap(c=>c.sites));
@@ -101,7 +124,7 @@ export function peaceQuote(w:World,war:War,actor:RealmId,terms:PeaceTerms,claims
  if(!reason&&!war.civil&&(terms==='demand'||terms==='annex'||terms==='enthrone'||terms==='statusQuo')&&acceptance<0)reason='对方尚不接受这些条件';
  if(!reason&&!war.civil&&(terms==='white'||terms==='statusQuo')&&!abandonedClaim&&(days<30||Math.abs(legacyScore)>20&&enemyWill.total>0))reason='对方仍希望继续交战';
  if(war.civil&&!reason)reason=civilPeaceReason(w,war,terms);
- return {enthrones,enthroneExecutive,claimant:enthrones?war.claimant?.person:null,annexes,annexedSites,capitulation,reason,parts,score:legacyScore,cost:clauseCost,acceptance,enemyWill,beneficiary,landBeneficiary,loser,takesLand,lands,landCosts,counterLandCosts,cessions,returning:occupied.filter(id=>!cessions.some(c=>c.site===id)),territoryGained,territoryLost,coins:annexes?0:extraCoins+(goalTerms&&war.goal==='reparations'?war.demand??300:0),tributary:!annexes&&goalTerms&&war.goal==='tributary'&&beneficiary===war.attacker};
+ return {enthrones,enthroneExecutive,claimant:enthrones?war.claimant?.person:null,annexes,annexedSites,capitulation,reason,parts,score:legacyScore,cost:clauseCost,acceptance,enemyWill,beneficiary,landBeneficiary,loser,takesLand,lands,landCosts,counterLandCosts,cessions,disconnectedCessions,returning:occupied.filter(id=>!cessions.some(c=>c.site===id)),territoryGained,territoryLost,coins:annexes?0:extraCoins+(goalTerms&&war.goal==='reparations'?war.demand??300:0),tributary:!annexes&&goalTerms&&war.goal==='tributary'&&beneficiary===war.attacker};
 }
 export function peaceSignature(q:ReturnType<typeof peaceQuote>){return JSON.stringify({cessions:q.cessions,returning:q.returning,annexes:q.annexes,annexedSites:q.annexedSites,coins:q.coins,tributary:q.tributary,beneficiary:q.beneficiary,loser:q.loser,cost:q.cost,...(q.enthrones?{claimant:q.claimant,enthrones:true,enthroneExecutive:q.enthroneExecutive}:{})});}
 export function advanceReparations(w:World){

@@ -12,35 +12,35 @@ import {civilCityCapture} from './civilWars';
 import {parseWorld,serializeWorld} from './save';
 import type {World} from './types';
 
-function setup(goal:'territory'|'reparations'='territory',person='xiao-yan'){
+function setup(goal:'territory'|'reparations'='territory',person='xiao-yan',target='luoyang'){
  const w=newCampaignWorld(person,undefined,'sandbox');awardInfluence(w,'xiao-yan',500);
- const war=declareRealmWar(w,'xiao-yan','liang','luoyang',goal);w.day=900;w.realm!.armies=[];w.realm!.treasuries.east.coins=0;
+ const war=declareRealmWar(w,'xiao-yan','liang',target,goal);w.day=900;w.realm!.armies=[];w.realm!.treasuries.east.coins=0;
  return {w,war};
 }
 function take(w:World,site:string,realm:'liang'|'east'|'west',war= w.realm!.wars![0]){const c=w.realm!.cities[site];c.controller=realm;c.occupiedByWar=war.id;c.occupiedSince=w.day;}
 function saved(w:World){expect(parseWorld(serializeWorld(w))).toEqual(w);}
 describe('占领现状议和与夺城居民损失',()=>{
  it('defaults to both sides retaining only occupied counties and never charges population at peace',()=>{
-  const {w,war}=setup();take(w,'luoyang','liang');take(w,'xiangyang','east');const pop=Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,c.population]));
-  const q=peaceQuote(w,war,'liang','statusQuo');expect(q.reason).toBe('');expect(q.cessions).toEqual(expect.arrayContaining([{site:'luoyang',from:'east',to:'liang'},{site:'xiangyang',from:'liang',to:'east'}]));
-  expect(q.cost).toBe(q.territoryGained-q.territoryLost);settleWar(w,war);expect(w.realm!.cities.luoyang.owner).toBe('liang');expect(w.realm!.cities.xiangyang.owner).toBe('east');expect(w.realm!.cities.yuci.owner).toBe('east');
+  const {w,war}=setup('territory','xiao-yan','pengcheng');take(w,'pengcheng','liang');take(w,'xiangyang','east');const pop=Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,c.population]));
+  const q=peaceQuote(w,war,'liang','statusQuo');expect(q.reason).toBe('');expect(q.cessions).toEqual(expect.arrayContaining([{site:'pengcheng',from:'east',to:'liang'},{site:'xiangyang',from:'liang',to:'east'}]));
+  expect(q.cost).toBe(q.territoryGained-q.territoryLost);settleWar(w,war);expect(w.realm!.cities.pengcheng.owner).toBe('liang');expect(w.realm!.cities.xiangyang.owner).toBe('east');expect(w.realm!.cities.yuci.owner).toBe('east');
   expect(Object.fromEntries(Object.entries(w.realm!.cities).map(([id,c])=>[id,c.population]))).toEqual(pop);saved(w);const s=serializeWorld(w);settleWar(w,war);expect(serializeWorld(w)).toBe(s);
  });
  it('also includes occupation outside a city war objective without manual claims',()=>{
   const {w,war}=setup();take(w,'luoyang','liang');take(w,'liangxian','liang');const q=peaceQuote(w,war,'liang','demand');expect(q.reason).toBe('');expect(q.lands).toEqual(['luoyang','liangxian']);settleWar(w,war,'demand');expect(w.realm!.cities.liangxian.owner).toBe('liang');saved(w);
  });
  it('can return either side’s county and explicitly restore the old border',()=>{
-  const {w,war}=setup();take(w,'luoyang','liang');take(w,'xiangyang','east');expect(peaceQuote(w,war,'liang','statusQuo',[],0,undefined,['luoyang']).cessions.map(c=>c.site)).toEqual(['xiangyang']);
-  settleWar(w,war,'statusQuo','liang',[],0,undefined,['xiangyang']);expect(w.realm!.cities.xiangyang).toMatchObject({owner:'liang',controller:'liang'});expect(w.realm!.cities.luoyang.owner).toBe('liang');saved(w);
-  const other=setup();take(other.w,'luoyang','liang');settleWar(other.w,other.war,'white');expect(other.w.realm!.cities.luoyang).toMatchObject({owner:'east',controller:'east'});saved(other.w);
+  const {w,war}=setup('territory','xiao-yan','pengcheng');take(w,'pengcheng','liang');take(w,'xiangyang','east');expect(peaceQuote(w,war,'liang','statusQuo',[],0,undefined,['pengcheng']).cessions.map(c=>c.site)).toEqual(['xiangyang']);
+  settleWar(w,war,'statusQuo','liang',[],0,undefined,['xiangyang']);expect(w.realm!.cities.xiangyang).toMatchObject({owner:'liang',controller:'liang'});expect(w.realm!.cities.pengcheng.owner).toBe('liang');saved(w);
+  const other=setup();take(other.w,'pengcheng','liang');settleWar(other.w,other.war,'white');expect(other.w.realm!.cities.pengcheng).toMatchObject({owner:'east',controller:'east'});saved(other.w);
  });
  it('refuses stale or forged returns before any mutation and refuses first-day settlements',()=>{
   const {w,war}=setup();take(w,'luoyang','liang');for(const ids of [['luoyang','luoyang'],['jiankang'],['missing']]){const before=serializeWorld(w);expect(()=>settleWar(w,war,'statusQuo','liang',[],0,undefined,ids)).toThrow('归还');expect(serializeWorld(w)).toBe(before);}
   w.day=0;delete w.realm!.cities.luoyang.occupiedSince;delete w.realm!.cities.luoyang.occupiedByWar;const before=serializeWorld(w);expect(()=>settleWar(w,war,'white')).toThrow('交战');expect(serializeWorld(w)).toBe(before);
  });
  it('keeps unrelated occupation in another war and attributes only unambiguous legacy occupation',()=>{
-  const {w,war}=setup();take(w,'luoyang','liang');const other={id:w.realm!.nextWarId!++,attacker:'west' as const,defender:'east' as const,target:'jinyang',started:0,score:0,captureLosses:[]};w.realm!.wars!.push(other);take(w,'jinyang','west',other);ensureWars(w);
-  expect(warOccupationSites(w,war)).toEqual(['luoyang']);settleWar(w,war);expect(w.realm!.cities.jinyang.controller).toBe('west');expect(w.realm!.wars).toContain(other);saved(w);
+  const {w,war}=setup('territory','xiao-yan','pengcheng');take(w,'pengcheng','liang');const other={id:w.realm!.nextWarId!++,attacker:'west' as const,defender:'east' as const,target:'jinyang',started:0,score:0,captureLosses:[]};w.realm!.wars!.push(other);take(w,'jinyang','west',other);ensureWars(w);
+  expect(warOccupationSites(w,war)).toEqual(['pengcheng']);settleWar(w,war);expect(w.realm!.cities.jinyang.controller).toBe('west');expect(w.realm!.wars).toContain(other);saved(w);
  });
  it('does not let default cession extinguish a polity without explicit annexation',()=>{
   const {w,war}=setup();for(const [id,c] of Object.entries(w.realm!.cities))if(c.owner==='east')take(w,id,'liang');const before=serializeWorld(w);
@@ -48,11 +48,11 @@ describe('占领现状议和与夺城居民损失',()=>{
   settleWar(w,war,'annex');expect(w.realm!.annexed?.east?.into).toBe('liang');saved(w);
  });
  it('caps territorial terms at 100 and deduplicates a grouped regional price',()=>{
-  const {w,war}=setup();for(const [id,c] of Object.entries(w.realm!.cities))if(c.owner==='east'&&id!=='ye')take(w,id,'liang');const q=peaceQuote(w,war,'liang','statusQuo');expect(q.territoryGained).toBe(100);expect(q.cost).toBeLessThan(120);expect(q.reason).toBe('');
+  const {w,war}=setup();for(const [id,c] of Object.entries(w.realm!.cities))if(c.owner==='east'&&id!=='linzhang')take(w,id,'liang');const q=peaceQuote(w,war,'liang','statusQuo');expect(q.territoryGained).toBe(100);expect(q.cost).toBeLessThan(120);expect(q.reason).toBe('');
   const grouped=peaceQuote(w,war,'liang','demand',['prefecture:taiyuan']);expect(new Set(grouped.lands).size).toBe(grouped.lands.length);expect(grouped.landCosts.filter(c=>c.sites.includes('jinyang'))).toHaveLength(1);
  });
  it('preserves an ally’s occupied territory without treating its opponent’s whole state as acquired',()=>{
-  const {w,war}=setup();war.allies={west:'attack'};take(w,'changan','east');take(w,'luoyang','liang');take(w,'ye','west');const q=peaceQuote(w,war,'liang','statusQuo');expect(q.cessions).toContainEqual({site:'changan',from:'west',to:'east'});expect(q.cessions).toContainEqual({site:'ye',from:'east',to:'west'});expect(q.cessions).toEqual(peaceQuote(w,war,'east','statusQuo').cessions);expect(q.reason).toBe('');settleWar(w,war);expect(w.realm!.cities.changan.owner).toBe('east');expect(w.realm!.cities.ye.owner).toBe('west');saved(w);
+  const {w,war}=setup();war.allies={west:'attack'};take(w,'liangxian','liang');take(w,'luoyang','liang');take(w,'jinyang','west');const q=peaceQuote(w,war,'east','yield');expect(q.cessions).toContainEqual({site:'liangxian',from:'east',to:'liang'});expect(q.cessions).toContainEqual({site:'jinyang',from:'east',to:'west'});expect(q.cessions).toEqual(peaceQuote(w,war,'liang','yield').cessions);expect(q.reason).toBe('');settleWar(w,war,'yield','east');expect(w.realm!.cities.changan.owner).toBe('west');expect(w.realm!.cities.jinyang.owner).toBe('west');saved(w);
  });
  it('charges 2% battle deaths only once per city and direction, including recapture',()=>{
   const {w,war}=setup();const c=w.realm!.cities.luoyang,pop=c.population;occupyCity(w,war,'luoyang','liang');expect(c.population).toBe(pop-Math.floor(pop*.02));const one=c.population;occupyCity(w,war,'luoyang','liang');expect(c.population).toBe(one);
