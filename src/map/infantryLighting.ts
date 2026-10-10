@@ -1,11 +1,13 @@
 import {Color,CubeTexture,DataTexture,LinearSRGBColorSpace,Mesh,MeshStandardMaterial,Vector3,type Group} from 'three';
 
-/** Local daylight reflections for the infantry PBR metal, without changing map lighting. */
+/** Local daylight for all army assets; lift backlit faces while retaining scene shadows. */
 export function applyInfantryLighting(root:Group){
  const materials=new Set<MeshStandardMaterial>();
  root.traverse(o=>{if(o instanceof Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial)materials.add(m);});
  if(!materials.size)return;
- const size=16,sky=new Color(.72,.80,.88),horizon=new Color(.43,.45,.42),ground=new Color(.24,.20,.15),color=new Color();
+ // Broad, neutral horizon and ground bounce keep armour, horses and timber legible
+ // from either side. These are linear light values, independent of the map's exposure.
+ const size=16,sky=new Color(.82,.90,.97),horizon=new Color(.68,.72,.70),ground=new Color(.42,.43,.38),color=new Color();
  const directions=[(u:number,v:number)=>new Vector3(1,-v,-u),(u:number,v:number)=>new Vector3(-1,-v,u),(u:number,v:number)=>new Vector3(u,1,v),(u:number,v:number)=>new Vector3(u,-1,-v),(u:number,v:number)=>new Vector3(u,-v,1),(u:number,v:number)=>new Vector3(-u,-v,-1)];
  const faces=directions.map(direction=>{
   const pixels=new Uint8Array(size*size*4);
@@ -18,7 +20,9 @@ export function applyInfantryLighting(root:Group){
  });
  const environment=new CubeTexture(faces);environment.name='Infantry soft daylight';environment.colorSpace=LinearSRGBColorSpace;environment.needsUpdate=true;
  for(const material of materials){
-  material.envMap=environment;material.envMapIntensity=1.25;
-  material.metalness*=.85;material.normalScale.multiplyScalar(.8);material.needsUpdate=true;
+  material.envMap=environment;material.envMapIntensity=1.55;
+  // Imported metal maps stay authoritative; a weathered diffuse component and
+  // gentler normal relief prevent painted texture shadows from becoming black pits.
+  material.metalness*=.7;material.normalScale.multiplyScalar(.75);material.needsUpdate=true;
  }
 }
