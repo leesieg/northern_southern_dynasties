@@ -14,3 +14,14 @@ dialog.paper-dialog.engagement-dialog.combat-details-dialog>header>button{margin
 /* The WebGL canvas must not feed its previous pixel height back into the grid. */
 .combat-viewport canvas{position:absolute;inset:0}
 .combat-note{line-height:1.35!important}
+/* Put the location and current phase over the battlefield, as in the reference. */
+.combat-center>.combat-heading{position:absolute;z-index:2;inset:0 0 auto;min-height:60px;margin:0;padding:9px 82px 7px;border:0;background:linear-gradient(#101a19ed,#1523229c,transparent);pointer-events:none}
+.combat-center>.combat-heading h3{color:#f2e9d5;text-shadow:0 1px 4px #000}
+.combat-center>.combat-heading p{color:#e4dfcf;text-shadow:0 1px 3px #000}
+.combat-center>.combat-heading .combat-motion{right:8px;top:10px;pointer-events:auto;background:#14231dc9!important;border-color:#b0a07880!important}
+.combat-viewport{height:clamp(310px,45vh,470px);background:#9c9f9b}
+.combat-details-dialog .detail-tabs{margin:0 0 5px}
+.combat-details-dialog .detail-tabs button{min-height:36px;padding:5px 12px!important;font-size:12px}
+.combat-dispatch p>small{display:inline;margin-left:12px;font-size:11px}
+.combat-dispatch,.combat-selected{padding:8px 11px}.combat-bottom{gap:8px}
+@media(max-width:850px){.combat-center>.combat-heading{padding-inline:55px}.combat-center>.combat-heading .combat-motion{top:64px;right:7px;margin:0}.combat-viewport{min-height:320px}}

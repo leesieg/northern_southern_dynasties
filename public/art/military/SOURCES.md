@@ -94,3 +94,9 @@ Style: high-quality art-directed realistic material texture work suitable for a 
 - 按当前模型的实际掌心位置重设刀、矛、弓和盾挂点，并闭合原张开的手指。同步移除裙甲误分配给手臂的蒙皮权重，避免抬臂拉出尖刺；只在共享资产载入时修正一次，保留 UV、纹理、归一化权重以及源 GLB 文件。箭袋后移以避开背甲。
 - 本次 7 个直接相关测试文件合计 98 项通过（包含既有检查复用），生产构建通过；新增检查以 60 Hz 推进 8 秒待机、完整行军及切换，以 10 Hz 对刀刃、矛杆、弓弦及盾／箭袋代表线段与真实蒙皮人物、马匹网格做相交检查。手部允许握柄接触；这些采样不等同于全部三角面间的连续碰撞证明。另查手臂长度、暂停稳定、裙甲权重归一化及幂等性。
 - 离线预览改为 `CARRY_PREVIEW=1 npx vitest run scripts/map-sample/export_carry_preview.test.mjs` 导出游戏同一实现的实际变形网格，再由 Blender 渲染，避免独立复刻姿势与运行时不一致。已检查五类兵种正反面与行军关键帧；修订预览 `.cache/weapons/carry-fixed-lineup.jpg`。游戏内观感待用户人工验收，未使用浏览器 UI 自动验收，未新增战斗动作。
+
+### 战争沙盘材质 v2（2026-10-10）
+
+- `battle-surface-atlas-v2.png`：使用 OpenAI imagegen 原创生成的四格漫反射图集，按左上夯土／右上踩实土壤／左下陶瓦／右下木材使用。题材演绎材质，不是史料照片或真实地形；没有建筑、人物、数值或文字。原图 1254×1254，直接复制保存，未通过裁切修改游戏场景或伪造实机画面。
+- 完整提示词：[battle-surface-atlas-v2.prompt.txt](../../../art/military/battle-surface-atlas-v2.prompt.txt)。Three.js 按象限内部世界坐标重复采样，留边避免串色；真实灯光提供照明和阴影。载入失败保留军阵、城防和操作，并显示材质提示。
+- 纹理的 1×1 载入占位和完整图集尺寸不同，替换前释放旧 GPU 存储，避免 WebGL 不可变存储的尺寸溢出；弹窗关闭释放图集及 ImageBitmap。

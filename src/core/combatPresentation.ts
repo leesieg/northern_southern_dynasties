@@ -33,6 +33,8 @@ export function armyCombatVisual(w:World,a:Army,kind:TroopKind|'foot'){
  return {state,battle,side:battle?.attackers?.includes(a.id!)?'attack' as const:'defend' as const,besieging:!!w.realm?.sieges?.some(s=>s.site===a.location)};
 }
 /** Display representatives, never individual soldiers. Unknown forces have a constant budget. */
-export function formationRepresentatives(g:FormationGroup){if(g.troops===null)return 6;if(!g.troops)return 0;const cap=g.kind==='siege'?1:g.kind==='lightHorse'||g.kind==='heavyHorse'?4:6;return Math.min(cap,Math.max(1,Math.ceil(g.troops/100)));}
+/** At most 96 skeletons, even when each side has known troops plus concealed allies. */
+export function formationCapacity(kind:FormationGroup['kind']){return kind==='unknown'?12:kind==='siege'?1:kind==='lightHorse'||kind==='heavyHorse'?4:9;}
+export function formationRepresentatives(g:FormationGroup){if(g.troops===null)return formationCapacity('unknown');if(!g.troops)return 0;return Math.min(formationCapacity(g.kind),Math.max(1,Math.ceil(g.troops/60)));}
 /** Public status can stay in battle while a specific front rank is standing by. */
 export function armyDisplayState(w:World,a:Army){const v=armyCombatVisual(w,a,'foot');return v.battle?'battle' as const:v.state;}

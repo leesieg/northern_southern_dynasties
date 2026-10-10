@@ -16,6 +16,14 @@ const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale
 const inViewport=(r:ScreenRect)=>{expect(r.left).toBeGreaterThanOrEqual(8);expect(r.top).toBeGreaterThanOrEqual(8);expect(r.right).toBeLessThanOrEqual(viewport.width-8);expect(r.bottom).toBeLessThanOrEqual(viewport.height-8);};
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
 
+it('animates concealed combat silhouettes without attaching or revealing a troop weapon',async()=>{
+ vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);const attached=vi.spyOn(equipment,'attachMilitaryEquipment');
+ vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
+ vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
+ const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),'foot','梁',undefined,true);
+ try{await assets.ready;let skin!:SkinnedMesh;model.animation!.root.traverse(o=>{if(o instanceof SkinnedMesh&&!skin)skin=o;});const hand=skin.skeleton.bones.find(b=>b.name.replaceAll('.','')==='HandR')!;animateMilitaryModel(model,'garrison',0,true);const before=hand.getWorldPosition(new Vector3());for(let i=1;i<=35;i++)animateMilitaryModel(model,'battle',i/60,true);expect(hand.getWorldPosition(new Vector3()).distanceTo(before)).toBeGreaterThan(.05);expect(attached).not.toHaveBeenCalled();expect(model.root.position.toArray()).toEqual([0,0,0]);}finally{assets.dispose();}
+});
+
 describe('anchored models and map annotations (no UI)',()=>{
  const entries=[{key:'2',point:anchor,position:{lon:118.78,lat:32.04}},{key:'1',point:anchor,position:{lon:118.78,lat:32.04}}];
  it('keeps a model exactly at the anchor through pan, zoom and viewport changes',()=>{
