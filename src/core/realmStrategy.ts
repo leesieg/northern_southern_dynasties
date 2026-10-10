@@ -79,7 +79,8 @@ export function advanceRealmStrategy(w:World){
   const previous=s.strategy?.[r];if(previous?.phase==='recover'&&w.day-previous.since<90){set(w,r,'recover',null,'战后恢复人口、军饷与粮运');continue;}
   if(previous?.phase==='war'){set(w,r,'recover',null,'战争结束，转入三个月休整');continue;}
   if(activeWars(w).some(v=>v.civil&&warRealmSide(v,r))){set(w,r,'rest',null,'先处理国内战事');continue;}
-  const court=courtOf(w,r);if(court&&courtEnabled(w,r)&&courtPolicyActive(w,r)!=='expansion'){set(w,r,court.phase==='stable'?'rest':'recover',null,court.phase==='stable'?court.policy==='reform'?'安定变革：先投入农商与邦交差事':'安定固本：先修复公库、地方秩序与民食':'局势'+(court.phase==='chaos'?'混乱':'动荡')+'：安定方略暂停，先处理真实国内政治与民生压力');continue;}
+  // Stable court policies bias motives and costs; they do not veto hostile border preparation.
+  const court=courtOf(w,r);if(court&&courtEnabled(w,r)&&court.phase!=='stable'){set(w,r,'recover',null,'局势'+(court.phase==='chaos'?'混乱':'动荡')+'：安定方略暂停，先处理真实国内政治与民生压力');continue;}
   supportHostedClaimant(w,r,actor);
   const candidates=[...strategicClaimantTargets(w,r),...strategicTargets(w,r).map(t=>({...t,goal:'territory' as const,claimant:undefined as string|undefined}))].filter(t=>!declareRealmWarReason(w,actor,r,t.id,t.goal,false,undefined,t.claimant)),prepared=candidates.find(t=>t.id===previous?.target),target=prepared&&prepared.priority>=(candidates[0]?.priority??0)-10?prepared:candidates[0];if(!target){set(w,r,'rest',null,'没有当前合法且值得投入的边境目标');continue;}
   const t=s.treasuries[r],forecast=realmForecast(w,r),own=s.armies.filter(a=>a.realm===r&&!a.owner),local=own.filter(a=>!!planRoute(a.location,target.id,id=>s.cities[id].controller===r||s.cities[id].controller===target.enemy)),enemy=s.armies.filter(a=>a.realm===target.enemy&&(a.location===target.id||!!planRoute(a.location,target.id,id=>s.cities[id].controller===target.enemy)));
