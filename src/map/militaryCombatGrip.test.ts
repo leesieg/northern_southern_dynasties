@@ -43,9 +43,29 @@ it('keeps all four siege wrist bridges joined to cuff and palm in every clip',()
   [a.idle,a.walk,a.attack!].forEach(v=>v.setEffectiveWeight(v===action?1:0));
   for(let f=0;f<=24;f++){
    a.mixer.setTime(action.getClip().duration*f/24);a.root.updateMatrixWorld(true);
-   for(const bridge of bridges){bridge.skeleton.update();const prefix=bridge.name.slice(0,6),side=bridge.name.at(-1)!,hand=a.root.getObjectByName(prefix+'Hand'+side)!,inverse=hand.matrixWorld.clone().invert(),positions=bridge.geometry.getAttribute('position');let back=Infinity,front=-Infinity,maxRadius=0;
-    for(let i=0;i<positions.count;i++){const p=bridge.applyBoneTransform(i,new Vector3().fromBufferAttribute(positions,i)).applyMatrix4(bridge.matrixWorld).applyMatrix4(inverse);back=Math.min(back,p.y);front=Math.max(front,p.y);maxRadius=Math.max(maxRadius,Math.hypot(p.x,p.z));}
-    expect(back).toBeLessThan(-.08);expect(front).toBeGreaterThan(.01);expect(maxRadius).toBeLessThan(.065);
+   for(const bridge of bridges){bridge.skeleton.update();const prefix=bridge.name.slice(0,6),side=bridge.name.at(-1)!,hand=a.root.getObjectByName(prefix+'Hand'+side)!,inverse=hand.matrixWorld.clone().invert(),positions=bridge.geometry.getAttribute('position');const sleeve=a.root.getObjectByName(prefix+'WristSleeve'+side)!;const sleevePoint=(y:number)=>new Vector3(0,y,0).applyMatrix4(sleeve.matrixWorld).applyMatrix4(inverse);
+    const centres=[sleevePoint(-.12),sleevePoint(-.08).add(new Vector3(0,-.08,0)).multiplyScalar(.5),new Vector3(0,-.04,0),new Vector3(0,.015,0)];let back=Infinity,front=-Infinity,maxRadius=0;
+    const elbow=a.root.getObjectByName(prefix+'Forearm'+side)!,cuff=a.root.getObjectByName(prefix+'ForearmTwist'+side)!;
+    const forearm=hand.getWorldPosition(new Vector3()).sub(elbow.getWorldPosition(new Vector3())).normalize();
+    expect(new Vector3(0,1,0).transformDirection(cuff.matrixWorld).dot(forearm),'cuff must follow forearm, not palm').toBeGreaterThan(.999);
+    const radius=(p:Vector3,start:Vector3,end:Vector3)=>{const d=end.clone().sub(start);return p.distanceTo(start.clone().addScaledVector(d,Math.max(0,Math.min(1,p.clone().sub(start).dot(d)/d.lengthSq()))));};
+    for(let i=0;i<positions.count;i++){const p=bridge.applyBoneTransform(i,new Vector3().fromBufferAttribute(positions,i)).applyMatrix4(bridge.matrixWorld).applyMatrix4(inverse);back=Math.min(back,p.y);front=Math.max(front,p.y);maxRadius=Math.max(maxRadius,Math.min(...centres.slice(1).map((end,i)=>radius(p,centres[i],end))));}
+    expect(back).toBeLessThan(-.08);expect(front).toBeGreaterThan(.01);expect(maxRadius,`${action.getClip().name} ${f} ${bridge.name}: swollen wrist`).toBeLessThan(.03);
+   }
+  }
+ }disposeInfantryAnimation(a);
+});
+
+it('keeps siege elbows below the shoulders without flipping between working poses',()=>{
+ const a=createInfantryAnimation(crew,0);
+ for(const action of [a.idle,a.walk,a.attack!]){
+  [a.idle,a.walk,a.attack!].forEach(v=>v.setEffectiveWeight(v===action?1:0));const previous=new Map<string,Vector3>();
+  for(let f=0;f<=240;f++){
+   a.mixer.setTime(action.getClip().duration*f/240);a.root.updateMatrixWorld(true);
+   for(const prefix of ['CrewL_','CrewR_'])for(const side of ['L','R']){
+    const name=prefix+'Forearm'+side,elbow=a.root.getObjectByName(name)!.getWorldPosition(new Vector3()),shoulder=a.root.getObjectByName(prefix+'UpperArm'+side)!.getWorldPosition(new Vector3());
+    expect(shoulder.y-elbow.y,`${action.getClip().name} ${f} ${name}: raised elbow`).toBeGreaterThan(.14);
+    const old=previous.get(name);if(old)expect(elbow.distanceTo(old),`${name}: elbow jump at ${f}`).toBeLessThan(.06);previous.set(name,elbow);
    }
   }
  }disposeInfantryAnimation(a);
@@ -56,7 +76,9 @@ it('keeps both spear palms on the same shaft throughout the thrust and recovery'
  for(let f=0;f<=180;f++){
   a.mixer.setTime(a.attack!.getClip().duration*f/180);a.root.updateMatrixWorld(true);
   const weapon=a.root.getObjectByName('Equipment Spear')!,rear=a.root.getObjectByName('GripSpear')!.getWorldPosition(new Vector3()),front=a.root.getObjectByName('GripReins')!.getWorldPosition(new Vector3()),axis=new Vector3(0,1,0).transformDirection(weapon.matrixWorld),gap=front.sub(rear);
-  expect(gap.clone().cross(axis).length(),`shaft contact at ${f}`).toBeLessThan(.008);expect(gap.dot(axis)).toBeGreaterThan(.26);expect(gap.length()).toBeLessThan(.31);
+  expect(gap.clone().cross(axis).length(),`shaft contact at ${f}`).toBeLessThan(.008);expect(gap.dot(axis)).toBeCloseTo(.48,3);
+  const chest=a.root.getObjectByName('Chest')!.getWorldPosition(new Vector3());expect(rear.y-chest.y).toBeLessThan(-.07);
+  for(const side of ['L','R']){const shoulder=a.root.getObjectByName('UpperArm'+side)!.getWorldPosition(new Vector3()),elbow=a.root.getObjectByName('Forearm'+side)!.getWorldPosition(new Vector3());expect(shoulder.y-elbow.y,`raised spear elbow ${f}`).toBeGreaterThan(.15);}
  }disposeInfantryAnimation(a);
 });
 

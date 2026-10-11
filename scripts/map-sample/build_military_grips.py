@@ -61,12 +61,26 @@ def wrist_only(rig,rest,world,side,delta,angle):
   if n.startswith('Hand.'):pose=pose@Matrix.Rotation(angle,4,'Z')
   set_world(rig,rest,world,n,pose)
 
+def fit_crew_grips(mesh,rest,prefix):
+ """Open the sword-sized finger curl around the actual 4.5 cm square bar."""
+ for side in ['L','R']:
+  hand=prefix+'Hand.'+side;group=mesh.vertex_groups[hand].index;matrix=rest['Hand.'+side];inverse=matrix.inverted()
+  for vertex in mesh.data.vertices:
+   if not any(g.group==group and g.weight>.99 for g in vertex.groups):continue
+   p=inverse@vertex.co
+   if p.y<.028:continue
+   radial=Vector((0,p.y-GRIP.y,p.z-GRIP.z))
+   if radial.length<.001:continue
+   direction=radial.normalized();radius=.029
+   p+=direction*(radius-.019)*smooth(.028,.049,p.y)
+   vertex.co=matrix@p
+
 def crew_wrists(rig,rest,prefix):
  """A continuous skinned wrist bridges cuff and palm, even while loading."""
  body=bpy.data.objects[prefix.rstrip('_')];material=next(m for m in body.data.materials if 'grip skin' in m.name)
  face=next(p for p in body.data.polygons if body.data.materials[p.material_index]==material);uv=body.data.uv_layers.active.data[face.loop_start].uv.copy()
  for side in ['L','R']:
-  hand=prefix+'Hand.'+side;cuff=prefix+'ForearmTwist.'+side;vertices=[];faces=[]
+  hand=prefix+'Hand.'+side;cuff=prefix+'WristSleeve.'+side;vertices=[];faces=[]
   rings=[(-.12,.026),(-.08,.027),(-.04,.024),(.015,.022)]
   for y,radius in rings:
    for j in range(16):vertices.append(rest[hand]@Vector((radius*math.cos(math.tau*j/16),y,radius*.85*math.sin(math.tau*j/16))))
@@ -85,12 +99,12 @@ def crew_wrists(rig,rest,prefix):
     if weight<1:groups[cuff].add([i*16+j],1-weight,'REPLACE')
   obj.modifiers.new('Wrist connection','ARMATURE').object=rig
 
-def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None,outward=None,bow_carry=False):
+def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None,outward=None,bow_carry=False,prefix=""):
  """Keep the elbow on its anatomical side; fit palm roll, not elbow roll.
 
  The search is offline only. The exported clips contain ordinary keyframes.
  """
- upper,fore,hand,twist=[n+'.'+side for n in ['UpperArm','Forearm','Hand','ForearmTwist']]
+ upper,fore,hand,twist=[prefix+n+'.'+side for n in ['UpperArm','Forearm','Hand','ForearmTwist']]
  shoulder=world[upper].translation;a=(rest[fore].translation-rest[upper].translation).length;b=(rest[hand].translation-rest[fore].translation).length
  x=handle.normalized();base=Vector((0,0,1)) if abs(x.z)<.9 else Vector((0,-1,0));base=(base-x*base.dot(x)).normalized();across=x.cross(base)
  def candidate(angle):
@@ -103,6 +117,10 @@ def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None,outward=Non
   # Allow a limited elbow-plane adjustment, never an inward/backward flip.
   angle=math.atan2(axis.dot(preferred.cross(desired)),preferred.dot(desired));angle=max(-math.pi/3,min(math.pi/3,angle));bend=Matrix.Rotation(angle,3,axis)@preferred;elbow=shoulder+axis*along+bend*height
   forward=(wrist-elbow).normalized();score=(1-forward.dot(fore_target))*12+abs(distance-d)*100+.15*(1-bend.dot(preferred))
+  if prefix:
+   sign=1 if side=='L' else -1
+   score+=max(0,-.045-(elbow.x-shoulder.x)*sign)*100
+   score+=max(0,elbow.z-shoulder.z+.15)*100
   if palm_hint is not None:score+=(1-y.dot(palm_hint.normalized()))*.8
   if outward is not None:score+=max(0,.025-(elbow-shoulder).dot(outward.normalized()))*100
   if bow_carry:
@@ -115,8 +133,8 @@ def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None,outward=Non
      segment=end-start;u=max(0,min(1,(string-start).dot(segment)/segment.length_squared))
      clearance=(string-start-segment*u).length
      score+=max(0,.07-clearance)*50
-  if side in contact_history:
-   change=1-y.dot(contact_history[side]);score+=change*.4+max(0,change-(1-math.cos(.16)))*200
+  if prefix+side in contact_history:
+   change=1-y.dot(contact_history[prefix+side]);score+=change*.4+max(0,change-(1-math.cos(.16)))*200
   return score,(elbow,wrist,x,y,z)
  angle=min((math.tau*i/120 for i in range(120)),key=lambda v:candidate(v)[0])
  angle=min((angle+(i-10)*math.tau/1200 for i in range(21)),key=lambda v:candidate(v)[0]);_,(elbow,wrist,x,y,z)=candidate(angle)
@@ -126,7 +144,7 @@ def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None,outward=Non
  # Cloth takes forearm roll; the metal cuff and hand remain a rigid pair.
  set_world(rig,rest,world,twist,rotation@Matrix.Rotation(-math.pi/2 if side=='R' else 0,4,'Y'))
  rotation.translation=wrist;set_world(rig,rest,world,hand,rotation)
- contact_history[side]=y.copy()
+ contact_history[prefix+side]=y.copy()
 
 def build_archer_bow(rig,rest):
  """Reuse the supplied bow, replacing its two rigid string strips by a rigged cord."""
@@ -234,6 +252,7 @@ def build(kind,base,out):
    for v in mesh.data.vertices:
     p=v.co.copy();v.co=sum(((targets[prefix][source_mesh.vertex_groups[g.group].name]@source_rest[source_mesh.vertex_groups[g.group].name].inverted()@p)*g.weight for g in v.groups),Vector())
    for g in mesh.vertex_groups:g.name=prefix+g.name
+   if kind=='siege':fit_crew_grips(mesh,targets[prefix],prefix)
    mesh.parent=rig;mesh.matrix_world=Matrix.Identity(4)
    for modifier in mesh.modifiers:
     if modifier.type=='ARMATURE':modifier.object=rig
@@ -257,6 +276,11 @@ def build(kind,base,out):
    if kind=='siege':name='GripTool'+side
    name=prefix+name;parent=prefix+'Hand.'+side;wanted=rest[parent]@VERTICAL;wanted.translation=rest[parent]@GRIP
    b=rig.data.edit_bones.get(name) or rig.data.edit_bones.new(name);b.head=wanted.translation;b.tail=b.head+wanted.to_3x3()@Vector((0,.035,0));b.matrix=wanted;b.parent=rig.data.edit_bones[parent];b.use_deform=False;sockets[name]=parent
+ if kind=='siege':
+  for prefix in prefixes:
+   for side in ['L','R']:
+    hand=rig.data.edit_bones[prefix+'Hand.'+side];b=rig.data.edit_bones.new(prefix+'WristSleeve.'+side)
+    b.head=hand.head;b.tail=hand.tail;b.matrix=hand.matrix.copy();b.parent=rig.data.edit_bones[prefix+'Forearm.'+side]
  if kind=='archer':
   b=rig.data.edit_bones.new('GripQuiver');b.head=(.12,.27,1.20);b.tail=b.head+Vector((0,0,.035));b.matrix=Matrix.Translation(b.head)@Matrix.Rotation(math.pi/2,4,'X');b.parent=rig.data.edit_bones['Chest'];b.use_deform=False
  bpy.ops.object.mode_set(mode='OBJECT');rest={b.name:b.matrix_local.copy() for b in rig.data.bones}
@@ -284,25 +308,23 @@ def build(kind,base,out):
    world=matrices(rig,rest)
    if kind in ['archer','spear'] and name=='Attack':
     # Side-on stance leaves the weapon outside the torso while facing the front.
-    facing=world['Head'].copy();hips=world['Hips'];turn=Matrix.Translation(hips.translation)@Matrix.Rotation(-1.15 if kind=='archer' else -.90,4,'Z')@Matrix.Translation(-hips.translation)
+    facing=world['Head'].copy();hips=world['Hips'];turn=Matrix.Translation(hips.translation)@Matrix.Rotation(-1.15 if kind=='archer' else -1.40,4,'Z')@Matrix.Translation(-hips.translation)
     set_world(rig,rest,world,'Hips',turn@hips);world=matrices(rig,rest);facing.translation=world['Head'].translation;set_world(rig,rest,world,'Head',facing);world=matrices(rig,rest)
    for prefix in prefixes:
     chest=prefix+'Chest';delta=world[chest]@rest[chest].inverted();mounted=kind in ['lightHorse','heavyHorse'];offset=Vector((0,.06,.62)) if mounted else Vector()
     for side,sign in ([('L',1),('R',-1)] if kind=='archer' else [('R',-1),('L',1)]):
      handle=Vector((0,0,1));wrist=Vector((sign*.385,-.23,1.07))+offset
      if kind=='siege':
-      # Follow the previous real mechanism contact path, with the new palm
-      # centre replacing the old approximate 6 cm forward hand extension.
-      # The old mechanism rig assigned negative-X grips to its positive-X
-      # hand. Preserve the contact paths, but uncross the operator's arms.
-      goal=source[1][prefix+'Hand.'+('R' if side=='L' else 'L')].translation+Vector((0,-.06,0));wrist=goal+Vector((0,.064,-.009));handle=Vector((1,0,0))
-      if prefix=='CrewR_' and name=='Attack':
-       seconds=(f-1)/scene.render.fps;load=smooth(.45,1.1,seconds)*(1-smooth(2.05,2.7,seconds))
-       idle=samples['Idle'][0][1];left=idle[prefix+'Hand.R'].translation+Vector((0,-.06,0));right=idle[prefix+'Hand.L'].translation+Vector((0,-.06,0))
-       # The hand nearest the sling loads it. The other hand remains on
-       # the push bar; never reach across the operator's chest to the sling.
-       goal=source[1][prefix+'Hand.L'].translation+Vector((0,-.06,0))+(left-right)*(1-load) if side=='L' else right
-       wrist=goal+Vector((0,.064,-.009))
+      # Targets come from the real chassis bar / sling, not the old wrist
+      # animation, whose clamped IK stopped short of the mechanism.
+      seconds=(f-1)/scene.render.fps;load=0
+      centre=Vector((.86,-.16,1.01)) if prefix=='CrewL_' else Vector((-.76,.74,1.01))
+      goal=centre+Vector((sign*.14,0,0));handle=Vector((1,0,0))
+      if name=='Attack' and prefix=='CrewL_':
+       pull=.11*math.sin(math.pi*smooth(2.2,4.3,seconds));goal+=Vector((0,pull,-pull*.8))
+      if prefix=='CrewR_' and name=='Attack' and side=='L':
+       load=smooth(.45,1.1,seconds)*(1-smooth(2.05,2.7,seconds))
+       goal=goal.lerp(world['Pouch'].translation+Vector((-.13,0,.055)),load)
      elif mounted and side=='L':wrist=Vector((.12,-.39,1.74));handle=Vector((1,0,0))
      elif kind=='archer':
       if side=='L':wrist=Vector((.20,-.40,1.18)) if name!='Attack' else Vector((-.03,-.30,1.32))
@@ -319,22 +341,47 @@ def build(kind,base,out):
       # The rigid supplied bow has its string 24.5 cm behind the grip.
       # Keep the nocking hand on that real string, without an air draw.
       goal=world['Hand.L']@Vector((0,.064-.245,.009));wrist=goal-delta.to_3x3()@Vector((0,-.064,.009))
-     free_wrist=kind=='siege' and prefix=='CrewR_' and name=='Attack' and side=='L' and load>0
+     if kind=='siege':
+      loading=load if prefix=='CrewR_' and name=='Attack' and side=='L' else 0
+      if loading:
+       shoulder=world[prefix+'UpperArm.'+side].translation
+       reach=(goal-shoulder).normalized();free_axis=Vector((1,0,0));free_axis-=reach*free_axis.dot(reach);free_axis.normalize()
+       handle=handle.lerp(free_axis,loading).normalized()
+      contact_pose(rig,rest,world,side,goal,handle,Vector((sign*.3,.12,-1)),prefix=prefix)
+      # The skin bridge follows the forearm at its sleeve end, without the
+      # metal cuff's authored quarter-turn entering the wrist skin weights.
+      hand=world[prefix+'Hand.'+side];y=(hand.translation-world[prefix+'Forearm.'+side].translation).normalized()
+      x=hand.to_3x3()@Vector((1,0,0));x=(x-y*x.dot(y)).normalized();z=x.cross(y).normalized()
+      sleeve=Matrix((x,y,z)).transposed().to_4x4();sleeve.translation=hand.translation
+      set_world(rig,rest,world,prefix+'WristSleeve.'+side,sleeve)
+      cuff=sleeve.copy();cuff.translation=world[prefix+'Forearm.'+side].translation
+      set_world(rig,rest,world,prefix+'ForearmTwist.'+side,cuff@Matrix.Rotation(-math.pi/2 if side=='R' else 0,4,'Y'))
+      continue
+     free_wrist=False
      forward_elbow=kind=='archer' and name=='Attack' and side=='L'
      arm_pose(rig,rest,world,prefix,side,wrist,handle,free_wrist,forward_elbow)
-     if kind=='siege' or kind=='archer' and name=='Attack' and side=='R':
+     if kind=='archer' and name=='Attack' and side=='R':
       # Solve for the real palm centre rather than approximating a wrist
       # offset in world coordinates when the forearm slopes downward.
       for _ in range(5):
        correction=goal-world[prefix+'Hand.'+side]@GRIP;wrist+=correction
        arm_pose(rig,rest,world,prefix,side,wrist,handle,free_wrist,forward_elbow)
+   if kind=='siege':
+    seconds=(f-1)/scene.render.fps
+    if name=='Attack' and 1.05<=seconds<2.05:
+     stone=world['Projectile'].copy();stone.translation=(world['CrewR_Hand.L']@GRIP).lerp(world['Pouch'].translation+Vector((0,0,.045)),smooth(1.8,2.05,seconds))
+     set_world(rig,rest,world,'Projectile',stone)
+    # The hauling rope stays attached to the corrected right-hand grip.
+    start=world['HaulRope'].translation.copy();end=world['CrewL_Hand.R']@GRIP
+    point(rig,rest,world,'HaulRope',start,end)
+    set_world(rig,rest,world,'HaulRope',world['HaulRope']@Matrix.Diagonal((1,(end-start).length/rig.data.bones['HaulRope'].length,1,1)))
    if name=='Attack' and kind in ['spear','lightHorse','heavyHorse','archer']:
     delta=world['Chest']@rest['Chest'].inverted();orientation=delta.to_3x3()
     thrust=smooth(.18,.36,t)*(1-smooth(.43,.76,t))
     if kind=='spear':
-     rear=Vector((-.25,-.18-.03*thrust,1.35));axis=Vector((.85,-.52,.10)).normalized()
-     for side,goal in [('R',rear),('L',rear+axis*.287)]:
-      contact_pose(rig,rest,world,side,delta@goal,orientation@axis,orientation@Vector((.35 if side=='L' else -.35,-.65,-1)))
+     rear=Vector((-.29,-.235,1.08));axis=Vector((.985,-.17,0)).normalized();rear+=axis*(.04*thrust)
+     for side,goal in [('R',rear),('L',rear+axis*.48)]:
+      contact_pose(rig,rest,world,side,delta@goal,orientation@axis,orientation@Vector((.25 if side=='L' else -.15,.6,-1)))
     elif kind=='heavyHorse':
      contact_pose(rig,rest,world,'R',delta@Vector((-.38,-.055-.075*thrust,1.93)),orientation@Vector((0,-1,.08)),orientation@Vector((-.35,-.65,-1)))
      wrist_only(rig,rest,world,'R',delta,.05*math.sin(math.tau*t))

@@ -56,7 +56,7 @@ it.each(['lightHorse','heavyHorse','siege'] as const)('%s preserves the existing
  for(const name of kind==='siege'?['Idle','Walk','Attack']:['Idle','Walk']){
   for(const model of [a,b])[model.idle,model.walk,model.attack].forEach(v=>v?.setEffectiveWeight(v.getClip().name===name?1:0));
   for(let f=0;f<=24;f++){const seconds=old.animations.find(c=>c.name===name)!.duration*f/24;for(const model of [a,b]){model.mixer.setTime(seconds);model.root.updateMatrixWorld(true);}
-   for(const joint of kind==='siege'?['Chassis','ThrowArm','Pouch','Projectile','HaulRope']:['HorseBody','HorseHead']){const first=a.root.getObjectByName(joint)!,second=b.root.getObjectByName(joint)!;first.matrixWorld.elements.forEach((v,i)=>expect(v).toBeCloseTo(second.matrixWorld.elements[i],5));}
+   for(const joint of kind==='siege'?['Chassis','ThrowArm','Pouch','Projectile']:['HorseBody','HorseHead']){if(kind==='siege'&&joint==='Projectile'&&name==='Attack'&&seconds>=1.05&&seconds<2.05)continue;const first=a.root.getObjectByName(joint)!,second=b.root.getObjectByName(joint)!;first.matrixWorld.elements.forEach((v,i)=>expect(v).toBeCloseTo(second.matrixWorld.elements[i],5));}
   }
  }disposeInfantryAnimation(a);disposeInfantryAnimation(b);
 });
@@ -78,17 +78,37 @@ it('draws the authored string with the hand, then releases it independently',()=
  disposeInfantryAnimation(a);
 });
 
-it('keeps both siege operators on the original animated mechanism contact paths',async()=>{
- const a=createInfantryAnimation(assets.siege,0),b=createInfantryAnimation(await readInfantryTestAsset('siege-crew-v1.glb'),0);
- b.root.updateMatrixWorld(true);const idleLeft=b.root.getObjectByName('CrewR_HandR')!.getWorldPosition(new Vector3()).add(new Vector3(0,0,.06)),idleRight=b.root.getObjectByName('CrewR_HandL')!.getWorldPosition(new Vector3()).add(new Vector3(0,0,.06));
+it('keeps siege palms on the real wooden bars and loading pouch',()=>{
+ const a=createInfantryAnimation(assets.siege,0);
  const smooth=(from:number,to:number,t:number)=>{const u=Math.max(0,Math.min(1,(t-from)/(to-from)));return u*u*(3-2*u);};
- for(const name of ['Idle','Walk','Attack']){
-  for(const model of [a,b])[model.idle,model.walk,model.attack!].forEach(v=>v.setEffectiveWeight(v.getClip().name===name?1:0));
-  for(let f=0;f<48;f++){const seconds=[b.idle,b.walk,b.attack!].find(v=>v.getClip().name===name)!.getClip().duration*f/48;for(const model of [a,b]){model.mixer.setTime(seconds);model.root.updateMatrixWorld(true);}
-   // Old targets crossed the arms; each corrected hand takes the same-side path.
-   for(const prefix of ['CrewL_','CrewR_'])for(const side of ['L','R']){let target=b.root.getObjectByName(prefix+'Hand'+(side==='L'?'R':'L'))!.getWorldPosition(new Vector3()).add(new Vector3(0,0,.06));
-    if(name==='Attack'&&prefix==='CrewR_'){const load=smooth(.45,1.1,seconds)*(1-smooth(2.05,2.7,seconds));target=side==='R'?idleRight:b.root.getObjectByName('CrewR_HandL')!.getWorldPosition(new Vector3()).add(new Vector3(0,0,.06)).add(idleLeft.clone().sub(idleRight).multiplyScalar(1-load));}
-    const palm=a.root.getObjectByName(prefix+'GripTool'+side)!.getWorldPosition(new Vector3());expect(palm.distanceTo(target),`${name} ${f} ${prefix}${side}`).toBeLessThan(.025);}
+ for(const action of [a.idle,a.walk,a.attack!]){
+  [a.idle,a.walk,a.attack!].forEach(v=>v.setEffectiveWeight(v===action?1:0));
+  for(let f=0;f<96;f++){
+   const seconds=action.getClip().duration*f/96,attack=action===a.attack;a.mixer.setTime(seconds);a.root.updateMatrixWorld(true);
+   for(const prefix of ['CrewL_','CrewR_'])for(const side of ['L','R']){
+    // Actual rig_siege.py chassis bars: width 0.38 m, top at waist height.
+    const target=new Vector3(prefix==='CrewL_'?.86:-.76,1.01,prefix==='CrewL_'?.16:-.74);target.x+=(side==='L'?1:-1)*.14;
+    if(attack&&prefix==='CrewL_'){const pull=.11*Math.sin(Math.PI*smooth(2.2,4.3,seconds));target.add(new Vector3(0,-pull*.8,-pull));}
+    if(attack&&prefix==='CrewR_'&&side==='L')target.lerp(a.root.getObjectByName('Pouch')!.getWorldPosition(new Vector3()).add(new Vector3(-.13,.055,0)),smooth(.45,1.1,seconds)*(1-smooth(2.05,2.7,seconds)));
+    const palm=a.root.getObjectByName(prefix+'GripTool'+side)!.getWorldPosition(new Vector3());expect(palm.distanceTo(target),`${action.getClip().name} ${f} ${prefix}${side}`).toBeLessThan(.004);
+   }
+   if(attack&&seconds>=1.1&&seconds<=1.8)expect(a.root.getObjectByName('Projectile')!.getWorldPosition(new Vector3()).distanceTo(a.root.getObjectByName('CrewR_GripToolL')!.getWorldPosition(new Vector3()))).toBeLessThan(.008);
   }
- }disposeInfantryAnimation(a);disposeInfantryAnimation(b);
+ }disposeInfantryAnimation(a);
+});
+
+it('keeps the actual hauling rope end on the repositioned operator palm',()=>{
+ const a=createInfantryAnimation(assets.siege,0);let mesh:SkinnedMesh|undefined;
+ a.root.traverse(o=>{if(o instanceof SkinnedMesh&&o.name.startsWith('HaulRopeMesh'))mesh=o;});expect(mesh).toBeDefined();
+ const rope=mesh!,joint=a.root.getObjectByName('HaulRope')!,bone=rope.skeleton.bones.indexOf(joint as typeof rope.skeleton.bones[number]),positions=rope.geometry.getAttribute('position');
+ const local=Array.from({length:positions.count},(_,i)=>new Vector3().fromBufferAttribute(positions,i).applyMatrix4(rope.bindMatrix).applyMatrix4(rope.skeleton.boneInverses[bone]));
+ const tip=Math.max(...local.map(p=>p.y)),indices=local.flatMap((p,i)=>Math.abs(p.y-tip)<.0001?[i]:[]);expect(indices.length).toBeGreaterThanOrEqual(8);
+ for(const action of [a.idle,a.walk,a.attack!]){
+  [a.idle,a.walk,a.attack!].forEach(v=>v.setEffectiveWeight(v===action?1:0));
+  for(let frame=0;frame<=72;frame++){
+   a.mixer.setTime(action.getClip().duration*frame/72);a.root.updateMatrixWorld(true);rope.skeleton.update();
+   const end=indices.reduce((sum,i)=>sum.add(rope.applyBoneTransform(i,new Vector3().fromBufferAttribute(positions,i)).applyMatrix4(rope.matrixWorld)),new Vector3()).divideScalar(indices.length);
+   expect(end.distanceTo(a.root.getObjectByName('CrewL_GripToolR')!.getWorldPosition(new Vector3()))).toBeLessThan(.008);
+  }
+ }disposeInfantryAnimation(a);
 });
