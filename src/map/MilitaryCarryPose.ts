@@ -45,9 +45,13 @@ export function createMilitaryCarryPose(root:Group,kind:ArmyModelKind){
  };
 }
 
+export function hasAuthoredMilitaryGrip(root:Group){
+ let authored=false;root.traverse(o=>{if(o.userData.authoredCarry==='military-v2'||o.userData.authoredCarry==='sword-shield-v2')authored=true;});return authored;
+}
+
 /** Close the source's open fingers once, in hand bind space; retain UVs and skin weights. */
 export function prepareMilitaryHands(root:Group){
- if(root.getObjectByName('GripSword')&&root.getObjectByName('GripShield'))return;
+ if(hasAuthoredMilitaryGrip(root))return;
  root.traverse(o=>{
   if(!(o instanceof SkinnedMesh)||o.geometry.userData.carryGrip||o.userData.authoredCarry==='sword-shield-v2')return;
   const p=o.geometry.getAttribute('position'),weights=o.geometry.getAttribute('skinWeight'),indices=o.geometry.getAttribute('skinIndex');

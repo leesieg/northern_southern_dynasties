@@ -14,7 +14,7 @@ import {sampleRoad} from '../../core/routeGeometry';
 afterEach(()=>{vi.restoreAllMocks();vi.unstubAllGlobals();});
 it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('uses %s at the real army position and releases it on removal',async kind=>{
  vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(await readInfantryTestAsset('weapons-v1.glb'));
- const infantry=await readInfantryTestAsset(kind==='foot'?'infantry-sword-shield-v2.glb':['spear','archer'].includes(kind)?'infantry-rigged-v1.glb':kind==='lightHorse'?'light-cavalry-v1.glb':kind==='heavyHorse'?'heavy-cavalry-v1.glb':'siege-crew-v1.glb');vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);
+ const infantry=await readInfantryTestAsset(kind==='foot'?'infantry-sword-shield-v2.glb':kind==='spear'?'spear-infantry-v2.glb':kind==='archer'?'archer-infantry-v2.glb':kind==='lightHorse'?'light-cavalry-v2.glb':kind==='heavyHorse'?'heavy-cavalry-v2.glb':'siege-crew-v2.glb');vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(infantry);
  vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
  vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
  // Only unrelated scenery and terrain inputs are substituted; infantry and its mixer are real.

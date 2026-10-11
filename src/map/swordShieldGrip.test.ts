@@ -26,7 +26,7 @@ it.each(['garrison','marching','battle'] as const)('keeps sword and shield attac
  const paths={Sword:[[[0,.12,0],[0,.80,0]]],Shield:[[[-.24,-.35,.05],[.24,-.35,.05]],[[-.24,.35,.05],[.24,.35,.05]]]};
  for(let frame=0;frame<288;frame++){
   updateInfantryAnimation(a,state,frame/60,true);a.root.updateMatrixWorld(true);body.forEach(m=>{m.skeleton.update();m.computeBoundingBox();m.computeBoundingSphere();});
-  for(const [name,segments] of Object.entries(paths)){const prop=a.root.getObjectByName('Equipment '+name)!,grip=prop.getWorldPosition(new Vector3());expect(prop.position.length()).toBe(0);expect(prop.quaternion.w).toBe(1);
+  for(const [name,segments] of Object.entries(paths)){const prop=a.root.getObjectByName('Equipment '+name)!,grip=prop.getWorldPosition(new Vector3());expect(prop.position.length()).toBe(0);expect(prop.quaternion.w).toBeCloseTo(name==='Sword'?Math.SQRT1_2:1);
    for(const [start,end] of segments){const from=new Vector3(...start).applyMatrix4(prop.matrixWorld),to=new Vector3(...end).applyMatrix4(prop.matrixWorld),delta=to.clone().sub(from);ray.set(from,delta.clone().normalize());ray.far=delta.length();for(const hit of ray.intersectObjects(body,false))expect(hit.point.distanceTo(grip),`${state} ${name} at ${frame/60}s`).toBeLessThan(.11);}
   }
   expect(a.root.position.toArray()).toEqual([0,0,0]);

@@ -9,10 +9,11 @@ import {createMilitaryCarryPose,prepareMilitaryHands} from '../../src/map/Milita
 it.skipIf(!process.env.CARRY_PREVIEW)('exports actual runtime deformed geometry for offline inspection',async()=>{
  const out=process.env.CARRY_OUT??'.cache/weapons/carry';mkdirSync(out,{recursive:true});
  const kit=await readInfantryTestAsset('weapons-v1.glb');
- for(const [kind,file] of [['foot',process.env.CARRY_BASELINE?'infantry-rigged-v1.glb':'infantry-sword-shield-v2.glb'],['spear','infantry-rigged-v1.glb'],['archer','infantry-rigged-v1.glb'],['lightHorse','light-cavalry-v1.glb'],['heavyHorse','heavy-cavalry-v1.glb']]){
+ for(const [kind,current,original] of [['foot','infantry-sword-shield-v2.glb','infantry-rigged-v1.glb'],['spear','spear-infantry-v2.glb','infantry-rigged-v1.glb'],['archer','archer-infantry-v2.glb','infantry-rigged-v1.glb'],['lightHorse','light-cavalry-v2.glb','light-cavalry-v1.glb'],['heavyHorse','heavy-cavalry-v2.glb','heavy-cavalry-v1.glb'],['siege','siege-crew-v2.glb','siege-crew-v1.glb']]){
+  const file=process.env.CARRY_BASELINE?original:current;
   const asset=await readInfantryTestAsset(file);prepareMilitaryHands(asset.scene);
-  for(const [state,frame] of [['garrison',0],['marching',90],['marching',108],['marching',126],...(kind==='foot'?[['battle',24],['battle',39],['battle',54]]:[])]){
-   const a=createInfantryAnimation(asset,0);if(!a.authoredCarry){a.carryPose=createMilitaryCarryPose(a.root,kind);a.carryPose();}attachMilitaryEquipment(a.root,kit,kind);
+  for(const [state,frame] of [['garrison',0],['marching',90],['marching',108],['marching',126],...(asset.animations.some(c=>c.name==='Attack')?[['battle',24],['battle',39],['battle',54]]:[])]){
+   const a=createInfantryAnimation(asset,0);if(!a.authoredCarry&&kind!=='siege'){a.carryPose=createMilitaryCarryPose(a.root,kind);a.carryPose();}if(kind!=='siege')attachMilitaryEquipment(a.root,kit,kind);
    for(let i=0;i<=frame;i++)updateInfantryAnimation(a,state,i/60,true);
    a.root.updateMatrixWorld(true);const objects=[];
    a.root.traverse(o=>{if(!(o instanceof Mesh))return;

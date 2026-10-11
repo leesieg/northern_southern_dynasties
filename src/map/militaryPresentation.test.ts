@@ -8,8 +8,8 @@ import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
-let kit:GLTF,infantry:GLTF,shield:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
-beforeAll(async()=>{[kit,infantry,shield,lightHorse,heavyHorse,siege]=await Promise.all(['weapons-v1.glb','infantry-rigged-v1.glb','infantry-sword-shield-v2.glb','light-cavalry-v1.glb','heavy-cavalry-v1.glb','siege-crew-v1.glb'].map(readInfantryTestAsset));});
+let kit:GLTF,infantry:GLTF,archer:GLTF,shield:GLTF,lightHorse:GLTF,heavyHorse:GLTF,siege:GLTF;
+beforeAll(async()=>{[kit,infantry,archer,shield,lightHorse,heavyHorse,siege]=await Promise.all(['weapons-v1.glb','spear-infantry-v2.glb','archer-infantry-v2.glb','infantry-sword-shield-v2.glb','light-cavalry-v2.glb','heavy-cavalry-v2.glb','siege-crew-v2.glb'].map(readInfantryTestAsset));});
 
 const viewport={width:1200,height:800},anchor={x:600,y:400};
 const army=(id=1):Army=>({id,realm:'liang',location:'jiankang',troops:800,morale:80,supply:500,siege:0,journey:null});
@@ -133,7 +133,7 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
  });
  it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('contains the %s miniature inside its reserved target across headings and pitches',async kind=>{
   vi.spyOn(equipment,'loadMilitaryEquipment').mockResolvedValue(kit);
-  const asset=kind==='foot'?shield:kind==='lightHorse'?lightHorse:kind==='heavyHorse'?heavyHorse:kind==='siege'?siege:infantry;vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(asset);
+  const asset=kind==='foot'?shield:kind==='lightHorse'?lightHorse:kind==='heavyHorse'?heavyHorse:kind==='siege'?siege:kind==='archer'?archer:infantry;vi.spyOn(mapResources,'mapResource').mockImplementation(async()=>new Response(new ArrayBuffer(0)));vi.spyOn(GLTFLoader.prototype,'parseAsync').mockResolvedValue(asset);
   vi.spyOn(TextureLoader.prototype,'load').mockImplementation(()=>new Texture());
   vi.stubGlobal('document',{createElement:()=>({width:128,height:128,getContext:()=>({createRadialGradient:()=>({addColorStop:()=>{}}),fillRect:()=>{}})})});
   const assets=militaryModelAssets(()=>{},()=>{}),model=assets.create(army(),kind,'梁'),size=armyMarkerFootprint(true),extent={width:0,above:0,below:0};

@@ -26,11 +26,12 @@ export function attachMilitaryEquipment(root:Group,kit:GLTF,kind:ArmyModelKind){
   const bone=skin.skeleton.bones[index];
   const posed=new Matrix4().multiplyMatrices(root.matrixWorld.clone().invert(),bone.matrixWorld);
   const prop=template.clone(true);prop.name='Equipment '+name;
-  const socket=kind==='foot'?root.getObjectByName(name==='Sword'?'GripSword':'GripShield'):undefined;
-  if(socket){prop.position.set(0,0,0);prop.quaternion.identity();prop.scale.setScalar(1);prop.traverse(o=>{if(o instanceof Mesh){o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;}});socket.add(prop);continue;}
+  const socket=root.getObjectByName('Grip'+name);
+  // Sword's sharp -X edge faces forward; bow's +Z string faces the archer.
+  if(socket){prop.position.set(0,0,0);prop.quaternion.setFromAxisAngle(new Vector3(0,1,0),name==='Sword'?Math.PI/2:name==='Bow'?Math.PI:0);prop.scale.setScalar(1);prop.traverse(o=>{if(o instanceof Mesh){o.frustumCulled=false;o.castShadow=true;o.receiveShadow=true;}});socket.add(prop);continue;}
   // Canonical kit grips are at the origin, +Y up; put them inside the palm.
   prop.position.set(joint==='HandL'?.05:-.05,.048,-.037);prop.quaternion.copy(new Quaternion().setFromRotationMatrix(posed).invert());
-  if(name==='Sword')prop.quaternion.multiply(new Quaternion().setFromAxisAngle(new Vector3(1,0,0),.4));
+  if(name==='Sword')prop.quaternion.multiply(new Quaternion().setFromAxisAngle(new Vector3(0,1,0),Math.PI/2));
   if(name==='Shield')prop.position.add(new Vector3(0,0,1).transformDirection(posed.clone().invert()).multiplyScalar(.055));
   if(name==='Quiver'){
    const back=new Vector3(.12,1.20,-.27);prop.position.copy(back.applyMatrix4(skin.skeleton.boneInverses[index]));
