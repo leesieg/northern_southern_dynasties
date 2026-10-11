@@ -256,3 +256,7 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .focused-shell .atlas-map [data-paper="true"] .atlas-city-realm img{width:25px;height:30px}
 .focused-shell .atlas-map [data-paper="true"] .atlas-governor{width:25px;height:28px}
 .focused-shell .atlas-map [data-paper="true"] .atlas-place-label:focus-visible{clip-path:none;outline:2px solid #ffe49a;outline-offset:2px}
+
+/* The transparent lower part is the model hit area, anchored to its real feet. */
+.focused-shell .atlas-map .atlas-traveler[data-model="true"]{padding-bottom:var(--traveler-height,68px);min-width:44px;pointer-events:auto}
+.focused-shell .atlas-map .atlas-traveler[data-model="true"]:is(:hover,:focus-visible)>span{top:auto;bottom:calc(var(--traveler-height,68px) + 48px)}

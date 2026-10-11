@@ -1,3 +1,4 @@
+import {travelerActors} from './travelerActors';
 import {cityDetailForPixels,sceneryTier,sceneryBudgets,type SceneryTier} from './sceneryDetail';
 import type {CityDetail} from '../campaignScenery';
 import {Box3,BufferGeometry,Group,InstancedMesh,Mesh,MeshStandardMaterial,Object3D,Vector3,type Scene,type Texture} from 'three';
@@ -20,10 +21,12 @@ import {vegetationCandidates} from './vegetation';
 import {projectGround} from './geography';
 import {landscapeMaterial} from './landscapeMaterial';
 import {cityFoundationGeometry} from './cityFoundation';
-export interface CampaignState{speed?:number;armyPosition?:(a:import('../../core/realm').Army)=>{lon:number;lat:number;heading?:number};armyMoving?:(a:import('../../core/realm').Army)=>boolean;seasonPreview?:Season;world:World;selected:string;tilted:boolean;sceneryDetail:boolean;militaryModels:boolean;armyMotion:boolean;}
+export interface CampaignState{showTravelers?:boolean;travelerAnimation?:boolean;travelers?:()=>import('../../core/types').Person[];travelerVisible?:(id:string)=>boolean;travelerPosition?:(p:import('../../core/types').Person)=>{lon:number;lat:number;heading?:number};travelerMoving?:(p:import('../../core/types').Person)=>boolean;speed?:number;armyPosition?:(a:import('../../core/realm').Army)=>{lon:number;lat:number;heading?:number};armyMoving?:(a:import('../../core/realm').Army)=>boolean;seasonPreview?:Season;world:World;selected:string;tilted:boolean;sceneryDetail:boolean;militaryModels:boolean;armyMotion:boolean;}
 export interface ActorView{scene:Scene;detailMap?:Texture;sceneryHeight?:(lon:number,lat:number)=>number|null;footprintHeight?:(bounds:{minX:number;minZ:number;maxX:number;maxZ:number})=>number|null;cityLayout:(id:string)=>{x:number;z:number;scale:number;radius:number}|undefined;height:(lon:number,lat:number)=>number|null;isRiver:(lon:number,lat:number)=>boolean;isLand:(lon:number,lat:number)=>boolean;isMoving:()=>boolean;project:(ll:[number,number])=>{x:number;y:number};getZoom:()=>number;getSize:()=>{width:number;height:number};unitsPerPixel:()=>number;unitsPerPixelAt:(lon:number,lat:number)=>number;getTarget:()=>Vector3;getViewKey:()=>string;repaint:()=>void;warning:(message:string)=>void;}
 export async function campaignActors(view:ActorView,getState:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined,signal?:AbortSignal,progress?:(completed:number,total:number)=>void){
- const assets=await loadCampaignSampleAssets(signal,progress),military=militaryModelAssets(view.repaint,view.warning,signal),root=new Group();view.scene.add(root);
+ const notices=new Map<string,string>();const warn=(source:string,message:string)=>{if(message)notices.set(source,message);else notices.delete(source);view.warning([...notices.values()].join(' '));};
+ const assets=await loadCampaignSampleAssets(signal,progress),military=militaryModelAssets(view.repaint,message=>warn('military',message),signal),root=new Group();view.scene.add(root);
+ const travelers=travelerActors(view,root,message=>warn('travelers',message),signal);
  const cities=new Map<string,{root:Group;key:string;detail:CityDetail;bounds:Box3;foundation:Mesh}>(),armies=new Map<number,MilitaryModel>();let knownWorld:World|undefined,known=campaignCoverage(getState().world);let world:World|undefined,viewKey='',forestKey='',coverageKey='',sceneryWorldKey='',revision=0;let tier:SceneryTier='far';
  // Army-only snapshots do not change city geometry, terrain foundations or forest placement.
  const sceneryKey=(w:World)=>domainSignature(w)+'|'+worldRealms(w).map(r=>r+':'+capital(r,w)).join(',')+'|'+[...cities.keys()].map(id=>{const site=sites.find(s=>s.id===id)!,realm=w.realm?.cities[id]?.controller??site.polity;return id+':'+campaignCityKey(campaignCityAppearance(w,site))+':'+realm+':'+realmOrigin(w,realm)+':'+regimeName(w,realm);}).join('|');
@@ -79,8 +82,8 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
    if((visual==='marching'||visual==='retreat')&&state.armyMoving&&!state.armyMoving(a))visual='garrison';
    m.camp.visible=view.getZoom()>=7.4&&(visual==='garrison'||combat.besieging);
    moving=animateMilitaryModel(m,visual,now/1000,state.armyMotion)||!!state.armyMoving?.(a)||moving;
-  }military.pruneBanners(new Set([...armies.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));return moving;
+  }military.pruneBanners(new Set([...armies.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));return travelers.update(state,now)||moving;
  }
- return {root,update,refresh,retryAssets:()=>military.retry(),revision:()=>revision,farmCenters:()=>[...cities.values()].map(c=>({x:c.root.position.x,z:c.root.position.z,radius:c.root.scale.x*17*.65})),showsSite:(id:string)=>!!cities.get(id)?.root.visible,cityRoots:()=>[...cities.values()].map(c=>c.root).filter(root=>root.visible),dispose(){view.scene.remove(root);cities.forEach(c=>c.foundation.geometry.dispose());foundationMaterial.dispose();forests.forEach(t=>t.dispose());treeMaterials.forEach(m=>m.dispose());military.dispose();assets.dispose();}};
+ return {root,update,refresh,retryAssets:()=>{military.retry();travelers.retry();},showsTraveler:travelers.shows,revision:()=>revision,farmCenters:()=>[...cities.values()].map(c=>({x:c.root.position.x,z:c.root.position.z,radius:c.root.scale.x*17*.65})),showsSite:(id:string)=>!!cities.get(id)?.root.visible,cityRoots:()=>[...cities.values()].map(c=>c.root).filter(root=>root.visible),dispose(){view.scene.remove(root);cities.forEach(c=>c.foundation.geometry.dispose());foundationMaterial.dispose();forests.forEach(t=>t.dispose());treeMaterials.forEach(m=>m.dispose());travelers.dispose();military.dispose();assets.dispose();}};
 }
 import {unprojectGround as viewPosition} from './geography';

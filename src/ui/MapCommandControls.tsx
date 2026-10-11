@@ -20,7 +20,7 @@ export function MapDisplayControls(p:Props){
  ['立体山河',p.tilted,p.onTilted,'近景使用真实高程，远景自动铺平为纸质舆图'],
  ['近景细节',p.sceneryDetail,p.onSceneryDetail,'开启细密建筑、林地树木与象征农田；关闭以减少图形负担，城池与操作仍保留'],
  ['军队兵模',p.models,p.onModels,'拉近时显示兵模；关闭后使用军旗'],
- ['军队动画',p.motion,p.onMotion,'关闭以减少动态；位置与军情照常更新'],
+ ['单位动画',p.motion,p.onMotion,'关闭人物与军队动作及平滑移动；位置仍随真实进度更新'],
  ] as const).map(([label,value,onClick,hint])=><div key={label} className="map-option"><button aria-describedby={"map-option-"+label} aria-pressed={value} onClick={onClick}><span>{label}</span><b aria-hidden="true">{value?'开':'关'}</b></button><small id={"map-option-"+label}>{hint}</small></div>)}</section>}
  </>;
 }

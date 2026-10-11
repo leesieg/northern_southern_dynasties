@@ -1,0 +1,98 @@
+[
+  {
+    "model": "han-female",
+    "source": "风云南北朝-汉文化旅行女.glb",
+    "source_sha256": "f244840ee1d42b14e717197394d5439b1dce5fe60d5053b24567ee00ffb1d7fc",
+    "original_triangles": 54676,
+    "triangles": 15000,
+    "bones": 26,
+    "clips": {
+      "Idle": {
+        "seconds": 2.4,
+        "min_z": -6.344635039567947e-08,
+        "max_z": 1.7163177728652954
+      },
+      "Walk": {
+        "seconds": 1.2,
+        "min_z": -2.551823854446411e-07,
+        "max_z": 1.7108103036880493
+      }
+    },
+    "texture_pixels": {
+      "near": 1024,
+      "far": 512
+    }
+  },
+  {
+    "model": "han-male",
+    "source": "风云南北朝-汉文化旅行男.glb",
+    "source_sha256": "7f977e7e43bd5f95238d5b803ba7a5342f5fdd0178dc1a14fd655c428b593e85",
+    "original_triangles": 59580,
+    "triangles": 15000,
+    "bones": 26,
+    "clips": {
+      "Idle": {
+        "seconds": 2.4,
+        "min_z": 6.612390279769897e-08,
+        "max_z": 1.71640145778656
+      },
+      "Walk": {
+        "seconds": 1.2,
+        "min_z": -1.30385160446167e-07,
+        "max_z": 1.710459589958191
+      }
+    },
+    "texture_pixels": {
+      "near": 1024,
+      "far": 512
+    }
+  },
+  {
+    "model": "xianbei-female",
+    "source": "风云南北朝-鲜卑文化旅行女.glb",
+    "source_sha256": "25e7247d2e652d83f77223b66461d02472e61bbd1d4ca45726b0d5c6339e8473",
+    "original_triangles": 59254,
+    "triangles": 14999,
+    "bones": 26,
+    "clips": {
+      "Idle": {
+        "seconds": 2.4,
+        "min_z": 4.193861968815327e-08,
+        "max_z": 1.7159631252288818
+      },
+      "Walk": {
+        "seconds": 1.2,
+        "min_z": -1.2433156371116638e-07,
+        "max_z": 1.7105960845947266
+      }
+    },
+    "texture_pixels": {
+      "near": 1024,
+      "far": 512
+    }
+  },
+  {
+    "model": "xianbei-male",
+    "source": "风云南北朝-鲜卑文化旅行男.glb",
+    "source_sha256": "9b7b808e84c211cdb66c27d83327a516043b79ec4fbebe148bdf1576b1f79747",
+    "original_triangles": 58216,
+    "triangles": 15000,
+    "bones": 26,
+    "clips": {
+      "Idle": {
+        "seconds": 2.4,
+        "min_z": -1.2718373909592628e-07,
+        "max_z": 1.7163687944412231
+      },
+      "Walk": {
+        "seconds": 1.2,
+        "min_z": -1.4156103134155273e-07,
+        "max_z": 1.7105158567428589
+      }
+    },
+    "texture_pixels": {
+      "near": 1024,
+      "far": 512
+    }
+  }
+]
