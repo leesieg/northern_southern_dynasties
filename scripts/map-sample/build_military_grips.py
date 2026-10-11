@@ -138,25 +138,20 @@ def build(kind,base,out):
        wrist=goal+Vector((0,.064,-.009))
      elif mounted and side=='L':wrist=Vector((.12,-.39,1.74));handle=Vector((1,0,0))
      elif kind=='archer':
-      if side=='L':wrist=Vector((.20,-.40,1.18)) if name!='Attack' else Vector((.14,-.40,1.32))
+      if side=='L':wrist=Vector((.20,-.40,1.18)) if name!='Attack' else Vector((-.03,-.30,1.32))
       else:wrist=Vector((-.24,-.20,1.07)) if name!='Attack' else Vector((-.08,-.24+.12*strike,1.37))
      elif kind=='spear' and side=='L':
       wrist=Vector((.36,-.10,.89));handle=Vector((1,0,0))
      if name=='Attack' and side=='R' and kind in ['spear','heavyHorse']:
-      # Shoulder-height thrust, elbow underneath the grip. A low wrist with
-      # a forward shaft forced the analytic elbow solution over the hand.
-      wrist=Vector((-.40,-.105-.08*strike,1.30+.015*strike))+offset
-      handle=Vector((0,-.98,.18))
+      wrist.y-=.12*strike;wrist.z+=.09;handle=Vector((0,-.85,.53))
      elif name=='Attack' and side=='R' and kind=='lightHorse':
       wrist.z+=.20*strike;wrist.y-=.10*strike;handle=Vector((0,-.35*strike,1))
      if name=='Walk' and kind not in ['siege'] and not (mounted and side=='L'):wrist.z+=.005*wave
      if kind!='siege':wrist=delta@wrist;handle=delta.to_3x3()@handle
      if kind=='archer' and name=='Attack' and side=='R':
-      # Cant the bow plane around the vertical grip, away from the forearm.
-      # The actual string lies 23.3 cm behind the handle; match the runtime
-      # socket turn and put the nocking hand on the string's outer surface.
-      turn=math.pi+math.radians(35)
-      goal=world['Hand.L']@(GRIP+Vector((0,.233*math.cos(turn),.233*math.sin(turn))));wrist=goal-delta.to_3x3()@Vector((0,-.064,.009))
+      # The rigid supplied bow has its string 24.5 cm behind the grip.
+      # Keep the nocking hand on that real string, without an air draw.
+      goal=world['Hand.L']@Vector((0,.064-.245,.009));wrist=goal-delta.to_3x3()@Vector((0,-.064,.009))
      free_wrist=kind=='siege' and prefix=='CrewR_' and name=='Attack' and side=='L' and load>0
      forward_elbow=kind=='archer' and name=='Attack' and side=='L'
      arm_pose(rig,rest,world,prefix,side,wrist,handle,free_wrist,forward_elbow)

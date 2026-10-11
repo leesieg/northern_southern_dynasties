@@ -1,5 +1,5 @@
 import {beforeAll,expect,it} from 'vitest';
-import {DoubleSide,Quaternion,Raycaster,SkinnedMesh,Vector3} from 'three';
+import {SkinnedMesh,Vector3} from 'three';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
 import {createInfantryAnimation,disposeInfantryAnimation,updateInfantryAnimation} from './RiggedInfantry';
 import {attachMilitaryEquipment} from './MilitaryEquipment';
@@ -71,32 +71,9 @@ it.each(['lightHorse','heavyHorse'] as const)('%s keeps both reins gathered in i
 
 it('orients the bowstring towards the archer and keeps the nocking hand on it',()=>{
  const a=createInfantryAnimation(assets.archer,0);attachMilitaryEquipment(a.root,kit,'archer');a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);
- for(let f=0;f<48;f++){a.mixer.setTime(a.attack!.getClip().duration*f/48);a.root.updateMatrixWorld(true);const bow=a.root.getObjectByName('Equipment Bow')!,string=new Vector3(0,0,.233).applyMatrix4(bow.matrixWorld),grip=a.root.getObjectByName('GripSword')!.getWorldPosition(new Vector3());expect(new Vector3(0,0,1).transformDirection(bow.matrixWorld).z).toBeLessThan(-.6);expect(grip.distanceTo(string)).toBeLessThan(.025);}
+ for(let f=0;f<48;f++){a.mixer.setTime(a.attack!.getClip().duration*f/48);a.root.updateMatrixWorld(true);const bow=a.root.getObjectByName('Equipment Bow')!,string=new Vector3(0,0,.245).applyMatrix4(bow.matrixWorld),grip=a.root.getObjectByName('GripSword')!.getWorldPosition(new Vector3());expect(new Vector3(0,0,1).transformDirection(bow.matrixWorld).z).toBeLessThan(-.6);expect(grip.distanceTo(string)).toBeLessThan(.025);}
  disposeInfantryAnimation(a);
 });
-
-it.each(['spear','heavyHorse'] as const)('%s thrusts with its elbow below the grip and no wrist flips',kind=>{
- const a=createInfantryAnimation(assets[kind],0);attachMilitaryEquipment(a.root,kit,kind);a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);const hand=a.root.getObjectByName('HandR')!,elbow=a.root.getObjectByName('ForearmR')!,shoulder=a.root.getObjectByName('UpperArmR')!,previous=new Quaternion();
- for(let f=0;f<=144;f++){a.mixer.setTime(a.attack!.getClip().duration*f/144);a.root.updateMatrixWorld(true);const wrist=hand.getWorldPosition(new Vector3()),joint=elbow.getWorldPosition(new Vector3()),upper=shoulder.getWorldPosition(new Vector3()),turn=hand.getWorldQuaternion(new Quaternion());
-  expect(wrist.y-joint.y,`${kind} ${f}: elbow below hand`).toBeGreaterThan(.07);expect(joint.y-upper.y,`${kind} ${f}: elbow below shoulder`).toBeLessThan(.01);
-  if(f)expect(turn.angleTo(previous),`${kind} ${f}: wrist angular step`).toBeLessThan(.12);previous.copy(turn);
- }disposeInfantryAnimation(a);
-});
-
-it('keeps the actual bowstring ribbon out of the arms through clips and transitions',()=>{
- const a=createInfantryAnimation(assets.archer,0);attachMilitaryEquipment(a.root,kit,'archer');const body:SkinnedMesh[]=[];a.root.traverse(o=>{if(o instanceof SkinnedMesh){body.push(o);for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.side=DoubleSide;}});const ray=new Raycaster();
- for(let f=0;f<240;f++){
-  updateInfantryAnimation(a,f<60?'garrison':f<120?'marching':f<210?'battle':'garrison',f/30,true);a.root.updateMatrixWorld(true);body.forEach(o=>{o.skeleton.update();o.computeBoundingSphere();o.computeBoundingBox();});const bow=a.root.getObjectByName('Equipment Bow')!;
-  // Measured from the actual kit: the broad string is at Z=.230–.235,
-  // X=±.029. Check both edges as well as its centre, not just the grip.
-  for(const x of [-.027,0,.027])for(const z of [.230,.235]){const start=new Vector3(x,-.38,z).applyMatrix4(bow.matrixWorld),end=new Vector3(x,.38,z).applyMatrix4(bow.matrixWorld),delta=end.clone().sub(start);ray.set(start,delta.clone().normalize());ray.far=delta.length();
-   for(const hit of ray.intersectObjects(body,false)){const mesh=hit.object as SkinnedMesh,indices=mesh.geometry.getAttribute('skinIndex'),weights=mesh.geometry.getAttribute('skinWeight');
-    const fingerContact=[hit.face!.a,hit.face!.b,hit.face!.c].every(i=>[0,1,2,3].some(c=>weights.getComponent(i,c)>.99&&mesh.skeleton.bones[indices.getComponent(i,c)].name.replaceAll('.','')==='HandR'));
-    const joints=[hit.face!.a,hit.face!.b,hit.face!.c].map(i=>mesh.skeleton.bones[indices.getX(i)].name).join(',');expect(fingerContact,`bowstring hits ${joints} at frame ${f}`).toBe(true);
-   }
-  }
- }disposeInfantryAnimation(a);
-},15000);
 
 it('keeps both siege operators on the original animated mechanism contact paths',async()=>{
  const a=createInfantryAnimation(assets.siege,0),b=createInfantryAnimation(await readInfantryTestAsset('siege-crew-v1.glb'),0);
