@@ -103,8 +103,10 @@ Style: high-quality art-directed realistic material texture work suitable for a 
 
 ### 刀盾兵专用握姿样板（2026-10-11，待用户自然度确认）
 
-- `infantry-sword-shield-v2.glb` 从保留的 `infantry-rigged-v1.blend` 制作，继续使用用户 Tripo 单兵的身体、衣甲及内嵌 PBR 贴图。只在原皮肤手部区域替换 109 个面片，加入四指包握、拇指对握与圆润指尖；新手部 UV 取原手部贴图区域，保持单材质。旧源文件及旧 GLB 不覆盖；新可编辑源 `art/military/infantry-sword-shield-v2.blend`，复现脚本 `scripts/map-sample/build_sword_shield_grip.py`。
-- 最终 9,899 三角面、31 个骨骼、5,099,820 字节；较旧骨架只增加 GripSword／GripShield 两个非变形挂点，没有增加指节骨骼。刀柄竖握、盾后横把横握分别制作，掌面与前臂旋转协调；Idle 2.4 秒、Walk 1.2 秒沿用原下肢步态，新增 Attack 2.4 秒展示准备、挥砍、收势与防御。资产烘焙后播放，不是动作捕捉或独立伤害来源。
+- `infantry-sword-shield-v2.glb` 从保留的 `infantry-rigged-v1.blend` 制作，继续使用用户 Tripo 单兵的身体、衣甲及内嵌 PBR 贴图。局部替换原手部与接缝 119 个面片，加入四指包握、拇指对握与圆润指尖；新手部 UV 取原手部贴图区域，皮肤独立使用非金属材质，与原衣甲共两组材质。旧源文件及旧 GLB 不覆盖；新可编辑源 `art/military/infantry-sword-shield-v2.blend`，复现脚本 `scripts/map-sample/build_sword_shield_grip.py`。
+- 修订后 11,709 三角面、33 个骨骼、5,186,196 字节；较旧骨架增加 GripSword／GripShield 两个非变形挂点与两根 ForearmTwist 变形骨，没有增加指节骨骼。刀柄竖握、盾后横把横握分别制作，掌面与前臂旋转协调；Idle 2.4 秒、Walk 1.2 秒沿用原下肢步态，新增 Attack 2.4 秒展示准备、挥砍、收势与防御。资产烘焙后播放，不是动作捕捉或独立伤害来源。
 - 只有刀盾兵及未详部队的通用刀盾代表采用新资产；长矛、弓及骑兵保留原实现。源能力由实际握持挂点识别；新资产不再执行运行时卷指或持械 IK 覆盖，武器刚性挂于各自固定挂点。资源按实际需要载入，保留独立骨骼、共享几何／材质及释放规则。
 - QA 使用游戏同一实现导出的真实变形网格及浏览器实际 GLB。67 项局部检查覆盖原身体／面部／衣甲三角面及朝向、实际刀柄／盾把接触、刀盾代表线段穿插、三个状态完整循环、切换与暂停、腕部中立范围、攻击相位错开、异步挂载和地图点击／朝向。代表线段与接触采样不等同于全部面片的连续碰撞证明。实机同镜头对照 `.cache/grip-v2/full-comparison.png`、`hand-comparison.png`、`shield-comparison.png`；手形仍为固定握持，最终自然度由用户确认。
 - 离线导出：`CARRY_PREVIEW=1 CARRY_BASELINE=1 CARRY_OUT=.cache/grip-v2/before npx vitest run scripts/map-sample/export_carry_preview.test.mjs`；新资产省略 CARRY_BASELINE 并改输出路径。保持旧资产用于对照，未通过的中间模型未作为最终结果。
+- 2026-10-11 返修：纠正肘／腕骨中心偏离源网格、袖口错误权重与护腕背面外翻；局部收口并添加布袖内衬，腕掌／指部合并为每手一个连续表面。70 项局部检查通过，新增手部连通性、金属护腕边长变化小于 5%、三状态袖口中心距腕点小于 5.5 cm 的采样检查。旧检查只验证挂点与腕轴，不能证明自然度。最新实机对照是上轮样板与返修资产，截图 `.cache/grip-v2/revised-hand.png`；近景手部仍是简化建模，待用户最终确认。
+- 返修构建边界：工作区随后出现并行的 UI／音频／worker 修改，全项目构建被这些文件的类型错误阻断；未覆盖其内容。在临时目录导出本轮起点 `9014685`，覆盖最终兵模与测试后，`npm run build` 和 815 项资源校验通过（含 768 高程块）。该检查证明本轮修改可构建，不代表其他并行工作已通过。记录 `.cache/grip-v2/revise-regression.log`、`isolated-build.log`；未执行全量或长局测试。

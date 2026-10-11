@@ -41,3 +41,26 @@ it('keeps wrists neutral and the pose stable through state transitions and pause
 it('staggers authored sword attacks without changing grip alignment',()=>{
  const a=createInfantryAnimation(asset,1),b=createInfantryAnimation(asset,8);for(let i=0;i<35;i++){updateInfantryAnimation(a,'battle',i/60,true);updateInfantryAnimation(b,'battle',i/60,true);}expect(a.root.getObjectByName('GripSword')!.getWorldPosition(new Vector3()).distanceTo(b.root.getObjectByName('GripSword')!.getWorldPosition(new Vector3()))).toBeGreaterThan(.03);disposeInfantryAnimation(a);disposeInfantryAnimation(b);
 });
+it('keeps each replacement hand a single connected skin surface',()=>{
+ const components:number[]=[];asset.scene.traverse(o=>{if(!(o instanceof SkinnedMesh))return;const joints=o.geometry.getAttribute('skinIndex'),weights=o.geometry.getAttribute('skinWeight');if(!Array.from({length:joints.count},(_,i)=>weights.getX(i)>.99&&o.skeleton.bones[joints.getX(i)].name.startsWith('Hand')).every(Boolean))return;
+  const p=o.geometry.getAttribute('position'),index=o.geometry.index!,adj=new Map<string,Set<string>>(),key=(i:number)=>[p.getX(i),p.getY(i),p.getZ(i)].map(n=>n.toFixed(5)).join(',');
+  for(let i=0;i<index.count;i+=3){const keys=[0,1,2].map(j=>key(index.getX(i+j)));for(const a of keys){if(!adj.has(a))adj.set(a,new Set());keys.forEach(b=>adj.get(a)!.add(b));}}
+  const seen=new Set<string>();for(const a of adj.keys()){if(seen.has(a))continue;const stack=[a];let size=0;while(stack.length){const b=stack.pop()!;if(seen.has(b))continue;seen.add(b);size++;for(const c of adj.get(b)!)if(!seen.has(c))stack.push(c);}components.push(size);}
+ });expect(components).toHaveLength(2);expect(Math.min(...components)).toBeGreaterThan(100);
+});
+it('keeps the metal forearm cuffs rigid during all authored actions',()=>{
+ const a=createInfantryAnimation(asset,0),surfaces:{mesh:SkinnedMesh;edges:[number,number,number][]}[]=[];
+ a.root.traverse(o=>{if(!(o instanceof SkinnedMesh))return;const p=o.geometry.getAttribute('position'),index=o.geometry.index!,edges:[number,number,number][]=[];
+  for(let i=0;i<index.count;i+=3){for(let j=0;j<3;j++){const u=index.getX(i+j),v=index.getX(i+(j+1)%3),from=new Vector3().fromBufferAttribute(p,u),to=new Vector3().fromBufferAttribute(p,v);if([from,to].every(q=>q.y>.89&&q.y<1.005&&Math.abs(q.x)>.32)&&from.distanceTo(to)>.006)edges.push([u,v,from.distanceTo(to)]);}}if(edges.length)surfaces.push({mesh:o,edges});
+ });expect(surfaces.reduce((n,s)=>n+s.edges.length,0)).toBeGreaterThan(50);
+ for(const state of ['garrison','marching','battle'] as const)for(let f=0;f<72;f++){
+  updateInfantryAnimation(a,state,f/30+(['garrison','marching','battle'].indexOf(state)*3),true);a.root.updateMatrixWorld(true);
+  for(const {mesh,edges} of surfaces){mesh.skeleton.update();const p=mesh.geometry.getAttribute('position');for(const [u,v,length] of edges){const from=mesh.applyBoneTransform(u,new Vector3().fromBufferAttribute(p,u)),to=mesh.applyBoneTransform(v,new Vector3().fromBufferAttribute(p,v)),ratio=from.distanceTo(to)/length;expect(ratio,`${state}: sleeve edge stretch`).toBeLessThan(1.05);expect(ratio,`${state}: sleeve edge collapse`).toBeGreaterThan(.95);}}
+ }disposeInfantryAnimation(a);
+},15000);
+it('keeps the original cuff ends surrounding the animated wrists',()=>{
+ const a=createInfantryAnimation(asset,0);const cuffs:{mesh:SkinnedMesh;ids:number[];side:string}[]=[];
+ a.root.traverse(o=>{if(!(o instanceof SkinnedMesh))return;const p=o.geometry.getAttribute('position'),indices=o.geometry.getAttribute('skinIndex');if(o.skeleton.bones[indices.getX(0)].name.startsWith('Hand'))return;for(const side of ['L','R']){const ids:number[]=[];for(let i=0;i<p.count;i++)if(p.getY(i)>.879&&p.getY(i)<.921&&(side==='L'?p.getX(i)>.33:p.getX(i)<-.33))ids.push(i);if(ids.length)cuffs.push({mesh:o,ids,side});}});expect(cuffs).toHaveLength(2);
+ for(let f=0;f<240;f++){updateInfantryAnimation(a,f<80?'garrison':f<160?'marching':'battle',f/30,true);a.root.updateMatrixWorld(true);for(const {mesh,ids,side} of cuffs){mesh.skeleton.update();const p=mesh.geometry.getAttribute('position'),center=new Vector3();for(const i of ids)center.add(mesh.applyBoneTransform(i,new Vector3().fromBufferAttribute(p,i)).applyMatrix4(mesh.matrixWorld));center.divideScalar(ids.length);const wrist=mesh.skeleton.bones.find(b=>b.name.replaceAll('.','')==='Hand'+side)!.getWorldPosition(new Vector3());expect(center.distanceTo(wrist),side+' cuff to wrist').toBeLessThan(.055);}}
+ disposeInfantryAnimation(a);
+});
