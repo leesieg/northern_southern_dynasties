@@ -2,7 +2,7 @@ import {Color,ShaderMaterial,Vector4} from 'three';
 import {WORLD_KM,ORIGIN} from './geography';
 /** Opaque unmodeled territory; the strategic painting is decorative, not game geography. */
 export function hiddenTerrainMaterial(){
- return new ShaderMaterial({transparent:true,depthWrite:false,depthTest:false,toneMapped:false,uniforms:{
+ return new ShaderMaterial({transparent:true,depthWrite:false,depthTest:false,uniforms:{
   coverage:{value:null},parchment:{value:null},paperExtent:{value:new Vector4()},strategic:{value:0},fogColor:{value:new Color('#bdc6c1')},
  },vertexShader:`varying vec2 ground;
  void main(){ground=position.xz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
@@ -14,9 +14,8 @@ export function hiddenTerrainMaterial(){
   float cloud=.5+.22*sin(ground.x*.032+sin(ground.y*.021))+.18*cos(ground.y*.049);
   float alpha=1.-smoothstep(.05,.7,known);if(alpha<.002)discard;
   vec3 paper=texture2D(parchment,(uv-paperExtent.xy)/paperExtent.zw).rgb;
-  // Preserve the painting's ink contrast. Mixing luminance into a constant wash
-  // erased fine mountains and foliage at atlas scale; desaturate without flattening it.
-  float ink=dot(paper,vec3(.2126,.7152,.0722));paper=mix(vec3(ink),paper,.25);
+  // A warm ink wash keeps the decorative painting subdued beside known territory.
+  float ink=dot(paper,vec3(.2126,.7152,.0722));paper=vec3(.77,.69,.51)*mix(.92,ink,.30);
   gl_FragColor=vec4(mix(fogColor*(.91+cloud*.15),paper,strategic),alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
