@@ -52,7 +52,40 @@ def arm_pose(rig,rest,world,prefix,side,wrist,handle_axis,free_wrist=False,forwa
  set_world(rig,rest,world,twist,cuff);rotation=rotation.copy();rotation.translation=wrist;set_world(rig,rest,world,hand,rotation)
 
 contact_history={}
-def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None):
+fixed_arms={}
+def wrist_only(rig,rest,world,side,delta,angle):
+ names=[n+'.'+side for n in ['UpperArm','Forearm','ForearmTwist','Hand']]
+ if side not in fixed_arms:fixed_arms[side]={n:delta.inverted()@world[n] for n in names}
+ for n in names:
+  pose=delta@fixed_arms[side][n]
+  if n.startswith('Hand.'):pose=pose@Matrix.Rotation(angle,4,'Z')
+  set_world(rig,rest,world,n,pose)
+
+def crew_wrists(rig,rest,prefix):
+ """A continuous skinned wrist bridges cuff and palm, even while loading."""
+ body=bpy.data.objects[prefix.rstrip('_')];material=next(m for m in body.data.materials if 'grip skin' in m.name)
+ face=next(p for p in body.data.polygons if body.data.materials[p.material_index]==material);uv=body.data.uv_layers.active.data[face.loop_start].uv.copy()
+ for side in ['L','R']:
+  hand=prefix+'Hand.'+side;cuff=prefix+'ForearmTwist.'+side;vertices=[];faces=[]
+  rings=[(-.12,.026),(-.08,.027),(-.04,.024),(.015,.022)]
+  for y,radius in rings:
+   for j in range(16):vertices.append(rest[hand]@Vector((radius*math.cos(math.tau*j/16),y,radius*.85*math.sin(math.tau*j/16))))
+  for i in range(3):
+   for j in range(16):faces.append((i*16+j,i*16+(j+1)%16,(i+1)*16+(j+1)%16,(i+1)*16+j))
+  mesh=bpy.data.meshes.new(prefix+'Wrist'+side);mesh.from_pydata(vertices,[],faces);mesh.materials.append(material);layer=mesh.uv_layers.new();colour=mesh.color_attributes.new(name='GripSkin',type='FLOAT_COLOR',domain='POINT')
+  for loop in layer.data:loop.uv=uv
+  for value in colour.data:value.color=(1,1,1,1)
+  for p in mesh.polygons:p.use_smooth=True
+  obj=bpy.data.objects.new(prefix+'Wrist'+side,mesh);bpy.context.scene.collection.objects.link(obj);obj.parent=rig
+  groups={n:obj.vertex_groups.new(name=n) for n in [hand,cuff]}
+  for i,(y,_) in enumerate(rings):
+   weight=smooth(-.12,-.04,y)
+   for j in range(16):
+    if weight:groups[hand].add([i*16+j],weight,'REPLACE')
+    if weight<1:groups[cuff].add([i*16+j],1-weight,'REPLACE')
+  obj.modifiers.new('Wrist connection','ARMATURE').object=rig
+
+def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None,outward=None,bow_carry=False):
  """Keep the elbow on its anatomical side; fit palm roll, not elbow roll.
 
  The search is offline only. The exported clips contain ordinary keyframes.
@@ -71,6 +104,17 @@ def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None):
   angle=math.atan2(axis.dot(preferred.cross(desired)),preferred.dot(desired));angle=max(-math.pi/3,min(math.pi/3,angle));bend=Matrix.Rotation(angle,3,axis)@preferred;elbow=shoulder+axis*along+bend*height
   forward=(wrist-elbow).normalized();score=(1-forward.dot(fore_target))*12+abs(distance-d)*100+.15*(1-bend.dot(preferred))
   if palm_hint is not None:score+=(1-y.dot(palm_hint.normalized()))*.8
+  if outward is not None:score+=max(0,.025-(elbow-shoulder).dot(outward.normalized()))*100
+  if bow_carry:
+   score+=max(0,math.cos(math.radians(29.5))-forward.dot(y))*5000
+   score+=max(0,.065-(shoulder-goal).dot(z))*200
+   # Keep the carried string outside both arm segments, not merely the wrist.
+   for i in range(17):
+    string=goal-y*.232+x*(.44*(i/8-1))
+    for start,end in [(shoulder,elbow),(elbow,wrist)]:
+     segment=end-start;u=max(0,min(1,(string-start).dot(segment)/segment.length_squared))
+     clearance=(string-start-segment*u).length
+     score+=max(0,.07-clearance)*50
   if side in contact_history:
    change=1-y.dot(contact_history[side]);score+=change*.4+max(0,change-(1-math.cos(.16)))*200
   return score,(elbow,wrist,x,y,z)
@@ -97,9 +141,18 @@ def build_archer_bow(rig,rest):
    for e in p.link_edges:
     q=e.other_vert(p)
     if q not in seen:seen.add(q);todo.append(q)
-  if max(p.co.z for p in part)-min(p.co.z for p in part)>.8 and max(p.co.y for p in part)-min(p.co.y for p in part)<.02:remove.extend(part)
+  span=max(p.co.y for p in part)-min(p.co.y for p in part)
+  full_string=max(p.co.z for p in part)-min(p.co.z for p in part)>.8 and span<.02
+  # The scanned string also contains disconnected flakes in its flat plane.
+  # Preserve the curved limbs and tip bindings outside the central string span.
+  string_flake=span<.012 and min(p.co.y for p in part)>-.24 and max(p.co.y for p in part)<-.225 and max(abs(p.co.z) for p in part)<.46
+  if full_string or string_flake:remove.extend(part)
  if not remove:raise ValueError('Original bowstring components not found')
- bmesh.ops.delete(bm,geom=remove,context='VERTS');bm.to_mesh(bow.data);bm.free()
+ bmesh.ops.delete(bm,geom=remove,context='VERTS')
+ # Some flat string triangles share vertices with the end bindings.
+ flakes=[f for f in bm.faces if all(-.24<v.co.y<-.225 for v in f.verts) and any(abs(v.co.z)<.42 for v in f.verts)]
+ bmesh.ops.delete(bm,geom=flakes,context='FACES')
+ bm.to_mesh(bow.data);bm.free()
  # Weapon source: Z up, -Y towards the string. Palm X is up, Y points at target.
  basis=Matrix(((0,0,1,0),(0,1,0,0),(-1,0,0,0),(0,0,0,1)))
  transform=rest['Hand.L']@Matrix.Translation(GRIP)@basis;heights=[v.co.z for v in bow.data.vertices];bow.data.transform(transform);bow.parent=rig;bow.matrix_world=Matrix.Identity(4)
@@ -209,6 +262,8 @@ def build(kind,base,out):
  bpy.ops.object.mode_set(mode='OBJECT');rest={b.name:b.matrix_local.copy() for b in rig.data.bones}
  if kind=='archer':
   build_archer_bow(rig,rest);rest={b.name:b.matrix_local.copy() for b in rig.data.bones}
+ if kind=='siege':
+  for prefix in prefixes:crew_wrists(rig,rest,prefix)
  for p in rig.pose.bones:p.rotation_mode='QUATERNION'
  rig.animation_data.action=None
  for track in list(rig.animation_data.nla_tracks):rig.animation_data.nla_tracks.remove(track)
@@ -216,6 +271,7 @@ def build(kind,base,out):
  actions={};rig['authoredCarry']='military-v2'
  for name,last in [('Idle',len(samples['Idle'])),('Walk',len(samples['Walk'])),('Attack',len(samples.get('Attack',samples['Idle'])))]:
   contact_history.clear()
+  fixed_arms.clear()
   if kind=='archer' and name=='Attack':last=145
   action=bpy.data.actions.new(name);actions[name]=action;rig.animation_data.action=action
   for f in range(1,last+1):
@@ -226,9 +282,9 @@ def build(kind,base,out):
     for p in rig.pose.bones:
      if p.name.startswith(tuple(prefix+n for n in ARM)):p.matrix_basis=Matrix.Identity(4)
    world=matrices(rig,rest)
-   if kind=='archer' and name=='Attack':
-    # Side-on archery stance, with the arrow still aimed along the army's front.
-    facing=world['Head'].copy();hips=world['Hips'];turn=Matrix.Translation(hips.translation)@Matrix.Rotation(-1.15,4,'Z')@Matrix.Translation(-hips.translation)
+   if kind in ['archer','spear'] and name=='Attack':
+    # Side-on stance leaves the weapon outside the torso while facing the front.
+    facing=world['Head'].copy();hips=world['Hips'];turn=Matrix.Translation(hips.translation)@Matrix.Rotation(-1.15 if kind=='archer' else -.90,4,'Z')@Matrix.Translation(-hips.translation)
     set_world(rig,rest,world,'Hips',turn@hips);world=matrices(rig,rest);facing.translation=world['Head'].translation;set_world(rig,rest,world,'Head',facing);world=matrices(rig,rest)
    for prefix in prefixes:
     chest=prefix+'Chest';delta=world[chest]@rest[chest].inverted();mounted=kind in ['lightHorse','heavyHorse'];offset=Vector((0,.06,.62)) if mounted else Vector()
@@ -272,19 +328,23 @@ def build(kind,base,out):
       for _ in range(5):
        correction=goal-world[prefix+'Hand.'+side]@GRIP;wrist+=correction
        arm_pose(rig,rest,world,prefix,side,wrist,handle,free_wrist,forward_elbow)
-   if name=='Attack' and kind in ['spear','heavyHorse','archer']:
+   if name=='Attack' and kind in ['spear','lightHorse','heavyHorse','archer']:
     delta=world['Chest']@rest['Chest'].inverted();orientation=delta.to_3x3()
     thrust=smooth(.18,.36,t)*(1-smooth(.43,.76,t))
     if kind=='spear':
-     rear=Vector((-.02,-.04-.05*thrust,1.15));axis=Vector((.13,-.27,.04)).normalized()
+     rear=Vector((-.25,-.18-.03*thrust,1.35));axis=Vector((.85,-.52,.10)).normalized()
      for side,goal in [('R',rear),('L',rear+axis*.287)]:
       contact_pose(rig,rest,world,side,delta@goal,orientation@axis,orientation@Vector((.35 if side=='L' else -.35,-.65,-1)))
     elif kind=='heavyHorse':
      contact_pose(rig,rest,world,'R',delta@Vector((-.38,-.055-.075*thrust,1.93)),orientation@Vector((0,-1,.08)),orientation@Vector((-.35,-.65,-1)))
+     wrist_only(rig,rest,world,'R',delta,.05*math.sin(math.tau*t))
+    elif kind=='lightHorse':
+     wrist_only(rig,rest,world,'R',delta,.12*math.sin(math.tau*t))
     else:
-     raise_bow=smooth(.05,.32,t)*(1-smooth(.72,.95,t));draw=raise_bow;release=smooth(.58,.61,t)
-     direction=Vector((.94,-.342,0)).normalized();grip=Vector((.35,-.33,1.38)).lerp(Vector((.61,-.33,1.38)),raise_bow)
-     contact_pose(rig,rest,world,'L',delta@grip,orientation@Vector((0,0,1)),orientation@Vector((-1,.2,-.35)),orientation@direction)
+     raise_bow=smooth(.05,.32,t)*(1-smooth(.72,.95,t));draw=.7+.3*raise_bow;release=smooth(.58,.61,t)*(1-smooth(.90,.97,t))
+     direction=Vector((.94,-.342,0)).normalized();grip=Vector((.61,-.33,1.38))
+     contact_pose(rig,rest,world,'L',delta@grip,orientation@Vector((0,0,1)),orientation@Vector((-1,.2,-.35)),orientation@direction,orientation@Vector((1,0,0)))
+     wrist_only(rig,rest,world,'L',delta,.015*math.sin(math.tau*t))
      # Use the actual left palm frame, including its small natural wrist roll.
      left=world['Hand.L'];direction=left.to_3x3()@Vector((0,1,0));grip=left@GRIP
      goal=grip-direction*(.232+.38*draw)
@@ -299,7 +359,7 @@ def build(kind,base,out):
      set_world(rig,rest,world,'BowArrow',arrow)
    elif kind=='archer':
     delta=world['Chest']@rest['Chest'].inverted();orientation=delta.to_3x3()
-    contact_pose(rig,rest,world,'L',delta@Vector((.35,-.33,1.25)),orientation@Vector((0,0,1)),orientation@Vector((-1,.2,-.35)),orientation@Vector((.94,-.342,0)))
+    contact_pose(rig,rest,world,'L',delta@Vector((.56,-.20,1.12)),orientation@Vector((0,0,1)),orientation@Vector((1,.1,-.35)),orientation@Vector((.94,-.342,0)),orientation@Vector((1,0,0)),bow_carry=True)
     left=world['Hand.L']
     for joint,z in [('BowNock',0),('BowUpper',.44),('BowLower',-.44)]:
      pose=left.copy();pose.translation=left@Vector((z,.064-.232,.009));set_world(rig,rest,world,joint,pose)

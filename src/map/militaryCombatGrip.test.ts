@@ -1,12 +1,55 @@
 import {beforeAll,expect,it} from 'vitest';
-import {DoubleSide,Quaternion,Raycaster,SkinnedMesh,Vector3} from 'three';
+import {Box3,DoubleSide,Matrix4,Quaternion,Raycaster,SkinnedMesh,Vector3} from 'three';
 import {readInfantryTestAsset} from './infantryAsset.testSupport';
 import {createInfantryAnimation,disposeInfantryAnimation,updateInfantryAnimation} from './RiggedInfantry';
 import {attachMilitaryEquipment} from './MilitaryEquipment';
 
 type Asset=Awaited<ReturnType<typeof readInfantryTestAsset>>;
-let spear:Asset,archer:Asset,horse:Asset,kit:Asset;
-beforeAll(async()=>{[spear,archer,horse,kit]=await Promise.all(['spear-infantry-v2.glb','archer-infantry-v2.glb','heavy-cavalry-v2.glb','weapons-v1.glb'].map(readInfantryTestAsset));});
+let spear:Asset,archer:Asset,horse:Asset,light:Asset,crew:Asset,kit:Asset;
+beforeAll(async()=>{[spear,archer,horse,light,crew,kit]=await Promise.all(['spear-infantry-v2.glb','archer-infantry-v2.glb','heavy-cavalry-v2.glb','light-cavalry-v2.glb','siege-crew-v2.glb','weapons-v1.glb'].map(readInfantryTestAsset));});
+
+it.each(['archer','horse','light'] as const)('%s keeps the weapon elbow and forearm fixed to the chest during combat',kind=>{
+ const a=createInfantryAnimation({archer,horse,light}[kind],0);a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);const side=kind==='archer'?'L':'R',reference=new Map<string,Matrix4>();let first:Quaternion|undefined,turn=0;
+ for(let f=0;f<=120;f++){
+  a.mixer.setTime(a.attack!.getClip().duration*f/120);a.root.updateMatrixWorld(true);const inverse=a.root.getObjectByName('Chest')!.matrixWorld.clone().invert();
+  for(const n of ['UpperArm','Forearm','ForearmTwist']){const name=n+side,pose=new Matrix4().multiplyMatrices(inverse,a.root.getObjectByName(name)!.matrixWorld);if(!f)reference.set(name,pose.clone());else pose.elements.forEach((v,i)=>expect(v,`${name} ${f}`).toBeCloseTo(reference.get(name)!.elements[i],4));}
+  const hand=new Matrix4().multiplyMatrices(inverse,a.root.getObjectByName('Hand'+side)!.matrixWorld),q=new Quaternion().setFromRotationMatrix(hand);first??=q.clone();turn=Math.max(turn,q.angleTo(first));
+ }expect(turn).toBeGreaterThan(.01);disposeInfantryAnimation(a);
+});
+
+it('carries the bow with its marching elbow outside the shoulder',()=>{
+ const a=createInfantryAnimation(archer,0);a.idle.setEffectiveWeight(0);a.walk.setEffectiveWeight(1);
+ for(let f=0;f<72;f++){
+  a.mixer.setTime(a.walk.getClip().duration*f/72);a.root.updateMatrixWorld(true);const inverse=a.root.getObjectByName('Chest')!.matrixWorld.clone().invert(),p=(name:string)=>a.root.getObjectByName(name)!.getWorldPosition(new Vector3()).applyMatrix4(inverse);
+  expect(p('ForearmL').x-p('UpperArmL').x,`elbow at ${f}`).toBeGreaterThan(.015);
+ }disposeInfantryAnimation(a);
+});
+
+it('keeps the full spear, including its butt, outside the body during combat',()=>{
+ const a=createInfantryAnimation(spear,0);attachMilitaryEquipment(a.root,kit,'spear');a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);const box=new Box3().setFromObject(kit.scene.getObjectByName('Spear')!),body:SkinnedMesh[]=[];
+ a.root.traverse(o=>{if(o instanceof SkinnedMesh){body.push(o);for(const m of Array.isArray(o.material)?o.material:[o.material])m.side=DoubleSide;}});const ray=new Raycaster();
+ for(let f=0;f<=72;f++){
+  a.mixer.setTime(a.attack!.getClip().duration*f/72);a.root.updateMatrixWorld(true);body.forEach(o=>{o.skeleton.update();o.computeBoundingBox();o.computeBoundingSphere();});const weapon=a.root.getObjectByName('Equipment Spear')!;
+  for(const offset of [-.012,0,.012]){
+   const start=new Vector3(offset,box.min.y,0).applyMatrix4(weapon.matrixWorld),end=new Vector3(offset,box.max.y,0).applyMatrix4(weapon.matrixWorld),d=end.sub(start);ray.set(start,d.clone().normalize());ray.far=d.length();
+   for(const hit of ray.intersectObjects(body,false)){const m=hit.object as SkinnedMesh,indices=m.geometry.getAttribute('skinIndex');expect([hit.face!.a,hit.face!.b,hit.face!.c].every(i=>/^Hand[LR]$/.test(m.skeleton.bones[indices.getX(i)].name)),`shaft intersects body at ${f}`).toBe(true);}
+  }
+ }disposeInfantryAnimation(a);
+});
+
+it('keeps all four siege wrist bridges joined to cuff and palm in every clip',()=>{
+ const a=createInfantryAnimation(crew,0),bridges:SkinnedMesh[]=[];a.root.traverse(o=>{if(o instanceof SkinnedMesh&&/Crew[LR]_Wrist[LR]/.test(o.name))bridges.push(o);});expect(bridges).toHaveLength(4);
+ for(const action of [a.idle,a.walk,a.attack!]){
+  [a.idle,a.walk,a.attack!].forEach(v=>v.setEffectiveWeight(v===action?1:0));
+  for(let f=0;f<=24;f++){
+   a.mixer.setTime(action.getClip().duration*f/24);a.root.updateMatrixWorld(true);
+   for(const bridge of bridges){bridge.skeleton.update();const prefix=bridge.name.slice(0,6),side=bridge.name.at(-1)!,hand=a.root.getObjectByName(prefix+'Hand'+side)!,inverse=hand.matrixWorld.clone().invert(),positions=bridge.geometry.getAttribute('position');let back=Infinity,front=-Infinity,maxRadius=0;
+    for(let i=0;i<positions.count;i++){const p=bridge.applyBoneTransform(i,new Vector3().fromBufferAttribute(positions,i)).applyMatrix4(bridge.matrixWorld).applyMatrix4(inverse);back=Math.min(back,p.y);front=Math.max(front,p.y);maxRadius=Math.max(maxRadius,Math.hypot(p.x,p.z));}
+    expect(back).toBeLessThan(-.08);expect(front).toBeGreaterThan(.01);expect(maxRadius).toBeLessThan(.065);
+   }
+  }
+ }disposeInfantryAnimation(a);
+});
 
 it('keeps both spear palms on the same shaft throughout the thrust and recovery',()=>{
  const a=createInfantryAnimation(spear,0);attachMilitaryEquipment(a.root,kit,'spear');a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);
@@ -26,6 +69,15 @@ it('bends the bow limbs without stretching the string and aims the nocked arrow 
  }disposeInfantryAnimation(a);
 });
 
+it('removes disconnected old string flakes from the authored bow mesh',()=>{
+ const bow=archer.scene.getObjectByName('AuthoredBow') as SkinnedMesh,index=bow.skeleton.bones.findIndex(b=>b.name==='HandL'),positions=bow.geometry.getAttribute('position');expect(index).toBeGreaterThanOrEqual(0);
+ const points=Array.from({length:positions.count},(_,i)=>new Vector3().fromBufferAttribute(positions,i).applyMatrix4(bow.bindMatrix).applyMatrix4(bow.skeleton.boneInverses[index])),indices=bow.geometry.index!;
+ for(let i=0;i<indices.count;i+=3){
+  const triangle=[0,1,2].map(j=>points[indices.getX(i+j)]);
+  expect(triangle.every(p=>Math.abs(p.y+.168)<.007)&&triangle.some(p=>Math.abs(p.x)<.42),`old string triangle ${i/3}`).toBe(false);
+ }
+});
+
 it.each(['spear','archer','horse'] as const)('%s has continuous wrist and elbow motion, including the loop seam',kind=>{
  const a=createInfantryAnimation({spear,archer,horse}[kind],0);a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);
  const previous=new Map<string,{q:Quaternion;p:Vector3}>();
@@ -38,8 +90,8 @@ it.each(['spear','archer','horse'] as const)('%s has continuous wrist and elbow 
  }disposeInfantryAnimation(a);
 });
 
-it('keeps the moving bowstring clear of the body and bow arm through the cycle and transitions',()=>{
- const a=createInfantryAnimation(archer,0),body:SkinnedMesh[]=[];
+it.each([0,3,7])('keeps the moving bowstring clear of body and bow arm through the cycle and transitions (seed %s)',seed=>{
+ const a=createInfantryAnimation(archer,seed),body:SkinnedMesh[]=[];
  a.root.traverse(o=>{if(o instanceof SkinnedMesh&&o.name.startsWith('Infantry')){body.push(o);for(const m of Array.isArray(o.material)?o.material:[o.material])m.side=DoubleSide;}});expect(body.length).toBeGreaterThan(0);
  const ray=new Raycaster();
  function check(frame:number){
@@ -55,6 +107,7 @@ it('keeps the moving bowstring clear of the body and bow arm through the cycle a
  }
  a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);
  for(let f=0;f<=120;f++){a.mixer.setTime(a.attack!.getClip().duration*f/120);check(f);}
+ for(const [index,action] of [a.idle,a.walk].entries()){[a.idle,a.walk,a.attack!].forEach(v=>v.setEffectiveWeight(v===action?1:0));for(let f=0;f<=72;f++){a.mixer.setTime(action.getClip().duration*f/72);check(400+index*100+f);}}
  for(let f=0;f<180;f++){updateInfantryAnimation(a,f<45?'garrison':f<135?'battle':'marching',f/60,true);check(f+121);}
  disposeInfantryAnimation(a);
-},15000);
+},30000);
