@@ -51,6 +51,7 @@
 | 人物分层素材 | [生成提示词](art-direction/人物分层素材提示词.md) |
 | 生活重心插画 | [插画提示词](art-direction/lifestyle-art-prompts.md) |
 | 地形纹理 | [地图图集提示词](art-direction/terrain-atlas-prompt.txt) |
+| 建康独立美术样板（待确认） | [本地入口](http://127.0.0.1:5173/map-art-sample.html)，近／中／远景与舆图，未接入正式游戏 |
 | 山水目标 | [目标提示词](art-direction/landscape-target-prompt.txt)、[目标图](art-direction/landscape-target.png) |
 | 地图书房目标 | [目标说明](art-direction/atlas-study-target-v2.md)、[目标图](art-direction/atlas-study-target-v2.png) |
 | 肖像历史样板 | [A／B／C 方向](art-direction/portrait-studies/index.html)、[C 方向](art-direction/portrait-studies/style-c/index.html)、[人物组合](art-direction/portrait-studies/style-c/composer.html)、[人物名单](art-direction/portrait-studies/style-c/roster.html) |
@@ -76,7 +77,7 @@
 | --- | --- |
 | `README.md` | 面向玩家的首页、线上入口与开发入口 |
 | `AGENTS.md` | 项目协作、权限与工程规则 |
-| `index.html`、`map-sample.html` | 游戏与独立地图样板的 Vite 入口 |
+| `index.html`、`map-sample.html`、`map-art-sample.html` | 游戏、原地图样板与待确认的建康美术样板 Vite 入口 |
 | `package.json`、`package-lock.json` | 项目命令、依赖与锁定版本 |
 | `tsconfig.json`、`vite.config.ts` | TypeScript 与构建配置 |
 | `.gitignore` | 本地产物与敏感文件的忽略规则 |
