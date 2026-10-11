@@ -1,5 +1,5 @@
 import {readFileSync,readdirSync} from 'node:fs';
-import {join,basename,extname} from 'node:path';
+import {join,basename,extname,relative,sep} from 'node:path';
 import {createHash} from 'node:crypto';
 import {gzipSync,gunzipSync} from 'node:zlib';
 import {execFileSync} from 'node:child_process';
@@ -23,7 +23,23 @@ export function mapResourcesPlugin() {
  const build=revision+'-'+sourceHash.digest('hex').slice(0,12),manifest=JSON.stringify({version,build,entries});
  return {name:'campaign-map-resources',
   config:()=>({define:{__MAP_RESOURCE_MANIFEST__:manifest}}),
-  configureServer(server){server.middlewares.use((request,response,next)=>{
+  configureServer(server){
+   // The manifest and compressed payloads are one immutable snapshot. Rebuild
+   // both on source-asset edits; reloading a page alone would retain old bytes.
+   let restartTimer;
+   const events=['add','change','unlink'];
+   const changed=file=>{
+    const path=relative(publicRoot,file).split(sep).join('/');
+    if(!/^(art\/(campaign|military)\/|data\/land\.geojson$)/.test(path)||/\.(md|txt)$/.test(path))return;
+    clearTimeout(restartTimer);
+    restartTimer=setTimeout(()=>{
+     restartTimer=undefined;
+     void server.restart().catch(error=>server.config.logger.error(`Map asset refresh failed: ${error.message}`));
+    },1000);
+   };
+   for(const event of events)server.watcher.on(event,changed);
+   server.httpServer?.once('close',()=>{clearTimeout(restartTimer);for(const event of events)server.watcher.off(event,changed);});
+   server.middlewares.use((request,response,next)=>{
    const url=new URL(request.url??'/','http://localhost'),key=url.pathname.startsWith(server.config.base)?url.pathname.slice(server.config.base.length):url.pathname.replace(/^\//,'');
    if(key==='map-resources.json'){response.setHeader('Cache-Control','private, no-cache');response.setHeader('Content-Type','application/json');response.end(manifest);return;}
    const payload=assets.get(key);
