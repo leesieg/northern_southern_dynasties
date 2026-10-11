@@ -12,4 +12,12 @@ export function coarseReliefTexture(meta:DEMGrid,values:Float32Array){
 }
 export async function resourceTexture(path:string,signal?:AbortSignal,flipY=false){const response=await mapResource(path,{signal,priority:2}),bitmap=await createImageBitmap(await response.blob(),{colorSpaceConversion:'none',imageOrientation:flipY?'flipY':'none'}),texture=new Texture(bitmap);texture.colorSpace=SRGBColorSpace;texture.flipY=false;texture.needsUpdate=true;texture.addEventListener('dispose',()=>bitmap.close());return texture;}
 /** Preserve texture identity so already compiled shaders and actors see the new artwork. */
-export function installTexture(target:Texture,loaded:Texture){target.image=loaded.image;target.colorSpace=loaded.colorSpace;target.flipY=loaded.flipY;target.anisotropy=loaded.anisotropy;target.needsUpdate=true;target.addEventListener('dispose',()=>loaded.dispose());}
+export function installTexture(target:Texture,loaded:Texture){
+ // WebGL texture storage is immutable: a 1×1 placeholder cannot accept a full
+ // painting via texSubImage2D. Release storage before replacing its source,
+ // while retaining the Texture object referenced by shaders and room screens.
+ target.dispose();
+ target.source=loaded.source;target.colorSpace=loaded.colorSpace;target.flipY=loaded.flipY;target.anisotropy=loaded.anisotropy;target.needsUpdate=true;
+ const release=()=>{target.removeEventListener('dispose',release);loaded.dispose();};
+ target.addEventListener('dispose',release);
+}
