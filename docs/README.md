@@ -46,6 +46,7 @@
 
 | 内容 | 文档或图像 |
 | --- | --- |
+| 行动与后果界面目标 | [目标说明与提示词](art-direction/ck3-action-feedback-target.md)、[预期效果图](art-direction/ck3-action-feedback-target.png) |
 | 人物外观与遗传 | [人物形象与遗传设计](art-direction/人物形象与遗传设计.md) |
 | 人物分层素材 | [生成提示词](art-direction/人物分层素材提示词.md) |
 | 生活重心插画 | [插画提示词](art-direction/lifestyle-art-prompts.md) |

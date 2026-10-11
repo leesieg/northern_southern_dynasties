@@ -225,3 +225,12 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
 
 export function courtSalary(w:World,r:RealmId){return courtEnabled(w,r)?Object.values(courtOf(w,r)?.ministries??{}).filter(Boolean).length*4:0;}
 export function payCourtSalary(w:World,r:RealmId,paid:number){const c=courtOf(w,r);if(!c||!courtEnabled(w,r))return;const holders=Object.values(c.ministries).filter(Boolean);if(paid<holders.length*4){c.tension=cap(c.tension+5);log(w,r,'中央俸给不足：紧张 +5。');}for(let i=0;i<holders.length;i++)creditPersonalCoins(w,holders[i]!,Math.floor(paid/holders.length)+(i<paid%holders.length?1:0));}
+
+/** Navigation for existing catalyst labels; no independent pressure or forecast calculation. */
+export function courtCauseResponse(label:string){
+ if(label==='实际战线与续战负担'||label==='都城失守冲击')return 'wars';
+ if(label.startsWith('拟拨预算与月支出缺口')||label==='军队实际欠饷'||label==='收支与军饷平稳')return 'finance';
+ if(label==='地方失序与民食缺口'||label==='民食与地方秩序平稳')return 'local';
+ if(label==='集团分歧'||label==='集团支持'||label==='朝野离心')return 'groups';
+ return 'court';
+}

@@ -1,3 +1,4 @@
+import {PersonalContinuity} from './PersonalContinuity';
 import {afterCommand} from './actionFeedback';
 import {NobilityPanel} from './PoliticalIdentity';
 import type {PersonLifeEntry} from '../core/ongoing';
@@ -82,6 +83,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  {tab==='overview'&&<>
  {w.custody?.records[id]&&<CustodyPerson key={'custody-'+id} world={w} person={id} pending={pending} send={send} onPerson={onPerson}/>}
  <PersonOfficeSummary world={w} person={id} model={model} onPerson={onPerson} onCity={onCity} onOffice={()=>onCourtPerson(id)}/>
+ {self&&!deceased&&w.realm&&<PersonalContinuity world={w} unappointed={!model.office} onEstate={onEstate} onRelations={()=>onTab('relations')} onOffice={()=>onCourtPerson(id)} onPerson={onPerson}/>}
  {!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}
  <LifeDetails world={w} id={lifeId} entry={lifeEntry?.person===id?lifeEntry:null} pending={pending} send={send}/>
  {self&&w.social&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson} section="self"/>}
@@ -104,7 +106,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  </ActionDialog>}
  </div>
  <footer className="person-dossier-footer">
-  {self?<>{w.realm&&<CommandButton label="查看经济" icon="coins" hint="查看本人财产、收入与支出。" onClick={onEconomy}/>}<CommandButton label="家族庄园" icon="estate" hint="查看庄园与营建。" onClick={onEstate}/></>:canInteract&&<CommandButton label="人物互动" icon="gregarious" hint={'与'+name+'交往、议婚或办理委任。'} onClick={()=>onTab('interaction')}/>}
+  {self?<>{w.realm&&<CommandButton label="查看经济" icon="coins" hint="查看本人财产、收入与支出。" onClick={onEconomy}/>}{(tab!=='overview'||!!model.office||deceased||!w.realm)&&<CommandButton label="家族庄园" icon="estate" hint="查看庄园与营建。" onClick={onEstate}/>}</>:canInteract&&<CommandButton label="人物互动" icon="gregarious" hint={'与'+name+'交往、议婚或办理委任。'} onClick={()=>onTab('interaction')}/>}
   {model.site&&!deceased&&<CommandButton label="地图定位" icon="world" hint={'定位'+name+'的'+(model.traveling?'当前途经地。':'驻地。')} onClick={()=>onLocate(model.site!)}/>}
  </footer>
  </div>

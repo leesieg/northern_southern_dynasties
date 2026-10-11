@@ -40,7 +40,7 @@ import {playerRealm,capital,realmForecast,type RealmId} from '../core/realm';
 import {retinueMembers} from '../core/retinue';
 import {ministryIds,ministries,phases,type MinistryId} from '../data/court';
 import {territoryNodes} from '../data/territorialHierarchy';
-import {appointmentEvaluation} from '../core/appointmentRules';
+import {appointmentEvaluation,appointmentExplanation} from '../core/appointmentRules';
 import type {GameCommand,World} from '../core/types';
 import './staffChamber.css';
 import './courtAudience.css';
@@ -132,7 +132,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
       <div className="court-local-roster">{group.map(node=><article className="court-local-seat" key={node.id}><header><strong>{territoryNodes[node.territory!].name}</strong><HoverHint label="查看辖区" content={territoryNodes[node.territory!].name}><button className="court-icon-button" aria-label={'查看'+territoryNodes[node.territory!].name} onClick={()=>onTerritory(node.territory!)}><ArtIcon name="world" size={21}/></button></HoverHint></header><LocalOfficeSeat world={w} territory={node.territory!} realm={realm} pending={pending} send={send} onPerson={onPerson}/></article>)}{!group.length&&<p className="court-empty">此范围没有已录席位</p>}</div>
      </section>;})}</div>
     </section>}
-    {active==='situation'&&<SituationPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson} onTerritory={onTerritory} onService={onService} embedded/>}
+    {active==='situation'&&<SituationPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson} onTerritory={onTerritory} onService={onService} onFinance={()=>onTab('finance')} onCourt={()=>onTab('central')} embedded/>}
     {active==='government'&&<GovernancePolicyPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson} onTerritory={onTerritory} onService={onService}/>}
     {active==='finance'&&<div className="court-finance-desk">{own?<>
      <section className="court-scroll-pane"><CourtTreasuryPanel world={w} compact pending={pending} send={send} onPerson={onPerson} initialTab={treasuryTab}/></section>
@@ -156,7 +156,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
   {tab==='person'&&own&&<ActionDialog title={politicalName(person,w)+' · 官爵与任职'} onClose={()=>onTab('central')} cancelLabel="返回朝会" actions={null}><div className="court-person-record"><NobilityPanel world={w} realm={realm} person={person} pending={pending} send={send} onPerson={onPerson}/>{person===id&&<ResignationPanel world={w} pending={pending} send={send}/>}<OfficeHierarchy world={w} person={person} onPerson={onPerson}/><LocalCareer world={w} person={person} send={send} pending={pending} onPerson={onPerson}/><ServiceProfile world={w} person={person} onOpen={()=>onService()}/></div></ActionDialog>}
   {office&&command&&own&&<PersonSelectionDialog world={w} context={{realm,site:capital(realm,w)}} title={(executive?'任命 · ':'请任 · ')+ministries[office].name} value={executive?candidate:id} onSelect={setCandidate} onClose={closeOffice} pending={pending}
    description={<>{ministries[office].duty}；{ministries[office].effect}。任用评价按现行准则与通道；实际履职须到任、对口能力加经验达到 10。空缺常额补任不耗影响力；撤换或破格 15，破格另使支持 −3、紧张 +3。</>}
-   options={officeCandidates(w,realm).filter(p=>isAlive(w,p.id)&&(executive||p.id===id)).map(p=>{const q=appointmentEvaluation(w,realm,p.id,{ministry:office,site:capital(realm,w)},executives[0]);return {id:p.id,score:q.score,metric:'任用评价',detail:q.factors.map(f=>f.label+' '+f.value).join(' / ')+(q.trial?' · 任事试用':q.sponsored?' · 担保取用':q.ordinary?' · 常额任用':' · 需破格'),reason:courtReason(w,command.action==='appoint'?{...command,candidate:p.id}:command)};})}
+   options={officeCandidates(w,realm).filter(p=>isAlive(w,p.id)&&(executive||p.id===id)).map(p=>{const q=appointmentEvaluation(w,realm,p.id,{ministry:office,site:capital(realm,w)},executives[0]);return {id:p.id,score:q.score,metric:'任用评价',factors:q.factors,evaluationNote:appointmentExplanation(q),reason:courtReason(w,command.action==='appoint'?{...command,candidate:p.id}:command)};})}
    confirmLabel={(executive?'确认任命':'确认请任')+' · '+cost+' 影响力'} onConfirm={()=>{if(pending||courtReason(w,command))return;void afterCommand(send(command),closeOffice);}}>
    {court.ministries[office]&&dismiss&&executive&&<><HoverHint label="免职" content={courtReason(w,dismiss)||"预览撤免后果，确认消耗 15 影响力。"}><button disabled={pending||!!courtReason(w,dismiss)} onClick={()=>setDismissConfirm(true)}>免职 · 15 影响力</button></HoverHint>{dismissConfirm&&<ConfirmAction title="免职" detail="撤销此人的中央官职与履职增益。" confirmLabel="确认免职" danger pending={pending||!!courtReason(w,dismiss)} onCancel={()=>setDismissConfirm(false)} onConfirm={()=>{if(pending||courtReason(w,dismiss))return;void afterCommand(send(dismiss),closeOffice);}}/>}</>}
   </PersonSelectionDialog>}

@@ -15,7 +15,7 @@ import {familyById} from '../data/families';
 import {siteById} from '../data/scenario';
 import {personCulture} from '../core/culture';
 import {cultureNames} from '../data/cultures';
-export type PersonOption={id:string;score?:number;metric?:string;detail?:string;reason?:string|null};
+export type PersonOption={id:string;score?:number;metric?:string;detail?:string;factors?:{label:string;value:number}[];evaluationNote?:string;reason?:string|null};
 export type PersonSelectionContext={realm?:RealmId;site?:string};
 export type PersonFilters={available:boolean;sameRealm:boolean;sameSite:boolean;sex:'all'|'male'|'female';office:'all'|'vacant'|'held';minAge:string;maxAge:string;minMerit:string;ability:Ability;minAbility:string};
 export type PersonSort='recommended'|'score'|'merit'|'prestige'|'influence'|'diplomacy'|'martial'|'stewardship'|'intrigue'|'ageAsc'|'ageDesc'|'name';

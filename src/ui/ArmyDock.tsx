@@ -1,3 +1,4 @@
+import {ArmyIntent} from './ArmyIntent';
 import {afterCommand} from './actionFeedback';
 import {allPeople} from '../core/personRegistry';
 import {terrainSceneStyle} from './terrainScene';
@@ -59,6 +60,7 @@ export function ArmyDock({world:w,pending,send,onPerson,onLocate,selectedArmies,
   <DetailTabs label="军队详情" value={detailTab} onChange={setDetailTab} items={[{id:'supply',label:'军情',icon:'grain'},{id:'orders',label:'军令',icon:'army'},{id:'organization',label:'编制',icon:'person'},{id:'campaign',label:'战役',icon:'world'}]}/>
   <div className="army-inspected-body">{detailTab!=='organization'&&<RegimentCards army={inspected} world={w}/>}
   {detailTab==='campaign'&&<MilitaryCampaignPanel key={inspected.id} world={w} armyId={inspected.id} site={inspected.location} pending={pending} send={send} onPerson={onPerson}/>}
+  {detailTab==='supply'&&<ArmyIntent world={w} army={inspected}/>}
   {detailTab==='supply'&&<ArmySupplyStatus key={inspected.id} world={w} army={inspected} pending={pending} send={send}/>}
   {detailTab==='orders'&&<><div className="muster-chips">{armyCommander(w,inspected)===w.characterId&&(['balanced','attack','guard'] as const).map(stance=><button key={stance} disabled={pending} aria-pressed={(w.mobility?.stance??'balanced')===stance} onClick={()=>send({type:'mobility',action:'stance',stance})}>{({balanced:'稳步',attack:'进击',guard:'固守'})[stance]}</button>)}</div><MilitaryAftermathPanel world={w} army={inspected.id!} site={move?.site??inspected.location} pending={pending} send={send}/></>}
   {detailTab==='organization'&&<ArmyOrganizationPanel key={inspected.id} armyId={inspected.id} view="organize" world={w} site={inspected.location} pending={pending} send={send}/>}
