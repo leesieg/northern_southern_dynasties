@@ -1,0 +1,14 @@
+{
+  "zoom": 11,
+  "west": 1698,
+  "east": 1701,
+  "north": 830,
+  "south": 833,
+  "tileSize": 256,
+  "tiles": 9,
+  "format": "gzip little-endian int16 metres",
+  "source": "Mapzen Terrain Tiles on AWS / Terrarium z11",
+  "attribution": "SRTM and GMTED2010 courtesy USGS; ETOPO1 courtesy NOAA",
+  "rights": "https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
+  "note": "Modern measured terrain, about 65 m source sampling near Jiankang. Art sample only; not a reconstruction of 546 CE."
+}

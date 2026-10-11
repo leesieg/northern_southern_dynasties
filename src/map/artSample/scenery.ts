@@ -3,10 +3,12 @@ import {loadCampaignSampleAssets} from '../CampaignSampleAssets';
 import {seededRandom} from '../sample/geography';
 import {EXTENT,cityClearance,forestCover,palettes,plantable,type SampleSeason} from './layout';
 import type {SampleTerrain} from './terrain';
+import {createOutcrops} from './outcrops';
 
 export async function createScenery(terrain:SampleTerrain,report:(message:string)=>void){
  const assets=await loadCampaignSampleAssets(undefined,(n,total)=>report(`正在布置城郭与林地 · ${n} / ${total}`));
  const root=new Group(),trees:InstancedMesh[]=[],treeMaterials:MeshStandardMaterial[]=[],treeColors:Float32Array[]=[],random=seededRandom(5461011),dummy=new Object3D();
+ const outcrops=await createOutcrops(terrain);root.add(outcrops.root);
  for(const town of terrain.cities){
   const city=assets.city({capital:town.id==='jiankang',south:true,style:'jiangnan',county:town.id!=='jiankang',fort:town.id==='jiankang'?3:1,levels:town.id==='jiankang'?[2,2,2]:[1,1,1],project:-1,progress:0,besieged:false,color:'#627b5f'},'close');
   const bounds=new Box3().setFromObject(city),scale=9.5*town.scale/(bounds.max.x-bounds.min.x);
@@ -17,6 +19,7 @@ export async function createScenery(terrain:SampleTerrain,report:(message:string
  for(let z=-EXTENT.depth*.49;z<EXTENT.depth*.49;z+=1.02)for(let x=-EXTENT.width*.49;x<EXTENT.width*.49;x+=1.02){
   const px=x+(random()-.5)*1.2,pz=z+(random()-.5)*1.2,y=terrain.height(px,pz),cover=forestCover(px,pz,y);
   if(!plantable(px,pz,y,terrain.river(px,pz),terrain.cities)||random()>cover*.9)continue;
+  if(outcrops.placements.some(p=>Math.hypot(px-p.x,pz-p.z)<p.width*.45))continue;
   if(Math.abs(terrain.height(px+.5,pz)-terrain.height(px-.5,pz))>2.6)continue;
   placements.push({x:px,z:pz,y,size:1.3+random()*1.5,angle:random()*Math.PI*2,variant:Math.floor(random()*3),tint:.82+random()*.34});
  }
@@ -28,14 +31,6 @@ export async function createScenery(terrain:SampleTerrain,report:(message:string
   items.forEach((p,i)=>{dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.angle,0);dummy.scale.set(p.size*.9,p.size,p.size*.9);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);mesh.setColorAt(i,new Color().setScalar(p.tint));});
   mesh.castShadow=true;mesh.receiveShadow=true;mesh.computeBoundingSphere();trees.push(mesh);root.add(mesh);
  }
- // Small rock groups grow out of measured slopes instead of creating invented mountains.
- const rockGeometry=assets.rocks.clone();rockGeometry.computeBoundingBox();const rockBox=rockGeometry.boundingBox!;rockGeometry.translate(0,-rockBox.min.y,0);const rockScale=1/Math.max(1,rockBox.max.x-rockBox.min.x);rockGeometry.scale(rockScale,rockScale,rockScale);
- const rockMaterial=new MeshStandardMaterial({vertexColors:true,roughness:1}),rocks=new InstancedMesh(rockGeometry,rockMaterial,240);let rockCount=0;
- for(let i=0;i<2400&&rockCount<240;i++){
-  const x=(random()-.5)*EXTENT.width*.9,z=(random()-.5)*EXTENT.depth*.9,y=terrain.height(x,z),slope=Math.abs(terrain.height(x+1,z)-terrain.height(x-1,z));
-  if(y<2||slope<.5||terrain.river(x,z)<2||cityClearance(x,z,terrain.cities)<8)continue;
-  const size=1+random()*3;dummy.position.set(x,y-.12,z);dummy.rotation.set(0,random()*Math.PI*2,0);dummy.scale.set(size,size*(.6+random()*.6),size);dummy.updateMatrix();rocks.setMatrixAt(rockCount++,dummy.matrix);
- }rocks.count=rockCount;rocks.castShadow=true;rocks.receiveShadow=true;rocks.computeBoundingSphere();root.add(rocks);
  // Terrain-conforming, irregular field parcels, with their own banks and row detail.
  const fields=new Group(),fieldMaterials:MeshStandardMaterial[]=[];
  for(let k=0;k<5;k++){
@@ -74,9 +69,9 @@ export async function createScenery(terrain:SampleTerrain,report:(message:string
     const c=foliage?leaf.clone().multiplyScalar(.63+Math.min(1,g*2)*.6):new Color().setRGB(r,g,b);colors.setXYZ(i,c.r,c.g,c.b);}
    colors.needsUpdate=true;
   });
-  fieldMaterials.forEach((m,k)=>m.color.set(p.field).multiplyScalar(.77+k*.075));rockMaterial.color.set(p.rock);bankMaterial.color.set(value==='winter'?'#858d79':'#665e37');
+  fieldMaterials.forEach((m,k)=>m.color.set(p.field).multiplyScalar(.77+k*.075));outcrops.season(value);bankMaterial.color.set(value==='winter'?'#858d79':'#665e37');
  }
  season('autumn');
- function update(distance:number,paper:number){treeMaterials.forEach(m=>{m.opacity=1-paper*.93;});trees.forEach(t=>{t.visible=paper<.99;t.castShadow=distance<175;});fields.visible=paper<.9;rocks.visible=paper<.95;root.traverse(o=>{if(o instanceof Mesh&&!(o instanceof InstancedMesh))o.castShadow=distance<175;});}
+ function update(distance:number,paper:number){treeMaterials.forEach(m=>{m.opacity=1-paper*.93;});trees.forEach(t=>{t.visible=paper<.99;t.castShadow=distance<175;});fields.visible=paper<.9;outcrops.root.visible=paper<.95;root.traverse(o=>{if(o instanceof Mesh&&!(o instanceof InstancedMesh))o.castShadow=distance<175;});}
  return {root,season,update,treeCount:placements.length,assets,dispose(){assets.dispose();}};
 }

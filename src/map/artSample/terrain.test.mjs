@@ -4,6 +4,7 @@ import {describe,it,expect,vi,beforeAll,afterAll} from 'vitest';
 vi.mock('../resourceLoader',()=>({mapResource:async path=>new Response(await readFile(new URL('../../../public/'+path,import.meta.url)))}));
 import {createTerrain} from './terrain';
 import {siteById} from '../../data/scenario';
+import {outcropPlacements} from './outcrops';
 
 describe('Jiankang sample with real local elevation',()=>{
  let terrain;
@@ -25,5 +26,9 @@ describe('Jiankang sample with real local elevation',()=>{
   const geometry=terrain.root.children[0].geometry,normals=geometry.attributes.normal;
   for(let i=0;i<normals.count;i+=97)expect(normals.getY(i)).toBeGreaterThan(0);
   for(const season of ['summer','autumn','winter']){terrain.colorize(season);const colors=geometry.attributes.color;for(let i=0;i<colors.count;i+=127)for(const value of [colors.getX(i),colors.getY(i),colors.getZ(i)]){expect(value).toBeGreaterThanOrEqual(0);expect(value).toBeLessThanOrEqual(1);}}
+ });
+ it('embeds rock groups in slopes and excludes city footprints',()=>{
+  const rocks=outcropPlacements(terrain);expect(rocks.length).toBeGreaterThan(5);
+  for(const rock of rocks){expect(rock.y).toBeLessThan(terrain.height(rock.x,rock.z));expect(Number.isFinite(rock.y)).toBe(true);for(const city of terrain.cities)expect(Math.hypot((rock.x-city.x)/1.25,rock.z-city.z)).toBeGreaterThan(10);}
  });
 });
