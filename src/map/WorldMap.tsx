@@ -106,7 +106,7 @@ export function WorldMap(props:Props){
     let estateButton:HTMLButtonElement|undefined;
     const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
     const motion=new ArmyMotion(),travelerMotion=new TravelerMotion();
-    const travelers=()=>{travelerMotion.sync(current.current.world,performance.now(),current.current.speed>0&&current.current.armyMotion&&!reduced);return travelerMotion.people;};
+    const travelers=()=>{travelerMotion.sync(current.current.world,performance.now(),current.current.speed>0,current.current.armyMotion);return travelerMotion.people;};
     const travelerPosition=(p:import('../core/types').Person)=>{travelers();return travelerMotion.position(p,performance.now());};
     const armyPosition=(a:Army)=>{const w=current.current.world;motion.sync(w,performance.now(),current.current.speed>0&&current.current.armyMotion);const battle=armyBattle(w,a);return !a.withdrawalUntil&&a.troops>=100&&battle?.contact?battle.contact:motion.position(a,performance.now());};
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
@@ -167,7 +167,7 @@ export function WorldMap(props:Props){
        }
        const at=travelerPosition(person),element=entry.marker.getElement();entry.marker.setLngLat([at.lon,at.lat]);element.setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+' · 在途';
        if(entry.world!==world){const face=element.querySelector<HTMLElement>('.traveler-face');if(face)updateMarkerPortrait(face,person.id==='player'?(world.characterId??'fictional'):person.id,world);entry.world=world;}
-       element.dataset.model=String(map.showsTraveler(person.id));element.style.setProperty('--traveler-height',travelerPixels(zoom)+'px');
+       element.dataset.model=String(map.showsTraveler(person.id));element.style.setProperty('--traveler-height',travelerPixels()+'px');
       }
       const travelerIds=annotationDensity([...people].filter(([id])=>travelingIds.has(id)).map(([id,entry])=>({key:id,point:map!.project([entry.marker.getLngLat().lng,entry.marker.getLngLat().lat]),priority:0,required:id==='player'||id===current.current.world.characterId})),{width:w,height:h},zoom<9?2:5,130);
       for(const [id,entry] of people){const self=id==='player'||id===current.current.world.characterId;entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||!travelerIds.has(id)||(!self&&(strategicView||zoom<7));}
@@ -353,7 +353,7 @@ export function WorldMap(props:Props){
         if(!map||disposed)return;
         styleReady=true;current.current.onMapReady?.(map);
         sceneryLayer={siteAt:point=>map?.siteAt(point)??null,showsSite:id=>map?.showsSite(id)??false};
-        map.attachWorld(()=>({...current.current,travelerAnimation:current.current.armyMotion&&!reduced,travelers,travelerPosition,travelerVisible:(id:string)=>!!people.get(id)&&!people.get(id)!.marker.getElement().hidden,travelerMoving:(p:import('../core/types').Person)=>travelerMotion.moving(p,performance.now()),armyPosition,armyMoving:(a:Army)=>motion.moving(a,performance.now()),selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},message=>setNotices(value=>message?[...clearMapNotice(value,'models-runtime'),{source:'models-runtime',message,auth:message.includes('登录')}]:clearMapNotice(value,'models-runtime')));
+        map.attachWorld(()=>({...current.current,travelerAnimation:current.current.armyMotion,travelers,travelerPosition,travelerVisible:(id:string)=>!!people.get(id)&&!people.get(id)!.marker.getElement().hidden,travelerMoving:(p:import('../core/types').Person)=>travelerMotion.moving(p,performance.now()),armyPosition,armyMoving:(a:Army)=>motion.moving(a,performance.now()),selected:current.current.selectionActive===false?'':current.current.selected}),id=>armyPlacements.get(String(id)),()=>{militaryLayerReady=true;scheduleLabels();},message=>setNotices(value=>message?[...clearMapNotice(value,'models-runtime'),{source:'models-runtime',message,auth:message.includes('登录')}]:clearMapNotice(value,'models-runtime')));
         for(const s of sites){
           const element=document.createElement('div');element.className='atlas-place';
           const button=document.createElement('button');button.className=`atlas-place-label${s.capital?' capital':s.rank==='county'?' county':''}`;button.textContent=s.name;element.style.setProperty('--city-realm',polities[s.polity].color);button.setAttribute('aria-label',`选择${s.name}`);

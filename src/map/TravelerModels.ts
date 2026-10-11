@@ -1,3 +1,4 @@
+import {ARMY_MODEL_PIXELS} from './armyMapPresentation';
 import {AnimationMixer,Group,Mesh,SkinnedMesh,type AnimationAction} from 'three';
 import {GLTFLoader,type GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -11,7 +12,10 @@ import {applyInfantryLighting} from './infantryLighting';
 import {disposeInfantryAsset} from './RiggedInfantry';
 export type TravelerKind=`${'han'|'xianbei'}-${'male'|'female'}`;
 export type TravelerAssetKey=`${TravelerKind}-${'near'|'far'}`;
-export const travelerPixels=(zoom:number)=>zoom>=8?68:48;
+// The imported traveler is 1.72 units tall. Match the army's scale per model unit,
+// rather than comparing a full human height with the army's unit-scale constant.
+export const TRAVELER_MODEL_HEIGHT=1.72;
+export const travelerPixels=()=>TRAVELER_MODEL_HEIGHT*ARMY_MODEL_PIXELS;
 /** Costume reuse is presentation only: it must never write culture or allegiance. */
 export function travelerKind(w:World,id:string):TravelerKind|undefined{
  id=travelerPersonId(w,id);const age=ageAt(w,id);if(age!==null&&age<18)return;
