@@ -1,3 +1,4 @@
+import {armyAdvanceRoute,armyAtEnemyCity} from './militaryRoutes';
 import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {warObjectiveSites} from './warTerritories';
 import {localBalance,spendLocal,fiscalPath} from './treasury';
@@ -66,11 +67,12 @@ export function delegatedArmyDecision(w:World,a:Army,context=armyDecisionContext
  const intent=retreat?'整顿补给与士气':threats.length?'恢复失地与解围':'推进战争目标';
  const retreatReason=a.supply<armyDailyFood(w,a)*2?'携粮不足两日':a.morale<25?'士气低于 25':'欠饷超过 100 钱';
  if(!playerExecutive&&!retreat&&!threats.length&&own.length>=2&&a===reserve&&s.cities[a.location].controller===r&&wars.some(v=>v.attacker===r))return report('留守预备','驻防本土','进攻期间保留一支本土预备军','本土遇袭或预备军条件改变后重议');
+ if(!retreat&&armyAtEnemyCity(w,a))return report(intent,'攻取沿途据点','尚未控制当前敌方城池','占领后重新规划后续战争目标',a.location);
  if(targets.includes(a.location)&&(!retreat||s.cities[a.location].grain>civilianFood(w,a.location)*2+30))return report(intent,retreat?'就地整顿':'已在目标地',retreat?retreatReason:'军队已抵达本轮目标','按当地补给、交锋与围城规则继续处理',a.location);
- const routes=targets.map(target=>planRoute(a.location,target,id=>retreat?armyControls(w,a,id):canMarchThrough(w,r,id,target,a))).filter(p=>!!p).sort((a,b)=>a.days-b.days);
+ const routes=targets.map(target=>retreat?planRoute(a.location,target,id=>armyControls(w,a,id)):armyAdvanceRoute(w,a,target)).filter(p=>!!p).sort((a,b)=>a.days-b.days);
  let route=routes[0];
  if(!route)return report(intent,'暂无可行路线',retreat?retreatReason+'，无可达安全粮仓':targets.length?'目标通路受阻':'当前无可推进目标','通行或目标条件改变后重新判断');
- let reason=retreat?retreatReason:'采用当前可通行的最短目标路线',current=retreat?'准备撤退':'准备行军',target=route.route.at(-1)!;
+ let reason=retreat?retreatReason:targets.includes(route.route.at(-1)!)?'采用当前可通行的最短目标路线':'先攻取通往战争目标的沿途城防据点',current=retreat?'准备撤退':'准备行军',target=route.route.at(-1)!;
  if(!retreat){
   const hostile=armyEnemy.filter(e=>e.location===target&&!e.journey).reduce((n,e)=>n+readyTroops(e,w.day),0);
   const staging=Object.keys(s.cities).filter(id=>id!==target&&armyControls(w,a,id)&&!armyEnemy.some(e=>e.location===id&&!e.journey)&&s.cities[id].grain>civilianFood(w,id)*2+30).map(id=>({id,path:planRoute(id,target,x=>canMarchThrough(w,r,x,target,a))})).filter(v=>v.path).sort((x,y)=>x.path!.days-y.path!.days)[0];

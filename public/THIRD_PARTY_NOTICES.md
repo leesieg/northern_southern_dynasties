@@ -51,7 +51,7 @@ Natural Earth 1:110m 陆地与河流，公共领域。<https://www.naturalearthd
 - 《梁书》卷 3（古籍原文）：https://zh.wikisource.org/wiki/梁書/卷03 。用于梁代州名与时间校读。
 - CK3《Roads to Power》官方庄园介绍：https://www.paradoxinteractive.com/games/crusader-kings-iii/add-ons/crusader-kings-iii-roads-to-power 。参考家族在没有官职领地时仍持有庄园、通过建设增强家产的机制方向；不使用其媒体、代码或建筑数值。
 
-新增坐标为开发者手工近似锚点，区划几何为生成的交互分区，不是来源提供的历史边界。未导入 CHGIS 的非商业许可数据库。所有地图中的工程造价、工期和收益属于游戏参数。
+原新增坐标为开发者手工近似锚点，区划几何为生成的交互分区，不是来源提供的历史边界。2026-10-11 城址核验改编了 CHGIS/TGAZ 的 19 个研究点（Harvard University／Fudan University，CC BY-NC 4.0），另 4 个点来自专项遗址资料；逐条来源见 `src/data/historicalSiteLocations.ts` 及 `docs/历史资料/城址位置与地形核验.md`。涉及 CHGIS 坐标的派生锚点及交互几何保留其署名及非商业许可条件：[CHGIS/TGAZ](https://chgis.hudci.org/)、[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)。其余点仍有待核项。所有地图中的工程造价、工期和收益属于游戏参数。
 
 ## Three.js
 

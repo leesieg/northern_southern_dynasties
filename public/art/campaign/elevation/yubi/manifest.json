@@ -1,0 +1,14 @@
+{
+  "zoom": 12,
+  "west": 3309,
+  "east": 3312,
+  "north": 1613,
+  "south": 1616,
+  "tileSize": 256,
+  "tiles": 9,
+  "format": "gzip little-endian int16 metres",
+  "source": "Mapzen Terrain Tiles on AWS / Terrarium z12",
+  "attribution": "SRTM and GMTED2010 courtesy USGS; ETOPO1 courtesy NOAA",
+  "rights": "https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
+  "note": "Modern measured terrain, not a reconstruction of 546 CE. About 31 m per source pixel at Yubi; rounded to integer metres, resampled for display."
+}

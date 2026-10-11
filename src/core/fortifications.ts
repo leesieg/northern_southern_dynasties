@@ -12,7 +12,8 @@ import {civilianFood} from './population';
 
 /** Capital status is derived from current identities, not the opening city's label. */
 export function isCapitalSite(w:World,id:string){return worldRealms(w).some(r=>!w.realm?.annexed?.[r]&&capital(r,w)===id&&(w.realm?.cities[id]?.owner??siteById[id]?.polity)===r);}
-export function initialFortificationLevel(w:World,id:string){return isCapitalSite(w,id)||siteById[id]?.capital||id==='luoyang'?1:0;}
+// Opening defended approaches: level one is a game parameter, not a historical measurement.
+export function initialFortificationLevel(w:World,id:string){return isCapitalSite(w,id)||siteById[id]?.capital||['luoyang','yubi','puzhou','hongnong','huayin'].includes(id)?1:0;}
 /** Missing legacy facilities are materialized once; explicit damage and paid projects remain intact. */
 export function ensureFortifications(w:World){if(w.realm)for(const site of sites){const c=w.realm.cities[site.id];if(c)c.fortification??={level:initialFortificationLevel(w,site.id),due:null};}}
 export function establishCapitalFortification(w:World,id:string){

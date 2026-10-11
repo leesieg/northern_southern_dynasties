@@ -68,7 +68,7 @@ export function distanceBetween(a: string, b: string): number {
 // Static road topology; permissions are still evaluated against live world state for every route.
 const roadLinks=new Map<string,Map<string,number>>(),routeLinks=new Map<string,Map<string,number>>();
 for(const edge of roads){
-  const days=Math.max(1,Math.ceil(distanceBetween(edge.from,edge.to)*edge.factor/40));
+  const days=edge.days??Math.max(1,Math.ceil(distanceBetween(edge.from,edge.to)*edge.factor/40));
   for(const [from,to] of [[edge.from,edge.to],[edge.to,edge.from]]){
     const links=roadLinks.get(from)??new Map<string,number>();if(!links.has(to))links.set(to,days);roadLinks.set(from,links);
     if(!edge.legacyOnly){const active=routeLinks.get(from)??new Map<string,number>();if(!active.has(to))active.set(to,days);routeLinks.set(from,active);}

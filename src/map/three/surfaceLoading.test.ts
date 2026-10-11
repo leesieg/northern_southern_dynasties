@@ -24,3 +24,24 @@ it('applies only the latest request when the camera returns to an already pendin
  const surface=await countrySurface(createSeasonState());
  try{const before=surface.height(110,32),first=surface.refine(110,32);await vi.waitFor(()=>expect(pending.size).toBe(9));const firstPaths=[...pending.keys()],middle=surface.refine(125,35);await vi.waitFor(()=>expect(pending.size).toBe(18));const latest=surface.refine(110,32);await Promise.resolve();for(const path of firstPaths)pending.get(path)!(new Response(new Int16Array(65536).fill(4000).buffer));expect(await first).toBe(false);expect(await latest).toBe(true);expect(surface.height(110,32)).toBeGreaterThan(before!);for(const [path,resolve] of pending)if(!firstPaths.includes(path))resolve(new Response(new Int16Array(65536).fill(2000).buffer));expect(await middle).toBe(false);}finally{surface.dispose();}
 });
+it('loads measured local Yubi relief, preserves its anchor and returns to national terrain',async()=>{
+ const filesystemModule='node:fs/promises';
+ const {readFile}=await import(/* @vite-ignore */ filesystemModule) as {readFile(path:string):Promise<Uint8Array<ArrayBuffer>>};
+ vi.spyOn(resources,'mapResource').mockImplementation(async(path)=>{
+  if(path.endsWith('national-terrain.json')||path.endsWith('national-elevation.bin')||path.endsWith('river-corridors.geojson'))return new Response(await readFile('public/'+path));
+  if(path.includes('elevation/yubi/'))return new Response(await readFile('public/'+path));
+  if(path.endsWith('elevation/manifest.json'))return new Response(JSON.stringify(manifest));
+  if(path.endsWith('.bin.gz'))return new Response(new Int16Array(65536).fill(100).buffer);
+  return base(path);
+ });
+ const {siteById}=await import('../../data/scenario'),{projectGround}=await import('./geography'),site=siteById.yubi,surface=await countrySurface(createSeasonState());
+ try{expect(await surface.refine(site.lon,site.lat)).toBe(true);expect(surface.cityLayout('yubi')).toMatchObject({...projectGround(site.lon,site.lat),scale:1});
+  // Modern measured plateau is above the riverward sample, without a fabricated height offset.
+  expect(surface.height(site.lon,site.lat)!).toBeGreaterThan(surface.height(site.lon,35.576)!);
+  expect(surface.renderedHeight(site.lon,site.lat)!).toBeGreaterThan(surface.renderedHeight(site.lon,35.576)!);
+  // No coarse triangle can cover the local high-resolution plateau.
+  const p=projectGround(site.lon,site.lat),coarse=surface.meshes[0].geometry,positions=coarse.getAttribute('position'),indices=coarse.index!;
+  for(let i=0;i<indices.count;i+=3){const ids=[indices.getX(i),indices.getX(i+1),indices.getX(i+2)],xs=ids.map(n=>positions.getX(n)),zs=ids.map(n=>positions.getZ(n));expect(p.x>Math.min(...xs)&&p.x<Math.max(...xs)&&p.z>Math.min(...zs)&&p.z<Math.max(...zs)).toBe(false);}
+  expect(await surface.refine(110,32)).toBe(true);
+ }finally{surface.dispose();}
+},30000);

@@ -1,3 +1,4 @@
+import {armyAdvanceRoute,armyAtEnemyCity} from './militaryRoutes';
 import {getPerson} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {detained} from './custodyState';
@@ -5,7 +6,7 @@ import {relationOpinion} from './relationships';
 import {armyCommander} from './mobility';
 import type {World} from './types';
 import type {RealmId,Army} from './realm';
-import {playerRealm,canMarchThrough,armyDailyFood} from './realm';
+import {playerRealm,armyDailyFood} from './realm';
 import {activeWars,warRealmSide} from './wars';
 import {armyControls} from './civilWars';
 import {attemptCompliance} from './militaryCareer';
@@ -57,7 +58,7 @@ export function advanceMilitaryCampaigns(w:World){if(!w.realm)return;for(const q
  const threshold=armyDailyFood(w,a)*(q.doctrine==='cautious'?10:q.doctrine==='aggressive'?2:5);
  if(!a.journey&&(a.supply<threshold||a.morale<25)&&!armyControls(w,a,a.location)){const retreat=Object.keys(w.realm.cities).filter(id=>armyControls(w,a,id)).map(id=>planRoute(a.location,id,node=>armyControls(w,a,node))).filter(p=>p!==null).sort((x,y)=>x.days-y.days)[0];if(retreat){a.journey={route:retreat.route,durations:retreat.durations,leg:0,elapsed:0,started:w.day};q.reason='按授权撤往安全据点整顿补给';continue;}}
  q.reason=breached?'达到期限或损失上限，抵达后交接':!q.remaining?'军饷专款用尽，等待追加':a.supply<threshold?'补给不足，暂停推进':a.arrears?'军饷拖欠，暂停推进':'';
- if(!q.reason&&!a.journey&&a.location!==q.target){const route=planRoute(a.location,q.target,id=>canMarchThrough(w,a.realm,id,q.target));const enemy=w.realm.armies.filter(b=>b.realm!==q.realm&&warRealmSide(war,b.realm)&&warRealmSide(war,b.realm)!==warRealmSide(war,q.realm)&&b.location===q.target&&!b.journey).reduce((n,b)=>n+readyTroops(b,w.day),0),risk=q.doctrine==='cautious'?1.25:q.doctrine==='aggressive'?.8:1;if(enemy>a.troops/risk){q.reason='敌军优势，等待援军或调整战役授权';continue;}if(route)a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};else q.reason='通路中断或敌方城防封锁';}
+ if(!q.reason&&!a.journey&&a.location!==q.target){const route=armyAdvanceRoute(w,a,q.target),stepTarget=route?.route.at(-1)??a.location;const enemy=w.realm.armies.filter(b=>b.realm!==q.realm&&warRealmSide(war,b.realm)&&warRealmSide(war,b.realm)!==warRealmSide(war,q.realm)&&b.location===stepTarget&&!b.journey).reduce((n,b)=>n+readyTroops(b,w.day),0),risk=q.doctrine==='cautious'?1.25:q.doctrine==='aggressive'?.8:1;if(enemy>a.troops/risk){q.reason='敌军优势，等待援军或调整战役授权';continue;}if(route)a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};else q.reason=armyAtEnemyCity(w,a)?'先攻取当前沿途据点，再推进委任目标':'通路中断或未获第三方通行';}
  }}
 export function validMilitaryCampaigns(w:World){const s=w.militaryCampaigns;if(s===undefined)return true;const n=(v:unknown,max=1e9)=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;
  return !!s&&n(s.nextId)&&Array.isArray(s.items)&&s.items.length<=256&&new Set(s.items.map(q=>q?.id)).size===s.items.length&&new Set(s.items.filter(q=>q.status==='active').map(q=>q.army)).size===s.items.filter(q=>q.status==='active').length&&s.items.every(q=>q&&(q.doctrine===undefined||['cautious','balanced','aggressive'].includes(q.doctrine))&&(q.allowLoot===undefined||typeof q.allowLoot==='boolean')&&n(q.id,s.nextId-1)&&q.id>0&&worldRealms(w).includes(q.realm)&&!! getPerson(w,q.commander)!&&!! getPerson(w,q.issuer)!&&!!siteById[q.target]&&n(q.war)&&n(q.army)&&['capture','defend'].includes(q.goal)&&typeof q.source==='string'&&(q.source==='central:'+q.realm||q.source.startsWith(q.realm+'|')&&!!w.realm?.fiscal?.balances&&Object.hasOwn(w.realm.fiscal.balances,q.source))&&n(q.budget,10000)&&n(q.remaining,q.budget)&&n(q.spent,q.budget)&&q.remaining+q.spent<=q.budget&&n(q.lastDay,w.day)&&q.lastDay>=q.started&&n(q.started,w.day)&&q.deadline===q.started+180&&n(q.strength,6000)&&q.strength>=100&&[25,50,75].includes(q.lossLimit)&&n(q.held,30)&&['active','success','failed','cancelled'].includes(q.status)&&typeof q.reason==='string'&&q.reason.length<=200);

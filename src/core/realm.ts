@@ -268,6 +268,7 @@ export function advanceRealm(w:World){
  settleArmyFood(w,a,need);
  if(a.withdrawalUntil&&(a.location===a.journey?.route.at(-1)||!a.journey&&s.cities[a.location].controller===a.realm||w.day>a.withdrawalUntil))delete a.withdrawalUntil;
  if(a.journey&&!a.withdrawalUntil&&!canEnter(w,a.realm,s.cities[a.journey.route[a.journey.leg+1]].controller,undefined,true)){a.journey=null;a.siege=0;log(w,regimeName(w,a.realm)+'军借道许可失效，停止行军。');}
+ if(a.journey&&a.journey.leg>0&&a.journey.elapsed===0&&!a.withdrawalUntil&&!canMarchThrough(w,a.realm,a.location,a.journey.route.at(-1)!,a)){a.journey=null;a.siege=0;log(w,regimeName(w,a.realm)+'军在沿途敌方城防前停止推进，须先攻取据点。');}
  if(a.journey&&a.journey.started<w.day){
  if(engaged.has(a)||a.starvationDays&&w.day%3===0)a.journey.started++;
  else{const j=a.journey;j.elapsed++;if(j.elapsed>=j.durations[j.leg]){a.location=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)a.journey=null;}}

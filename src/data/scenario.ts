@@ -1,3 +1,4 @@
+import {historicalSiteLocations} from './historicalSiteLocations.ts';
 import {expandedSeats} from './expandedGeography.ts';
 import { countySeats } from './administration.ts';
 import type { Polity, Road, Site } from '../core/types';
@@ -58,6 +59,7 @@ const links: [string, string, number?][] = [
   ['changan','luoyang',1.2],['changan','tianshui',1.4],['tianshui','jincheng',1.4],['jincheng','wuwei',1.3],
   ['wuwei','zhangye'],['zhangye','dunhuang'],['dunhuang','gaochang',1.3],['gaochang','qiuci',1.3],
   ['qiuci','shule',1.3],['luoyang','ye'],['luoyang','pengcheng'],['ye','qingzhou'],['pengcheng','qingzhou'],
+  ['pingyao','yubi',1.3],['luoyang','hongnong',1.2],
   ['ye','jinyang',1.6],['jinyang','pingcheng',1.2],['jinyang','changan',1.5],['ye','jicheng'],
   ['jicheng','pingcheng',1.4],['jicheng','liaodong',1.3],['chengdu','ningzhou',1.7],['ningzhou','guangzhou',1.7],
 ];
@@ -70,6 +72,17 @@ for(const [id,name,lon,lat,connection,polity,terrain] of expandedSeats){
  sites.push({id,name,lon,lat,polity,terrain,rank:'county',description:'州郡县治与周边乡里，城址约略。'});
  links.push([connection,id]);
 }
-// Retain the old direct edge only to read journeys already saved on it. New routes pass through Liang County.
-export const roads: Road[] = links.map(([from, to, factor = 1]) => ({from, to, factor,...(from==='xiangyang'&&to==='luoyang'?{legacyOnly:true}:{})}));
+// Keep booked road durations valid after geographic corrections. Distances and all
+// new links use corrected anchors; existing durations remain simulation parameters.
+const previousAnchors=Object.fromEntries(sites.map(site=>[site.id,{lon:site.lon,lat:site.lat}]));
+for(const site of sites){const correction=historicalSiteLocations[site.id];if(correction){site.lon=correction.lon;site.lat=correction.lat;site.description=correction.note;}}
+const newApproaches=new Set(['pingyao:yubi','luoyang:hongnong']);
+function bookedRoadDays(from:string,to:string,factor:number){
+ if(newApproaches.has(from+':'+to)||!historicalSiteLocations[from]&&!historicalSiteLocations[to])return {};
+ const a=previousAnchors[from],b=previousAnchors[to];
+ return {days:Math.max(1,Math.ceil(Math.hypot((a.lon-b.lon)*Math.cos((a.lat+b.lat)*Math.PI/360),a.lat-b.lat)*111*factor/40))};
+}
+// Legacy shortcuts remain readable for booked journeys, but cannot form new routes or borders.
+// Western approaches pass through Yubi–Puban or Hongnong–Huayin; not surveyed ancient roads.
+export const roads: Road[] = links.map(([from, to, factor = 1]) => ({from, to, factor,...bookedRoadDays(from,to,factor),...(from==='xiangyang'&&to==='luoyang'||from==='jinyang'&&to==='changan'||from==='changan'&&to==='luoyang'?{legacyOnly:true}:{})}));
 export const siteById = Object.fromEntries(sites.map(site => [site.id, site])) as Record<string, Site>;
