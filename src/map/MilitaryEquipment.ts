@@ -16,7 +16,7 @@ export function attachMilitaryEquipment(root:Group,kit:GLTF,kind:ArmyModelKind){
  let skin:SkinnedMesh|undefined;root.traverse(o=>{if(o instanceof SkinnedMesh&&!skin)skin=o;});
  if(!skin)throw new Error('兵模缺少骨架');
  // Resolve and validate all mounts before mutating the model.
- const mounts=equipment[kind].map(name=>{
+ const mounts=equipment[kind].filter(name=>name!=='Bow'||!root.getObjectByName('AuthoredBow')).map(name=>{
   const template=kit.scene.getObjectByName(name),joint=name==='Quiver'?'Chest':name==='Bow'||name==='Shield'?'HandL':'HandR';
   const index=skin!.skeleton.bones.findIndex(b=>b.name.replaceAll('.','')===joint);
   if(!template||index<0)throw new Error('兵模缺少装备挂点：'+name);

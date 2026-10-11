@@ -46,6 +46,7 @@ export async function loadInfantryAsset(file='infantry-rigged-v1.glb',signal?:Ab
  if(!required.every(name=>asset.animations.some(a=>a.name===name))){disposeInfantryAsset(asset);throw new Error('兵模缺少必要动画');}
  const sockets:Record<string,string[]>={'infantry-sword-shield-v2.glb':['GripSword','GripShield'],'spear-infantry-v2.glb':['GripSpear'],'archer-infantry-v2.glb':['GripBow','GripQuiver'],'light-cavalry-v2.glb':['GripSword','GripReins'],'heavy-cavalry-v2.glb':['GripSpear','GripReins'],'siege-crew-v2.glb':['CrewL_GripToolL','CrewL_GripToolR','CrewR_GripToolL','CrewR_GripToolR']};
  if(sockets[file]?.some(name=>!asset.scene.getObjectByName(name))){disposeInfantryAsset(asset);throw new Error('兵模缺少握持挂点');}
+ if(file==='archer-infantry-v2.glb'&&['AuthoredBow','AuthoredBowstring','BowUpper','BowLower','BowNock','BowArrow'].some(name=>!asset.scene.getObjectByName(name))){disposeInfantryAsset(asset);throw new Error('弓兵缺少拉弦动作资源');}
  if(file!=='siege-crew-v1.glb')prepareMilitaryHands(asset.scene);
  applyInfantryLighting(asset.scene);
  return asset;

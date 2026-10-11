@@ -2,7 +2,7 @@
 Blender --background --python-exit-code 1 --python scripts/map-sample/build_military_grips.py
 Preserves the original horse/cart meshes and their sampled animation transforms.
 """
-import bpy, math, json, sys
+import bpy, bmesh, math, json, sys
 from pathlib import Path
 from mathutils import Vector, Matrix
 
@@ -50,6 +50,109 @@ def arm_pose(rig,rest,world,prefix,side,wrist,handle_axis,free_wrist=False,forwa
  y.normalize();z=x.cross(y).normalized();rotation=Matrix((x,y,z)).transposed().to_4x4();rotation.translation=elbow
  cuff=rotation@Matrix.Rotation(-math.pi/2 if side=='R' else 0,4,'Y')
  set_world(rig,rest,world,twist,cuff);rotation=rotation.copy();rotation.translation=wrist;set_world(rig,rest,world,hand,rotation)
+
+contact_history={}
+def contact_pose(rig,rest,world,side,goal,handle,pole,palm_hint=None):
+ """Keep the elbow on its anatomical side; fit palm roll, not elbow roll.
+
+ The search is offline only. The exported clips contain ordinary keyframes.
+ """
+ upper,fore,hand,twist=[n+'.'+side for n in ['UpperArm','Forearm','Hand','ForearmTwist']]
+ shoulder=world[upper].translation;a=(rest[fore].translation-rest[upper].translation).length;b=(rest[hand].translation-rest[fore].translation).length
+ x=handle.normalized();base=Vector((0,0,1)) if abs(x.z)<.9 else Vector((0,-1,0));base=(base-x*base.dot(x)).normalized();across=x.cross(base)
+ def candidate(angle):
+  y=base*math.cos(angle)+across*math.sin(angle);z=x.cross(y);wrist=goal-y*GRIP.y-z*GRIP.z;axis=wrist-shoulder;distance=axis.length;axis.normalize()
+  d=max(abs(a-b)+.001,min(distance,a+b-.008));along=(a*a-b*b+d*d)/(2*d);height=math.sqrt(max(0,a*a-along*along));preferred=(pole-axis*pole.dot(axis)).normalized()
+  # A small outward bow-hand cant leaves the string's release plane beside
+  # the forearm. A perfectly collinear wrist puts the string through that arm.
+  fore_target=Matrix.Rotation(-.43,3,x)@y if palm_hint is not None else y
+  desired=wrist-fore_target*b-shoulder;desired=(desired-axis*desired.dot(axis)).normalized()
+  # Allow a limited elbow-plane adjustment, never an inward/backward flip.
+  angle=math.atan2(axis.dot(preferred.cross(desired)),preferred.dot(desired));angle=max(-math.pi/3,min(math.pi/3,angle));bend=Matrix.Rotation(angle,3,axis)@preferred;elbow=shoulder+axis*along+bend*height
+  forward=(wrist-elbow).normalized();score=(1-forward.dot(fore_target))*12+abs(distance-d)*100+.15*(1-bend.dot(preferred))
+  if palm_hint is not None:score+=(1-y.dot(palm_hint.normalized()))*.8
+  if side in contact_history:
+   change=1-y.dot(contact_history[side]);score+=change*.4+max(0,change-(1-math.cos(.16)))*200
+  return score,(elbow,wrist,x,y,z)
+ angle=min((math.tau*i/120 for i in range(120)),key=lambda v:candidate(v)[0])
+ angle=min((angle+(i-10)*math.tau/1200 for i in range(21)),key=lambda v:candidate(v)[0]);_,(elbow,wrist,x,y,z)=candidate(angle)
+ if (wrist-shoulder).length>a+b-.004:raise ValueError(f'Unreachable combat grip {side}: {(wrist-shoulder).length:.4f} > {a+b:.4f}')
+ point(rig,rest,world,upper,shoulder,elbow);point(rig,rest,world,fore,elbow,wrist)
+ rotation=Matrix((x,y,z)).transposed().to_4x4();rotation.translation=elbow
+ # Cloth takes forearm roll; the metal cuff and hand remain a rigid pair.
+ set_world(rig,rest,world,twist,rotation@Matrix.Rotation(-math.pi/2 if side=='R' else 0,4,'Y'))
+ rotation.translation=wrist;set_world(rig,rest,world,hand,rotation)
+ contact_history[side]=y.copy()
+
+def build_archer_bow(rig,rest):
+ """Reuse the supplied bow, replacing its two rigid string strips by a rigged cord."""
+ with bpy.data.libraries.load(str(ROOT/'art/military/weapons-v1.blend'),link=False) as (src,dst):dst.objects=['Bow']
+ bow=dst.objects[0];bpy.context.scene.collection.objects.link(bow);bow.name='AuthoredBow'
+ bm=bmesh.new();bm.from_mesh(bow.data);seen=set();remove=[]
+ for v in bm.verts:
+  if v in seen:continue
+  todo=[v];seen.add(v);part=[]
+  while todo:
+   p=todo.pop();part.append(p)
+   for e in p.link_edges:
+    q=e.other_vert(p)
+    if q not in seen:seen.add(q);todo.append(q)
+  if max(p.co.z for p in part)-min(p.co.z for p in part)>.8 and max(p.co.y for p in part)-min(p.co.y for p in part)<.02:remove.extend(part)
+ if not remove:raise ValueError('Original bowstring components not found')
+ bmesh.ops.delete(bm,geom=remove,context='VERTS');bm.to_mesh(bow.data);bm.free()
+ # Weapon source: Z up, -Y towards the string. Palm X is up, Y points at target.
+ basis=Matrix(((0,0,1,0),(0,1,0,0),(-1,0,0,0),(0,0,0,1)))
+ transform=rest['Hand.L']@Matrix.Translation(GRIP)@basis;heights=[v.co.z for v in bow.data.vertices];bow.data.transform(transform);bow.parent=rig;bow.matrix_world=Matrix.Identity(4)
+ groups={n:bow.vertex_groups.new(name=n) for n in ['Hand.L','BowUpper','BowLower']}
+ for i,z in enumerate(heights):
+  weight=smooth(.06,.42,abs(z));groups['Hand.L'].add([i],1-weight,'REPLACE');groups['BowUpper' if z>0 else 'BowLower'].add([i],weight,'REPLACE')
+ bow.modifiers.new('Bow flex','ARMATURE').object=rig
+ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);bpy.context.view_layer.objects.active=rig;bpy.ops.object.mode_set(mode='EDIT')
+ for name,z in [('BowNock',0),('BowUpper',.44),('BowLower',-.44),('BowArrow',0)]:
+  bone=rig.data.edit_bones.new(name);matrix=rest['Hand.L'].copy();matrix.translation=transform@Vector((0,-.232,z));bone.head=matrix.translation;bone.tail=bone.head+matrix.to_3x3()@Vector((0,.035,0));bone.matrix=matrix;bone.parent=rig.data.edit_bones['Hand.L']
+ bpy.ops.object.mode_set(mode='OBJECT')
+ vertices=[];faces=[];weights=[]
+ for sign in [-1,1]:
+  start=len(vertices)
+  for i in range(9):
+   t=i/8;point=Vector((0,-.232,sign*.44*(1-t)))
+   for j in range(6):
+    vertices.append(transform@(point+Vector((.0018*math.cos(math.tau*j/6),.0018*math.sin(math.tau*j/6),0))));weights.append(t)
+  for i in range(8):
+   for j in range(6):faces.append((start+i*6+j,start+i*6+(j+1)%6,start+(i+1)*6+(j+1)%6,start+(i+1)*6+j))
+ mesh=bpy.data.meshes.new('Bowstring');mesh.from_pydata(vertices,[],faces);cord=bpy.data.objects.new('AuthoredBowstring',mesh);bpy.context.scene.collection.objects.link(cord);cord.parent=rig
+ material=bpy.data.materials.new('Bowstring fibre');material.diffuse_color=(.38,.30,.19,1);mesh.materials.append(material)
+ upper=cord.vertex_groups.new(name='BowUpper');lower=cord.vertex_groups.new(name='BowLower');nock=cord.vertex_groups.new(name='BowNock')
+ for i,t in enumerate(weights):
+  if t<1:(lower if i<54 else upper).add([i],1-t,'REPLACE')
+  if t>0:nock.add([i],t,'REPLACE')
+ cord.modifiers.new('String draw','ARMATURE').object=rig
+ # A visible nocked arrow follows the same release. It is presentation only;
+ # world combat continues to own all casualties and projectile outcomes.
+ vertices=[];faces=[]
+ for y,radius in [(0,.003),(.66,.003),(.67,.009),(.71,0)]:
+  for j in range(6):vertices.append((radius*math.cos(math.tau*j/6),y,radius*math.sin(math.tau*j/6)))
+ for i in range(3):
+  for j in range(6):faces.append((i*6+j,i*6+(j+1)%6,(i+1)*6+(j+1)%6,(i+1)*6+j))
+ for x,z in [(1,0),(-.5,.866),(-.5,-.866)]:
+  i=len(vertices);vertices.extend([(0,.025,0),(x*.018,.035,z*.018),(x*.018,.09,z*.018),(0,.12,0)]);faces.append((i,i+1,i+2,i+3))
+ matrix=rig.data.bones['BowArrow'].matrix_local;data=bpy.data.meshes.new('Nocked arrow');data.from_pydata([matrix@Vector(v) for v in vertices],[],faces);arrow=bpy.data.objects.new('AuthoredArrow',data);bpy.context.scene.collection.objects.link(arrow);arrow.parent=rig
+ material=bpy.data.materials.new('Arrow wood');material.diffuse_color=(.24,.16,.07,1);data.materials.append(material);group=arrow.vertex_groups.new(name='BowArrow');group.add(list(range(len(vertices))),1,'REPLACE');arrow.modifiers.new('Arrow release','ARMATURE').object=rig
+ # Open the distal curl of the existing unified grip mesh for the string.
+ # Blend the change into the palm; retain the wrist and thumb attachment.
+ mesh=bpy.data.objects['Infantry'];hand=rest['Hand.R'];inverse=hand.inverted();idx=mesh.vertex_groups['Hand.R'].index
+ for v in mesh.data.vertices:
+  if not any(g.group==idx and g.weight>.99 for g in v.groups):continue
+  p=inverse@v.co
+  if p.y<.04 or abs(p.x)>.037:continue
+  # Preserve the tube cross-section while shortening its curl about the grip.
+  theta=math.atan2(p.z-.009,p.y-.064)
+  if theta< -1.15:theta+=math.tau
+  if theta>3.35:continue
+  centre=Vector((p.x,.064+.019*math.cos(theta),.009+.019*math.sin(theta)));radial=p-centre
+  changed=-1.15+(theta+1.15)*.58
+  p=Vector((p.x,.064+.019*math.cos(changed),.009+.019*math.sin(changed)))+Matrix.Rotation(changed-theta,3,'X')@radial
+  v.co=hand@((inverse@v.co).lerp(p,smooth(.049,.064,(inverse@v.co).y)))
 
 def build(kind,base,out):
  bpy.ops.wm.open_mainfile(filepath=str(ROOT/'art/military'/ (base+'.blend')))
@@ -104,21 +207,29 @@ def build(kind,base,out):
  if kind=='archer':
   b=rig.data.edit_bones.new('GripQuiver');b.head=(.12,.27,1.20);b.tail=b.head+Vector((0,0,.035));b.matrix=Matrix.Translation(b.head)@Matrix.Rotation(math.pi/2,4,'X');b.parent=rig.data.edit_bones['Chest'];b.use_deform=False
  bpy.ops.object.mode_set(mode='OBJECT');rest={b.name:b.matrix_local.copy() for b in rig.data.bones}
+ if kind=='archer':
+  build_archer_bow(rig,rest);rest={b.name:b.matrix_local.copy() for b in rig.data.bones}
  for p in rig.pose.bones:p.rotation_mode='QUATERNION'
  rig.animation_data.action=None
  for track in list(rig.animation_data.nla_tracks):rig.animation_data.nla_tracks.remove(track)
  for action in list(bpy.data.actions):bpy.data.actions.remove(action)
  actions={};rig['authoredCarry']='military-v2'
  for name,last in [('Idle',len(samples['Idle'])),('Walk',len(samples['Walk'])),('Attack',len(samples.get('Attack',samples['Idle'])))]:
+  contact_history.clear()
+  if kind=='archer' and name=='Attack':last=145
   action=bpy.data.actions.new(name);actions[name]=action;rig.animation_data.action=action
   for f in range(1,last+1):
-   scene.frame_set(f);source=samples.get(name,samples['Idle'])[(f-1)%len(samples.get(name,samples['Idle']))];t=(f-1)/(last-1);strike=max(0,math.sin(math.tau*t));wave=math.sin(math.tau*t)
+   scene.frame_set(f);t=(f-1)/(last-1);frames=samples.get(name,samples['Idle']);source=frames[round(t*(len(frames)-1))];strike=max(0,math.sin(math.tau*t));wave=math.sin(math.tau*t)
    for p in rig.pose.bones:p.matrix_basis=source[0].get(p.name,Matrix.Identity(4))
    # Source upper-arm transforms use different rest joints; author them anew.
    for prefix in prefixes:
     for p in rig.pose.bones:
      if p.name.startswith(tuple(prefix+n for n in ARM)):p.matrix_basis=Matrix.Identity(4)
    world=matrices(rig,rest)
+   if kind=='archer' and name=='Attack':
+    # Side-on archery stance, with the arrow still aimed along the army's front.
+    facing=world['Head'].copy();hips=world['Hips'];turn=Matrix.Translation(hips.translation)@Matrix.Rotation(-1.15,4,'Z')@Matrix.Translation(-hips.translation)
+    set_world(rig,rest,world,'Hips',turn@hips);world=matrices(rig,rest);facing.translation=world['Head'].translation;set_world(rig,rest,world,'Head',facing);world=matrices(rig,rest)
    for prefix in prefixes:
     chest=prefix+'Chest';delta=world[chest]@rest[chest].inverted();mounted=kind in ['lightHorse','heavyHorse'];offset=Vector((0,.06,.62)) if mounted else Vector()
     for side,sign in ([('L',1),('R',-1)] if kind=='archer' else [('R',-1),('L',1)]):
@@ -161,6 +272,38 @@ def build(kind,base,out):
       for _ in range(5):
        correction=goal-world[prefix+'Hand.'+side]@GRIP;wrist+=correction
        arm_pose(rig,rest,world,prefix,side,wrist,handle,free_wrist,forward_elbow)
+   if name=='Attack' and kind in ['spear','heavyHorse','archer']:
+    delta=world['Chest']@rest['Chest'].inverted();orientation=delta.to_3x3()
+    thrust=smooth(.18,.36,t)*(1-smooth(.43,.76,t))
+    if kind=='spear':
+     rear=Vector((-.02,-.04-.05*thrust,1.15));axis=Vector((.13,-.27,.04)).normalized()
+     for side,goal in [('R',rear),('L',rear+axis*.287)]:
+      contact_pose(rig,rest,world,side,delta@goal,orientation@axis,orientation@Vector((.35 if side=='L' else -.35,-.65,-1)))
+    elif kind=='heavyHorse':
+     contact_pose(rig,rest,world,'R',delta@Vector((-.38,-.055-.075*thrust,1.93)),orientation@Vector((0,-1,.08)),orientation@Vector((-.35,-.65,-1)))
+    else:
+     raise_bow=smooth(.05,.32,t)*(1-smooth(.72,.95,t));draw=raise_bow;release=smooth(.58,.61,t)
+     direction=Vector((.94,-.342,0)).normalized();grip=Vector((.35,-.33,1.38)).lerp(Vector((.61,-.33,1.38)),raise_bow)
+     contact_pose(rig,rest,world,'L',delta@grip,orientation@Vector((0,0,1)),orientation@Vector((-1,.2,-.35)),orientation@direction)
+     # Use the actual left palm frame, including its small natural wrist roll.
+     left=world['Hand.L'];direction=left.to_3x3()@Vector((0,1,0));grip=left@GRIP
+     goal=grip-direction*(.232+.38*draw)
+     contact_pose(rig,rest,world,'R',goal,orientation@Vector((0,0,1)),orientation@Vector((-.7,.3,.05)))
+     tension=draw*(1-release);nock=left.copy();nock.translation=grip-direction*(.232+.38*tension);set_world(rig,rest,world,'BowNock',nock)
+     # Bend the limbs as the string is drawn; each half of the cord stays 44 cm.
+     height=math.sqrt(.44**2-(.268*tension)**2)
+     for joint,sign in [('BowUpper',1),('BowLower',-1)]:
+      tip=left.copy();tip.translation=grip-direction*(.232+.112*tension)+(left.to_3x3()@Vector((1,0,0)))*height*sign;set_world(rig,rest,world,joint,tip)
+     arrow=left.copy();arrow.translation=nock.translation+direction*((t-.58)*14 if .58<t<.66 else 0)
+     if .66<t<.95:arrow=arrow@Matrix.Scale(.001,4)
+     set_world(rig,rest,world,'BowArrow',arrow)
+   elif kind=='archer':
+    delta=world['Chest']@rest['Chest'].inverted();orientation=delta.to_3x3()
+    contact_pose(rig,rest,world,'L',delta@Vector((.35,-.33,1.25)),orientation@Vector((0,0,1)),orientation@Vector((-1,.2,-.35)),orientation@Vector((.94,-.342,0)))
+    left=world['Hand.L']
+    for joint,z in [('BowNock',0),('BowUpper',.44),('BowLower',-.44)]:
+     pose=left.copy();pose.translation=left@Vector((z,.064-.232,.009));set_world(rig,rest,world,joint,pose)
+    arrow=left@Matrix.Scale(.001,4);arrow.translation=left@GRIP;set_world(rig,rest,world,'BowArrow',arrow)
    for p in rig.pose.bones:
     if 'Grip' in p.name:p.matrix_basis=Matrix.Identity(4)
     for prop in ['location','rotation_quaternion','scale']:p.keyframe_insert(prop,frame=f,group=p.name)

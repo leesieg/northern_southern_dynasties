@@ -69,9 +69,12 @@ it.each(['lightHorse','heavyHorse'] as const)('%s keeps both reins gathered in i
  }}disposeInfantryAnimation(a);
 });
 
-it('orients the bowstring towards the archer and keeps the nocking hand on it',()=>{
+it('draws the authored string with the hand, then releases it independently',()=>{
  const a=createInfantryAnimation(assets.archer,0);attachMilitaryEquipment(a.root,kit,'archer');a.idle.setEffectiveWeight(0);a.attack!.setEffectiveWeight(1);
- for(let f=0;f<48;f++){a.mixer.setTime(a.attack!.getClip().duration*f/48);a.root.updateMatrixWorld(true);const bow=a.root.getObjectByName('Equipment Bow')!,string=new Vector3(0,0,.245).applyMatrix4(bow.matrixWorld),grip=a.root.getObjectByName('GripSword')!.getWorldPosition(new Vector3());expect(new Vector3(0,0,1).transformDirection(bow.matrixWorld).z).toBeLessThan(-.6);expect(grip.distanceTo(string)).toBeLessThan(.025);}
+ expect(a.root.getObjectByName('Equipment Bow')).toBeUndefined();expect(a.root.getObjectByName('AuthoredBow')).toBeDefined();
+ const distances:number[]=[];
+ for(let f=0;f<48;f++){a.mixer.setTime(a.attack!.getClip().duration*f/48);a.root.updateMatrixWorld(true);const string=a.root.getObjectByName('BowNock')!.getWorldPosition(new Vector3()),grip=a.root.getObjectByName('GripSword')!.getWorldPosition(new Vector3()),bow=a.root.getObjectByName('GripBow')!.getWorldPosition(new Vector3());distances.push(string.distanceTo(bow));if(f/48<.57)expect(grip.distanceTo(string)).toBeLessThan(.015);if(f/48>.62&&f/48<.70)expect(grip.distanceTo(string)).toBeGreaterThan(.25);}
+ expect(Math.max(...distances)-Math.min(...distances)).toBeGreaterThan(.30);
  disposeInfantryAnimation(a);
 });
 
