@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {PersonChoice} from './PersonSelection';
 import {allPeople} from '../core/personRegistry';
 import {rulerEligibility,activeClaim} from '../core/claims';
@@ -22,7 +23,7 @@ import {ArtIcon,Resource} from './ArtIcon';
 import './warDeclaration.css';
 const goals={claimant:{label:'扶立',effect:'拥立所选宣称者，归还本场占领地；本国不吞并目标政权'},territory:{label:'割地',effect:'要求割让所选目标地'},reparations:{label:'赔款',effect:'要求赔款 300 钱，按期偿付'},tributary:{label:'宗属',effect:'迫使对方称臣'},annexation:{label:'吞并',effect:'胜利议和后接管对方政权'}};
 type DeclarationGoal=Exclude<NonNullable<War['goal']>,'defection'>;
-export function WarDeclaration({world:w,target,initialSite,pending,send,onClose,onPerson}:{world:World;target:RealmId;initialSite?:string;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void;onPerson?:(id:string)=>void}){
+export function WarDeclaration({world:w,target,initialSite,pending,send,onClose,onPerson}:{world:World;target:RealmId;initialSite?:string;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onClose:()=>void;onPerson?:(id:string)=>void}){
  const navigation=useContext(RealmNavigation);
  const openRealm=navigation?((id:RealmId)=>{onClose();navigation.open(id);}):undefined;
  const ref=useRef<HTMLDialogElement>(null),[claimant,setClaimant]=useState(''),[goal,setGoal]=useState<DeclarationGoal>('territory'),[chosen,setChosen]=useState(initialSite??''),[scope,setScope]=useState<'city'|RegionalWarLevel>('city'),[confirm,setConfirm]=useState<string|null>(null);
@@ -46,6 +47,6 @@ export function WarDeclaration({world:w,target,initialSite,pending,send,onClose,
  <div className="military-metrics"><Resource name="influence" value={cost} label="宣战消耗影响力" caption/><Resource name="grain" value={armies.reduce((n,a)=>n+armyDailyFood(w,a),0)} label="现役每日最多耗粮" unit="/日"/><Resource name="coins" value={armies.reduce((n,a)=>n+armyMonthlyPay(w,a),0)} label="现役军饷" unit="/月"/></div>
  {!armies.length?<p className="military-warning"><ArtIcon name="army" size={22}/>尚无现役军队</p>:armies.some(a=>a.supply<armyDailyFood(w,a)*10)&&<p className="military-warning"><ArtIcon name="grain" size={22}/>部分军队随军粮不足十日</p>}
  </div><footer><small>宣战后立即开战 · 盟国参战与钱粮军援需另请</small>{reason&&<p className="military-warning" role="status">{reason}</p>}<button className="primary" disabled={pending||!!reason} onClick={()=>setConfirm(confirmKey)}><ArtIcon name="army" size={24}/>提出宣战</button></footer>
- {confirm===confirmKey&&<ConfirmAction title="确认宣战" detail={<><p>目标：{goal==='annexation'?regimeName(w,target)+'政权':option?.name} · {goals[goal].label}。{goals[goal].effect}。</p>{territory&&<p>割让范围：{option!.sites.map(id=>siteById[id].name).join('、')}；第三国辖地不包含在内，全部占领后仍须议和接受。</p>}{goal==='annexation'&&<p>接管范围：{annexedSites.map(id=>siteById[id].name).join('、')}。议和代价 {annexationPeaceCost}；余额与债务随政权接管，人物私财保留。</p>}<p>确认后立即开战，消耗 {cost} 个人影响力；议和需另行提出。</p>{reason&&<p role="status">当前不可执行：{reason}</p>}</>} confirmLabel="确认开战" danger pending={pending||!!reason} onCancel={()=>setConfirm(null)} onConfirm={()=>{if(pending||reason)return;setConfirm(null);send(command);onClose();}}/>}
+ {confirm===confirmKey&&<ConfirmAction title="确认宣战" detail={<><p>目标：{goal==='annexation'?regimeName(w,target)+'政权':option?.name} · {goals[goal].label}。{goals[goal].effect}。</p>{territory&&<p>割让范围：{option!.sites.map(id=>siteById[id].name).join('、')}；第三国辖地不包含在内，全部占领后仍须议和接受。</p>}{goal==='annexation'&&<p>接管范围：{annexedSites.map(id=>siteById[id].name).join('、')}。议和代价 {annexationPeaceCost}；余额与债务随政权接管，人物私财保留。</p>}<p>确认后立即开战，消耗 {cost} 个人影响力；议和需另行提出。</p>{reason&&<p role="status">当前不可执行：{reason}</p>}</>} confirmLabel="确认开战" danger pending={pending||!!reason} onCancel={()=>setConfirm(null)} onConfirm={()=>{if(pending||reason)return;setConfirm(null);void afterCommand(send(command),()=>{onClose();});}}/>}
  </dialog>;
 }

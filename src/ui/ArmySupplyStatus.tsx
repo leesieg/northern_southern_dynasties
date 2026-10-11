@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {useState} from 'react';
 import {ConfirmAction} from './ConfirmAction';
 import {canEnter} from '../core/diplomacy';
@@ -9,7 +10,7 @@ import {siteById} from '../data/scenario';
 import {HoverHint} from './HoverHint';
 import {ArtIcon,Resource} from './ArtIcon';
 import type {World,GameCommand} from '../core/types';
-export function ArmySupplyStatus({world:w,army:a,pending,send}:{world:World;army:Army;pending:boolean;send:(c:GameCommand)=>void}){
+export function ArmySupplyStatus({world:w,army:a,pending,send}:{world:World;army:Army;pending:boolean;send:(c:GameCommand)=>Promise<boolean>}){
  const [relocate,setRelocate]=useState<string|null>(null);
  const relocation=relocate?{type:'realm',action:'march',army:a.id,site:relocate} as const:null;
  const daily=armyDailyFood(w,a),days=Math.floor(a.supply/Math.max(.001,daily)),c=a.convoy,city=w.realm!.cities[a.location],reserve=supplyReserve(w,a.location,a.realm),target=armySupplyTarget(w,a);
@@ -23,6 +24,6 @@ export function ArmySupplyStatus({world:w,army:a,pending,send}:{world:World;army
  <div className="army-logistics-row"><ArtIcon name="grain" size={24}/>{c?<HoverHint label="粮队详情" content={<><p>{siteById[c.from].name} → {siteById[c.to].name} · 军粮 {c.grain} · 装运 {c.loaded??0}/{c.grain}，通行天数另计装运等候；抵达损耗 5%。</p>{blocked&&<p>需恢复军队通行，或撤往己方粮仓。</p>}{c.to!==(a.journey?.route.at(-1)??a.location)&&<p>目的地已改变，粮队不会追随改道。</p>}</>}><span className={blocked?'military-warning':''}>{blocked?'粮道中断':'运往 '+siteById[c.to].name} · {eta===null?'到达时间待通路恢复':`预计 ${eta} 日，含装运等候`} · 实收 {Math.floor(c.grain*.95)} 粮</span></HoverHint>:<HoverHint label="驻地补给" content={`驻地保留民食 ${reserve}；驻军按兵力备粮目标 ${target}，携行容量 ${armySupplyCapacity(a)}。余粮沿可通行道路自动调运；行军部队可向前方安全据点发起运粮，抵达后领取。`}><span>{a.journey?'沿途安全据点备粮，抵达后领取':'驻地可调粮 '+Math.max(0,city.grain-reserve)+' · 目标 '+target}</span></HoverHint>}{!!a.arrears&&<span className="military-warning">欠饷 {a.arrears}</span>}{siege&&<span>{armyFieldStatus(w,a)} · 第 {(siege.round??0)+1} 轮阶段 · 工事 {siege.progress} · 下轮 {Math.max(0,(siege.nextPhase??w.day+14)-w.day)} 日后{a.supply>0?'':' · 待补给'}</span>}</div>
  {days<10&&<div className="army-remedy"><p className="military-warning">持续缺粮将减员 · 可移驻粮仓</p><div className="muster-chips">{homes.map(v=><HoverHint key={v.id} label={'移驻'+siteById[v.id].name} content={`当地可调粮 ${v.free}；沿道路行军，途中继续消耗军粮。`}><button disabled={pending} onClick={()=>setRelocate(v.id)}><ArtIcon name="world" size={22}/>{siteById[v.id].name}</button></HoverHint>)}</div>{a.logisticsReason&&<small>{a.logisticsReason}</small>}{!homes.length&&<small>暂无可达粮仓，请在迁运页调粮；结清欠饷后可遣散。</small>}</div>}
  {(battle||losses.length>0)&&<div className="army-loss-row"><ArtIcon name="stress" size={22}/>{battle&&<HoverHint label="战斗损失" content={`第 ${battle.last} 日最近交锋累计减员；使用撤军行动脱离交战。`}><span>战损 {battle.losses?.[a.id!]??(battle.a===a.id?battle.lossA:battle.lossB)}</span></HoverHint>}{losses.length>0&&<HoverHint label="断粮减员记录" content={losses.map((e,i)=><p key={i}>第 {e.day} 日 · {e.text}</p>)}><span className="military-warning">断粮减员 · 第 {losses[0].day} 日</span></HoverHint>}</div>}
- {relocation&&<ConfirmAction title={'移驻'+siteById[relocation.site!].name} detail={<><p>第 {a.id} 军从当前实际位置沿道路行军，途中继续消耗随军粮；新目的地的粮食不会提前计入本军库存。若已有行程，本次军令会改道。</p>{realmReason(w,relocation)&&<p role="status">{realmReason(w,relocation)}</p>}</>} confirmLabel="确认移驻" pending={pending||!!realmReason(w,relocation)} onCancel={()=>setRelocate(null)} onConfirm={()=>{if(pending||realmReason(w,relocation))return;send(relocation);setRelocate(null);}}/>}
+ {relocation&&<ConfirmAction title={'移驻'+siteById[relocation.site!].name} detail={<><p>第 {a.id} 军从当前实际位置沿道路行军，途中继续消耗随军粮；新目的地的粮食不会提前计入本军库存。若已有行程，本次军令会改道。</p>{realmReason(w,relocation)&&<p role="status">{realmReason(w,relocation)}</p>}</>} confirmLabel="确认移驻" pending={pending||!!realmReason(w,relocation)} onCancel={()=>setRelocate(null)} onConfirm={()=>{if(pending||realmReason(w,relocation))return;void afterCommand(send(relocation),()=>{setRelocate(null);});}}/>}
  </article>;
 }

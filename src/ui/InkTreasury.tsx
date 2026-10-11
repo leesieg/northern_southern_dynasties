@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {ConfirmAction} from './ConfirmAction';
 import {siteById} from '../data/scenario';
 import {useState} from 'react';
@@ -15,7 +16,7 @@ import {ArtIcon} from './ArtIcon';
 import {HoverHint} from './HoverHint';
 import {CountyArtwork} from './TerritoryArtwork';
 
-type Props={world:World;territory:string;realm:RealmId;pending:boolean;send:(c:GameCommand)=>void;onSelect:(id:string)=>void;onPerson?:(id:string)=>void};
+type Props={world:World;territory:string;realm:RealmId;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onSelect:(id:string)=>void;onPerson?:(id:string)=>void};
 type Transfer=Extract<FiscalCommand,{action:'request'|'allocate'}>;
 export function InkTreasury({world:w,territory,realm:r,pending,send,onSelect,onPerson}:Props){
  const [relief,setRelief]=useState(false);
@@ -44,15 +45,15 @@ export function InkTreasury({world:w,territory,realm:r,pending,send,onSelect,onP
  {page==='allocate'&&<div className="ink-allocation-list">{children.map(n=>{const command:Transfer={type:'fiscal',action:'allocate',territory:n.id,site:localSeatSite(w,n.id,r)??'',amount:100};return <button key={n.id} onClick={()=>{setPage(null);setDraft(command);}}>{n.name}<span>公库 {publicBalance(w,territoryAccount(w,r,n.id))} 钱 · 预览拨付 ›</span></button>;})}</div>}
  {page==='requests'&&<>{requests.map(q=>q.status==='pending'&&q.approver===w.characterId?<FiscalPetitionAudience key={q.id} world={w} request={q} pending={pending} send={send} onPerson={onPerson}/>:<article className="treasury-request" key={q.id}><strong>{q.amount} 钱 · {grantPurposes[q.purpose]}</strong><p>{q.status==='pending'?'候 '+politicalName(q.approver,w)+' 批示':q.reply}</p>{q.status==='pending'&&q.actor===w.characterId&&<button disabled={pending||!!fiscalReason(w,{type:'fiscal',action:'cancel',id:q.id})} onClick={()=>send({type:'fiscal',action:'cancel',id:q.id})}>撤回申请</button>}</article>)}{!requests.length&&<p>当前没有与你办理权限相关的拨款文书。</p>}</>}
  </ActionDialog>}
- {relief&&site&&<ConfirmAction title="确认下令平粜？" detail={siteById[site].name+'公库支出 20 钱，秩序 +8；不动用中央公款或私人财产。'} confirmLabel="确认平粜" pending={pending||!!reliefReason} onCancel={()=>setRelief(false)} onConfirm={()=>{const command={type:'fiscal',action:'relief',site} as const;if(pending||fiscalReason(w,command))return;send(command);setRelief(false);}}/>}
+ {relief&&site&&<ConfirmAction title="确认下令平粜？" detail={siteById[site].name+'公库支出 20 钱，秩序 +8；不动用中央公款或私人财产。'} confirmLabel="确认平粜" pending={pending||!!reliefReason} onCancel={()=>setRelief(false)} onConfirm={()=>{const command={type:'fiscal',action:'relief',site} as const;if(pending||fiscalReason(w,command))return;void afterCommand(send(command),()=>{setRelief(false);});}}/>}
  {draft&&<FiscalTransferDialog key={draft.territory+draft.action} world={w} pending={pending} send={send} initial={draft} onClose={()=>setDraft(null)}/>}
  </div>;
 }
 
-function FiscalTransferDialog({world:w,initial,pending,send,onClose}:{world:World;initial:Transfer;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void}){
+function FiscalTransferDialog({world:w,initial,pending,send,onClose}:{world:World;initial:Transfer;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onClose:()=>void}){
  const [amount,setAmount]=useState(initial.amount),[purpose,setPurpose]=useState<GrantRequest['purpose']>('construction');
  const request=initial.action==='request',command={...initial,amount,...(request?{purpose}:{})} as Transfer,r=playerRealm(w),territory=initial.territory!,actor=request?localSuperior(w,territory,r,w.characterId!)?.holder??'':w.characterId!,source=grantSource(w,r,territory,actor),target=territoryAccount(w,r,territory),reason=fiscalReason(w,command);
- return <ActionDialog title={(request?'向上级请款':'拨付公款')+' · '+territoryNodes[territory].name} onClose={onClose} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||fiscalReason(w,command))return;send(command);onClose();}}>确认{request?'请款':'拨付'} · {Number.isFinite(amount)?amount:0} 钱</button>}>
+ return <ActionDialog title={(request?'向上级请款':'拨付公款')+' · '+territoryNodes[territory].name} onClose={onClose} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||fiscalReason(w,command))return;void afterCommand(send(command),()=>{onClose();});}}>确认{request?'请款':'拨付'} · {Number.isFinite(amount)?amount:0} 钱</button>}>
  <div className="action-summary"><p>办理人：{politicalName(w.characterId!,w)}</p><p>{accountName(source)}（余额 {publicBalance(w,source)} 钱） → {accountName(target)}（余额 {publicBalance(w,target)} 钱）</p><p>{request?'提交申请后等待直属上级审批，当前不会转账。':'确认后按实际拨款路径划转，不动用私人财产。'}</p></div>
  <label>钱数<input aria-label="拨款钱数" type="number" min={20} max={400} step={10} value={Number.isFinite(amount)?amount:''} onChange={e=>setAmount(e.target.valueAsNumber)}/></label>
  {request&&<label>用途<select value={purpose} onChange={e=>setPurpose(e.target.value as GrantRequest['purpose'])}>{Object.entries(grantPurposes).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>}

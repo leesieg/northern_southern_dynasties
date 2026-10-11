@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {useContext,useEffect,useState} from 'react';
 import {AudienceDeferContext} from './AudienceContext';
 import {AudienceStage} from './PetitionAudience';
@@ -21,7 +22,7 @@ export const serviceOutcomeKind=(kind:Assignment['kind'])=>['relief','marketwork
 type Question='situation'|'accounts'|'alternatives'|'delay';
 type Decision='approve'|'revise'|'cancel';
 
-export function ServiceAudience({world:w,task:t,pending,send,onPerson}:{world:World;task:Assignment;pending:boolean;send:(command:GameCommand)=>void;onPerson:(id:string)=>void}){
+export function ServiceAudience({world:w,task:t,pending,send,onPerson}:{world:World;task:Assignment;pending:boolean;send:(command:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void}){
  const onDefer=useContext(AudienceDeferContext);
  const [question,setQuestion]=useState<Question|null>(null),[decision,setDecision]=useState<Decision|null>(null);
  useEffect(()=>{setQuestion(null);setDecision(null);},[t.id,t.phase]);
@@ -46,7 +47,7 @@ export function ServiceAudience({world:w,task:t,pending,send,onPerson}:{world:Wo
     </div></div></div>}
   </div>
   <SingleChoiceCards label="你的答复 · 单选" value={decision} onChange={setDecision} disabled={pending} options={options.map(o=>({id:o.id,title:o.title,description:o.description,reason:serviceReason(w,{type:'service',action:o.id,id:t.id})}))}/>
-  <div className="service-audience-confirm"><div className="service-audience-confirm-summary">{decision?<><strong>{options.find(o=>o.id===decision)?.title}</strong><small>{options.find(o=>o.id===decision)?.description}</small></>:<span>选择答复后确认</span>}{blocked&&<small role="status" className="service-warning">{blocked}</small>}</div><div className="service-audience-actions">{onDefer&&<button type="button" disabled={pending} onClick={onDefer}>稍后处理</button>}<button className="primary" disabled={pending||!command||!!blocked} onClick={()=>{if(!command||pending||serviceReason(w,command))return;send(command);setDecision(null);}}>确认答复</button></div></div>
+  <div className="service-audience-confirm"><div className="service-audience-confirm-summary">{decision?<><strong>{options.find(o=>o.id===decision)?.title}</strong><small>{options.find(o=>o.id===decision)?.description}</small></>:<span>选择答复后确认</span>}{blocked&&<small role="status" className="service-warning">{blocked}</small>}</div><div className="service-audience-actions">{onDefer&&<button type="button" disabled={pending} onClick={onDefer}>稍后处理</button>}<button className="primary" disabled={pending||!command||!!blocked} onClick={()=>{if(!command||pending||serviceReason(w,command))return;void afterCommand(send(command),()=>{setDecision(null);});}}>确认答复</button></div></div>
  </section>;
 }
 

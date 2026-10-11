@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {useEffect,useState} from 'react';
 import type {World,GameCommand} from '../core/types';
 import {demandNames,unrestReason,unrestBlock} from '../core/unrest';
@@ -10,7 +11,7 @@ import {ActionDialog} from './ActionDialog';
 import {SingleChoiceCards} from './SingleChoiceCards';
 import {CharacterPortrait} from './CharacterPortrait';
 import './unrest.css';
-export function UnrestPanel({world:w,site,pending,send,onPerson,onTransport}:{world:World;site:string;pending:boolean;send:(c:GameCommand)=>void;onPerson?:(id:string)=>void;onTransport?:()=>void}){
+export function UnrestPanel({world:w,site,pending,send,onPerson,onTransport}:{world:World;site:string;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson?:(id:string)=>void;onTransport?:()=>void}){
  const [open,setOpen]=useState(false),[choice,setChoice]=useState('report');
  const q=w.unrest?.items.find(q=>q.site===site&&['warning','armed'].includes(q.stage));
  useEffect(()=>{setOpen(false);setChoice('report');},[site,q?.id]);
@@ -25,7 +26,7 @@ export function UnrestPanel({world:w,site,pending,send,onPerson,onTransport}:{wo
  ];
  const selected=options.find(o=>o.id===choice)??options[0],reason=selected.command.type==='unrest'?unrestReason(w,selected.command):realmReason(w,selected.command);
  return <section className="local-unrest"><ArtIcon name={q.demand==='food'?'grain':q.demand==='tax'?'coins':'army'} size={28}/><div><strong>{q.stage==='armed'?'民变起事':'地方诉求'} · {demandNames[q.demand]}</strong><small>{q.deadline===null?'已进入战事':q.deadline>w.day?'尚余 '+(q.deadline-w.day)+' 日':'处理期限已到'}{q.reported!==undefined?' · 已上报':''}</small></div><HoverHint label="审阅地方诉求" content="查看原因、组织者与实际钱粮，选择处理后确认。"><button className="court-icon-button" aria-label="审阅地方诉求" onClick={()=>{setChoice('report');setOpen(true);}}><ArtIcon name="diligent" size={24}/></button></HoverHint>
- {open&&<ActionDialog title={'地方诉求 · '+demandNames[q.demand]} onClose={()=>setOpen(false)} actions={<><button className="primary" disabled={pending||!!reason} onClick={()=>{const command=selected.command;if(pending||(command.type==='unrest'?unrestReason(w,command):realmReason(w,command)))return;send(command);setOpen(false);}}>确认 · {selected.title}</button></>}>
+ {open&&<ActionDialog title={'地方诉求 · '+demandNames[q.demand]} onClose={()=>setOpen(false)} actions={<><button className="primary" disabled={pending||!!reason} onClick={()=>{const command=selected.command;if(pending||(command.type==='unrest'?unrestReason(w,command):realmReason(w,command)))return;void afterCommand(send(command),()=>{setOpen(false);});}}>确认 · {selected.title}</button></>}>
   <div className="unrest-facts">{q.organizer&&<button className="unrest-organizer" disabled={!onPerson} onClick={()=>{setOpen(false);onPerson?.(q.organizer!);}}><CharacterPortrait characterId={q.organizer} world={w} compact/><span>组织者<br/>{politicalName(q.organizer,w)}</span></button>}<p>{q.demand==='customs'?'撤销军镇旧俗后，实际带兵将领失去原组织待遇。':q.demand==='tax'?'持续低秩序与重税并存。':'持续低秩序与当地粮仓不足并存。'}已积累 {q.distressedDays} 日；不同文化本身不增加压力。</p></div>
   <div className="unrest-resources"><span>本城公粮 <b>{city.grain}</b> / 民食需求 <b>{civilianFood(w,site)}</b> 每期</span><span>本城秩序 <b>{city.order}</b> / 100</span>{arrivals.length>0&&<span>粮援在途 {arrivals.reduce((n,t)=>n+t.sent,0)}，以抵达实收为准</span>}</div>
   {q.stage==='warning'&&q.deadline!<=w.day&&<p role="status">{unrestBlock(w,q)||'组织条件具备，未处理将进入武装起事。'}</p>}

@@ -16,7 +16,7 @@ import {CharacterPortrait} from './CharacterPortrait';
 import {politicalName} from '../core/government';
 import {accountName} from '../core/treasury';
 import './careerSystems.css';
-type Props={world:World;pending:boolean;send:(c:GameCommand)=>void;onPerson?:(id:string)=>void};
+type Props={world:World;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson?:(id:string)=>void};
 function Action({command,label,reason,detail,icon='influence',...p}:Props&{command:GameCommand;label:string;reason:string;detail:string;icon?:ArtName}){const [confirm,setConfirm]=useState(false);return <div><HoverHint label={label} content={<>{detail}{reason&&<p>{reason}</p>}</>}><button className="diplomacy-action-card" disabled={p.pending||!!reason} onClick={()=>setConfirm(true)}><ArtIcon name={icon} size={28}/>{label}</button></HoverHint>{confirm&&<ConfirmAction title={label} detail={detail} confirmLabel='确认执行' danger pending={p.pending||!!reason} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(p.pending||reason)return;p.send(command);setConfirm(false);}}/>}</div>;}
 export {EnterpriseLedger as EnterprisePanel} from './EnterpriseLedger';
 export function MilitaryCampaignPanel(p:Props&{site:string;armyId?:number}){const w=p.world,r=playerRealm(w),armies=w.realm!.armies.filter(a=>playerCommandsArmy(w,a)&&(p.armyId===undefined||a.id===p.armyId)),wars=activeWars(w).filter(v=>!v.civil&&[v.attacker,v.defender].includes(r));

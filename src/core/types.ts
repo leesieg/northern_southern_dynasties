@@ -64,7 +64,7 @@ export type GameCommand = import('./estates').EstateCommand | import('./familyMa
   | { type: 'provision' }
   | { type: 'commission' }
   | import('./localAdministration').LocalCommand | import('./treasury').FiscalCommand | RetinueCommand | MobilityCommand | ServiceCommand | DutyCommand | LifeCommand | DiplomacyCommand | RelationshipCommand | CourtCommand | GovernmentCommand | BuildCommand | SocialCommand | RealmCommand | LifestyleCommand;
-export type Request =
+export type Request = (
   | { type: 'init' }
   | { type:'new';mode?:'sandbox'|'tutorial';scriptId?:string;characterId?:string }
   | { type:'resume'|'menu' }
@@ -76,9 +76,10 @@ export type Request =
   | { type: 'load'; slot: string }
   | { type: 'delete-save'; slot: string }
   | { type: 'export' }
-  | { type: 'import'; text: string };
+  | { type: 'import'; text: string }) & {requestId?:string};
 export interface SaveInfo { mode?:'sandbox'; scriptId?:string; characterName?:string; id: string; savedAt: number; day: number }
 export type Reply =
+  | {type:'receipt';requestId:string;ok:boolean;text?:string}
   | {type:'paused';events:PauseEvent[]}
   | { type:'screen';page:'menu'|'play' }
   | { type: 'world'; world: World; speed: number; slots: SaveInfo[]; lastSaved: number | null }

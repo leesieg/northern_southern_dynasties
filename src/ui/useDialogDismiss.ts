@@ -1,0 +1,3 @@
+import {useEffect,useRef,type RefObject} from 'react';
+import {pendingIn} from './actionFeedback';
+export function useDialogDismiss(ref:RefObject<HTMLElement|null>,onClose:()=>void){const closing=useRef(false),animation=useRef<Animation|null>(null);useEffect(()=>()=>{animation.current?.cancel();},[]);return ()=>{const node=ref.current;if(closing.current||pendingIn(node))return;if(!node||matchMedia('(prefers-reduced-motion: reduce)').matches||!node.animate){onClose();return;}closing.current=true;animation.current=node.animate([{opacity:1,translate:'0 0'},{opacity:0,translate:'0 5px'}],{duration:110,easing:'ease-in',fill:'forwards'});animation.current.finished.then(onClose).catch(()=>{});};}

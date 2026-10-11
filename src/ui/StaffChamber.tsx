@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {CourtIcon} from './CourtIcon';
 import {NobilityPanel,RulerHistoryPanel} from './PoliticalIdentity';
 import {terrainSceneStyle,personTerrainSite} from './terrainScene';
@@ -45,7 +46,7 @@ import './staffChamber.css';
 import './courtAudience.css';
 
 export type CourtTab='central'|'factions'|'local'|'person'|'finance'|'government'|'situation'|'history';
-type Props={realm?:RealmId;world:World;pending:boolean;send:(command:GameCommand)=>void;onPerson:(id:string)=>void;onTerritory:(id:string)=>void;onService:(task?:number,site?:string)=>void;tab:CourtTab;onTab:(tab:CourtTab)=>void;region:string;onRegion:(region:string)=>void;person:string;financeView:'treasury'|'audit';treasuryTab:'budget'|'requests'|'ledger'};
+type Props={realm?:RealmId;world:World;pending:boolean;send:(command:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void;onTerritory:(id:string)=>void;onService:(task?:number,site?:string)=>void;tab:CourtTab;onTab:(tab:CourtTab)=>void;region:string;onRegion:(region:string)=>void;person:string;financeView:'treasury'|'audit';treasuryTab:'budget'|'requests'|'ledger'};
 
 function belongsToProvince(territory:string,province:string){
  let node:(typeof territoryNodes)[string]|undefined=territoryNodes[territory];
@@ -53,13 +54,13 @@ function belongsToProvince(territory:string,province:string){
  return false;
 }
 
-export function RetinueChamber({world:w,host,pending,send,onPerson,onFind,onInteract}:{world:World;host:string;pending:boolean;send:(command:GameCommand)=>void;onPerson:(id:string)=>void;onFind:()=>void;onInteract:(id:string)=>void}){
+export function RetinueChamber({world:w,host,pending,send,onPerson,onFind,onInteract}:{world:World;host:string;pending:boolean;send:(command:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void;onFind:()=>void;onInteract:(id:string)=>void}){
  const members=retinueMembers(w,host),own=host===w.characterId;
  return <div className="retinue-chamber"><aside className="retinue-chamber-master detail-landscape" style={terrainSceneStyle(personTerrainSite(w,host))}><div className="retinue-master-portrait"><CharacterPortrait characterId={host} world={w}/></div><div className="retinue-master-seal" aria-hidden="true"><ArtIcon name="influence" size={21}/>幕府</div><small className="retinue-master-rank">{own?'你的幕府':'人物幕府'}</small><h3>{politicalName(host,w)}</h3><p>属员协理文书、财计与军务；授予幕职后可按职责差遣。</p><div className="retinue-master-metrics"><span><b>{members.length}<small> / 6</small></b>属员</span><span><b>{members.filter(m=>!!m.post).length}</b>授职</span><span><b>{members.reduce((sum,m)=>sum+(m.post?4:2),0)}</b>钱／月俸</span></div></aside><div className="retinue-chamber-work"><div className="retinue-work-heading"><h3>署中席位</h3><small>{own?'点击席位任命，已任职者可在席位内差遣':'查阅幕职与属员'}</small></div><RetinuePanel world={w} host={host} pending={pending} send={send} onPerson={onPerson} onFind={onFind} onInteract={onInteract}/></div></div>;
 }
 
 export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,onTerritory,onService,tab,onTab,region,onRegion,person,financeView,treasuryTab}:Props){
- const [nobilityOpen,setNobilityOpen]=useState(false);
+ const [nobilityOpen,setNobilityOpen]=useState(false),[mandateConfirm,setMandateConfirm]=useState(false);
  const [office,setOffice]=useState<MinistryId|null>(null),[candidate,setCandidate]=useState(''),[dismissConfirm,setDismissConfirm]=useState(false),[requestsOpen,setRequestsOpen]=useState(false);
  const id=w.characterId!,realm=targetRealm??playerRealm(w),own=realm===playerRealm(w),government=governmentOf(w,realm)!,court=courtOf(w,realm)!;
  const executives=governingExecutives(w,realm),sovereign=own&&isSovereign(w,id),executive=own&&executives.includes(id);
@@ -146,17 +147,18 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
    <HoverHint label="朝局与下次月结" content={<>{phases[court.phase].effect}。{projection.enabled?'当前条件预估 '+phases[projection.phase].name:'当前政体暂停结算'}；治理规则持续有效。</>}><button className={'court-phase court-phase--'+court.phase} onClick={()=>onTab('situation')} aria-label="查看朝局与月结原因"><CourtIcon name={court.phase} size={28}/>{phases[court.phase].name}<b>{projection.enabled?(projection.delta>0?'↑':projection.delta<0?'↓':'→'):''}</b></button></HoverHint>
    <HoverHint label="中央薪俸" content="已填中枢职掌的每月薪俸，支付与收款仍按实际任职结算。"><span className="court-salary" tabIndex={0}><ArtIcon name="coins" size={21}/>{courtSalary(w,realm)} / 月</span></HoverHint>
    <div className="court-footer-actions">{own&&<>
-    {!sovereign&&!w.realm?.mandate&&<HoverHint label="请求军务授权" content={mandateReason||'向上级请求军务授权，消耗个人影响力 40。'}><button className="court-icon-button" aria-label="请求军务授权" disabled={pending||!!mandateReason} onClick={()=>send({type:'realm',action:'mandate'})}><ArtIcon name="army" size={25}/></button></HoverHint>}
+    {!sovereign&&!w.realm?.mandate&&<HoverHint label="请求军务授权" content={mandateReason||'向上级请求军务授权，消耗个人影响力 40。'}><button className="court-icon-button" aria-label="请求军务授权" disabled={pending||!!mandateReason} onClick={()=>setMandateConfirm(true)}><ArtIcon name="army" size={25}/></button></HoverHint>}
     <HoverHint label="差事与奏事" content={serviceTasks.length+' 项本国在办差事；按自己的职权委派、请领与呈报。'}><button className="court-icon-button" aria-label="打开差事与奏事" onClick={()=>onService()}><ArtIcon name="diligent" size={25}/><b>{serviceTasks.length}</b></button></HoverHint>
    </>}</div>
   </footer>
+  {mandateConfirm&&<ConfirmAction title="请求军务授权" detail="向上级请求军务授权，消耗本人影响力 40；获准后的可用军务仍受真实官职与辖区限制。" confirmLabel="确认请求 · 40 影响力" pending={pending||!!mandateReason} onCancel={()=>setMandateConfirm(false)} onConfirm={()=>{const command={type:'realm',action:'mandate'} as const;if(pending||realmReason(w,command))return;void afterCommand(send(command),()=>setMandateConfirm(false));}}/>}
   {requestsOpen&&own&&<ActionDialog title="地方任职文书" onClose={()=>setRequestsOpen(false)} cancelLabel="返回朝廷" actions={null}><LocalRequests world={w} pending={pending} send={send} onPerson={onPerson}/>{!localRecords.length&&<p>暂无自己的地方任职文书。</p>}</ActionDialog>}
   {tab==='person'&&own&&<ActionDialog title={politicalName(person,w)+' · 官爵与任职'} onClose={()=>onTab('central')} cancelLabel="返回朝会" actions={null}><div className="court-person-record"><NobilityPanel world={w} realm={realm} person={person} pending={pending} send={send} onPerson={onPerson}/>{person===id&&<ResignationPanel world={w} pending={pending} send={send}/>}<OfficeHierarchy world={w} person={person} onPerson={onPerson}/><LocalCareer world={w} person={person} send={send} pending={pending} onPerson={onPerson}/><ServiceProfile world={w} person={person} onOpen={()=>onService()}/></div></ActionDialog>}
   {office&&command&&own&&<PersonSelectionDialog world={w} context={{realm,site:capital(realm,w)}} title={(executive?'任命 · ':'请任 · ')+ministries[office].name} value={executive?candidate:id} onSelect={setCandidate} onClose={closeOffice} pending={pending}
    description={<>{ministries[office].duty}；{ministries[office].effect}。任用评价按现行准则与通道；实际履职须到任、对口能力加经验达到 10。空缺常额补任不耗影响力；撤换或破格 15，破格另使支持 −3、紧张 +3。</>}
    options={officeCandidates(w,realm).filter(p=>isAlive(w,p.id)&&(executive||p.id===id)).map(p=>{const q=appointmentEvaluation(w,realm,p.id,{ministry:office,site:capital(realm,w)},executives[0]);return {id:p.id,score:q.score,metric:'任用评价',detail:q.factors.map(f=>f.label+' '+f.value).join(' / ')+(q.trial?' · 任事试用':q.sponsored?' · 担保取用':q.ordinary?' · 常额任用':' · 需破格'),reason:courtReason(w,command.action==='appoint'?{...command,candidate:p.id}:command)};})}
-   confirmLabel={(executive?'确认任命':'确认请任')+' · '+cost+' 影响力'} onConfirm={()=>{if(pending||courtReason(w,command))return;send(command);closeOffice();}}>
-   {court.ministries[office]&&dismiss&&executive&&<><button disabled={pending||!!courtReason(w,dismiss)} onClick={()=>setDismissConfirm(true)}>免职 · 15 影响力</button>{dismissConfirm&&<ConfirmAction title="免职" detail="撤销此人的中央官职与履职增益。" confirmLabel="确认免职" danger pending={pending||!!courtReason(w,dismiss)} onCancel={()=>setDismissConfirm(false)} onConfirm={()=>{if(pending||courtReason(w,dismiss))return;send(dismiss);closeOffice();}}/>}</>}
+   confirmLabel={(executive?'确认任命':'确认请任')+' · '+cost+' 影响力'} onConfirm={()=>{if(pending||courtReason(w,command))return;void afterCommand(send(command),closeOffice);}}>
+   {court.ministries[office]&&dismiss&&executive&&<><HoverHint label="免职" content={courtReason(w,dismiss)||"预览撤免后果，确认消耗 15 影响力。"}><button disabled={pending||!!courtReason(w,dismiss)} onClick={()=>setDismissConfirm(true)}>免职 · 15 影响力</button></HoverHint>{dismissConfirm&&<ConfirmAction title="免职" detail="撤销此人的中央官职与履职增益。" confirmLabel="确认免职" danger pending={pending||!!courtReason(w,dismiss)} onCancel={()=>setDismissConfirm(false)} onConfirm={()=>{if(pending||courtReason(w,dismiss))return;void afterCommand(send(dismiss),closeOffice);}}/>}</>}
   </PersonSelectionDialog>}
  </div>;
 }

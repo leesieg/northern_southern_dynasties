@@ -1,3 +1,5 @@
+import {TroopChoice} from './DecisionPresentation';
+import {afterCommand} from './actionFeedback';
 import {ManpowerPreview} from './ManpowerPreview';
 import {allPeople} from '../core/personRegistry';
 import {terrainSceneStyle} from './terrainScene';
@@ -30,7 +32,6 @@ import {DetailTabs} from './DetailTabs';
 import {ArtIcon,Resource} from './ArtIcon';
 import {CommandButton} from './CommandButton';
 import {ActionDialog} from './ActionDialog';
-import {SingleChoiceCards} from './SingleChoiceCards';
 import {MilitaryChoiceDialog,type MilitaryChoice} from './MilitaryChoiceDialog';
 import {CharacterPortrait} from './CharacterPortrait';
 import {ConfirmAction} from './ConfirmAction';
@@ -39,7 +40,7 @@ import {RecruitmentPlanDialog} from './RecruitmentPlanDialog';
 import './militaryHub.css';
 type Tab='overview'|'armies'|'generals'|'wars';
 const tabs=[{id:'overview',label:'军情',icon:'stress'},{id:'armies',label:'军队',icon:'army'},{id:'generals',label:'将领',icon:'person'},{id:'wars',label:'战事',icon:'influence'}] as const;
-export function MilitaryHub({world:w,pending,send,onArmy,onCity,onPerson,onDiplomacy}:{world:World;pending:boolean;send:(c:GameCommand)=>void;onArmy:(id:number)=>void;onCity:(id:string)=>void;onPerson:(id:string)=>void;onDiplomacy:(r:RealmId)=>void}){
+export function MilitaryHub({world:w,pending,send,onArmy,onCity,onPerson,onDiplomacy}:{world:World;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onArmy:(id:number)=>void;onCity:(id:string)=>void;onPerson:(id:string)=>void;onDiplomacy:(r:RealmId)=>void}){
  const [tab,setTab]=useState<Tab>('overview'),[choice,setChoice]=useState<MilitaryChoice|null>(null),[recruit,setRecruit]=useState(false),[deploy,setDeploy]=useState(false),[privateDialog,setPrivateDialog]=useState(false),[privateKind,setPrivateKind]=useState<TroopKind>('shield'),[privateAmount,setPrivateAmount]=useState<number|undefined>(),[confirm,setConfirm]=useState<{command:GameCommand;title:string;detail:string}|null>(null),r=playerRealm(w),id=w.characterId!,central=governingExecutives(w,r).includes(id);
  const armies=w.realm!.armies.filter(a=>authorityGrant(w,id,'command',{realm:a.realm,site:a.location,army:a}).allowed),wars=activeWars(w).filter(v=>!!warRealmSide(v,r)),recruitSites=Object.keys(w.realm!.cities).filter(site=>authorityGrant(w,id,'levy',{realm:r,site}).allowed),site=w.people[0].location;
  const privateQuote=privateRecruitmentQuote(w,{type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount});
@@ -67,14 +68,14 @@ export function MilitaryHub({world:w,pending,send,onArmy,onCity,onPerson,onDiplo
  </div>
  {recruit&&<RecruitmentPlanDialog world={w} pending={pending} send={send} onClose={()=>setRecruit(false)}/>}
  {deploy&&<ArmyDeploymentDialog world={w} pending={pending} send={send} onClose={()=>setDeploy(false)}/>}
- {privateDialog&&<ActionDialog title="私募部曲" onClose={()=>setPrivateDialog(false)} actions={<button className="primary" disabled={pending||!!militaryCareerReason(w,{type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount})} onClick={()=>{const c={type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount} as const;if(pending||militaryCareerReason(w,c))return;send(c);setPrivateDialog(false);}}>确认私募 · {privateQuote.coins} 钱</button>}>
+ {privateDialog&&<ActionDialog title="私募部曲" onClose={()=>setPrivateDialog(false)} actions={<button className="primary" disabled={pending||!!militaryCareerReason(w,{type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount})} onClick={()=>{const c={type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount} as const;if(pending||militaryCareerReason(w,c))return;void afterCommand(send(c),()=>{setPrivateDialog(false);});}}>确认私募 · {privateQuote.coins} 钱</button>}>
   <p>驻地{siteById[site].name}，{privateQuote.amount} 人来自权威来源，使用庄粮 {privateQuote.estateGrain}、购买公粮 {privateQuote.purchase}，训练三十日；后续私财供饷。优先补入同城兼容部曲，改编保留原兵源占用。</p>
   <label>征募人数<input type="number" min={1} max={6000} value={privateAmount??privateQuote.amount} onChange={event=>setPrivateAmount(event.target.valueAsNumber)}/></label><ManpowerPreview world={w} site={site} owner={id} amount={privateQuote.amount}/>
-  <SingleChoiceCards label="兵种与私财支出" value={privateKind} onChange={setPrivateKind} disabled={pending} options={(Object.keys(troopKinds) as TroopKind[]).map(kind=>({id:kind,title:troopKinds[kind].name,description:`兵装 ${Math.ceil(troopKinds[kind].cost*privateQuote.amount/200)} 钱 · ${privateQuote.amount} 人 · 30 日训练`,detail:`攻击 ${troopKinds[kind].attack}% · 防护 ${troopKinds[kind].defence}%`,reason:militaryCareerReason(w,{type:'militaryCareer',action:'privateRaise',site,kind,amount:privateAmount})}))}/>
+  <TroopChoice value={privateKind} onChange={setPrivateKind} pending={pending}/><p>所选兵种兵装 {Math.ceil(troopKinds[privateKind].cost*privateQuote.amount/200)} 钱 · {privateQuote.amount} 人 · 30 日训练</p>
   <div className="military-metrics"><Resource caption name="coins" label="个人现钱" value={w.people[0].coins}/><Resource caption name="coins" label="本次私财支出" value={privateQuote.coins}/></div>
   {militaryCareerReason(w,{type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount})&&<p role="status" className="military-warning">{militaryCareerReason(w,{type:'militaryCareer',action:'privateRaise',site,kind:privateKind,amount:privateAmount})}</p>}
  </ActionDialog>}
  {choice&&<MilitaryChoiceDialog world={w} choice={choice} pending={pending} send={send} onClose={()=>setChoice(null)}/>}
- {confirm&&(()=>{const c=confirm.command,why=c.type==='militaryDefection'?militaryDefectionQuote(w,c).reason:c.type==='militaryNomination'?nominationReason(w,c):c.type==='militaryCareer'?militaryCareerReason(w,c):c.type==='defection'?defectionReason(w,c):c.type==='siegeDecision'?siegeDecisionReason(w,c):c.type==='separatePeace'?separatePeaceReason(w,c):'';return <ConfirmAction title={confirm.title} detail={<><p>{confirm.detail}</p>{why&&<p className="service-warning">{why}</p>}</>} confirmLabel={'确认 · '+confirm.title} danger={c.type==='militaryDefection'||c.type==='siegeDecision'&&c.choice==='surrender'||c.type==='separatePeace'} pending={pending||!!why} onCancel={()=>setConfirm(null)} onConfirm={()=>{if(pending||why)return;send(c);setConfirm(null);}}/>;})()}
+ {confirm&&(()=>{const c=confirm.command,why=c.type==='militaryDefection'?militaryDefectionQuote(w,c).reason:c.type==='militaryNomination'?nominationReason(w,c):c.type==='militaryCareer'?militaryCareerReason(w,c):c.type==='defection'?defectionReason(w,c):c.type==='siegeDecision'?siegeDecisionReason(w,c):c.type==='separatePeace'?separatePeaceReason(w,c):'';return <ConfirmAction title={confirm.title} detail={<><p>{confirm.detail}</p>{why&&<p className="service-warning">{why}</p>}</>} confirmLabel={'确认 · '+confirm.title} danger={c.type==='militaryDefection'||c.type==='siegeDecision'&&c.choice==='surrender'||c.type==='separatePeace'} pending={pending||!!why} onCancel={()=>setConfirm(null)} onConfirm={()=>{if(pending||why)return;void afterCommand(send(c),()=>{setConfirm(null);});}}/>;})()}
  </div>;
 }

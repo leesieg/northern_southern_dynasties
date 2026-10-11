@@ -12,7 +12,7 @@ import {playerRealm} from '../core/realm';
 import {siteById} from '../data/scenario';
 import type {World,GameCommand} from '../core/types';
 
-type Props={world:World;pending:boolean;send:(command:GameCommand)=>void;onPerson?:(person:string)=>void};
+type Props={world:World;pending:boolean;send:(command:GameCommand)=>Promise<boolean>;onPerson?:(person:string)=>void};
 
 export function CourtPetitionAudience({world:w,pending,send,onPerson}:Props){
  const petition=courtOf(w)?.petition;if(!petition)return null;

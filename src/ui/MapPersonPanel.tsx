@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {NobilityPanel} from './PoliticalIdentity';
 import type {PersonLifeEntry} from '../core/ongoing';
 import {ActionDialog} from './ActionDialog';
@@ -42,7 +43,7 @@ import {personSheetPresentation} from './personSheetPresentation';
 import {PersonOfficeSummary} from './PersonOfficeSummary';
 import './personSheet.css';
 export type PersonTab='overview'|'family'|'relations'|'interaction'|'focus';
-export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,onIntrigue,pending,send}:{world:World;ids:string[];lifeEntry?:PersonLifeEntry|null;tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:(site:string)=>void;onCity:(id:string)=>void;onIntrigue?:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>void}){
+export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,onIntrigue,pending,send}:{world:World;ids:string[];lifeEntry?:PersonLifeEntry|null;tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:(site:string)=>void;onCity:(id:string)=>void;onIntrigue?:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>Promise<boolean>}){
  const [order,setOrder]=useState<'provision'|'repatriate'|null>(null);
  const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'contributions'|'legacy'>('tree');
  const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=getCharacter(w,id)!,extra=getPerson(w,id)!,self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
@@ -97,7 +98,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  {tab==='interaction'&&self&&w.realm&&!deceased&&<PactRequestPanel world={w} pending={pending} send={send}/>}
  {tab==='interaction'&&!self&&w.social&&extra&&!retired&&!deceased&&<>{!w.custody?.records[id]&&<CustodyPerson key={'arrest-'+id} world={w} person={id} pending={pending} send={send} onPerson={onPerson}/>}<RelationshipPanel onIntrigue={onIntrigue} key={id} world={w} pending={pending} send={send} targetId={id}/></>}
 
- {order&&self&&p&&<ActionDialog title={(order==='provision'?'补充行粮':'请求返国通行')+' · '+name} scene="landscape" onClose={()=>setOrder(null)} actions={<button className="primary" disabled={pending||!!orderReason} onClick={()=>{if(pending||(order==='provision'?provisionReason:diplomaticQuote(w,{type:'diplomacy',action:'repatriate'}).reason))return;send(order==='provision'?{type:'provision'}:{type:'diplomacy',action:'repatriate'});setOrder(null);}}>{order==='provision'?'确认补给 · '+provisionCost(w)+' 钱':'确认返国'}</button>}>
+ {order&&self&&p&&<ActionDialog title={(order==='provision'?'补充行粮':'请求返国通行')+' · '+name} scene="landscape" onClose={()=>setOrder(null)} actions={<button className="primary" disabled={pending||!!orderReason} onClick={()=>{if(pending||(order==='provision'?provisionReason:diplomaticQuote(w,{type:'diplomacy',action:'repatriate'}).reason))return;void afterCommand(send(order==='provision'?{type:'provision'}:{type:'diplomacy',action:'repatriate'}),()=>{setOrder(null);});}}>{order==='provision'?'确认补给 · '+provisionCost(w)+' 钱':'确认返国'}</button>}>
  {order==='provision'?<p>{name}在{siteById[p.location].name}以本人盘缠支付 {provisionCost(w)} 钱，补充 30 日行粮。</p>:<><p>执行者：{name}。仅允许沿指定路线返回本国，不能改道访问他国。</p>{route&&<p>{route.route.map(site=>siteById[site].name).join(' → ')} · 路程 {route.days} 日 · 本人行粮 −{route.food} 日份。</p>}</>}
  {orderReason&&<p className="service-warning" role="status">{orderReason}</p>}
  </ActionDialog>}

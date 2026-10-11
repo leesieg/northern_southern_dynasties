@@ -21,7 +21,7 @@ import type {RealmId} from '../core/realm';
 import {countyCulture} from '../core/culture';
 import {cultureNames} from '../data/cultures';
 import type {World,GameCommand} from '../core/types';
-export function CitySummary({world:w,site,pending,send,onPerson,onDiplomacy}:{world:World;site:string;pending:boolean;send:(c:GameCommand)=>void;onPerson?:(id:string)=>void;onDiplomacy:(r:RealmId)=>void}){
+export function CitySummary({world:w,site,pending,send,onPerson,onDiplomacy}:{world:World;site:string;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson?:(id:string)=>void;onDiplomacy:(r:RealmId)=>void}){
  const [warOpen,setWarOpen]=useState(false);
  const city=siteById[site],c=w.realm?.cities[site],owner=c?.owner??city.polity,controller=c?.controller??owner,r=controller==='frontier'?null:controller,holder=c?.governor;
  const internal=r?civilWar(w,r):undefined,controllerPerson=internal?.civil&&(internal.civil.cities.includes(site)?internal.civil.claimant:internal.civil.loyalist);

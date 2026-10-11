@@ -6,9 +6,10 @@
     <meta name="theme-color" content="#192323" />
     <meta name="description" content="风云南北朝 · 人物驱动的历史战略沙盒" />
     <title>风云南北朝 · 山河之间</title>
+  <style>@keyframes boot-ink{from{stroke-dashoffset:760;opacity:.4}to{stroke-dashoffset:0;opacity:1}}.boot-mountains{width:200px;height:80px;margin:auto;fill:none;stroke:currentColor;stroke-width:2;stroke-dasharray:800;animation:boot-ink 2.8s ease-in-out infinite alternate}@media(prefers-reduced-motion:reduce){.boot-mountains{animation:none}}</style>
   </head>
   <body>
-    <div id="root"><div style="min-height:100vh;display:grid;place-content:center;gap:20px;text-align:center;background:#192a22;color:#e4d3a8;font-family:serif"><h1>风云南北朝</h1><p id="boot-message" role="status">正在载入游戏资源…</p><noscript>此游戏需要 JavaScript，请启用后刷新。</noscript></div></div>
+    <div id="root"><div style="min-height:100vh;display:grid;place-content:center;gap:20px;text-align:center;background:#192a22;color:#e4d3a8;font-family:serif"><svg class="boot-mountains" viewBox="0 0 280 96" aria-hidden="true"><path d="M12 78 53 36 72 55 109 12 154 73 175 50 207 79M146 66l41-45 22 36 15-10 44 31M16 85l61-4 43 5 62-3 52 3 31-2"/></svg><h1>风云南北朝</h1><p id="boot-message" role="status">正在载入游戏资源…</p><noscript>此游戏需要 JavaScript，请启用后刷新。</noscript></div></div>
     <script type="module" src="/src/main.tsx" onerror="document.getElementById('boot-message').textContent='游戏资源加载失败，请刷新重试。'"></script>
   </body>
 </html>

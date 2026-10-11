@@ -7,7 +7,7 @@ import {personSheetPresentation} from './personSheetPresentation';
 import {MapPersonPanel,type PersonTab} from './MapPersonPanel';
 import {RealmBadge} from './RealmBadge';
 const noop=()=>{};
-const render=(world:ReturnType<typeof newCampaignWorld>,id:string,tab:PersonTab='overview')=>renderToStaticMarkup(<MapPersonPanel world={world} ids={[id]} tab={tab} onTab={noop} onPerson={noop} onSelect={noop} onEconomy={noop} onCourtPerson={noop} onStaff={noop} onEstate={noop} onDiplomacy={noop} onLocate={noop} onCity={noop} pending={false} send={noop}/>);
+const render=(world:ReturnType<typeof newCampaignWorld>,id:string,tab:PersonTab='overview')=>renderToStaticMarkup(<MapPersonPanel world={world} ids={[id]} tab={tab} onTab={noop} onPerson={noop} onSelect={noop} onEconomy={noop} onCourtPerson={noop} onStaff={noop} onEstate={noop} onDiplomacy={noop} onLocate={noop} onCity={noop} pending={false} send={async()=>true}/>);
 it('现任身份、统属、外国朝廷从当前世界读取，继位后不沿用旧头衔',()=>{
  const w=newCampaignWorld('gao-huan',undefined,'sandbox');
  expect(personSheetPresentation(w,'gao-huan')).toMatchObject({title:'东魏执政',ruler:'yuan-shanjian',realm:'east'});

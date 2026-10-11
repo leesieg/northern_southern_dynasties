@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {useState} from 'react';
 import type {GameCommand,World} from '../core/types';
 import {economyCommandReason,type PersonalEconomyCommand} from '../core/personalEconomyAdapter';
@@ -5,7 +6,7 @@ import type {ArtName} from './ArtIcon';
 import {ConfirmAction} from './ConfirmAction';
 import {CommandButton} from './CommandButton';
 
-export function EconomyAction({world,pending,send,command,label,icon='coins',consequence,hint,summary,active}:{world:World;pending:boolean;send:(c:GameCommand)=>void;command:PersonalEconomyCommand;label:string;icon?:ArtName;consequence?:string;hint?:string;summary?:string;active?:boolean}){
+export function EconomyAction({world,pending,send,command,label,icon='coins',consequence,hint,summary,active}:{world:World;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;command:PersonalEconomyCommand;label:string;icon?:ArtName;consequence?:string;hint?:string;summary?:string;active?:boolean}){
  const [confirm,setConfirm]=useState(false),reason=economyCommandReason(world,command);
- return <div className="economy-action"><CommandButton label={label} icon={icon} hint={hint||consequence||label} reason={reason} pending={pending} selected={active} summary={summary} onClick={()=>consequence?setConfirm(true):send(command)}/>{confirm&&<ConfirmAction title={label} detail={<><p>{consequence}</p>{reason&&<p role='status'>{reason}</p>}</>} confirmLabel='确认执行' pending={pending||!!reason} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(pending||economyCommandReason(world,command))return;send(command);setConfirm(false);}}/>}</div>;
+ return <div className="economy-action"><CommandButton label={label} icon={icon} hint={hint||consequence||label} reason={reason} pending={pending} selected={active} summary={summary} onClick={()=>consequence?setConfirm(true):send(command)}/>{confirm&&<ConfirmAction title={label} detail={<><p>{consequence}</p>{reason&&<p role='status'>{reason}</p>}</>} confirmLabel='确认执行' pending={pending||!!reason} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(pending||economyCommandReason(world,command))return;void afterCommand(send(command),()=>{setConfirm(false);});}}/>}</div>;
 }

@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {useState} from 'react';
 import type {World,GameCommand} from '../core/types';
 import {playerRealm} from '../core/realm';
@@ -6,7 +7,7 @@ import {ActionDialog} from './ActionDialog';
 import {SingleChoiceCards} from './SingleChoiceCards';
 
 export type MilitaryChoice={kind:'automation'|'priority';army:number}|{kind:'supplyPolicy'};
-export function MilitaryChoiceDialog({world:w,choice,pending,send,onClose}:{world:World;choice:MilitaryChoice;pending:boolean;send:(c:GameCommand)=>void;onClose:()=>void}){
+export function MilitaryChoiceDialog({world:w,choice,pending,send,onClose}:{world:World;choice:MilitaryChoice;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onClose:()=>void}){
  const army=choice.kind==='supplyPolicy'?undefined:w.realm?.armies.find(a=>a.id===choice.army);
  const [value,setValue]=useState<string>(()=>choice.kind==='supplyPolicy'?w.realm?.supplyPolicies?.[playerRealm(w)]??'normal':choice.kind==='automation'?army?.automation??'delegated':String(army?.supplyPriority??1));
  const options=choice.kind==='automation'?[
@@ -23,7 +24,7 @@ export function MilitaryChoiceDialog({world:w,choice,pending,send,onClose}:{worl
  ];
  const command:MilitaryCareerCommand=choice.kind==='supplyPolicy'?{type:'militaryCareer',action:'supplyPolicy',policy:value as 'civilian'|'normal'|'emergency'}:choice.kind==='automation'?{type:'militaryCareer',action:'automation',army:choice.army,control:value as 'direct'|'delegated'}:{type:'militaryCareer',action:'priority',army:choice.army,priority:Number(value)};
  const reason=militaryCareerReason(w,command),label=options.find(option=>option.id===value)?.title??'',title=choice.kind==='supplyPolicy'?'国家征粮政策':`第 ${choice.army} 军 · ${choice.kind==='automation'?'指挥方式':'补给优先级'}`;
- return <ActionDialog title={title} onClose={onClose} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||militaryCareerReason(w,command))return;send(command);onClose();}}>确认 · {label}</button>}>
+ return <ActionDialog title={title} onClose={onClose} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||militaryCareerReason(w,command))return;void afterCommand(send(command),()=>{onClose();});}}>确认 · {label}</button>}>
   <SingleChoiceCards label="选择方案" value={value} onChange={setValue} options={options} disabled={pending}/>
   <p>{choice.kind==='supplyPolicy'?'作用于本国军需调运；不会立即增发粮食，也不改变每日军粮消耗。':'仅调整本军；兵员、将领、供饷账户与当前库存不变。'}</p>
   {reason&&<p role="status" className="military-warning">{reason}</p>}

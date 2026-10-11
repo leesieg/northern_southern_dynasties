@@ -1,3 +1,4 @@
+import {beginFeedback,finishFeedback} from './actionFeedback';
 import {pauseHasActions} from '../core/pauseEvents';
 import type {PauseEvent} from '../core/pauseEvents';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,12 +12,18 @@ export function useGame() {
   const [entry,setEntry]=useState(0);
   const [page,setPage]=useState<'menu'|'play'>('menu');
   const [pending,setPending]=useState(false);
+  const requests=useRef(new Map<string,{resolve:(ok:boolean)=>void;visible:boolean}>());
   const nextPage=useRef<'menu'|'play'|null>(null);
   const worker=useRef<Worker|null>(null);
   const [world,setWorld]=useState<World|null>(null),[speed,setSpeed]=useState(0),[slots,setSlots]=useState<SaveInfo[]>([]),[lastSaved,setLastSaved]=useState<number|null>(null);
   const [notice,setNotice]=useState<{text:string;error?:boolean}|null>(null),[blocked,setBlocked]=useState('');
   const notify=useCallback((text:string,error=false)=>setNotice({text,error}),[]);
-  const send=useCallback((message:Request)=>{if(worker.current){if(['new','resume','menu','load','import'].includes(message.type))setNotice(null);setPending(true);worker.current.postMessage(message.type==='command'?{...message,key:message.key??{session:commandSession,sequence:++commandSequence}}:message);}},[]);
+  const send=useCallback((message:Request):Promise<boolean>=>{
+    if(!worker.current)return Promise.resolve(false);
+    const requestId=crypto.randomUUID(),visible=!['speed','background','export'].includes(message.type);
+    if(visible){setNotice(null);setPending(true);const active=document.activeElement;const label=active instanceof HTMLElement?(active.getAttribute('aria-label')||active.textContent?.trim().slice(0,42)):null;beginFeedback(requestId,label||({new:'准备新战役',resume:'续读行记',load:'读取行记',save:'保存行记',menu:'保存并返回'} as Record<string,string>)[message.type]||'办理指令');}
+    return new Promise(resolve=>{requests.current.set(requestId,{resolve,visible});try{worker.current!.postMessage(message.type==='command'?{...message,requestId,key:message.key??{session:commandSession,sequence:++commandSequence}}:{...message,requestId});}catch(error){requests.current.delete(requestId);if(visible){finishFeedback(requestId,false,error instanceof Error?error.message:'指令未能送达，请重试。');setPending([...requests.current.values()].some(r=>r.visible));}resolve(false);}});
+  },[]);
   useEffect(()=>{
     let stopped=false,closeSession:(()=>void)|undefined;
     const start=()=>{
@@ -24,8 +31,9 @@ export function useGame() {
       const instance=new Worker(new URL('../worker/simulation.ts',import.meta.url),{type:'module'});worker.current=instance;
       instance.onmessage=(event:MessageEvent<Reply>)=>{
         if(stopped)return;const message=event.data;
-        if(message.type==='screen'){nextPage.current=message.page;setPauses([]);}
-        else if(message.type==='world'){if(nextPage.current){setPage(nextPage.current);nextPage.current=null;setEntry(n=>n+1);}setPending(false);setWorld(message.world);setPauses(items=>items.filter(e=>!['succession','allegiance'].includes(e.kind)||pauseHasActions(message.world,e)));setSpeed(message.speed);setSlots(message.slots);setLastSaved(message.lastSaved);}
+        if(message.type==='receipt'){const current=requests.current.get(message.requestId);requests.current.delete(message.requestId);if(current?.visible){finishFeedback(message.requestId,message.ok,message.text);setPending([...requests.current.values()].some(r=>r.visible));}current?.resolve(message.ok);}
+        else if(message.type==='screen'){nextPage.current=message.page;setPauses([]);}
+        else if(message.type==='world'){if(nextPage.current){setPage(nextPage.current);nextPage.current=null;setEntry(n=>n+1);}setWorld(message.world);setPauses(items=>items.filter(e=>!['succession','allegiance'].includes(e.kind)||pauseHasActions(message.world,e)));setSpeed(message.speed);setSlots(message.slots);setLastSaved(message.lastSaved);}
         else if(message.type==='paused')setPauses(items=>[...items,...message.events.filter(e=>!items.some(p=>p.id===e.id))]);
         else if(message.type==='notice')setNotice({text:message.text,error:message.error});
         else {
@@ -34,9 +42,9 @@ export function useGame() {
           notify('存档文件已生成，请妥善保存。');
         }
       };
-      instance.onerror=()=>{setBlocked('世界运行出现错误。请刷新页面恢复最近存档。');};
+      instance.onerror=()=>{for(const [id,r] of requests.current){finishFeedback(id,false,'世界运行中断，请恢复最近存档。');r.resolve(false);}requests.current.clear();setPending(false);setBlocked('世界运行出现错误。请刷新页面恢复最近存档。');};
       instance.postMessage({type:'init'} satisfies Request);
-      return ()=>{instance.terminate();if(worker.current===instance)worker.current=null;};
+      return ()=>{for(const [id,r] of requests.current){finishFeedback(id,false,'当前会话已结束。');r.resolve(false);}requests.current.clear();instance.terminate();if(worker.current===instance)worker.current=null;};
     };
     if(navigator.locks) {
       closeSession=openGameSession(navigator.locks,{

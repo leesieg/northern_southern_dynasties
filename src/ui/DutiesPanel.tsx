@@ -1,3 +1,4 @@
+import {afterCommand} from './actionFeedback';
 import {ConfirmAction} from './ConfirmAction';
 import {PersonChoice,PositionSeat} from './PersonSelection';
 import {attributes} from '../core/social';
@@ -9,7 +10,7 @@ import {DutyPetitionAudience} from './PetitionCases';
 import {chiefOfDuty,dutyCandidates,dutyPause,dutyPhaseNames,dutyPlans,dutyReason,type DutyCommand,type DutyPlan} from '../core/duties';
 import type {World,GameCommand} from '../core/types';
 import {Resource} from './ArtIcon';
-export function DutiesPanel({world:w,pending,send,onPerson}:{world:World;pending:boolean;send:(c:GameCommand)=>void;onPerson:(id:string)=>void}){
+export function DutiesPanel({world:w,pending,send,onPerson}:{world:World;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void}){
  const [candidate,setCandidate]=useState(''),[confirm,setConfirm]=useState(false),[recordOpen,setRecordOpen]=useState(false);
  const t=w.duties?.task,chief=chiefOfDuty(w),isChief=w.characterId===chief,isOfficer=w.characterId===t?.officer;
  useEffect(()=>{setRecordOpen(false);},[t?.created,t?.phase]);
@@ -28,7 +29,7 @@ export function DutiesPanel({world:w,pending,send,onPerson}:{world:World;pending
  {isOfficer&&t.phase==='incident'&&<><p>粮队遇险路。追加护送保持工期；绕行增加五日。</p><div className="realm-actions">{!t.aidRequested&&action({type:'duty',action:'request-aid'},'求援 · 追加公款 20')}{action({type:'duty',action:'escort'},'增派护送')}{action({type:'duty',action:'detour'},'绕行 · 工期 +5 日')}</div></>}
  {t.phase==='working'&&<p>粮务正在办理。继续时间以推进差事。</p>}
  {((isChief&&['proposal','ready','incident'].includes(t.phase))||(isOfficer&&['approval','aid','report'].includes(t.phase)))&&<p>等待{isChief?'承办人':'朝廷'}答复，继续时间以接收文书。</p>}
- {isChief&&<section className="detail-record-group"><h4>改派与撤回</h4><p>改派保留预算和进度，由新承办人领取考绩。</p><PersonChoice world={w} title="接任者" value={candidate} onChange={setCandidate} pending={pending} onPerson={onPerson} options={candidates.map(c=>({id:c.id,score:attributes(w,c.id).stewardship,metric:"职务能力",reason:dutyReason(w,{type:'duty',action:'replace',candidate:c.id})}))}/>{action({type:'duty',action:'replace',candidate},'改派此人')}<p>撤回视为未能办结：天水秩序 −8，双方交往积累 −8；启办后不退钱粮。</p><button onClick={()=>setConfirm(true)}>撤回差事</button>{confirm&&<ConfirmAction title='撤回天水粮务？' detail='撤回视为未能办结：天水秩序 −8，双方交往积累 −8；启办后不退钱粮。' confirmLabel='确认撤回' danger pending={pending||!!dutyReason(w,{type:'duty',action:'cancel'})} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(pending||dutyReason(w,{type:'duty',action:'cancel'}))return;send({type:'duty',action:'cancel'});setConfirm(false);}}/>}</section>}
+ {isChief&&<section className="detail-record-group"><h4>改派与撤回</h4><p>改派保留预算和进度，由新承办人领取考绩。</p><PersonChoice world={w} title="接任者" value={candidate} onChange={setCandidate} pending={pending} onPerson={onPerson} options={candidates.map(c=>({id:c.id,score:attributes(w,c.id).stewardship,metric:"职务能力",reason:dutyReason(w,{type:'duty',action:'replace',candidate:c.id})}))}/>{action({type:'duty',action:'replace',candidate},'改派此人')}<p>撤回视为未能办结：天水秩序 −8，双方交往积累 −8；启办后不退钱粮。</p><button onClick={()=>setConfirm(true)}>撤回差事</button>{confirm&&<ConfirmAction title='撤回天水粮务？' detail='撤回视为未能办结：天水秩序 −8，双方交往积累 −8；启办后不退钱粮。' confirmLabel='确认撤回' danger pending={pending||!!dutyReason(w,{type:'duty',action:'cancel'})} onCancel={()=>setConfirm(false)} onConfirm={()=>{if(pending||dutyReason(w,{type:'duty',action:'cancel'}))return;void afterCommand(send({type:'duty',action:'cancel'}),()=>{setConfirm(false);});}}/>}</section>}
  </>}
  {t.history.length>0&&<section className="detail-record-group"><h4>往来文书 · {t.history.length}</h4>{t.history.slice().reverse().map((h,i)=><p key={i}>第 {h.day} 日 · {h.text}</p>)}</section>}</>}</section>;
 }

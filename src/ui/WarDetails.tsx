@@ -21,7 +21,7 @@ import {WarSettlement} from './WarSettlement';
 import {battleKey,warBattles,warOccupations,type EngagementRef} from './warPresentation';
 import './warDetails.css';
 
-type Props={world:World;war:War;pending:boolean;send:(c:GameCommand)=>void;onPerson?:(id:string)=>void;onRealm?:(id:War['attacker'])=>void};
+type Props={world:World;war:War;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson?:(id:string)=>void;onRealm?:(id:War['attacker'])=>void};
 const goalNames={claimant:'扶立宣称者',territory:'割让目标地',reparations:'索取战争赔款',tributary:'确立宗属',annexation:'吞并政权',defection:'接纳归附领地'};
 const stageNames={skirmish:'前哨交锋',clash:'主力交战',pursuit:'追击阶段'};
 const signed=(n:number)=>(n>0?'+':'')+n;

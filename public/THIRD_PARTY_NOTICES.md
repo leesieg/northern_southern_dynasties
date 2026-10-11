@@ -120,3 +120,7 @@ THE SOFTWARE.
 城池曲面屋顶、瓦脊、窗格、纹理图集、分层树冠、农田及村落为本项目原创程序化资产，未使用《全面战争：三国》或 CK3 的模型、贴图及界面素材。两款游戏仅作为美术与信息交互方向参考。城池尺寸为夸张视觉占地，田村为象征场景，不构成历史城市布局、县域面积或农业经营范围的考证。
 
 立体树木沿用 OpenFreeMap／OpenStreetMap 现代林地遮罩，水域与地形署名沿用上文；不表示南北朝林地复原。`src/data/roadCorridors.ts` 的四条折线为沿江河谷与关中走廊的设计示意，中间点由项目绘制，不声称实测古道，城邑端点沿用既有剧本地点。道路通行与耗时由游戏既有规则决定。
+
+## Music
+
+Asianoriental1 and Asianoriental2 by Tozan, released under CC0. Original recordings included without modification; contemporary East Asian-inspired music, not a historical reconstruction. See [audio credits](audio/CREDITS.md) for source pages and license.

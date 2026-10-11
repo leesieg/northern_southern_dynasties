@@ -11,7 +11,7 @@ import './realmOverview.css';
 import './realm.css';
 
 export type RealmTab='overview'|'duties'|'council';
-export function RealmPanel({world:w,pending,send,onCity,onTerritory,onPerson,onCourt,tab,onTab,serviceFocus}:{serviceFocus?:{id?:number;site?:string;seq:number;view?:'duties'};world:World;pending:boolean;send:(c:GameCommand)=>void;onCity:(id:string)=>void;onTerritory:(id:string)=>void;onPerson:(id:string)=>void;onCourt:(tab?:'central'|'person'|'local'|'situation')=>void;tab:RealmTab;onTab:(tab:RealmTab)=>void}){
+export function RealmPanel({world:w,pending,send,onCity,onTerritory,onPerson,onCourt,tab,onTab,serviceFocus}:{serviceFocus?:{id?:number;site?:string;seq:number;view?:'duties'};world:World;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onCity:(id:string)=>void;onTerritory:(id:string)=>void;onPerson:(id:string)=>void;onCourt:(tab?:'central'|'person'|'local'|'situation')=>void;tab:RealmTab;onTab:(tab:RealmTab)=>void}){
  const s=w.realm;if(!s)return <p>政务用于新建的历史沙盒。旧教学局保留原规则。</p>;
  const r=playerRealm(w),grainFirst=r==='west'&&serviceFocus?.view==='duties';
  const action=(c:RealmCommand,label:string)=>{const reason=realmReason(w,c);return <div className="realm-action"><CommandButton label={label} icon="influence" pending={pending} reason={reason} hint={label} onClick={()=>{if(!pending&&!realmReason(w,c))send(c);}}/>{reason&&<small>{reason}</small>}</div>;};

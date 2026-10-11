@@ -1,0 +1,9 @@
+import {useId,type ReactNode} from 'react';
+import {ArtworkStatus} from './artworkLoading';
+import {ArtIcon,type ArtName} from './ArtIcon';
+import {TroopIllustration} from './RegimentCards';
+import {troopKinds,type TroopKind} from '../core/armyOrganization';
+import './decisionPresentation.css';
+export function DecisionMetrics({items}:{items:{label:string;value:ReactNode;icon?:ArtName;note?:string}[]}){return <dl className="decision-metrics">{items.map(item=><div key={item.label}><dt>{item.icon&&<ArtIcon name={item.icon} size={22}/>} {item.label}</dt><dd>{item.value}</dd>{item.note&&<small>{item.note}</small>}</div>)}</dl>;}
+export function TroopChoice({value,onChange,pending}:{value:TroopKind;onChange:(kind:TroopKind)=>void;pending:boolean}){const name=useId();return <fieldset className="troop-choice"><legend>选择兵种</legend><div className="troop-choice-grid">{(Object.keys(troopKinds) as TroopKind[]).map(kind=><label key={kind} className={value===kind?'is-selected':''}><input type="radio" name={name} checked={kind===value} disabled={pending} onChange={()=>onChange(kind)}/><TroopIllustration kind={kind}/><strong>{troopKinds[kind].name}</strong><span>攻 {troopKinds[kind].attack}% · 防 {troopKinds[kind].defence}%</span><small>{value===kind?'已选':'选择'}</small></label>)}</div><ArtworkStatus path="art/military/regiment-portraits.png" label="兵种绘卷"/></fieldset>;}
+export function RouteSummary({from,to,days,food,supply}:{from:string;to:string;days:number;food:number;supply:number}){return <div className="route-summary"><div className="route-summary-places"><ArtIcon name="city" size={28}/><strong>{from}</strong><span aria-label="前往">⟶</span><ArtIcon name="city" size={28}/><strong>{to}</strong></div><DecisionMetrics items={[{label:'最早抵达',value:days+' 日',icon:'world'},{label:'路程耗粮',value:food,icon:'grain'},{label:'现有携粮',value:supply,icon:'grain'}]}/>{food>supply&&<p className="service-warning">携粮不足以覆盖路耗，需途中补给。</p>}</div>;}

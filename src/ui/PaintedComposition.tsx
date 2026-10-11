@@ -1,3 +1,4 @@
+import {InkMountains} from './LoadingMark';
 import {type PortraitLife} from '../character/portraitLife';
 import {useLayoutEffect,useRef,useState} from 'react';
 import type {PaintedRecipe} from '../character/paintedLayers';
@@ -18,5 +19,5 @@ export function PaintedComposition({recipe,compact,life,cutout=false}:{recipe:Pa
   if(!cached){const start=()=>{observer?.disconnect();void portraitImage(key,lifeKey,compact).then(show).catch(()=>{if(active)setStatus('error');});};if(typeof IntersectionObserver==='undefined'||!holder.current)start();else {observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))start();},{rootMargin:'120px'});observer.observe(holder.current);}}
   return()=>{active=false;observer?.disconnect();};
  },[key,lifeKey,compact,cutout,retry]);
- return <><div ref={holder} className="painted-composition-canvas" aria-busy={status==='loading'}/>{status!=='ready'&&<div className={`painted-portrait-status ${lastRecipe.current===key?'is-refreshing':''}`} role="status">{status==='loading'?<span className="portrait-loading-sigil" aria-label="肖像载入中">◌</span>:<>肖像载入失败{<button type="button" onClick={event=>{event.stopPropagation();setRetry(v=>v+1);}}>重试</button>}</>}</div>}</>;
+ return <><div ref={holder} className="painted-composition-canvas" aria-busy={status==='loading'}/>{status!=='ready'&&<div className={`painted-portrait-status ${lastRecipe.current===key?'is-refreshing':''}`} role="status">{status==='loading'?<span className="portrait-loading-sigil" aria-label="肖像载入中"><InkMountains/></span>:<>肖像载入失败{<button type="button" onClick={event=>{event.stopPropagation();setRetry(v=>v+1);}}>重试</button>}</>}</div>}</>;
 }

@@ -1,0 +1,3 @@
+import './experience.css';
+export function InkMountains(){return <svg viewBox="0 0 280 96" aria-hidden="true" className="loading-mountains"><path d="M12 78 53 36 72 55 109 12 154 73 175 50 207 79M67 73l42-61 13 36 12-5 20 30M146 66l41-45 22 36 15-10 44 31M16 85l61-4 43 5 62-3 52 3 31-2"/></svg>;}
+export function LoadingMark({label='正在载入',detail,compact=false,completed,total}:{label?:string;detail?:string;compact?:boolean;completed?:number;total?:number}){return <div className={'ink-loading'+(compact?' is-compact':'')} role="status" aria-live="polite"><InkMountains/><div><strong>{label}</strong>{detail&&<span>{detail}</span>}{total!==undefined&&<><progress aria-label={label} max={total} value={completed}/><small>{completed??0} / {total}</small></>}</div></div>;}

@@ -1,0 +1,16 @@
+import {useEffect,useRef,useState} from 'react';
+import {GameSound} from './soundEngine';
+import {useSound,useSoundError,changeSound} from './audioSettings';
+import {subscribeFeedback,getFeedback} from './actionFeedback';
+let currentSound:GameSound|null=null;
+export function useGameAudio(page:'menu'|'play',eventId?:string){
+ const preferences=useSound(),engine=useRef<GameSound|null>(null),lastEvent=useRef<string|undefined>(undefined);
+ useEffect(()=>{const audio=new GameSound();engine.current=audio;currentSound=audio;const unlock=()=>void audio.unlock();const click=(event:MouseEvent)=>{const button=event.target instanceof Element?event.target.closest('button'):null;if(!button||button.disabled)return;const label=button.getAttribute('aria-label')||button.textContent||'';audio.cue(/取消|关闭|返回/.test(label)?'cancel':button.classList.contains('primary')?'confirm':'select');};
+  const choice=(event:Event)=>{if(event.target instanceof Element&&event.target.matches('select,input[type=radio],input[type=checkbox]'))audio.cue('select');};
+  const visibility=()=>audio.update();document.addEventListener('pointerdown',unlock,{once:true});document.addEventListener('keydown',unlock,{once:true});document.addEventListener('click',click);document.addEventListener('change',choice);document.addEventListener('visibilitychange',visibility);
+  const unsubscribe=subscribeFeedback(()=>{const f=getFeedback();if(f?.state==='success')audio.cue('complete');else if(f?.state==='error')audio.cue('blocked');});
+  return()=>{unsubscribe();document.removeEventListener('pointerdown',unlock);document.removeEventListener('keydown',unlock);document.removeEventListener('click',click);document.removeEventListener('change',choice);document.removeEventListener('visibilitychange',visibility);audio.dispose();engine.current=null;currentSound=null;};},[]);
+ useEffect(()=>{engine.current?.setPage(page);engine.current?.update();},[page,preferences]);
+ useEffect(()=>{if(eventId&&eventId!==lastEvent.current)engine.current?.cue(eventId.includes('arrival')?'arrival':'event');lastEvent.current=eventId;},[eventId]);
+}
+export function SoundSettings({compact=false}:{compact?:boolean}){const settings=useSound(),error=useSoundError(),[open,setOpen]=useState(!compact);return <section className={'sound-settings'+(compact?' is-compact':'')} aria-label="声音设置"><button type="button" className="sound-settings-toggle" aria-expanded={open} onClick={()=>setOpen(v=>!v)}>♫ 声音{settings.muted?' · 静音':''}</button>{open&&<div className="sound-settings-body"><label className="sound-mute"><input type="checkbox" checked={settings.muted} onChange={e=>changeSound({muted:e.target.checked})}/>静音</label>{([['music','配乐'],['effects','操作音'],['ambience','山河环境']] as const).map(([key,label])=><label key={key}>{label}<input type="range" min="0" max="100" value={Math.round(settings[key]*100)} aria-label={label+'音量'} onChange={e=>changeSound({[key]:Number(e.target.value)/100})}/><output>{Math.round(settings[key]*100)}%</output></label>)}<button type="button" onClick={()=>currentSound?.retry()}>试听与重试</button>{error&&<p role="status">{error}</p>}<small>配乐：Tozan · Asianoriental 1 / 2 · CC0<br/>当代东方题材配乐；操作音与风声为原创合成。<a href={import.meta.env.BASE_URL+'audio/CREDITS.md'} target="_blank" rel="noreferrer">素材与许可</a></small></div>}</section>;}

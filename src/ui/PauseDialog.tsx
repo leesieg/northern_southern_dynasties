@@ -29,7 +29,7 @@ import {serviceAuthority} from '../core/serviceMandates';
 import {serviceChief} from '../core/assignments';
 import {chiefOfDuty} from '../core/duties';
 import './pauseDialog.css';
-export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,send}:{event:PauseEvent;count:number;world:World;pending:boolean;error?:string;onClose:()=>void;onNavigate:(event:PauseEvent)=>void;send:(command:GameCommand)=>void}){
+export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,send}:{event:PauseEvent;count:number;world:World;pending:boolean;error?:string;onClose:()=>void;onNavigate:(event:PauseEvent)=>void;send:(command:GameCommand)=>Promise<boolean>}){
  const ref=useRef<HTMLDialogElement>(null);
  const [decorHost,setDecorHost]=useState<HTMLDivElement|null>(null);
  useEffect(()=>{const dialog=ref.current!;const previous=document.activeElement as HTMLElement|null;dialog.showModal();return()=>{dialog.close();previous?.focus();};},[]);

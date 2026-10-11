@@ -1,3 +1,4 @@
+import {useArtwork} from './artworkLoading';
 import {useState,type ReactNode} from 'react';
 import type {Army} from '../core/realm';
 import type {World} from '../core/types';
@@ -8,8 +9,8 @@ import {ActionDialog} from './ActionDialog';
 /** Original painted sheet: each equal 2:3 cell is clipped without stretching. */
 const troopCells:Record<TroopKind,[number,number]>={shield:[0,0],spear:[1,0],archer:[2,0],lightHorse:[0,1],heavyHorse:[1,1],siege:[2,1]};
 export function TroopIllustration({kind}:{kind:TroopKind}){
- const [column,row]=troopCells[kind];
- return <svg className={'troop-illustration troop-illustration--'+kind} viewBox={`${column*418} ${row*627} 418 627`} aria-hidden="true"><image href={import.meta.env.BASE_URL+'art/military/regiment-portraits.png'} width="1254" height="1254"/></svg>;
+ const [column,row]=troopCells[kind],art=useArtwork('art/military/regiment-portraits.png');
+ return <svg className={'troop-illustration troop-illustration--'+kind} viewBox={`${column*418} ${row*627} 418 627`} aria-hidden="true"><image href={art.url} width="1254" height="1254"/></svg>;
 }
 export function RegimentCards({army,world,actions}:{army:Army;world:World;actions?:(unit:Regiment)=>ReactNode}){
  const [selected,setSelected]=useState<string|null>(null),unit=army.regiments?.find(u=>u.id===selected);

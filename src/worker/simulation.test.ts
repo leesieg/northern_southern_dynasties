@@ -262,3 +262,20 @@ it('save recovery leaves the running world intact when switching fails to persis
  const failed=await request({type:'load',slot:'manual'});fault.mockRestore();expect(failed.world).toEqual(before.world);expect(failed.speed).toBe(0);
  const {loadWorld}=await import('../core/storage');expect((await loadWorld('previous-run'))?.day).toBe(before.world.day);expect((await loadWorld())?.day).toBe(before.world.day);
 });
+
+it('returns correlated receipts after persistence and rejects failed commands without changing the world',async()=>{
+ await request({type:'init',requestId:'init-receipt'});expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'init-receipt',ok:true});
+ const start=await request({type:'new',characterId:'xiao-yan',mode:'sandbox',requestId:'new-receipt'});expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'new-receipt',ok:true});
+ const command={type:'relationship',action:'gift',target:'xiao-gang'} as const,key={session:'visual-feedback',sequence:1};
+ const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});const failed=await request({type:'command',command,key,requestId:'failed-receipt'});fault.mockRestore();expect(failed.world).toEqual(start.world);expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'failed-receipt',ok:false});expect(replies.at(-1)).toHaveProperty('text',expect.any(String));
+ const success=await request({type:'command',command,key,requestId:'successful-receipt'});expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'successful-receipt',ok:true});expect(success.world.people[0].coins).toBeLessThan(start.world.people[0].coins);
+ const repeat=await request({type:'command',command,key,requestId:'duplicate-receipt'});expect(repeat.world).toEqual(success.world);expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'duplicate-receipt',ok:true});
+ const refused=await request({type:'command',command:{...command,target:'missing-person'},requestId:'rule-receipt'});expect(refused.world).toEqual(success.world);expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'rule-receipt',ok:false});
+});
+
+it('acknowledges a committed command even when the save directory refresh fails',async()=>{
+ await request({type:'init'});const before=await request({type:'new',characterId:'xiao-yan',mode:'sandbox'}),getAll=IDBObjectStore.prototype.getAll;
+ const fault=vi.spyOn(IDBObjectStore.prototype,'getAll').mockImplementation(function(this:IDBObjectStore,...args:Parameters<typeof getAll>){if(this.transaction.mode==='readonly')throw new Error('directory unavailable');return getAll.apply(this,args);});
+ const completed=await request({type:'command',command:{type:'relationship',action:'gift',target:'xiao-gang'},requestId:'committed-directory-failure'});
+ expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'committed-directory-failure',ok:true});expect(completed.world.people[0].coins).toBeLessThan(before.world.people[0].coins);expect(replies.some(r=>r.type==='notice'&&r.text.includes('变更已完成'))).toBe(true);replies=[];await request({type:'save',requestId:'save-directory-failure'});expect(replies.at(-1)).toMatchObject({type:'receipt',ok:true});expect(replies.some(r=>r.type==='notice'&&r.text.includes('变更已完成'))).toBe(true);fault.mockRestore();expect((await request({type:'resume'})).world).toEqual(completed.world);
+});
