@@ -1,3 +1,4 @@
+import {reportCampaignScene} from '../ui/campaignLoad';
 import {armyBattle,liveBattleArmies,armyDisplayState} from '../core/combatPresentation';
 import {ArmyMotion} from './ArmyMotion';
 import {ownedEstates} from '../core/estates';
@@ -47,6 +48,7 @@ import {armyShowsModel,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyMode
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
 interface Props {
+  loadEntry?:number;
   onMapReady?:(map:AtlasMap|null)=>void;
   speed:number;militaryModels:boolean;armyMotion:boolean;sceneryDetail:boolean;
   onActivity:(item:OngoingItem)=>void;
@@ -70,6 +72,7 @@ export function WorldMap(props:Props){
   const [combatGroupKey,setCombatGroupKey]=useState<string|null>(null);
   const [activitySite,setActivitySite]=useState<string|null>(null);
   const [error,setError]=useState(''),[errorAuth,setErrorAuth]=useState(false),[notices,setNotices]=useState<MapNotice[]>([]),[progress,setProgress]=useState<Partial<Record<MapLoadStage,MapLoadProgress>>>({}),[ready,setReady]=useState(false),[retry,setRetry]=useState(0);
+  useEffect(()=>{if(props.loadEntry!==undefined)reportCampaignScene(props.loadEntry,ready,!!error,progress.terrain);},[props.loadEntry,ready,error,progress.terrain]);
   const detailProgress=progress.detail?.busy?progress.detail:progress.art?.busy?progress.art:progress.models?.busy?progress.models:undefined;
   function downloadDiagnostics(){const url=URL.createObjectURL(new Blob([JSON.stringify(mapResourceDiagnostics(),null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='fengyun-map-diagnostics.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
   const [hover,setHover]=useState<{id:string;x:number;y:number;city:boolean}|null>(null);
