@@ -41,14 +41,17 @@ import { TraitBadge,Resource,ArtIcon } from './ArtIcon';
 import { SocialPanel } from './SocialPanel';
 import { LifestylePanel } from './LifestylePanel';
 import {personSheetPresentation} from './personSheetPresentation';
+import {HouseholdLifePanel} from './HouseholdLifePanel';
 import {PersonOfficeSummary} from './PersonOfficeSummary';
 import './personSheet.css';
+export type FamilyView={mode:'household'|'tree'|'contributions'|'legacy';selection:string|null};
 export type PersonTab='overview'|'family'|'relations'|'interaction'|'focus';
-export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,onIntrigue,pending,send}:{world:World;ids:string[];lifeEntry?:PersonLifeEntry|null;tab:PersonTab;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:(site:string)=>void;onCity:(id:string)=>void;onIntrigue?:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>Promise<boolean>}){
+export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,familyView,onFamilyView,onPerson,onSelect,onEconomy,onCourtPerson,onStaff,onEstate,onDiplomacy,onLocate,onCity,onIntrigue,pending,send}:{world:World;ids:string[];lifeEntry?:PersonLifeEntry|null;tab:PersonTab;familyView:FamilyView;onFamilyView:(view:FamilyView)=>void;onTab:(t:PersonTab)=>void;onPerson:(id:string)=>void;onSelect:(id:string)=>void;onDiplomacy:(r:RealmId)=>void;onEconomy:()=>void;onCourtPerson:(id:string)=>void;onStaff:(id:string)=>void;onEstate:()=>void;onLocate:(site:string)=>void;onCity:(id:string)=>void;onIntrigue?:(id:string)=>void;pending:boolean;send:(c:GameCommand)=>Promise<boolean>}){
  const [order,setOrder]=useState<'provision'|'repatriate'|null>(null);
- const [familySelection,setFamilySelection]=useState<string|null>(null),[familyMode,setFamilyMode]=useState<'tree'|'contributions'|'legacy'>('tree');
+ const familySelection=familyView.selection,familyMode=familyView.mode,setFamilyMode=(mode:FamilyView['mode'])=>onFamilyView({...familyView,mode});
  const raw=ids[0],id=raw==='player'?w.characterId??'player':raw,c=getCharacter(w,id)!,extra=getPerson(w,id)!,self=id===w.characterId||raw==='player',p=self?w.people[0]:w.people.find(p=>p.id===id),retired=w.social?.lineage.slice(0,-1).some(p=>p.id===id);
  useEffect(()=>setOrder(null),[id,tab]);
+ useEffect(()=>{if(lifeEntry?.person===id)setFamilyMode('household');},[id,lifeEntry]);
  const reference=familyPersonOf(w,id)!;
  if(!c&&!p&&!extra&&!reference)return <p>未找到人物。</p>;
  const lifeId=id==='player'?'fictional':id,deceased=isDeceased(w,lifeId);
@@ -71,13 +74,13 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  </aside>
  <div className="person-information">
  <header className="person-dossier-heading">
-  <div className="person-heading-copy"><p className="person-status-line">{model.title}{self?' · 你':retired?' · 退居':extra?.status==='fictional'?' · 架空':''}</p><h2>{name}</h2><p className="person-rank-line">{[model.honour,model.title,model.rites?'加殊礼':null].filter(Boolean).join(' · ')}</p></div>
+  <div className="person-heading-copy"><p className="person-status-line">{self?'你':retired?'退居':extra?.status==='fictional'?'架空人物':'人物档案'}</p><h2>{name}</h2><p className="person-rank-line">{[model.honour,model.title,model.rites?'加殊礼':null].filter(Boolean).join(' · ')}</p></div>
   <div className="person-heraldry">{realm&&<RealmBadge realm={realm} world={w} onOpen={onDiplomacy} seal/>}{family&&<HoverHint label={family.name+'家族'} content={<><strong>{family.name}</strong>{clan?.elite&&<><p>本国世族 · 族望第 {clan.rank} 位 · 家族威望 {clan.prestige}</p><p>联姻荫望 +{clan.marriage}；求官接受度 +{clan.petition}，城邑请任功绩门槛 −{clan.merit}。</p></>}</>}><button type="button" className={'person-clan'+(clan?.elite?' is-elite':'')} aria-label={'查看'+family.name+'家族详情'} onClick={()=>onTab('family')}><FamilyCrest family={family.id}/></button></HoverHint>}</div>
   <div className="person-demographics"><LifeSummary world={w} id={lifeId}/><HoverHint label="文化身份" content={(id==='gao-huan'?cultureSources.gao.note:id.startsWith('hulu-')?cultureSources.hulu.note:id==='hou-jing'?cultureSources.hou.note:'文化身份为剧本概括。')+' 文化独立于家族与效忠，换官、换国、换衣不改变身份。'}><small>{cultureNames[personCulture(w,id)]}</small></HoverHint>{model.site&&!deceased&&<button type="button" onClick={()=>onCity(model.site!)}>{model.traveling?'在途':'驻留'}{siteById[model.site]?.name}</button>}</div>
  </header>
  <PersonAbilities world={w} person={id} labels/>
  <div className="person-dossier-traits"><span>特质</span><div>{(c||extra)&&traitsFor(w,id).map(t=><span className="person-named-trait" key={t}><TraitBadge trait={t}/><small>{traitDefinitions[t].name}</small></span>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div></div>
- <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'focus',label:'重心',icon:'diligent'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'&&!!family||key==='relations'||key==='focus'&&self||key==='interaction'&&canInteract)}/>
+ <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'focus',label:'重心',icon:'diligent'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'||key==='relations'||key==='focus'&&self||key==='interaction'&&canInteract)}/>
 
  <div key={id+'|'+tab} className="person-page-content">
  {tab==='overview'&&<>
@@ -85,14 +88,14 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  <PersonOfficeSummary world={w} person={id} model={model} onPerson={onPerson} onCity={onCity} onOffice={()=>onCourtPerson(id)}/>
  {self&&!deceased&&w.realm&&<PersonalContinuity world={w} unappointed={!model.office} onEstate={onEstate} onRelations={()=>onTab('relations')} onOffice={()=>onCourtPerson(id)} onPerson={onPerson}/>}
  {!self&&w.social&&extra&&<OpinionDetails world={w} actor={w.characterId!} target={id}/>}
- <LifeDetails world={w} id={lifeId} entry={lifeEntry?.person===id?lifeEntry:null} pending={pending} send={send}/>
+ <LifeDetails world={w} id={lifeId} pending={pending} send={send}/>
  {self&&w.social&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson} section="self"/>}
  {self&&<ActivityProgress world={w} send={send} pending={pending}/>}
- {self&&p&&<section className="person-travel"><h3><ArtIcon name="world" size={26}/>行踪与行囊</h3>{w.realm&&w.realm.cities[p.location].controller!==playerRealm(w)&&<div><CommandButton label="请求返国通行" icon="world" pending={pending} reason={diplomaticQuote(w,{type:'diplomacy',action:'repatriate'}).reason} hint="预览指定返国路线与行粮支出，确认后启程。" onClick={()=>setOrder('repatriate')}/><p>{diplomaticQuote(w,{type:'diplomacy',action:'repatriate'}).reason||'只允许沿指定路线返回本国。'}</p></div>}<p>{siteById[p.location].name}{p.journey?' → '+siteById[p.journey.route.at(-1)!].name+' · 余 '+remainingDays(p)+' 日':' · 驻留'}</p><Resource name="coins" value={p.coins} label="盘缠" unit="钱"/><Resource name="grain" value={p.food} label="行粮" unit="日"/><div className="person-quick-actions"><CommandButton icon="grain" label="补充行粮" pending={pending} reason={provisionReason} hint={`个人盘缠 −${provisionCost(w)} 钱，行粮 +30 日份；预览后确认。`} onClick={()=>setOrder('provision')}/></div></section>}
+ {self&&p&&<section className="person-travel"><h3><ArtIcon name="world" size={26}/>行囊</h3>{w.realm&&w.realm.cities[p.location].controller!==playerRealm(w)&&<div><CommandButton label="请求返国通行" icon="world" pending={pending} reason={diplomaticQuote(w,{type:'diplomacy',action:'repatriate'}).reason} hint="预览指定返国路线与行粮支出，确认后启程。" onClick={()=>setOrder('repatriate')}/><p>{diplomaticQuote(w,{type:'diplomacy',action:'repatriate'}).reason||'只允许沿指定路线返回本国。'}</p></div>}{p.journey&&<p>前往 {siteById[p.journey.route.at(-1)!].name} · 余 {remainingDays(p)} 日</p>}<Resource name="coins" value={p.coins} label="盘缠" unit="钱"/><Resource name="grain" value={p.food} label="行粮" unit="日"/><div className="person-quick-actions"><CommandButton icon="grain" label="补充行粮" pending={pending} reason={provisionReason} hint={`个人盘缠 −${provisionCost(w)} 钱，行粮 +30 日份；预览后确认。`} onClick={()=>setOrder('provision')}/></div></section>}
  {reference&&!c&&<p>{reference.description}</p>}
  {c&&<section className="detail-record-group"><h4>生平</h4><p>{c.biography}</p></section>}
  </>}
- {tab==='family'&&family&&<><DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'tree' as const,label:'族谱',icon:'renown' as const},{id:'contributions' as const,label:'威望',icon:'influence' as const},...(self?[{id:'legacy' as const,label:'世业继任',icon:'estate' as const}]:[])]}/>{familyMode!=='legacy'&&<FamilyPanel world={w} selected={familySelection??id} chapter={familyMode} onSelect={id=>{setFamilySelection(id);setFamilyMode('tree');}} onPerson={onPerson}/>} {self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
+ {tab==='family'&&<><DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'household' as const,label:'家事',icon:'estate' as const},...family?[{id:'tree' as const,label:'族谱',icon:'renown' as const},{id:'contributions' as const,label:'威望',icon:'influence' as const}]:[],...(self?[{id:'legacy' as const,label:'世业继任',icon:'estate' as const}]:[])]}/>{familyMode==='household'&&(deceased?<p>身后家事由在世亲属办理。</p>:<HouseholdLifePanel world={w} id={lifeId} entry={lifeEntry?.person===id?lifeEntry:null} pending={pending} send={send}/>)}{(familyMode==='tree'||familyMode==='contributions')&&family&&<FamilyPanel world={w} selected={familySelection??id} chapter={familyMode} onSelect={id=>{onFamilyView({selection:id,mode:'tree'});}} onPerson={onPerson}/>} {self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
 
  {tab==='focus'&&self&&<LifestylePanel world={w} pending={pending} send={send}/>}
  {tab==='interaction'&&w.realm&&allegianceRealm(w,id)&&<NobilityPanel world={w} realm={allegianceRealm(w,id)!} person={id} pending={pending} send={send} onPerson={onPerson}/>}
@@ -106,7 +109,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,onPerson,onSelec
  </ActionDialog>}
  </div>
  <footer className="person-dossier-footer">
-  {self?<>{w.realm&&<CommandButton label="查看经济" icon="coins" hint="查看本人财产、收入与支出。" onClick={onEconomy}/>}{(tab!=='overview'||!!model.office||deceased||!w.realm)&&<CommandButton label="家族庄园" icon="estate" hint="查看庄园与营建。" onClick={onEstate}/>}</>:canInteract&&<CommandButton label="人物互动" icon="gregarious" hint={'与'+name+'交往、议婚或办理委任。'} onClick={()=>onTab('interaction')}/>}
+  {self?<>{w.realm&&<CommandButton label="查看家计" icon="coins" hint="查看本人财产、收入与支出。" onClick={onEconomy}/>}{(tab!=='overview'||!!model.office||deceased||!w.realm)&&<CommandButton label="家族庄园" icon="estate" hint="查看庄园与营建。" onClick={onEstate}/>}</>:canInteract&&<CommandButton label="人物互动" icon="gregarious" hint={'与'+name+'交往、议婚或办理委任。'} onClick={()=>onTab('interaction')}/>}
   {model.site&&!deceased&&<CommandButton label="地图定位" icon="world" hint={'定位'+name+'的'+(model.traveling?'当前途经地。':'驻地。')} onClick={()=>onLocate(model.site!)}/>}
  </footer>
  </div>

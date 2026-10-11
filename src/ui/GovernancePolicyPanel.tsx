@@ -27,7 +27,7 @@ export function GovernancePolicyPanel({world:w,realm,pending,send,onPerson,onTer
  const reports=Object.entries(rules.reports??{}).filter(([site])=>w.realm!.cities[site].owner===realm),current=reports.filter(([,q])=>q.registration===rules.registration&&q.access===rules.access),cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===realm&&c.controller===realm);
  return <div className="governance-policy-panel court-policy-desk">
   <GovernmentPanel world={w} realm={realm} compact pending={pending} send={send}/>
-  <section className="court-policy-rules"><header className="court-desk-heading"><h3>治理准则</h3><small>版本 {rules.revision}</small></header>
+  <section className="court-policy-rules"><header className="court-desk-heading"><h3>治理准则</h3></header>
    <div className="governance-rule-grid">{policyDimensions.map(d=>{const definition=policyDefinition(d,rules[d])!;return <section className="court-rule" key={d}>
     <ArtIcon name={d==='appointment'?'influence':d==='access'?'person':d==='cultural'?'gregarious':'coins'} size={30}/>
     <HoverHint label={policyLabels[d]} content={definition.effect}><div tabIndex={0}><small>{policyLabels[d]}</small><strong>{definition.name}</strong><p className="court-rule-effect">{definition.effect}</p></div></HoverHint>

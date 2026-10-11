@@ -32,8 +32,9 @@ const groups:{name:string;icon:ArtName;actions:DiplomacyAction[]}[]=[{name:'邦�
 const effects:Record<DiplomacyAction,string>={improve:'获接纳后，两国关系 +25。',safe:'批准后本人获得 240 日安全通行；交战时失效。',meeting:'批准后本人获得安全通行，须亲赴对方都城完成会盟，完成后关系再 +15。',transit:'普通人物可通行 720 日；君主、执政和统帅仍需安全通行。',military:'己方军队可借道 720 日，不授予占领权。',aid:'盟国答应后拨付 120 钱与 120 粮，不派兵参战。',join:'盟国答应后实际加入指定战争，自行指挥军队；攻占归战争主导国，和约由主导国签订。',submit:'成为对方臣属，每月朝贡 20 钱，失去独立宣战及军政缔约权。',independence:'解除臣属，关系 −50、信用 −20。',revoke:'终止双方全部条约，关系 −30、信用 −20。',insult:'立即使两国关系 −25。',recognize:'相互承认国号，双方合法性 +5。',pact:'720 日互不侵犯；宣战前须先终止条约。',alliance:'720 日军事同盟，双方军队可借道；可分别请求钱粮军援或实际参战。'};
 const instant=(a:DiplomacyAction)=>['insult','revoke','independence'].includes(a);
 const signed=(n:number)=>(n>0?'+':'')+n;
-export function DiplomacyPanel({world:w,selected:target,initialTab='relations',onSelect,onPerson,onCourt,pending,send}:{world:World;selected:RealmId;initialTab?:'relations'|'clans';onSelect:(r:RealmId)=>void;onPerson:(id:string)=>void;onCourt:(r:RealmId)=>void;pending:boolean;send:(c:GameCommand)=>Promise<boolean>}){
- const [tab,setTab]=useState<'overview'|'relations'|'history'|'clans'|'claims'>(initialTab==='relations'&&target===playerRealm(w)?'overview':initialTab),[action,setAction]=useState<DiplomacyAction|null>(null),[warConfirm,setWarConfirm]=useState<'war'|'peace'|null>(null);
+export type DiplomacyTab='overview'|'relations'|'history'|'clans'|'claims';
+export function DiplomacyPanel({world:w,selected:target,tab,onTab:setTab,onSelect,onPerson,onCourt,pending,send}:{world:World;selected:RealmId;tab:DiplomacyTab;onTab:(tab:DiplomacyTab)=>void;onSelect:(r:RealmId)=>void;onPerson:(id:string)=>void;onCourt:(r:RealmId)=>void;pending:boolean;send:(c:GameCommand)=>Promise<boolean>}){
+ const [action,setAction]=useState<DiplomacyAction|null>(null),[warConfirm,setWarConfirm]=useState<'war'|'peace'|null>(null);
  const [envoy,setEnvoy]=useState<string|undefined>();
  const [joinWar,setJoinWar]=useState<number|undefined>();
  useEffect(()=>{setEnvoy(undefined);setAction(null);setWarConfirm(null);setJoinWar(undefined);},[target]);
@@ -60,9 +61,8 @@ export function DiplomacyPanel({world:w,selected:target,initialTab='relations',o
  {tab==='overview'&&<><div className="diplomacy-overview-identities"><article><ArtIcon name="influence" size={32}/><small>现行政体</small><strong>{governmentDefinitions[g.type].name}</strong></article><article><ArtIcon name="renown" size={32}/><small>朝局</small><strong>{court?phases[court.phase].name:'未详'}</strong></article><article><ArtIcon name="diligent" size={32}/><small>施政</small><strong>{court?court.phase==='stable'?policies[court.policy].name:'前国策 · '+policies[court.policy].name:'未详'}</strong></article></div>
  <section className="diplomacy-realm-facts" aria-label="国家基础信息">
   <div className="diplomacy-fact"><h3><ArtIcon name="coins" size={22}/>中央国库</h3><div className="diplomacy-fact-pair"><span>公款 <b>{treasury.coins.toLocaleString('zh-CN')}</b></span><span>公粮 <b>{treasury.grain.toLocaleString('zh-CN')}</b></span></div><small>中央余额，不含地方公库与县仓</small></div>
-  <div className="diplomacy-fact"><h3><ArtIcon name="person" size={22}/>总人口</h3><strong>{population.toLocaleString('zh-CN')} <small>人</small></strong><small>当前实控县域人口合计</small></div>
-  <div className="diplomacy-fact"><h3><ArtIcon name="city" size={22}/>总土地</h3><strong>{held.length} <small>县域</small></strong><small>法理辖县 {held.length} · 实控 {controlled.length}</small></div>
-  <div className="diplomacy-fact"><h3><ArtIcon name="renown" size={22}/>朝局状态</h3><strong>{court?phases[court.phase].name:'暂无朝局记录'}</strong><small>{court?`${policies[court.policy].name}国策 · 天命 ${g.legitimacy} · 支持 ${g.support} · 紧张 ${court.tension}${courtEnabled(w,target)?'':' · 结算暂停'}`:'此局尚未建立朝局状态'}</small></div>
+  <div className="diplomacy-fact"><h3><ArtIcon name="city" size={22}/>领土控制</h3><strong>{held.filter(c=>c.controller!==target).length} <small>县失守</small></strong><small>另控制他国县域 {controlled.filter(c=>c.owner!==target).length} 处</small></div>
+  <div className="diplomacy-fact"><h3><ArtIcon name="renown" size={22}/>朝局压力</h3><strong>{court?'紧张 '+court.tension:'暂无朝局记录'}</strong><small>{court?`天命 ${g.legitimacy}${courtEnabled(w,target)?'':' · 结算暂停'}`:'此局尚未建立朝局状态'}</small></div>
   <div className="diplomacy-fact diplomacy-fact-wars"><h3><ArtIcon name="army" size={22}/>进行中的战争 <small>{realmWars.length} 场</small></h3>{realmWars.length?realmWars.map(v=><p key={v.id??`${v.attacker}|${v.defender}|${v.started}`}><b>{v.civil?`内战 · ${v.civil.name}`:`${regimeName(w,v.attacker)} 对 ${regimeName(w,v.defender)}`}</b><small>{siteById[v.target]?.name??v.target} · 已持续 {w.day-v.started} 日</small></p>):<small>目前没有参与战争</small>}</div>
  </section></>}
  {tab==='clans'&&<ClanRanking world={w} realm={target} onPerson={onPerson}/>}

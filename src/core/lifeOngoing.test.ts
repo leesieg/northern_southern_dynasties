@@ -22,14 +22,14 @@ const teacherFor=(w:ReturnType<typeof newCampaignWorld>,id:string)=>allPeople(w)
 describe('生活事项顶部旗帜',()=>{
  it('projects adult unmarried self and direct children, then removes their reminders after real marriage or death',()=>{
   const w=newCampaignWorld('xiao-yan',undefined,'sandbox');for(const m of w.relationships!.marriages)if([m.a,m.b].includes('xiao-yi'))m.until=w.day;const items=lifeOngoingItems(w).filter(i=>i.kind==='marriage');expect(items.some(i=>i.id==='marriage:xiao-yan')).toBe(true);expect(items.some(i=>i.id==='marriage:xiao-yi')).toBe(true);expect(items.some(i=>i.id==='marriage:gao-cheng')).toBe(false);
-  expect(items.find(i=>i.id==='marriage:xiao-yan')).toMatchObject({days:null,progress:null,target:{page:'person',person:'xiao-yan',tab:'overview',action:'marriage'}});
+  expect(items.find(i=>i.id==='marriage:xiao-yan')).toMatchObject({days:null,progress:null,target:{page:'person',person:'xiao-yan',tab:'family',action:'marriage'}});
   changeRelationOpinion(w,'xiao-yan','guest-liang',100);changeRelationOpinion(w,'guest-liang','xiao-yan',100);actFamilyMarriage(w,{type:'familyMarriage',subject:'xiao-yan',target:'guest-liang',coins:100,residence:w.people[0].location,family:'xiao'});
   expect(lifeOngoingItems(w).some(i=>i.id==='marriage:xiao-yan')).toBe(false);die(w,'xiao-yi','illness');expect(lifeOngoingItems(w).some(i=>i.id==='marriage:xiao-yi')).toBe(false);
  });
  it('reminds for school-age children, replaces a draft reminder with a real course, and returns it on cancellation',()=>{
   const {w,id}=child();expect(ageAt(w,id)).toBe(8);expect(education(w,id)?.target).toMatchObject({person:id,action:'education'});
   const teacher=teacherFor(w,id);act(w,{type:'household',action:'educate',target:id,teacher,skill:'stewardship'});expect(education(w,id)).toBeUndefined();const t=w.householdPlans!.tuition.at(-1)!;
-  expect(lifeOngoingItems(w).find(i=>i.id==='tuition:'+t.id)).toMatchObject({progress:0,days:270,clock:'estimate',target:{person:id,tab:'interaction'}});
+  expect(lifeOngoingItems(w).find(i=>i.id==='tuition:'+t.id)).toMatchObject({progress:0,days:270,clock:'estimate',target:{person:id,tab:'family'}});
   act(w,{type:'household',action:'cancel',id:t.id});expect(education(w,id)).toBeDefined();expect(lifeOngoingItems(w).some(i=>i.id==='tuition:'+t.id)).toBe(false);
   w.householdPlans!.growth[id]={stewardship:1};expect(education(w,id)).toBeUndefined();die(w,id,'illness');expect(education(w,id)).toBeUndefined();
  });
@@ -44,7 +44,7 @@ describe('生活事项顶部旗帜',()=>{
  });
  it('keeps assigned family decisions, deduplicates education aspirations, and removes the item after a real choice',()=>{
   const {w,id}=child(16),s=w.householdLife!,e={id:s.nextId++,key:'flags-aspiration',kind:'aspiration' as const,person:id,actor:w.characterId!,created:w.day,status:'pending' as const,choice:null};s.moments.push(e);
-  expect(education(w,id)).toBeUndefined();expect(lifeOngoingItems(w).find(i=>i.id==='family-moment:'+e.id)?.target).toMatchObject({person:w.characterId,tab:'overview'});
+  expect(education(w,id)).toBeUndefined();expect(lifeOngoingItems(w).find(i=>i.id==='family-moment:'+e.id)?.target).toMatchObject({person:w.characterId,tab:'family'});
   actFamily(w,{type:'familyLife',action:'resolve',id:e.id,choice:'decline'});expect(lifeOngoingItems(w).some(i=>i.id==='family-moment:'+e.id)).toBe(false);expect(education(w,id)).toBeDefined();
   s.moments.push({id:s.nextId++,key:'other-actor',kind:'childhood',person:id,actor:'gao-huan',created:w.day,status:'pending',choice:null});expect(lifeOngoingItems(w).some(i=>i.id==='family-moment:'+s.moments.at(-1)!.id)).toBe(false);
  });

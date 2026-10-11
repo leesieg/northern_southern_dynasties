@@ -247,7 +247,7 @@ export function WorldMap(props:Props){
         if(estateButton&&estateSite&&estate){estateButton.hidden=false;
           places.find(item=>item.id===estate.location)?.marker.getElement().append(estateButton);
           estateButton.setAttribute('aria-label','查看'+estateName(estate.family)+'，位于'+estateSite.name);
-          estateButton.title=estateSite.name+' · '+estateName(estate.family);
+          estateButton.dataset.gameHint=estateSite.name+' · '+estateName(estate.family);
         }else if(estateButton)estateButton.hidden=true;
         const travelers=mapTravelers(p.world);travelingIds=new Set(travelers.filter(person=>person.journey).map(person=>person.id));
         for(const person of travelers){
@@ -261,10 +261,10 @@ export function WorldMap(props:Props){
           item.marker.getElement().style.setProperty('--city-realm',polityStyle(p.world,controller).color);
           item.button.replaceChildren(document.createTextNode(site.name+(controller!==owner?' · 占':rebel?' · 举兵':'')));const county=document.createElement('small');county.textContent=administration[site.id]?.prefecture??(site.capital?'都城':'县治');item.button.append(county);
           const governor=state?.owner===state?.controller?state?.governor:undefined;updateMarkerPortrait(item.portrait,governor??undefined,p.world);item.portrait.setAttribute('aria-label',governor?'查看本城治理者':'查看'+site.name+'详情');item.portrait.onclick=event=>{event.stopPropagation();if(governor)current.current.onInspectPeople([governor]);else current.current.onSelect(site.id);};item.button.dataset.rebel=String(!!rebel);
-          item.button.title='法理：'+regimeName(p.world,owner)+' / 控制：'+name;
+          item.button.dataset.gameHint='法理：'+regimeName(p.world,owner)+' / 控制：'+name;
           item.button.setAttribute('aria-label',site.name+'，'+name+'控制，查看城域详情');
           item.flag.src=armyHeraldry(controller,name,p.world);item.badge.disabled=controller==='frontier';
-          item.badge.title=controller==='frontier'?'周边地区，尚无统一国家档案':name+' · 查看国家详情';item.badge.setAttribute('aria-label',item.badge.title);
+          item.badge.dataset.gameHint=controller==='frontier'?'周边地区，尚无统一国家档案':name+' · 查看国家详情';item.badge.setAttribute('aria-label',item.badge.dataset.gameHint);
         }
         const currentArmies=p.world.realm?.armies??[];
         for(const [key,item] of armyMarkers)if(!currentArmies.some((a,i)=>String(a.id??a.realm+':'+i)===key)){item.marker.remove();armyMarkers.delete(key);}
@@ -285,7 +285,7 @@ export function WorldMap(props:Props){
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
           item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyDisplayState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
           item.button.style.setProperty('--army-morale',view.exact?Math.max(0,Math.min(100,a.morale))+'%':'0%');
-          item.button.title=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
+          item.button.dataset.gameHint=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
           item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人，士气 '+a.morale:''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
           if(view.command)item.button.setAttribute('aria-pressed','false');else item.button.removeAttribute('aria-pressed');
         }
@@ -299,12 +299,12 @@ export function WorldMap(props:Props){
          else if(primary.sides){primary.sides.forEach((side,index)=>{const row=document.createElement('span');row.className='atlas-combat-side';row.dataset.side=index===0?'attack':'defend';const flag=document.createElement('img');flag.src=armyHeraldry(side.realm,regimeName(p.world,side.realm),p.world);flag.alt=regimeName(p.world,side.realm);const strength=document.createElement('b');strength.textContent=side.strength;row.append(flag,strength);if(index===0)item!.button.prepend(row);else item!.button.append(row);});}
          if(kind==='battle'&&combat.items.some(i=>i.progress!==undefined)){const progress=document.createElement('span');progress.className='atlas-combat-siege-mini';const values=combat.items.flatMap(i=>i.progress===undefined?[]:[i.progress]);progress.textContent='围 '+(values.length===1?values[0]:Math.min(...values)+'–'+Math.max(...values))+'%';item.button.append(progress);}
          if(combat.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(combat.items.length);item.button.append(count);}
-         item.marker.setLngLat([combat.lon,combat.lat]);item.button.dataset.kind=kind;item.button.title=combat.items.map(i=>i.label).join('\n');item.button.setAttribute('aria-label',combat.items.length>1?'查看此地 '+combat.items.length+' 场战事':'查看'+combat.items[0].label);item.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=engagementGroups(current.current.world).find(c=>c.key===combat.key);if(!latest)return;if(latest.items.length===1)current.current.onEngagement(latest.items[0].ref);else{current.current.onBrowseActivities();setCombatGroupKey(combat.key);}};
+         item.marker.setLngLat([combat.lon,combat.lat]);item.button.dataset.kind=kind;item.button.dataset.gameHint=combat.items.map(i=>i.label).join('\n');item.button.setAttribute('aria-label',combat.items.length>1?'查看此地 '+combat.items.length+' 场战事':'查看'+combat.items[0].label);item.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=engagementGroups(current.current.world).find(c=>c.key===combat.key);if(!latest)return;if(latest.items.length===1)current.current.onEngagement(latest.items[0].ref);else{current.current.onBrowseActivities();setCombatGroupKey(combat.key);}};
         }
         const activityGroups=mapActivities(p.world);
         for(const [site,entry] of activityMarkers)if(!activityGroups.some(g=>g.site===site)){entry.marker.remove();activityMarkers.delete(site);}
         for(const group of activityGroups){let entry=activityMarkers.get(group.site);if(!entry){const button=document.createElement('button');button.className='atlas-activity-marker';const loc=siteById[group.site];const marker=new Marker({element:button,anchor:'left',offset:[18,-22]}).setLngLat([loc.lon,loc.lat]).addTo(map);entry={marker,button};activityMarkers.set(group.site,entry);}
-         const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent='';if(group.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(group.items.length);count.setAttribute('aria-hidden','true');entry.button.append(count);}entry.button.title=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',group.items.length===1?'查看'+item.title+'详情':'查看'+siteById[group.site].name+'的'+group.items.length+'项事务');entry.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=mapActivities(current.current.world).find(value=>value.site===group.site);if(!latest)return;if(latest.items.length===1)current.current.onActivity(latest.items[0]);else{current.current.onBrowseActivities();setActivitySite(group.site);}};}
+         const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent='';if(group.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(group.items.length);count.setAttribute('aria-hidden','true');entry.button.append(count);}entry.button.dataset.gameHint=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',group.items.length===1?'查看'+item.title+'详情':'查看'+siteById[group.site].name+'的'+group.items.length+'项事务');entry.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=mapActivities(current.current.world).find(value=>value.site===group.site);if(!latest)return;if(latest.items.length===1)current.current.onActivity(latest.items[0]);else{current.current.onBrowseActivities();setActivitySite(group.site);}};}
         lastWorld=p.world;lastRoute=routeKey;
       }
       for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}

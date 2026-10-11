@@ -1,3 +1,4 @@
+import {CommandConfirmation} from './CommandConfirmation';
 import {activeWars,warRealmSide} from '../core/wars';
 import {capital} from '../core/realm';
 import {afterCommand} from './actionFeedback';
@@ -38,7 +39,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
  const action=(cmd:CourtCommand,label:string,icon:ArtName,detail:string)=>{
   if(!ownRealm)return null;
   const reason=courtReason(w,cmd);
-  return <HoverHint label={label} content={<>{detail}{reason&&<p>{reason}</p>}</>}><button className="court-icon-button" aria-label={label} disabled={pending||!!reason} onClick={()=>{if(pending||courtReason(w,cmd))return;send(cmd);}}><ArtIcon name={icon} size={25}/></button></HoverHint>;
+  return <CommandConfirmation key={r+label} command={cmd} label={label} detail={detail} icon={icon} reason={reason} pending={pending} send={send} iconOnly/>;
  };
  const portrait=(id:string)=><button className="faction-person" key={id} onClick={()=>onPerson(id)} aria-label={'查看'+politicalName(id,w)}><CharacterPortrait characterId={id} world={w} compact/><span>{politicalName(id,w)}</span></button>;
  const response=(label:string)=>{

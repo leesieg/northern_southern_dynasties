@@ -29,11 +29,11 @@ import './intrigue.css';
 const schemeInfo:Record<Scheme['kind'],{name:string;icon:ArtName;effect:string;group:'personal'|'political'|'hostile'}>={
  befriend:{name:'交好',icon:'gregarious',effect:'经营友谊与好感；已有仇怨须先调解。',group:'personal'},
  woo:{name:'拉拢',icon:'influence',effect:'争取个人好感，提高此后政治交涉的接受度。',group:'personal'},
- favor:{name:'人情',icon:'generous',effect:'制造可兑现的人情；复用双方已有的人情记录。',group:'personal'},
+ favor:{name:'人情',icon:'generous',effect:'争取可兑现的人情，与双方已有往来一并记录。',group:'personal'},
  alienate:{name:'离间',icon:'wary',effect:'针对一段具体关系，挑起目标对另一人的疑惧。',group:'political'},
  recruit:{name:'密约',icon:'renown',effect:'约定支持一项明确的君位或执政安排；承诺按真实官职和兵权结算。',group:'political'},
- control:{name:'挟制',icon:'influence',effect:'保留君主名义，争夺实际执政权；须有真实权力基础。',group:'hostile'},
- abduct:{name:'绑架',icon:'army',effect:'将人物纳入实际拘押；后续招降、赎返、释放仍依拘押规则。',group:'hostile'},
+ control:{name:'挟制',icon:'influence',effect:'保留君主名义，争夺实际执政权；须具备相应兵权或政治势力。',group:'hostile'},
+ abduct:{name:'绑架',icon:'army',effect:'将人物秘密拘押，之后可交涉招降、赎返或释放。',group:'hostile'},
  murder:{name:'谋害',icon:'wary',effect:'目标可能死亡并进入正常身后结算；曝光会引起仇怨和朝局后果。',group:'hostile'},
 };
 const statusNames={active:'筹划中',succeeded:'已达成',failed:'未达成',cancelled:'已撤回',invalid:'已中止'};

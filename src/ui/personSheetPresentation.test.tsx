@@ -7,7 +7,7 @@ import {personSheetPresentation} from './personSheetPresentation';
 import {MapPersonPanel,type PersonTab} from './MapPersonPanel';
 import {RealmBadge} from './RealmBadge';
 const noop=()=>{};
-const render=(world:ReturnType<typeof newCampaignWorld>,id:string,tab:PersonTab='overview')=>renderToStaticMarkup(<MapPersonPanel world={world} ids={[id]} tab={tab} onTab={noop} onPerson={noop} onSelect={noop} onEconomy={noop} onCourtPerson={noop} onStaff={noop} onEstate={noop} onDiplomacy={noop} onLocate={noop} onCity={noop} pending={false} send={async()=>true}/>);
+const render=(world:ReturnType<typeof newCampaignWorld>,id:string,tab:PersonTab='overview')=>renderToStaticMarkup(<MapPersonPanel world={world} ids={[id]} tab={tab} familyView={{mode:'household',selection:null}} onFamilyView={noop} onTab={noop} onPerson={noop} onSelect={noop} onEconomy={noop} onCourtPerson={noop} onStaff={noop} onEstate={noop} onDiplomacy={noop} onLocate={noop} onCity={noop} pending={false} send={async()=>true}/>);
 it('现任身份、统属、外国朝廷从当前世界读取，继位后不沿用旧头衔',()=>{
  const w=newCampaignWorld('gao-huan',undefined,'sandbox');
  expect(personSheetPresentation(w,'gao-huan')).toMatchObject({title:'东魏执政',ruler:'yuan-shanjian',realm:'east'});
@@ -35,12 +35,12 @@ it('地图定位采用当前驻地或在途位置，而不是开局地点或终�
 });
 it('本人五页签、经济庄园入口与实际能力完整保留，渲染不写存档',()=>{
  const w=newCampaignWorld('gao-huan',undefined,'sandbox'),before=serializeWorld(w);
- for(const tab of ['overview','family','relations','focus','interaction'] as const){const html=render(w,'gao-huan',tab);expect(html).toContain('查看经济');expect(html).toContain('家族庄园');expect(html).toContain('地图定位');expect(html).toContain('外交');expect(html).toContain('个人威望');}
+ for(const tab of ['overview','family','relations','focus','interaction'] as const){const html=render(w,'gao-huan',tab);expect(html).toContain('查看家计');expect(html).toContain('家族庄园');expect(html).toContain('地图定位');expect(html).toContain('外交');expect(html).toContain('个人威望');}
  expect(serializeWorld(w)).toBe(before);
 });
 it('查看其他人物不展示本人的经济、庄园或重心操作；已故没有互动与地图定位',()=>{
  const w=newCampaignWorld('gao-huan',undefined,'sandbox');
- const npc=render(w,'yuwen-tai');expect(npc).not.toContain('查看经济');expect(npc).not.toContain('家族庄园');expect(npc).not.toContain('>重心<');expect(npc).toContain('人物互动');
+ const npc=render(w,'yuwen-tai');expect(npc).not.toContain('查看家计');expect(npc).not.toContain('家族庄园');expect(npc).not.toContain('>重心<');expect(npc).toContain('人物互动');
  w.life!.people['yuwen-tai'].death={day:0,cause:'age'};
  const deceased=render(w,'yuwen-tai');expect(deceased).not.toContain('人物互动');expect(deceased).not.toContain('地图定位');expect(deceased).toContain('任职档案');
 });

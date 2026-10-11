@@ -22,7 +22,7 @@ import {lifestyleProgress,lifestylePoints,lifestylePerson} from './lifestyle';
 import {lifestyleBranches,lifestyleFocuses,type LifestyleBranch} from '../data/lifestyles';
 import {isAlive} from './lifeState';
 export type OngoingKind='travel'|'activity'|'service'|'petition'|'diplomacy'|'construction'|'reform'|'scheme'|'military'|'retinue'|'focus'|'skills'|'marriage'|'education'|'family'|'care';
-export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'|'overview'|'interaction';action?:PersonLifeEntry['action']}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'|'governance'}|{page:'estate';estate?:string}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'|'intrigue'};
+export type OngoingTarget={page:'territory';territory:string}|{page:'person';person:string;tab?:'economy'|'overview'|'interaction'|'family';action?:PersonLifeEntry['action']}|{page:'lifestyle';branch?:LifestyleBranch}|{page:'service';id?:number}|{page:'duties'}|{page:'city';site:string;tab:'travel'|'build'|'military'|'governance'}|{page:'estate';estate?:string}|{page:'diplomacy';realm:ReturnType<typeof playerRealm>}|{page:'court'|'government'|'politics'|'retinue'|'treasury'|'audit'|'intrigue'};
 export interface PersonLifeEntry {person:string;action:'marriage'|'education'}
 export interface OngoingItem {id:string;kind:OngoingKind;title:string;started:number;progress:number|null;days:number|null;clock:'remaining'|'deadline'|'estimate'|'waiting';status:string;target:OngoingTarget}
 const ratio=(done:number,total:number)=>total>0?Math.max(0,Math.min(1,done/total)):null;

@@ -50,3 +50,5 @@
  .focused-shell .chronicle-control .tally-speed{min-width:27px}
 }
 @media(prefers-reduced-motion:reduce){.focused-shell .map-command-dock .map-tool-group>summary,.focused-shell .map-command-dock .map-tool-popover button,.focused-shell .command-rail :is(button,.rail-emblem){transition:none}}
+
+.campaign-dial-mode[aria-disabled=true]{opacity:.45;cursor:not-allowed}
