@@ -38,7 +38,8 @@ describe('atlas data and style contracts (no UI)',()=>{
     expect(activeRoute(world,preview.route).features[0].geometry.coordinates).toEqual(routeCoordinates(preview.route));
     act(world,{type:'travel',destination:'changan'});advance(world,3);
     const pos=position(world.people[0]),route=activeRoute(world,[]).features[0].geometry.coordinates;
-    expect(route[0]).toEqual([pos.lon,pos.lat]);expect(route.at(-1)).toEqual([108.94,34.27]);
+    const destination=sites.find(s=>s.id==='changan')!;
+    expect(route[0]).toEqual([pos.lon,pos.lat]);expect(route.at(-1)).toEqual([destination.lon,destination.lat]);
     const snapshot=structuredClone(world);activeRoute(world,[]);expect(world).toEqual(snapshot);
   });
   it('keeps overlays geographically valid and matches every travel node',()=>{

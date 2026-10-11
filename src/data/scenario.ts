@@ -1,4 +1,5 @@
 import {historicalSiteLocations} from './historicalSiteLocations.ts';
+import {reviseRoadNetwork} from './roadNetwork.ts';
 import {expandedSeats} from './expandedGeography.ts';
 import { countySeats } from './administration.ts';
 import type { Polity, Road, Site } from '../core/types';
@@ -84,5 +85,5 @@ function bookedRoadDays(from:string,to:string,factor:number){
 }
 // Legacy shortcuts remain readable for booked journeys, but cannot form new routes or borders.
 // Western approaches pass through Yubi–Puban or Hongnong–Huayin; not surveyed ancient roads.
-export const roads: Road[] = links.map(([from, to, factor = 1]) => ({from, to, factor,...bookedRoadDays(from,to,factor),...(from==='xiangyang'&&to==='luoyang'||from==='jinyang'&&to==='changan'||from==='changan'&&to==='luoyang'?{legacyOnly:true}:{})}));
+export const roads: Road[] = reviseRoadNetwork(links.map(([from, to, factor = 1]) => ({from, to, factor,...bookedRoadDays(from,to,factor),...(from==='xiangyang'&&to==='luoyang'||from==='jinyang'&&to==='changan'||from==='changan'&&to==='luoyang'?{legacyOnly:true}:{})})));
 export const siteById = Object.fromEntries(sites.map(site => [site.id, site])) as Record<string, Site>;
