@@ -87,7 +87,8 @@ export async function createTerrain(report:(message:string)=>void,atlas?:Texture
   const p=palettes[season],base=new Color(p.ground),grass=new Color(p.grass),wood=new Color(p.forest),rock=new Color(p.rock),vellum=new Color('#c6bd9c'),ink=new Color('#687363'),sand=new Color(season==='winter'?'#a5ad99':'#b4b290'),wet=new Color('#62785d');
   const position=geometry.getAttribute('position'),normal=geometry.getAttribute('normal'),color=geometry.getAttribute('color');
   for(let i=0;i<position.count;i++){const x=position.getX(i),z=position.getZ(i),h=position.getY(i),cover=forestCover(x,z,h)*smooth(7,13,cityClearance(x,z,cities));
-   const c=base.clone().lerp(grass,noise(x*.21,z*.21)*.7).lerp(wood,cover*.8).lerp(rock,smooth(.045,.23,1-normal.getY(i))*.84);
+   const exposed=smooth(.045,.23,1-normal.getY(i))*(.2+.8*smooth(.36,.66,noise(x*.22+4,z*.22)));
+   const c=base.clone().lerp(grass,noise(x*.21,z*.21)*.7).lerp(wood,cover*.8).lerp(rock,exposed*.84);
    c.multiplyScalar(.88+noise(x*.065,z*.065)*.22);
    const bank=channel.sample(x,z);if(bank&&bank.edge<bank.bank){const edge=Math.max(0,bank.edge);const shoreWidth=.16+bank.inner*.85;c.lerp(sand,(1-smooth(shoreWidth*.35,shoreWidth,edge))*(.60+bank.inner*.35));c.lerp(wet,(1-smooth(0,.12,edge))*.45);}
    if(paper)c.lerp(vellum.clone().lerp(ink,clamp(h/26)*.48+cover*.13),paper);

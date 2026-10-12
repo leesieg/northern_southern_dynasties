@@ -9,24 +9,26 @@ export const stoneGLSL=`
 `;
 
 export function outcropMaterial(atlas?:Texture){
- const material=new MeshStandardMaterial({vertexColors:true,roughness:.95});
+ const material=new MeshStandardMaterial({vertexColors:true,roughness:1});
  material.onBeforeCompile=shader=>{
   shader.uniforms.rockAtlas={value:atlas??null};
   shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 rockPoint;varying vec3 rockNormal;')
    .replace('#include <begin_vertex>',`#include <begin_vertex>
     vec4 geoPosition=vec4(position,1.);vec3 geoNormal=normal;
     #ifdef USE_INSTANCING
-     geoPosition=instanceMatrix*geoPosition;geoNormal=mat3(instanceMatrix)*geoNormal;
+     geoPosition=instanceMatrix*geoPosition;
+     geoNormal/=vec3(dot(instanceMatrix[0].xyz,instanceMatrix[0].xyz),dot(instanceMatrix[1].xyz,instanceMatrix[1].xyz),dot(instanceMatrix[2].xyz,instanceMatrix[2].xyz));
+     geoNormal=mat3(instanceMatrix)*geoNormal;
     #endif
     rockPoint=(modelMatrix*geoPosition).xyz;rockNormal=normalize(mat3(modelMatrix)*geoNormal);
    `);
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 rockPoint;varying vec3 rockNormal;uniform sampler2D rockAtlas;\n'+stoneGLSL)
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 rockPoint;varying vec3 rockNormal;uniform sampler2D rockAtlas;\nvec3 rockSwatch(vec2 uv){return texture2D(rockAtlas,vec2(.504,.504)+abs(fract(uv*.5)*2.-1.)*.492).rgb;}\n'+stoneGLSL)
    .replace('#include <color_fragment>',`#include <color_fragment>
     float grain=mineral(rockPoint),detail=1.-smoothstep(.08,.8,length(fwidth(rockPoint)));
-    float seams=mix(1.,fracture(rockPoint),detail*.27);
+    float seams=mix(1.,fracture(rockPoint),detail*.16);
     diffuseColor.rgb*=seams*(.73+grain*.51);
-    ${atlas?`vec2 uv=vec2(rockPoint.x+rockPoint.z,rockPoint.y)*.55;
-    vec3 texel=texture2D(rockAtlas,vec2(.504,.504)+abs(fract(uv*.5)*2.-1.)*.492).rgb;
+    ${atlas?`vec3 weights=pow(abs(normalize(rockNormal)),vec3(4.));weights/=max(.001,weights.x+weights.y+weights.z);
+    vec3 texel=rockSwatch(rockPoint.zy*.55)*weights.x+rockSwatch(rockPoint.xz*.55)*weights.y+rockSwatch(rockPoint.xy*.55)*weights.z;
     diffuseColor.rgb*=clamp(dot(texel,vec3(.3,.59,.11))*2.1+.3,.48,1.40);`:''}
     float moss=smoothstep(.4,.85,rockNormal.y)*smoothstep(.50,.73,geoNoise(rockPoint*.8));
     diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.67,.78,.49),moss*.32);
@@ -34,8 +36,8 @@ export function outcropMaterial(atlas?:Texture){
    .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
     float detailNormal=1.-smoothstep(.07,.45,length(fwidth(rockPoint)));float centre=mineral(rockPoint);
     vec3 grad=vec3(mineral(rockPoint+vec3(.04,0,0))-centre,mineral(rockPoint+vec3(0,.04,0))-centre,mineral(rockPoint+vec3(0,0,.04))-centre);
-    normal=normalize(normal-mat3(viewMatrix)*grad*1.4*detailNormal);
+    normal=normalize(normal-mat3(viewMatrix)*grad*.55*detailNormal);
    `);
  };
- material.customProgramCacheKey=()=> 'sample-weathered-outcrop-v2-'+!!atlas;return material;
+ material.customProgramCacheKey=()=> 'sample-weathered-outcrop-v3-'+!!atlas;return material;
 }
