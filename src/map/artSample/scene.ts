@@ -10,6 +10,7 @@ import {resourceTexture} from '../three/resourceTexture';
 import {createTerrain} from './terrain';
 import {createScenery} from './scenery';
 import {createPaperMap} from './paperMap';
+import {createPaperSymbols} from './paperSymbols';
 import {EXTENT,clamp,detailWeights,palettes,smooth,travelPose,views,type SampleSeason,type View} from './layout';
 
 export async function mountArtSample(container:HTMLElement,report:(message:string)=>void){
@@ -29,6 +30,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let surfaceAtlas:Texture|undefined;
  let scenery:Awaited<ReturnType<typeof createScenery>>|undefined;
+ let paperSymbols:ReturnType<typeof createPaperSymbols>|undefined;
  const actors:{root:Group;mixer:AnimationMixer;idle?:AnimationAction;walk?:AnimationAction;offset:number;moving:boolean;weight:number}[]=[];
  const labels:{element:HTMLElement;point:Vector3;capital:boolean}[]=[];
  const dispose=()=>{
@@ -37,7 +39,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
   const geometries=new Set<BufferGeometry>(),materials=new Set<Material>(),textures=new Set<Texture>();
   scene.traverse(o=>{if(o instanceof Mesh){geometries.add(o.geometry);for(const material of Array.isArray(o.material)?o.material:[o.material]){materials.add(material);for(const value of Object.values(material))if(value instanceof Texture)textures.add(value);}}});
   if(surfaceAtlas)textures.add(surfaceAtlas);
-  geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());scenery?.dispose();ao.dispose();output.dispose();composer.dispose();renderer.dispose();renderer.domElement.remove();labels.forEach(l=>l.element.remove());
+  geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());scenery?.dispose();paperSymbols?.dispose();ao.dispose();output.dispose();composer.dispose();renderer.dispose();renderer.domElement.remove();labels.forEach(l=>l.element.remove());
  };
  const observer=new ResizeObserver(()=>{if(closed)return;const w=container.clientWidth,h=container.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);composer.setSize(w,h);dirty=true;});observer.observe(container);
  function keydown(e:KeyboardEvent){
@@ -51,7 +53,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
   surfaceAtlas=await resourceTexture('art/campaign/terrain-atlas-v1.png',undefined,true);surfaceAtlas.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(closed){surfaceAtlas.dispose();throw new Error('样板已关闭');}
   const terrain=await createTerrain(report,surfaceAtlas);if(closed){terrain.root.traverse(o=>{if(o instanceof Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});throw new Error('样板已关闭');}scene.add(terrain.root);
   scenery=await createScenery(terrain,report);if(closed){scenery.dispose();throw new Error('样板已关闭');}scene.add(scenery.root);
-  const paperMap=createPaperMap(terrain);scene.add(paperMap.root);
+  const paperMap=createPaperMap(terrain);scene.add(paperMap.root);paperSymbols=createPaperSymbols(terrain,container);
   report('正在安置四名行旅与兵模…');
   const loader=new GLTFLoader(),paths=['han-male','han-female','xianbei-male','xianbei-female'].map(kind=>`art/campaign/travelers/${kind}-near.glb`);paths.push('art/military/spear-infantry-v2.glb');
   const models=await Promise.all(paths.map(async path=>loader.parseAsync(await mapResource(path).then(r=>r.arrayBuffer()),'')));
@@ -98,7 +100,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
    const span=clamp(distance*.62,28,120);sun.target.position.copy(controls.target);sun.position.copy(controls.target).add(new Vector3(-65,95,45));Object.assign(sun.shadow.camera,{left:-span,right:span,top:span,bottom:-span});sun.shadow.camera.updateProjectionMatrix();
    const key=[...controls.target.toArray(),span].map(v=>v.toFixed(2)).join('|')+sun.color.getHex();renderer.shadowMap.needsUpdate=walking||key!==lastShadowKey;lastShadowKey=key;
    const fog=scene.fog as Fog;fog.near=Math.max(95,distance*1.12);fog.far=Math.max(320,Math.min(470,distance*2.65));
-   composer.render();
+   composer.render();paperSymbols?.update(camera,container.clientWidth,container.clientHeight,paper);
    for(const label of labels){projected.copy(label.point);projected.y=label.point.y*(1-paper)+.06*paper;projected.project(camera);const visible=projected.z>-1&&projected.z<1&&(label.capital||distance>65);label.element.hidden=!visible;if(visible){label.element.style.left=(projected.x*.5+.5)*container.clientWidth+'px';label.element.style.top=(-projected.y*.5+.5)*container.clientHeight+'px';label.element.style.color=paper>.5?'#475b47':'';label.element.style.textShadow=paper>.5?'0 1px 2px #d2d2ad80':'';}}
   }
   frame=requestAnimationFrame(render);

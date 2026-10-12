@@ -4,6 +4,7 @@ import {siteById} from '../../data/scenario';
 import {projectGround} from '../three/geography';
 import {seededRandom} from '../sample/geography';
 import {forestCover} from './layout';
+import {inkEdge} from './paperInk';
 import type {SampleTerrain} from './terrain';
 
 const SIZE=4096,SPAN=840,SCALE=SIZE/SPAN;
@@ -16,39 +17,42 @@ export function createPaperMap(terrain:SampleTerrain){
  const local=(coordinates:number[])=>{const p=projectGround(coordinates[0],coordinates[1]);return {x:p.x-origin.x,z:p.z-origin.z};};
  const px=(v:number)=>(v+SPAN/2)*SCALE;
  ctx.fillStyle='#d6d3bd';ctx.fillRect(0,0,SIZE,SIZE);ctx.lineJoin='round';ctx.lineCap='round';
- const polygon=(coordinates:number[][][][])=>{ctx.beginPath();for(const shape of coordinates)for(const ring of shape){ring.forEach((v,i)=>{const p=local(v);if(i===0)ctx.moveTo(px(p.x),px(p.z));else ctx.lineTo(px(p.x),px(p.z));});ctx.closePath();}};
+ const polygon=(coordinates:number[][][][])=>{ctx.beginPath();for(const shape of coordinates)for(const ring of shape){ring.forEach((v,i)=>{const p=local(v);if(i===0)ctx.moveTo(px(p.x),px(p.z));else for(const q of inkEdge(local(ring[i-1]),p))ctx.lineTo(px(q.x),px(q.z));});ctx.closePath();}};
  for(const feature of territoryRealms.features){polygon(feature.geometry.coordinates);ctx.globalAlpha=.84;ctx.fillStyle=washes[String(feature.properties?.id)]??washes.frontier;ctx.fill('evenodd');ctx.globalAlpha=.36;ctx.strokeStyle='#667061';ctx.lineWidth=2.6*SCALE;ctx.stroke();}
  // Uneven pigment density adds a broad paper wash without screen-space noise.
- for(let i=0;i<2800;i++){const x=random()*SIZE,y=random()*SIZE,r=(4+random()*14)*SCALE;ctx.globalAlpha=.018;ctx.fillStyle=i%3?'#e2d6ae':'#4b6655';ctx.beginPath();ctx.ellipse(x,y,r,r*(.3+random()*.6),random()*Math.PI,0,Math.PI*2);ctx.fill();}
+ for(let i=0;i<4600;i++){const x=random()*SIZE,y=random()*SIZE,r=(4+random()*14)*SCALE;ctx.globalAlpha=.038;ctx.fillStyle=i%3?'#e2d6ae':'#4b6655';ctx.beginPath();ctx.ellipse(x,y,r,r*(.3+random()*.6),random()*Math.PI,0,Math.PI*2);ctx.fill();}
  // Local borders use the project's existing schematic polygons, never newly invented divisions.
- for(const feature of territories.features){polygon(feature.geometry.coordinates);ctx.globalAlpha=.44;ctx.strokeStyle='#4d654e';ctx.lineWidth=.32*SCALE;ctx.stroke();}
+ for(const feature of territories.features){polygon(feature.geometry.coordinates);ctx.globalAlpha=.16;ctx.strokeStyle='#364c35';ctx.lineWidth=.95*SCALE;ctx.stroke();ctx.globalAlpha=.55;ctx.lineWidth=.35*SCALE;ctx.stroke();}
  ctx.globalAlpha=1;
  // Low-frequency ink wash follows elevation; bilinear scaling avoids a grid or lit 3D relief.
  const relief=document.createElement('canvas');relief.width=260;relief.height=230;const rc=relief.getContext('2d')!,reliefPixels=rc.createImageData(260,230);
- for(let j=0;j<230;j++)for(let i=0;i<260;i++){const h=terrain.measured(-260+i*2,-230+j*2),n=(j*260+i)*4;reliefPixels.data[n]=58;reliefPixels.data[n+1]=82;reliefPixels.data[n+2]=60;reliefPixels.data[n+3]=Math.min(36,Math.max(0,h-.5)*10);}
+ for(let j=0;j<230;j++)for(let i=0;i<260;i++){const h=terrain.measured(-260+i*2,-230+j*2),n=(j*260+i)*4;reliefPixels.data[n]=58;reliefPixels.data[n+1]=82;reliefPixels.data[n+2]=60;reliefPixels.data[n+3]=Math.min(78,Math.max(0,h-.18)*24);}
  rc.putImageData(reliefPixels,0,0);ctx.globalAlpha=1;ctx.drawImage(relief,px(-260),px(-230),520*SCALE,460*SCALE);
  // Fibre and pigment are fixed in map space, so moving the camera never re-rolls the grain.
  const fibre=document.createElement('canvas');fibre.width=fibre.height=256;const f=fibre.getContext('2d')!;
- const pixels=f.createImageData(256,256);for(let i=0;i<pixels.data.length;i+=4){const value=82+random()*85;pixels.data[i]=value;pixels.data[i+1]=value-5;pixels.data[i+2]=value-16;pixels.data[i+3]=random()*20;}f.putImageData(pixels,0,0);
+ const pixels=f.createImageData(256,256);for(let i=0;i<pixels.data.length;i+=4){const value=82+random()*85;pixels.data[i]=value;pixels.data[i+1]=value-5;pixels.data[i+2]=value-16;pixels.data[i+3]=random()*55;}f.putImageData(pixels,0,0);
  ctx.fillStyle=ctx.createPattern(fibre,'repeat')!;ctx.fillRect(0,0,SIZE,SIZE);
+ // Visible fibres and soft creases span several texels rather than disappearing into mipmaps.
+ for(let i=0;i<18000;i++){const x=random()*SIZE,y=random()*SIZE;ctx.globalAlpha=.045+random()*.06;ctx.strokeStyle=i%3?'#ede1b9':'#5a6046';ctx.lineWidth=.5+random()*1.6;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+3,y-2,x+5+random()*22,y+(random()-.5)*5);ctx.stroke();}
+ ctx.globalAlpha=1;
  // Hand-drawn ridge marks follow measured high ground; these are map symbols, not new mountains.
  const stamps:{x:number;z:number}[]=[];
- for(let z=-230;z<230;z+=3.8)for(let x=-260;x<260;x+=4.5){
+ for(let z=-230;z<230;z+=2.7)for(let x=-260;x<260;x+=3.2){
   const sx=x+(random()-.5)*3,sz=z+(random()-.5)*2,h=terrain.measured(sx,sz);
-  if(h<.85||random()>.68||terrain.river(sx,sz)<2||terrain.cities.some(c=>Math.hypot(sx-c.x,sz-c.z)<5))continue;
+  if(h<.34||random()>.69||terrain.river(sx,sz)<2||terrain.cities.some(c=>Math.hypot(sx-c.x,sz-c.z)<5))continue;
   const slope=Math.abs(terrain.measured(sx+1,sz)-terrain.measured(sx-1,sz))+Math.abs(terrain.measured(sx,sz+1)-terrain.measured(sx,sz-1));
-  if(slope<.18&&h<2.4)continue;
-  const w=(1.1+random()*1.2)*SCALE,height=(.9+Math.min(3,h)*.55)*SCALE,cx=px(sx),cy=px(sz);
-  ctx.strokeStyle='#586951';ctx.fillStyle='#778166';ctx.globalAlpha=.47;ctx.lineWidth=.23*SCALE;
+  if(slope<.08&&h<1.1)continue;
+  const w=(1.3+random()*1.5)*SCALE,height=(1.0+Math.min(3,h)*.8)*SCALE,cx=px(sx),cy=px(sz);
+  ctx.strokeStyle='#3c513a';ctx.fillStyle='#526548';ctx.globalAlpha=.63;ctx.lineWidth=.23*SCALE;
   ctx.beginPath();ctx.moveTo(cx-w*1.5,cy+height*.45);ctx.lineTo(cx-w*.78,cy-height*.18);ctx.lineTo(cx-w*.44,cy+height*.12);ctx.moveTo(cx+w*.37,cy-height*.13);ctx.lineTo(cx+w*.69,cy-height*.39);ctx.lineTo(cx+w*1.4,cy+height*.36);ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-w,cy+height*.42);ctx.bezierCurveTo(cx-w*.62,cy+height*.12,cx-w*.30,cy-height*.60,cx,cy-height);ctx.bezierCurveTo(cx+w*.28,cy-height*.38,cx+w*.5,cy-height*.1,cx+w,cy+height*.34);ctx.stroke();
-  ctx.globalAlpha=.22;ctx.lineTo(cx+w*.10,cy+height*.14);ctx.lineTo(cx,cy-height);ctx.fill();
-  ctx.globalAlpha=.28;ctx.lineWidth=.12*SCALE;
-  for(let j=0;j<3;j++){ctx.beginPath();ctx.moveTo(cx+(j*.13-.10)*w,cy-height*(.73-j*.15));ctx.lineTo(cx+(.3+j*.17)*w,cy+height*(.14+j*.08));ctx.stroke();}
+  ctx.globalAlpha=.34;ctx.lineTo(cx+w*.10,cy+height*.14);ctx.lineTo(cx,cy-height);ctx.fill();
+  ctx.globalAlpha=.52;ctx.lineWidth=.16*SCALE;
+  for(let j=0;j<5;j++){ctx.beginPath();ctx.moveTo(cx+(j*.10-.15)*w,cy-height*(.86-j*.12));ctx.lineTo(cx+(.18+j*.15)*w,cy+height*(.14+j*.08));ctx.stroke();}
   stamps.push({x:sx,z:sz});
  }
  // Sparse woodland wash remains secondary to the ridge strokes and labels.
- for(let z=-150;z<150;z+=4)for(let x=-180;x<180;x+=4){const h=terrain.measured(x,z);if(h>.9||forestCover(x,z,h)<.57||terrain.river(x,z)<3||random()>.42)continue;ctx.globalAlpha=.08;ctx.fillStyle='#53694e';ctx.beginPath();ctx.ellipse(px(x),px(z),2.2*SCALE,.65*SCALE,0,0,Math.PI*2);ctx.fill();}
+ for(let z=-150;z<150;z+=4)for(let x=-180;x<180;x+=4){const h=terrain.measured(x,z);if(h>.9||forestCover(x,z,h)<.57||terrain.river(x,z)<3||random()>.42)continue;ctx.globalAlpha=.15;ctx.fillStyle='#53694e';ctx.beginPath();ctx.ellipse(px(x),px(z),2.2*SCALE,.65*SCALE,0,0,Math.PI*2);ctx.fill();}
  // Cyan water and pale banks match the reference's printed waterway, using actual channel profiles.
  for(const line of terrain.channel.profiles){ctx.beginPath();line.forEach((p,i)=>{const x=px(p.x-p.nx*p.left),z=px(p.z-p.nz*p.left);if(i===0)ctx.moveTo(x,z);else ctx.lineTo(x,z);});for(let i=line.length-1;i>=0;i--){const p=line[i];ctx.lineTo(px(p.x+p.nx*p.right),px(p.z+p.nz*p.right));}ctx.closePath();ctx.globalAlpha=.92;ctx.strokeStyle='#e1ece0';ctx.lineWidth=.50*SCALE;ctx.stroke();ctx.fillStyle='#29c2e5';ctx.fill();
   ctx.globalAlpha=.38;ctx.strokeStyle='#d2f0e5';ctx.lineWidth=.14*SCALE;ctx.beginPath();line.forEach((p,i)=>{const x=px(p.x+p.nx*p.right*.67),z=px(p.z+p.nz*p.right*.67);if(i===0)ctx.moveTo(x,z);else ctx.lineTo(x,z);});ctx.stroke();}
