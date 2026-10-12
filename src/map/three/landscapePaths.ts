@@ -26,7 +26,7 @@ export function riverSafeCity(p:GroundPoint,radius:number,segments:RiverSegment[
  // Compact sample-sized cities should not be halved simply because a river is nearby.
  // Try a short bankward adjustment at full scale before the constrained-site fallback.
  let best:GroundPoint|undefined,scale=1;
- for(const candidateScale of [1,.55]){scale=candidateScale;const r=radius*scale,maxShift=radius*(scale===1?.65:3);
+ for(const candidateScale of [1,.8]){scale=candidateScale;const r=radius*scale,maxShift=radius*(scale===1?.65:3);
   for(let d=0;d<=maxShift&&!best;d+=.5)for(let i=0;i<48;i++){const q={x:p.x+Math.cos(i*Math.PI/24)*d,z:p.z+Math.sin(i*Math.PI/24)*d};if(side(q)&&clearance(q)>=r+3.2){best=q;break;}}
   if(best)break;
  }

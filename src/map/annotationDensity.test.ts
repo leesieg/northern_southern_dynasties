@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {annotationDensity} from './annotationDensity';
+import {annotationDensity,cityAnnotationModes} from './annotationDensity';
 import {layoutArmyCards} from './armyMapPresentation';
 describe('campaign annotation density',()=>{
  it('keeps the selected entity over neighbours without moving geographic anchors',()=>{
@@ -16,4 +16,17 @@ describe('campaign annotation density',()=>{
  it('does not send a crowded army label across the screen',()=>{
   const result=layoutArmyCards([{key:'a',point:{x:150,y:150}}],[{left:0,top:0,right:400,bottom:400}],{width:1000,height:800},false,120);expect(result.size).toBe(0);
  });
+});
+
+it('keeps every visible city clickable at every zoom even when nameplates exceed the budget',()=>{
+ const viewport={width:800,height:600},items=Array.from({length:40},(_,i)=>({key:String(i),point:{x:100+i*2,y:100},priority:0,required:i===39})),before=structuredClone(items);
+ for(const zoom of [1.4,3,5,7,10]){
+  const modes=cityAnnotationModes(items,viewport,zoom);
+  expect(modes.size).toBe(40);expect(modes.get('39')).toBe('detail');expect([...modes.values()].filter(v=>v==='pin').length).toBeGreaterThan(30);
+ }
+ expect(items).toEqual(before);
+});
+it('keeps cities at the viewport edge and does not invent offscreen positions',()=>{
+ const modes=cityAnnotationModes([{key:'edge',point:{x:0,y:0},priority:0},{key:'off',point:{x:-1,y:0},priority:1}],{width:800,height:600},3);
+ expect(modes.has('edge')).toBe(true);expect(modes.has('off')).toBe(false);
 });

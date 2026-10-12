@@ -24,6 +24,15 @@
 .atlas-map[data-scale=landscape] .atlas-place:not(.is-selected) .atlas-paper-city-symbols>:nth-child(n+4){display:none}
 .atlas-map[data-scale=strategic] .atlas-place-label{color:#3e513b;font-weight:600;border:0;text-shadow:0 1px 2px #dfddbd}
 .atlas-map[data-scale=strategic] .atlas-place-label:hover,.atlas-map[data-scale=strategic] .atlas-place-label.is-selected{background:#e3d9b7cc;color:#283c2e}
+/* Overview pins stay at their city anchor; only expanded groups participate in label docking. */
+.atlas-map .atlas-city-pin{display:none}
+.atlas-map .atlas-place[data-presentation=pin]{display:block;min-height:0;width:24px;height:24px;z-index:2}
+.atlas-map .atlas-place[data-presentation=pin]>:not(.atlas-city-pin){display:none}
+.atlas-map .atlas-place[data-presentation=pin]::after{display:none}
+.atlas-map .atlas-place[data-presentation=pin] .atlas-city-pin{display:grid;place-items:center;width:24px;height:24px;min-height:0;padding:3px;border:1px solid #bfa66d;border-radius:3px;background:#243c32e8;color:#ead5a2;box-shadow:0 1px 3px #17281f88;pointer-events:auto}
+.atlas-map .atlas-city-pin svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.atlas-map .atlas-city-pin:hover{background:#415a42}
+.atlas-map[data-scale=strategic] .atlas-place[data-presentation=pin] .atlas-city-pin{background:#e0d5b6;color:#3e513b;border-color:#75684a}
 .atlas-map .atlas-army-marker{position:absolute;display:block;width:var(--army-target-width,94px);height:var(--army-target-height,110px);min-height:0;margin:0;padding:0;background:none;border:0;border-radius:0;box-shadow:none;color:#f0e3be;font-family:var(--serif);text-align:center;cursor:pointer;isolation:isolate;z-index:5}
 .atlas-army-marker::after{content:'';position:absolute;left:50%;bottom:var(--army-foot,8px);width:var(--army-link-length,0px);height:1px;background:#7564488f;transform:rotate(var(--army-link-angle,0rad));transform-origin:left center;pointer-events:none;z-index:-1}
 .atlas-map .atlas-army-flag{position:absolute;left:calc(50% - 17px);top:0;width:35px;height:43px;object-fit:contain;filter:drop-shadow(1px 2px 1px #142119a0);pointer-events:none}

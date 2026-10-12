@@ -70,3 +70,14 @@ it('keeps capital model and ground clearance at the sample scale across latitude
   expect(campaignCityRadius(site,true)).toBeCloseTo(6.175);
  }
 });
+
+// All city proxies use the same rank-based scale, including local high-resolution terrain sites.
+it('keeps Yubi and other cities at the same symbolic scale as peers of their rank',()=>{
+ for(const site of [siteById.yubi,siteById.jingkou,siteById.jiankang]){
+  const peer={...site,id:'peer'};
+  for(const capital of [false,true]){
+   expect(campaignCityMeters(site,capital)).toBe(campaignCityMeters(peer,capital));
+   expect(campaignCityRadius(site,capital)).toBeCloseTo((capital?9.5:site.rank==='county'?5.1:7)*.65);
+  }
+ }
+});

@@ -5,3 +5,9 @@ export function annotationDensity<T extends {key:string;point:{x:number;y:number
  for(const item of visible){if(item.required||(kept.length<budget&&!kept.some(k=>Math.hypot(k.point.x-item.point.x,k.point.y-item.point.y)<gap)))kept.push(item);}
  return new Set(kept.map(i=>i.key));
 }
+
+/** Every known on-screen city keeps an entry; density limits only its expanded nameplate. */
+export function cityAnnotationModes<T extends {key:string;point:{x:number;y:number};priority:number;required?:boolean}>(items:T[],viewport:{width:number;height:number},zoom:number){
+ const details=annotationDensity(items,viewport,zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
+ return new Map(items.filter(i=>i.point.x>=0&&i.point.x<=viewport.width&&i.point.y>=0&&i.point.y<=viewport.height).map(i=>[i.key,details.has(i.key)?'detail' as const:'pin' as const]));
+}

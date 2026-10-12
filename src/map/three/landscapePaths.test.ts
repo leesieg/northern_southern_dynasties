@@ -9,7 +9,7 @@ it('keeps endpoints, removes duplicate nodes and rounds a right-angle inside the
 });
 it('handles reversed paths and preserves the same river bank constraint',()=>{
  const source=[{a:{x:-40,z:0},b:{x:40,z:0}}],p={x:0,z:-.5};
- for(const segments of [source,source.map(s=>({a:s.b,b:s.a}))]){const city=riverSafeCity(p,12,segments,true);expect(city.z).toBeGreaterThan(city.radius+1);expect(city.clearance-city.radius).toBeGreaterThanOrEqual(1.2);expect(city.scale).toBe(.55);}
+ for(const segments of [source,source.map(s=>({a:s.b,b:s.a}))]){const city=riverSafeCity(p,12,segments,true);expect(city.z).toBeGreaterThan(city.radius+1);expect(city.clearance-city.radius).toBeGreaterThanOrEqual(1.2);expect(city.scale).toBe(.8);}
  expect(p).toEqual({x:0,z:-.5});
 });
 it('checks all segments in a meander instead of only the closest bank',()=>{
@@ -23,4 +23,10 @@ it('retains the sample scale when a short bankward adjustment clears the river',
  const city=riverSafeCity(p,6.175,source,true);
  expect(city.scale).toBe(1);expect(city.clearance-city.radius).toBeGreaterThanOrEqual(3.2);
  expect(Math.hypot(city.x-p.x,city.z-p.z)).toBeLessThanOrEqual(6.175*.65);
+});
+
+it('hides an unsafe city instead of shrinking it below the readable scale or crossing a river',()=>{
+ const rivers=Array.from({length:81},(_,i)=>({a:{x:-100,z:i*2-80},b:{x:100,z:i*2-80}}));
+ const layout=riverSafeCity({x:0,z:0},6,rivers);
+ expect(layout.scale).toBe(0);expect(layout.radius).toBe(0);
 });
