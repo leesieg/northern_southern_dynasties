@@ -3,16 +3,16 @@ import {clamp,noise,smooth,type Point} from './layout';
 export interface RiverSection extends Point {nx:number;nz:number;distance:number;level:number;left:number;right:number;leftBank:number;rightBank:number;bend:number}
 export interface RiverSample {distance:number;signed:number;width:number;bank:number;level:number;edge:number;flow:number;inner:number}
 /** Display widths and bank profiles follow the source corridor; source coordinates are never rewritten. */
-export function riverShape(lines:Point[][],measured:(x:number,z:number)=>number){
+export function riverShape(lines:Point[][],measured:(x:number,z:number)=>number,origin:Point={x:0,z:0}){
  const profiles=lines.map(line=>{
   let distance=0;
   const raw=line.map((p,i)=>{const a=line[Math.max(0,i-1)],b=line[Math.min(line.length-1,i+1)],len=Math.hypot(b.x-a.x,b.z-a.z)||1,nx=-(b.z-a.z)/len,nz=(b.x-a.x)/len;
    if(i)distance+=Math.hypot(p.x-a.x,p.z-a.z);
    const pa=line[Math.max(0,i-6)],pb=line[Math.min(line.length-1,i+6)],before={x:p.x-pa.x,z:p.z-pa.z},after={x:pb.x-p.x,z:pb.z-p.z},turn=clamp((before.x*after.z-before.z*after.x)/(Math.hypot(before.x,before.z)*Math.hypot(after.x,after.z)||1)*2.2,-1,1);
-   const width=.85+noise(p.x*.045,p.z*.045)*.65+noise(p.x*.15+8,p.z*.15)*.24;
+   const width=.85+noise((p.x-origin.x)*.045,(p.z-origin.z)*.045)*.65+noise((p.x-origin.x)*.15+8,(p.z-origin.z)*.15)*.24;
    // Measured low points across the existing corridor suppress spurious banks from the coarse centreline.
    let level=Infinity;for(let k=-4;k<=4;k++)level=Math.min(level,measured(p.x+nx*k*.4,p.z+nz*k*.4));
-   return {...p,nx,nz,distance,level:Math.max(.03,level-.06),left:width*(1+turn*.28),right:width*(1-turn*.28),leftBank:.34+Math.max(0,-turn)*1.6+noise(p.x*.2,p.z*.2)*.20,rightBank:.34+Math.max(0,turn)*1.6+noise(p.x*.2+21,p.z*.2)*.20,bend:turn};
+   return {...p,nx,nz,distance,level:Math.max(.03,level-.06),left:width*(1+turn*.28),right:width*(1-turn*.28),leftBank:.34+Math.max(0,-turn)*1.6+noise((p.x-origin.x)*.2,(p.z-origin.z)*.2)*.20,rightBank:.34+Math.max(0,turn)*1.6+noise((p.x-origin.x)*.2+21,(p.z-origin.z)*.2)*.20,bend:turn};
   });
   const levels=raw.map((_p,i)=>{let total=0,count=0;for(let j=Math.max(0,i-4);j<=Math.min(raw.length-1,i+4);j++){total+=raw[j].level;count++;}return total/count;});
   // Bound the water gradient in both directions without assuming the dataset's line direction is downstream.

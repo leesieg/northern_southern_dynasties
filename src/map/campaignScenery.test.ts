@@ -4,7 +4,7 @@ import {newWorld,newCampaignWorld} from '../core/world';
 import {newRealm} from '../core/realm';
 import {siteById} from '../data/scenario';
 import {emptyCity} from '../core/construction';
-import {campaignCityAppearance,campaignCityKey,campaignCityPixels,campaignCityPlacements,MAX_SCENERY_CITIES,MAX_CITY_GEOMETRIES} from './campaignScenery';
+import {campaignCityAppearance,campaignCityKey,campaignCityPixels,campaignCityMeters,campaignCityRadius,campaignCityPlacements,MAX_SCENERY_CITIES,MAX_CITY_GEOMETRIES} from './campaignScenery';
 import {campaignCityGeometry,campaignModelAssets} from './CampaignModels';
 
 describe('campaign scenery projection and budgets (CPU only)',()=>{
@@ -34,8 +34,8 @@ describe('campaign scenery projection and budgets (CPU only)',()=>{
   const spread=Array.from({length:100},(_,i)=>({site:{...siteById.jingkou,id:String(i)},capital:false,point:{x:i*200,y:0}}));
   expect(campaignCityPlacements(spread,'99',8)).toHaveLength(MAX_SCENERY_CITIES);
   expect(campaignCityPlacements(spread,'99',8)[0].site.id).toBe('99');
-  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeGreaterThan(400);
-  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeLessThan(650);
+  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeGreaterThan(240);
+  expect(campaignCityPixels(siteById.jiankang,true,11)).toBeLessThan(260);
  });
  it('produces finite outward normals and merges houses into one city mesh',()=>{
   const a=campaignCityAppearance(newWorld(),siteById.jiankang),g=campaignCityGeometry({...a,fort:3,levels:[3,3,3],project:0,progress:2,besieged:true});
@@ -61,4 +61,12 @@ it('uses native camera footprints for spacing while preserving selected city and
  const before=structuredClone(entries);
  expect(campaignCityPlacements(entries,'jingkou',6.2)).toEqual([entries[1]]);
  expect(entries).toEqual(before);
+});
+
+// Sample capital spans 9.5 projected kilometres; latitude must not enlarge its platform.
+it('keeps capital model and ground clearance at the sample scale across latitudes',()=>{
+ for(const lat of [22,32,42]){const site={...siteById.jiankang,lat};
+  expect(campaignCityMeters(site,true)/Math.cos(lat*Math.PI/180)/1000).toBeCloseTo(9.5);
+  expect(campaignCityRadius(site,true)).toBeCloseTo(6.175);
+ }
 });

@@ -27,7 +27,7 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  ctx.fillStyle='#d6d3bd';ctx.fillRect(0,0,SIZE,SIZE);ctx.lineJoin='round';ctx.lineCap='round';
  const polygon=(coordinates:number[][][][])=>{ctx.beginPath();for(const shape of coordinates)for(const ring of shape){ring.forEach((v,i)=>{const p=local(v);if(i===0)ctx.moveTo(px(p.x),px(p.z));else if(options){const a=projectGround(ring[i-1][0],ring[i-1][1]),b=projectGround(v[0],v[1]);for(const q of inkEdge(a,b))ctx.lineTo(px(q.x-origin.x),px(q.z-origin.z));}else for(const q of inkEdge(local(ring[i-1]),p))ctx.lineTo(px(q.x),px(q.z));});ctx.closePath();}};
  if(options?.land){ctx.fillStyle='#aec4bb';ctx.fillRect(0,0,SIZE,SIZE);for(const f of options.land.features){const coordinates=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];polygon(coordinates);ctx.fillStyle='#d6d3bd';ctx.fill('evenodd');}}
- for(const feature of realmData.features){polygon(feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.type==='MultiPolygon'?feature.geometry.coordinates:[]);ctx.globalAlpha=.84;ctx.fillStyle=options&&feature.properties?.color?new Color(String(feature.properties.color)).lerp(new Color('#d6d3bd'),.08).getStyle():washes[String(feature.properties?.id)]??washes.frontier;ctx.fill('evenodd');ctx.globalAlpha=.36;ctx.strokeStyle='#667061';ctx.lineWidth=2.6*SCALE;ctx.stroke();}
+ for(const feature of realmData.features){polygon(feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.type==='MultiPolygon'?feature.geometry.coordinates:[]);ctx.globalAlpha=.84;ctx.fillStyle=washes[String(feature.properties?.origin??feature.properties?.id)]??(options&&feature.properties?.color?new Color(String(feature.properties.color)).lerp(new Color('#d6d3bd'),.08).getStyle():washes.frontier);ctx.fill('evenodd');ctx.globalAlpha=.36;ctx.strokeStyle='#667061';ctx.lineWidth=2.6*SCALE;ctx.stroke();}
  // Uneven pigment density adds a broad paper wash without screen-space noise.
  for(let i=0;i<4600;i++){const x=random()*SIZE,y=random()*SIZE,r=(4+random()*14)*SCALE;ctx.globalAlpha=.038;ctx.fillStyle=i%3?'#e2d6ae':'#4b6655';ctx.beginPath();ctx.ellipse(x,y,r,r*(.3+random()*.6),random()*Math.PI,0,Math.PI*2);ctx.fill();}
  // Local borders use the project's existing schematic polygons, never newly invented divisions.
@@ -52,11 +52,11 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
   const slope=Math.abs(ground(sx+1,sz)-ground(sx-1,sz))+Math.abs(ground(sx,sz+1)-ground(sx,sz-1));
   if(slope<.08&&h<1.1)continue;
   const w=(1.3+random()*1.5)*SCALE*step,height=(1.0+Math.min(3,h)*.8)*SCALE*step,cx=px(sx),cy=px(sz);
-  ctx.strokeStyle='#3c513a';ctx.fillStyle='#526548';ctx.globalAlpha=.63;ctx.lineWidth=.23*SCALE;
+  ctx.strokeStyle='#3c513a';ctx.fillStyle='#526548';ctx.globalAlpha=.63;ctx.lineWidth=.23*SCALE*step;
   ctx.beginPath();ctx.moveTo(cx-w*1.5,cy+height*.45);ctx.lineTo(cx-w*.78,cy-height*.18);ctx.lineTo(cx-w*.44,cy+height*.12);ctx.moveTo(cx+w*.37,cy-height*.13);ctx.lineTo(cx+w*.69,cy-height*.39);ctx.lineTo(cx+w*1.4,cy+height*.36);ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-w,cy+height*.42);ctx.bezierCurveTo(cx-w*.62,cy+height*.12,cx-w*.30,cy-height*.60,cx,cy-height);ctx.bezierCurveTo(cx+w*.28,cy-height*.38,cx+w*.5,cy-height*.1,cx+w,cy+height*.34);ctx.stroke();
   ctx.globalAlpha=.34;ctx.lineTo(cx+w*.10,cy+height*.14);ctx.lineTo(cx,cy-height);ctx.fill();
-  ctx.globalAlpha=.52;ctx.lineWidth=.16*SCALE;
+  ctx.globalAlpha=.52;ctx.lineWidth=.16*SCALE*step;
   for(let j=0;j<5;j++){ctx.beginPath();ctx.moveTo(cx+(j*.10-.15)*w,cy-height*(.86-j*.12));ctx.lineTo(cx+(.18+j*.15)*w,cy+height*(.14+j*.08));ctx.stroke();}
   stamps.push({x:sx,z:sz});
  }

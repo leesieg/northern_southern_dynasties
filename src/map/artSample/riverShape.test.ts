@@ -33,3 +33,12 @@ describe('natural river cross-sections',()=>{
   expect(river.sample(70,70)).toBeUndefined();expect(JSON.stringify(line)).toBe(before);
  });
 });
+
+it('keeps sample bank widths and carving unchanged in the campaign coordinate frame',()=>{
+ const origin={x:1280,z:-720},shifted=line.map(p=>({x:p.x+origin.x,z:p.z+origin.z}));
+ const sample=riverShape([line],()=>.3),campaign=riverShape([shifted],()=>.3,origin);
+ for(let i=0;i<line.length;i+=7){
+  for(const k of ['left','right','leftBank','rightBank','level'] as const)expect(campaign.profiles[0][i][k]).toBeCloseTo(sample.profiles[0][i][k],8);
+  expect(campaign.carve(.3,campaign.sample(shifted[i].x,shifted[i].z+2))).toBeCloseTo(sample.carve(.3,sample.sample(line[i].x,line[i].z+2)),8);
+ }
+});

@@ -33,7 +33,7 @@ it('roots forest instances on rendered terrain without stacking a rock layer bel
  vi.spyOn(campaignAssets,'loadCampaignSampleAssets').mockResolvedValue({city:()=>new Group(),prune:()=>{},dispose:()=>geometry.dispose(),tree:geometry,trees:[geometry,geometry,geometry],closeTrees:[geometry,geometry,geometry],rocks:geometry});
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');world.realm!.armies=[];
  const site=siteById.jiankang,p=projectGround(site.lon,site.lat);
- vi.spyOn(vegetation,'vegetationCandidates').mockReturnValue([{...p,rotation:0,scale:1,variant:0,priority:0}]);
+ vi.spyOn(vegetation,'vegetationCandidates').mockReturnValue([{...p,rotation:0,scale:1,variant:0,priority:0,tint:1}]);
  const state={world,selected:'',tilted:true,sceneryDetail:true,militaryModels:false,armyMotion:false};let rendered:number|null=18;
  const view:ActorView={scene:new Scene(),cityLayout:()=>({x:p.x+10000,z:p.z,scale:1,radius:1}),height:()=>2,sceneryHeight:()=>rendered,isLand:()=>true,isRiver:()=>false,isMoving:()=>false,project:([lon])=>({x:Math.abs(lon-site.lon)<.01?200:-100,y:200}),getZoom:()=>12,getSize:()=>({width:1200,height:800}),unitsPerPixel:()=>1,unitsPerPixelAt:()=>1,getTarget:()=>new Vector3(p.x,0,p.z),getViewKey:()=>'',repaint:()=>{},warning:()=>{}};
  const actors=await campaignActors(view,()=>state,()=>undefined);

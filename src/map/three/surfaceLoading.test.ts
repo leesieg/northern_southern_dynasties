@@ -35,13 +35,13 @@ it('loads measured local Yubi relief, preserves its anchor and returns to nation
   return base(path);
  });
  const {siteById}=await import('../../data/scenario'),{projectGround}=await import('./geography'),site=siteById.yubi,surface=await countrySurface(createSeasonState());
- try{expect(await surface.refine(site.lon,site.lat)).toBe(true);expect(surface.cityLayout('yubi')).toMatchObject({...projectGround(site.lon,site.lat),scale:1});
+ try{expect(await surface.refine(site.lon,site.lat)).toBe(true);expect(surface.meshes).toHaveLength(3);expect(surface.meshes[1].userData.grid.columns).toBe(768);expect(surface.cityLayout('yubi')).toMatchObject({...projectGround(site.lon,site.lat),scale:1});
   // Modern measured plateau is above the riverward sample, without a fabricated height offset.
   expect(surface.height(site.lon,site.lat)!).toBeGreaterThan(surface.height(site.lon,35.576)!);
   expect(surface.renderedHeight(site.lon,site.lat)!).toBeGreaterThan(surface.renderedHeight(site.lon,35.576)!);
   // No coarse triangle can cover the local high-resolution plateau.
   const p=projectGround(site.lon,site.lat),coarse=surface.meshes[0].geometry,positions=coarse.getAttribute('position'),indices=coarse.index!;
   for(let i=0;i<indices.count;i+=3){const ids=[indices.getX(i),indices.getX(i+1),indices.getX(i+2)],xs=ids.map(n=>positions.getX(n)),zs=ids.map(n=>positions.getZ(n));expect(p.x>Math.min(...xs)&&p.x<Math.max(...xs)&&p.z>Math.min(...zs)&&p.z<Math.max(...zs)).toBe(false);}
-  expect(await surface.refine(110,32)).toBe(true);
+  expect(await surface.refine(110,32)).toBe(true);expect(surface.meshes).toHaveLength(2);
  }finally{surface.dispose();}
 },30000);

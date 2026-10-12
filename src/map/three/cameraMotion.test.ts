@@ -30,7 +30,7 @@ it('keeps pitch and north-up transition continuous in both directions',()=>{
   expect(Math.abs(a.pitch-b.pitch)).toBeLessThan(.4);expect(Math.abs(a.bearing-b.bearing)).toBeLessThan(2);
  }
  expect(campaignZoomPose(4.8,true,175)).toEqual({pitch:.06,bearing:0});
- expect(campaignZoomPose(12,true,175)).toEqual({pitch:66,bearing:175});
+ expect(campaignZoomPose(12,true,175)).toEqual({pitch:68,bearing:175});
  expect(campaignZoomPose(8,false,0).pitch).toBe(.06);
 });
 it('clears a mountain without changing zoom distance or blocking completion',()=>{

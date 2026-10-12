@@ -1,14 +1,14 @@
-import {BufferGeometry,CatmullRomCurve3,Color,Float32BufferAttribute,Mesh,MeshStandardMaterial,Vector3,Group,DoubleSide,type Texture} from 'three';
+import {BufferGeometry,CatmullRomCurve3,Float32BufferAttribute,Mesh,MeshStandardMaterial,Vector3,Group,DoubleSide,type Texture} from 'three';
 import {siteById,sites} from '../../data/scenario';
 import {mapResource} from '../resourceLoader';
 import {decodeElevation,elevationTiles,type ElevationManifest} from '../three/elevationTiles';
 import {gridHeight,mercator,projectGround,unprojectGround,WORLD_KM} from '../three/geography';
-import {EXTENT,clamp,smooth,noise,forestCover,cityClearance,palettes,type Point,type SampleSeason} from './layout';
+import {EXTENT,smooth,type Point,type SampleSeason} from './layout';
 import {riverShape} from './riverShape';
-import {stoneGLSL} from './geologyMaterial';
+import {groundMaterial} from './groundMaterial';
+import {groundColors} from './groundColors';
 import {RELIEF_SCALE,softenRelief} from './relief';
 import {artWaterMaterial} from './waterMaterial';
-import {artSurfaceTexture} from './surfaceTexture';
 
 export async function createTerrain(report:(message:string)=>void,atlas?:Texture){
  const origin=projectGround(siteById.jiankang.lon,siteById.jiankang.lat);
@@ -54,38 +54,9 @@ export async function createTerrain(report:(message:string)=>void,atlas?:Texture
  const root=new Group(),geometry=new BufferGeometry(),positions:number[]=[],indices:number[]=[],colors:number[]=[],width=xs.length-1,depth=zs.length-1;
  for(let j=0;j<=depth;j++)for(let i=0;i<=width;i++){const x=xs[i],z=zs[j];positions.push(x,height(x,z),z);colors.push(1,1,1);if(i<width&&j<depth){const a=j*(width+1)+i;indices.push(a,a+width+1,a+1,a+1,a+width+1,a+width+2);}}
  geometry.setAttribute('position',new Float32BufferAttribute(positions,3));geometry.setAttribute('color',new Float32BufferAttribute(colors,3));geometry.setIndex(indices);geometry.computeVertexNormals();
- const paperBlend={value:0},soil=new MeshStandardMaterial({vertexColors:true,roughness:.98});
- soil.onBeforeCompile=shader=>{
-  shader.uniforms.paperBlend=paperBlend;shader.uniforms.surfaceAtlas={value:atlas??null};
-  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 soilPoint;varying vec3 soilNormal;varying float soilSlope;').replace('#include <begin_vertex>','#include <begin_vertex>\nsoilPoint=position;soilNormal=normal;soilSlope=1.-normal.y;');
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
-   varying vec3 soilPoint;varying vec3 soilNormal;varying float soilSlope;uniform float paperBlend;uniform sampler2D surfaceAtlas;
-   vec3 swatch(vec2 uv,vec2 tile){return texture2D(surfaceAtlas,tile+vec2(.004)+abs(fract(uv*.5)*2.-1.)*.492).rgb;}
-   float grain(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-   ${stoneGLSL}
-  `).replace('#include <color_fragment>',`#include <color_fragment>
-   ${artSurfaceTexture(!!atlas)}
-   vec3 paperColor=mix(vec3(.57,.52,.37),vec3(.25,.31,.23),clamp(soilPoint.y/32.,0.,.65));
-   diffuseColor.rgb=mix(diffuseColor.rgb,paperColor,paperBlend*.86);
-  `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-   float rockDetail=smoothstep(.05,.25,soilSlope)*(1.-smoothstep(.06,.35,length(fwidth(soilPoint))))*(1.-paperBlend);
-   if(rockDetail>.01){float centre=mineral(soilPoint);vec3 grad=vec3(mineral(soilPoint+vec3(.04,0,0))-centre,mineral(soilPoint+vec3(0,.04,0))-centre,mineral(soilPoint+vec3(0,0,.04))-centre);
-   normal=normalize(normal-mat3(viewMatrix)*grad*.7*rockDetail);}
-  `);
- };
+ const {soil,paperBlend}=groundMaterial(atlas);
  const ground=new Mesh(geometry,soil);ground.receiveShadow=true;ground.castShadow=true;root.add(ground);
- function colorize(season:SampleSeason,paper=0){
-  const p=palettes[season],base=new Color(p.ground),grass=new Color(p.grass),wood=new Color(p.forest),rock=new Color(p.rock),vellum=new Color('#c6bd9c'),ink=new Color('#687363'),sand=new Color(season==='winter'?'#a5ad99':'#b4b290'),wet=new Color('#62785d');
-  const position=geometry.getAttribute('position'),normal=geometry.getAttribute('normal'),color=geometry.getAttribute('color');
-  for(let i=0;i<position.count;i++){const x=position.getX(i),z=position.getZ(i),h=position.getY(i),cover=forestCover(x,z,h)*smooth(7,13,cityClearance(x,z,cities));
-   const exposed=smooth(.045,.23,1-normal.getY(i))*(.2+.8*smooth(.36,.66,noise(x*.22+4,z*.22)));
-   const c=base.clone().lerp(grass,noise(x*.21,z*.21)*.7).lerp(wood,cover*.8).lerp(rock,exposed*.84);
-   c.multiplyScalar(.88+noise(x*.065,z*.065)*.22);
-   const bank=channel.sample(x,z);if(bank&&bank.edge<bank.bank){const edge=Math.max(0,bank.edge);const shoreWidth=.16+bank.inner*.85;c.lerp(sand,(1-smooth(shoreWidth*.35,shoreWidth,edge))*(.60+bank.inner*.35));c.lerp(wet,(1-smooth(0,.12,edge))*.45);}
-   if(paper)c.lerp(vellum.clone().lerp(ink,clamp(h/26)*.48+cover*.13),paper);
-   color.setXYZ(i,c.r,c.g,c.b);
-  }color.needsUpdate=true;
- }
+ function colorize(season:SampleSeason){groundColors(geometry,season,channel,cities);}
  colorize('summer');
  const {water,time}=artWaterMaterial();
  function ribbon(points:Point[],width:number,material:MeshStandardMaterial,level?:(x:number,z:number)=>number){
