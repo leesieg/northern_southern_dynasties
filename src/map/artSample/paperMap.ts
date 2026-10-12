@@ -20,7 +20,11 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  const SPAN=options?.span??840,SCALE=SIZE/SPAN,step=Math.max(1,SPAN/840),extent=options?SPAN*.5:260,extentZ=options?SPAN*.5:230;
  const realmData=options?.realms??territoryRealms,territoryData=options?.territories??territories;
  const canvas=document.createElement('canvas');canvas.width=canvas.height=SIZE;
- const ctx=canvas.getContext('2d');if(!ctx)throw new Error('无法创建舆图画布');
+ const live=canvas.getContext('2d');if(!live)throw new Error('无法创建舆图画布');let ctx=live;
+ // Keep public geography separate from live political, administrative and city information.
+ const context=options?document.createElement('canvas'):undefined;
+ if(context)context.width=context.height=SIZE;
+ const outside=context?.getContext('2d');
  const random=seededRandom(5461012),origin=options?.center??projectGround(siteById.jiankang.lon,siteById.jiankang.lat);
  const ground=(x:number,z:number)=>terrain.measured(x+(options?origin.x:0),z+(options?origin.z:0));
  const river=(x:number,z:number)=>terrain.river(x+(options?origin.x:0),z+(options?origin.z:0));
@@ -29,13 +33,17 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  const px=(v:number)=>(v+SPAN/2)*SCALE;
  ctx.fillStyle=ATLAS_PAPER_COLOR;ctx.fillRect(0,0,SIZE,SIZE);ctx.lineJoin='round';ctx.lineCap='round';
  const polygon=(coordinates:number[][][][])=>{ctx.beginPath();for(const shape of coordinates)for(const ring of shape){ring.forEach((v,i)=>{const p=local(v);if(i===0)ctx.moveTo(px(p.x),px(p.z));else if(options){const a=projectGround(ring[i-1][0],ring[i-1][1]),b=projectGround(v[0],v[1]);for(const q of inkEdge(a,b))ctx.lineTo(px(q.x-origin.x),px(q.z-origin.z));}else for(const q of inkEdge(local(ring[i-1]),p))ctx.lineTo(px(q.x),px(q.z));});ctx.closePath();}};
- if(options?.land){ctx.fillStyle='#aec4bb';ctx.fillRect(0,0,SIZE,SIZE);for(const f of options.land.features){const coordinates=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];polygon(coordinates);ctx.fillStyle=ATLAS_PAPER_COLOR;ctx.fill('evenodd');}}
+ if(options?.land){ctx.fillStyle='#aec4bb';ctx.fillRect(0,0,SIZE,SIZE);for(const f of options.land.features){const coordinates=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];polygon(coordinates);ctx.fillStyle=ATLAS_PAPER_COLOR;ctx.fill('evenodd');ctx.strokeStyle='#788e7f';ctx.lineWidth=.22*SCALE*step;ctx.stroke();}}
+ if(outside)outside.drawImage(canvas,0,0);
  for(const feature of realmData.features){polygon(feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.type==='MultiPolygon'?feature.geometry.coordinates:[]);ctx.globalAlpha=.84;ctx.fillStyle=washes[String(feature.properties?.origin??feature.properties?.id)]??(options&&feature.properties?.color?new Color(String(feature.properties.color)).lerp(new Color('#d6d3bd'),.08).getStyle():washes.frontier);ctx.fill('evenodd');ctx.globalAlpha=.36;ctx.strokeStyle='#667061';ctx.lineWidth=2.6*SCALE;ctx.stroke();}
- // Uneven pigment density adds a broad paper wash without screen-space noise.
- for(let i=0;i<4600;i++){const x=random()*SIZE,y=random()*SIZE,r=(4+random()*14)*SCALE;ctx.globalAlpha=.038;ctx.fillStyle=i%3?'#e2d6ae':'#4b6655';ctx.beginPath();ctx.ellipse(x,y,r,r*(.3+random()*.6),random()*Math.PI,0,Math.PI*2);ctx.fill();}
  // Local borders use the project's existing schematic polygons, never newly invented divisions.
  for(const feature of territoryData.features){polygon(feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.type==='MultiPolygon'?feature.geometry.coordinates:[]);ctx.globalAlpha=.16;ctx.strokeStyle='#364c35';ctx.lineWidth=.95*SCALE;ctx.stroke();ctx.globalAlpha=.55;ctx.lineWidth=.35*SCALE;ctx.stroke();}
  ctx.globalAlpha=1;
+ // Draw the same physical ink once, then composite it onto both sides of the coverage edge.
+ const physical=options?document.createElement('canvas'):undefined;
+ if(physical){physical.width=physical.height=SIZE;ctx=physical.getContext('2d')!;ctx.lineJoin='round';ctx.lineCap='round';}
+ // Uneven pigment density adds a broad paper wash without screen-space noise.
+ for(let i=0;i<4600;i++){const x=random()*SIZE,y=random()*SIZE,r=(4+random()*14)*SCALE;ctx.globalAlpha=.038;ctx.fillStyle=i%3?'#e2d6ae':'#4b6655';ctx.beginPath();ctx.ellipse(x,y,r,r*(.3+random()*.6),random()*Math.PI,0,Math.PI*2);ctx.fill();}
  // Low-frequency ink wash follows elevation; bilinear scaling avoids a grid or lit 3D relief.
  const relief=document.createElement('canvas');relief.width=260;relief.height=230;const rc=relief.getContext('2d')!,reliefPixels=rc.createImageData(260,230);
  for(let j=0;j<230;j++)for(let i=0;i<260;i++){const h=ground(-extent+i/260*extent*2,-extentZ+j/230*extentZ*2),n=(j*260+i)*4;reliefPixels.data[n]=58;reliefPixels.data[n+1]=82;reliefPixels.data[n+2]=60;reliefPixels.data[n+3]=Math.min(78,Math.max(0,h-.18)*24);}
@@ -68,6 +76,12 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  // Cyan water and pale banks match the reference's printed waterway, using actual channel profiles.
  for(const source of terrain.channel.profiles){const line=options?source.map(p=>({...p,x:p.x-origin.x,z:p.z-origin.z})):source;ctx.beginPath();line.forEach((p,i)=>{const x=px(p.x-p.nx*p.left),z=px(p.z-p.nz*p.left);if(i===0)ctx.moveTo(x,z);else ctx.lineTo(x,z);});for(let i=line.length-1;i>=0;i--){const p=line[i];ctx.lineTo(px(p.x+p.nx*p.right),px(p.z+p.nz*p.right));}ctx.closePath();ctx.globalAlpha=.92;ctx.strokeStyle='#e1ece0';ctx.lineWidth=.50*SCALE;ctx.stroke();ctx.fillStyle='#29c2e5';ctx.fill();
   ctx.globalAlpha=.38;ctx.strokeStyle='#d2f0e5';ctx.lineWidth=.14*SCALE;ctx.beginPath();line.forEach((p,i)=>{const x=px(p.x+p.nx*p.right*.67),z=px(p.z+p.nz*p.right*.67);if(i===0)ctx.moveTo(x,z);else ctx.lineTo(x,z);});ctx.stroke();}
+ if(physical&&outside){
+  live.drawImage(physical,0,0);outside.drawImage(physical,0,0);
+  // A light paper wash keeps peripheral geography subordinate without erasing its contours.
+  outside.fillStyle=ATLAS_PAPER_COLOR;outside.globalAlpha=.18;outside.fillRect(0,0,SIZE,SIZE);outside.globalAlpha=1;
+  ctx=live;
+ }
  // Administrative names reuse existing feature identities. Position in an open part of each group.
  const districts=new Map<string,{name:string;points:{x:number;z:number}[]}>();
  for(const feature of territoryData.features){const id=String(feature.properties?.id),town=towns.find(c=>c.id===id);if(!town)continue;const group=String(feature.properties?.group),entry=districts.get(group)??{name:String(feature.properties?.prefecture),points:[]};entry.points.push(town);districts.set(group,entry);}
@@ -79,15 +93,13 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  for(const town of towns){const x=px(town.x),y=px(town.z),s=(town.id==='jiankang'?1.4:1)*SCALE;
   for(const offset of [-1,0,1]){const cx=x+offset*s*.8,cy=y+(offset===0?-.5:.05)*s;ctx.beginPath();ctx.moveTo(cx-s*.6,cy);ctx.lineTo(cx,cy-s*.5);ctx.lineTo(cx+s*.6,cy);ctx.closePath();ctx.fill();ctx.strokeRect(cx-s*.36,cy+s*.10,s*.72,s*.48);}ctx.beginPath();ctx.moveTo(x-s*1.6,y+s*.9);ctx.lineTo(x+s*1.6,y+s*.9);ctx.stroke();}
  ctx.globalAlpha=1;
- // The unmodeled area is blank substrate on this same sheet, not a second landscape painting.
- // Apply the mask after ALL geography so no river, ridge or city leaks beyond coverage.
- if(options){
-  const blank=document.createElement('canvas');blank.width=blank.height=SIZE;const bc=blank.getContext('2d')!;
-  bc.fillStyle=ATLAS_PAPER_COLOR;bc.fillRect(0,0,SIZE,SIZE);bc.fillStyle=bc.createPattern(fibre,'repeat')!;bc.fillRect(0,0,SIZE,SIZE);
-  const grain=seededRandom(5461012);
-  for(let i=0;i<4600;i++){const x=grain()*SIZE,y=grain()*SIZE,r=12+grain()*70;bc.globalAlpha=.025;bc.fillStyle=i%3?'#e2d6ae':'#69725c';bc.beginPath();bc.ellipse(x,y,r,r*(.3+grain()*.6),grain()*Math.PI,0,Math.PI*2);bc.fill();}
-  bc.globalAlpha=1;bc.globalCompositeOperation='destination-out';bc.drawImage(paperCoverageMask(realmData,origin,SPAN),0,0,SIZE,SIZE);
-  ctx.drawImage(blank,0,0);
+ // Feather ONLY live information. Coastlines, measured relief and shared ridge/water ink
+ // continue into the surrounding sheet; no invented settlements or political claims are added.
+ if(context&&outside){
+  outside.globalCompositeOperation='destination-out';outside.drawImage(paperCoverageMask(realmData,origin,SPAN),0,0,SIZE,SIZE);
+  ctx.drawImage(context,0,0);
+  context.width=1; // Release temporary 4096² backing stores after compositing.
+  if(physical)physical.width=1;
  }
  const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;texture.anisotropy=4;
  const material=new MeshBasicMaterial({map:texture,transparent:true,opacity:0,depthTest:!!options,depthWrite:false,toneMapped:false,fog:false});

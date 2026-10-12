@@ -1,14 +1,17 @@
-import type {FeatureCollection} from 'geojson';
-import {projectGround,zoomDistance} from './geography';
+import {zoomDistance} from './geography';
 import {TABLE_CENTER} from './tableRoom';
-/** Frame the modeled world, not the decorative sheet. No geographic coordinates are moved. */
-export function atlasOverview(realms:FeatureCollection|undefined,aspect:number){
- const points=(realms?.features??[]).flatMap(f=>f.geometry.type==='Polygon'?f.geometry.coordinates.flat():f.geometry.type==='MultiPolygon'?f.geometry.coordinates.flat(2):[]).map(p=>projectGround(p[0],p[1]));
- if(!points.length)return {center:{...TABLE_CENTER},fov:39};
- const xs=points.map(p=>p.x),zs=points.map(p=>p.z),minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
- const halfWidth=(maxX-minX)/2,halfHeight=(maxZ-minZ)/2,d=zoomDistance(1.1),pitch=40*Math.PI/180;
- const nearest=d-halfHeight*Math.sin(pitch),tangent=Math.max(halfWidth/(Math.max(.3,aspect)*.78*nearest),halfHeight*Math.cos(pitch)/(.72*nearest));
- return {center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2},fov:Math.max(6,Math.min(39,2*Math.atan(tangent)*180/Math.PI))};
+/** The last zoom step frames the physical study, independent of political coverage.
+ * Bounds follow build_study_v2.py: desk, scrolls, inkstone, rear screen and window posts.
+ * Geography and the 1000 km/model-unit room scale remain unchanged.
+ */
+export function atlasOverview(aspect:number){
+ const d=zoomDistance(1.1),pitch=40*Math.PI/180;
+ let tangent=0;
+ for(const x of [-9100,9100])for(const y of [-2300,3650])for(const z of [-7400,4900]){
+  const depth=d-y*Math.cos(pitch)-z*Math.sin(pitch),vertical=y*Math.sin(pitch)-z*Math.cos(pitch);
+  tangent=Math.max(tangent,Math.abs(x)/(Math.max(.3,aspect)*.88*depth),Math.abs(vertical)/(.78*depth));
+ }
+ return {center:{...TABLE_CENTER},fov:2*Math.atan(tangent)*180/Math.PI};
 }
 export function atlasOverviewFov(zoom:number,outerFov:number){
  if(zoom>=4.8)return 39;
