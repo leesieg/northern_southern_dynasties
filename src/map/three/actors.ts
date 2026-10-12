@@ -1,7 +1,11 @@
+import {campaignSeason} from '../campaignSeason';
+import {outcropScenery} from './outcropScenery';
+import type {riverShape} from '../artSample/riverShape';
+import {palettes} from '../artSample/layout';
 import {travelerActors} from './travelerActors';
 import {cityDetailForPixels,sceneryTier,sceneryBudgets,type SceneryTier} from './sceneryDetail';
 import type {CityDetail} from '../campaignScenery';
-import {Box3,BufferGeometry,Group,InstancedMesh,Mesh,MeshStandardMaterial,Object3D,Vector3,type Scene,type Texture} from 'three';
+import {Box3,Color,BufferGeometry,Group,InstancedMesh,Mesh,MeshStandardMaterial,Object3D,Vector3,type Scene,type Texture} from 'three';
 import type {Season} from '../sample/seasons';
 import {sites} from '../../data/scenario';
 import type {World} from '../../core/types';
@@ -22,17 +26,18 @@ import {projectGround} from './geography';
 import {landscapeMaterial} from './landscapeMaterial';
 import {cityFoundationGeometry} from './cityFoundation';
 export interface CampaignState{showTravelers?:boolean;travelerAnimation?:boolean;travelers?:()=>import('../../core/types').Person[];travelerVisible?:(id:string)=>boolean;travelerPosition?:(p:import('../../core/types').Person)=>{lon:number;lat:number;heading?:number};travelerMoving?:(p:import('../../core/types').Person)=>boolean;speed?:number;armyPosition?:(a:import('../../core/realm').Army)=>{lon:number;lat:number;heading?:number};armyMoving?:(a:import('../../core/realm').Army)=>boolean;seasonPreview?:Season;world:World;selected:string;tilted:boolean;sceneryDetail:boolean;militaryModels:boolean;armyMotion:boolean;}
-export interface ActorView{scene:Scene;detailMap?:Texture;sceneryHeight?:(lon:number,lat:number)=>number|null;footprintHeight?:(bounds:{minX:number;minZ:number;maxX:number;maxZ:number})=>number|null;cityLayout:(id:string)=>{x:number;z:number;scale:number;radius:number}|undefined;height:(lon:number,lat:number)=>number|null;isRiver:(lon:number,lat:number)=>boolean;isLand:(lon:number,lat:number)=>boolean;isMoving:()=>boolean;project:(ll:[number,number])=>{x:number;y:number};getZoom:()=>number;getSize:()=>{width:number;height:number};unitsPerPixel:()=>number;unitsPerPixelAt:(lon:number,lat:number)=>number;getTarget:()=>Vector3;getViewKey:()=>string;repaint:()=>void;warning:(message:string)=>void;}
+export interface ActorView{scene:Scene;channel?:()=>ReturnType<typeof riverShape>|undefined;detailMap?:Texture;sceneryHeight?:(lon:number,lat:number)=>number|null;footprintHeight?:(bounds:{minX:number;minZ:number;maxX:number;maxZ:number})=>number|null;cityLayout:(id:string)=>{x:number;z:number;scale:number;radius:number}|undefined;height:(lon:number,lat:number)=>number|null;isRiver:(lon:number,lat:number)=>boolean;isLand:(lon:number,lat:number)=>boolean;isMoving:()=>boolean;project:(ll:[number,number])=>{x:number;y:number};getZoom:()=>number;getSize:()=>{width:number;height:number};unitsPerPixel:()=>number;unitsPerPixelAt:(lon:number,lat:number)=>number;getTarget:()=>Vector3;getViewKey:()=>string;repaint:()=>void;warning:(message:string)=>void;}
 export async function campaignActors(view:ActorView,getState:()=>CampaignState,placement:(id:number)=>ArmyMarkerPlacement|undefined,signal?:AbortSignal,progress?:(completed:number,total:number)=>void){
  const notices=new Map<string,string>();const warn=(source:string,message:string)=>{if(message)notices.set(source,message);else notices.delete(source);view.warning([...notices.values()].join(' '));};
  const assets=await loadCampaignSampleAssets(signal,progress),military=militaryModelAssets(view.repaint,message=>warn('military',message),signal),root=new Group();view.scene.add(root);
+ let outcrops:Awaited<ReturnType<typeof outcropScenery>>|undefined;try{if(view.channel)outcrops=await outcropScenery(view.detailMap,signal);}catch(error){assets.dispose();view.scene.remove(root);throw error;}if(outcrops)root.add(outcrops.root);
  const travelers=travelerActors(view,root,message=>warn('travelers',message),signal);
  const cities=new Map<string,{root:Group;key:string;detail:CityDetail;bounds:Box3;foundation:Mesh}>(),armies=new Map<number,MilitaryModel>();let knownWorld:World|undefined,known=campaignCoverage(getState().world);let world:World|undefined,viewKey='',forestKey='',coverageKey='',sceneryWorldKey='',revision=0;let tier:SceneryTier='far';
  // Army-only snapshots do not change city geometry, terrain foundations or forest placement.
  const sceneryKey=(w:World)=>domainSignature(w)+'|'+worldRealms(w).map(r=>r+':'+capital(r,w)).join(',')+'|'+[...cities.keys()].map(id=>{const site=sites.find(s=>s.id===id)!,realm=w.realm?.cities[id]?.controller??site.polity;return id+':'+campaignCityKey(campaignCityAppearance(w,site))+':'+realm+':'+realmOrigin(w,realm)+':'+regimeName(w,realm);}).join('|');
  const foundationMaterial=landscapeMaterial('Courtyard earth apron',false,view.detailMap);
  const treeMaterials=assets.trees.map((_,i)=>new MeshStandardMaterial({name:i===2?'Pine campaign':'Leaf campaign',vertexColors:true,roughness:.93}));
- const forests=[...assets.trees,...assets.closeTrees].map((geometry,i)=>{const mesh=new InstancedMesh(geometry,treeMaterials[i%3],i<3?2400:450);mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;});
+ const forests=[...assets.trees,...assets.closeTrees].map((source,i)=>{const geometry=source.clone();geometry.computeBoundingBox();const box=geometry.boundingBox!,size=box.max.y-box.min.y;geometry.translate(0,-box.min.y,0);geometry.scale(1/size,1/size,1/size);const colors=geometry.getAttribute('color'),leaf=new (Color)(palettes.summer.leaf[i%3]);for(let j=0;j<(colors?.count??0);j++){const r=colors.getX(j),g=colors.getY(j),b=colors.getZ(j);if(g>r*.92&&g>b*1.12){const c=leaf.clone().multiplyScalar(.63+Math.min(1,g*2)*.6);colors.setXYZ(j,c.r,c.g,c.b);}}const mesh=new InstancedMesh(geometry,treeMaterials[i%3],i<3?8000:1400);mesh.count=0;mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);return mesh;});
  function refresh(forceTerrain=true){
   const state=getState(),zoom=view.getZoom(),size=view.getSize(),known=campaignCoverage(state.world),capitals=new Set(worldRealms(state.world).map(r=>capital(r,state.world)));
   const visible=zoom<6.2?[]:campaignCityPlacements(sites.filter(s=>controlledSite(state.world,s.id)).map(site=>{const layout=view.cityLayout(site.id),ll=layout?viewPosition(layout.x,layout.z):{lng:site.lon,lat:site.lat};return {site,capital:capitals.has(site.id),point:view.project([ll.lng,ll.lat]),pixels:campaignCityMeters(site,capitals.has(site.id))/1000/Math.cos(site.lat*Math.PI/180)/view.unitsPerPixelAt(site.lon,site.lat)};}).filter(p=>p.point.x>=-30&&p.point.x<=size.width+30&&p.point.y>=-30&&p.point.y<=size.height+30),state.selected,zoom);
@@ -63,13 +68,15 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
     // Trees root into the rendered DEM triangles; exposed rock belongs to the terrain material.
     const rise=Math.max(Math.abs((sceneryHeight(ll.lng+.006,ll.lat)??h)-h),Math.abs((sceneryHeight(ll.lng,ll.lat+.006)??h)-h));
     if(treeCount>=budget.trees||rise>2)continue;
-    const detailed=tier==='near'&&closeCount<450&&p.scale*2.4/view.unitsPerPixelAt(ll.lng,ll.lat)>12;const trees=forests[p.variant+(detailed?3:0)];if(detailed)closeCount++;dummy.position.set(p.x,h,p.z);dummy.scale.setScalar(p.scale*2.4);dummy.rotation.set(0,p.rotation,0);dummy.updateMatrix();trees.setMatrixAt(trees.count++,dummy.matrix);treeCount++;
+    const detailed=tier==='near'&&closeCount<1400&&p.scale/view.unitsPerPixelAt(ll.lng,ll.lat)>12;const trees=forests[p.variant+(detailed?3:0)];if(detailed)closeCount++;dummy.position.set(p.x,h,p.z);dummy.scale.set(p.scale*1.35,p.scale*.80,p.scale*1.35);dummy.rotation.set(0,p.rotation,0);dummy.updateMatrix();trees.setMatrixAt(trees.count++,dummy.matrix);treeCount++;
    }
-  }forests.forEach(t=>{t.instanceMatrix.needsUpdate=true;t.computeBoundingSphere();});}
+  }forests.forEach(t=>{t.instanceMatrix.needsUpdate=true;t.computeBoundingSphere();});
+  const channel=view.channel?.();if(channel&&budget.trees>0&&state.sceneryDetail&&state.tilted){const center=view.getTarget(),range=Math.min(160,Math.max(60,view.unitsPerPixel()*Math.max(size.width,size.height)*.9));outcrops?.refresh(center,range,(x,z)=>{const ll=viewPosition(x,z);return (view.sceneryHeight??view.height)(ll.lng,ll.lat)??0;},channel,sites.map(s=>view.cityLayout(s.id)??projectGround(s.lon,s.lat)),(x,z)=>{const ll=viewPosition(x,z),p=view.project([ll.lng,ll.lat]);return view.isLand(ll.lng,ll.lat)&&known(ll.lng,ll.lat)&&p.x>=-30&&p.x<size.width+30&&p.y>=-30&&p.y<size.height+30;});}
+  }
   revision++;world=state.world;sceneryWorldKey=sceneryKey(state.world);viewKey=[view.getViewKey(),Math.round(zoom*5),Math.round(view.getTarget().x/10),Math.round(view.getTarget().z/10),state.selected,state.sceneryDetail,state.tilted].join(':');
  }
  function update(now:number){const state=getState(),key=[view.getViewKey(),Math.round(view.getZoom()*5),Math.round(view.getTarget().x/10),Math.round(view.getTarget().z/10),state.selected,state.sceneryDetail,state.tilted].join(':');const sceneryChanged=world!==state.world&&sceneryKey(state.world)!==sceneryWorldKey;if((key!==viewKey||sceneryChanged)&&!view.isMoving())refresh(false);else if(!sceneryChanged)world=state.world;
-  const zoom=view.getZoom();forests.forEach(t=>{t.visible=zoom>=6.2&&state.sceneryDetail&&state.tilted;});
+  const zoom=view.getZoom();outcrops?.update(zoom>=6.2&&state.sceneryDetail&&state.tilted,state.seasonPreview??campaignSeason(state.world));forests.forEach(t=>{t.visible=zoom>=6.2&&state.sceneryDetail&&state.tilted;});
   for(const city of cities.values())city.root.visible=zoom>=6.2&&state.tilted&&city.root.userData.grounded===true;
   const list=state.world.realm?.armies??[],ids=new Set(list.map(a=>a.id));for(const [id,m] of armies)if(!ids.has(id)){military.release(m);armies.delete(id);}let moving=false;if(knownWorld!==state.world){knownWorld=state.world;known=campaignCoverage(state.world);}
   for(const a of list){if(a.id===undefined)continue;const exact=militaryArmyView(state.world,a).exact,kind=exact?armyModelKind(a):'foot',name=regimeName(state.world,a.realm);let m=armies.get(a.id);
@@ -84,6 +91,6 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
    moving=animateMilitaryModel(m,visual,now/1000,state.armyMotion)||!!state.armyMoving?.(a)||moving;
   }military.pruneBanners(new Set([...armies.values()].map(m=>'banner|'+m.origin+'|'+m.realm+'|'+m.bannerName)));return travelers.update(state,now)||moving;
  }
- return {root,update,refresh,retryAssets:()=>{military.retry();travelers.retry();},showsTraveler:travelers.shows,revision:()=>revision,farmCenters:()=>[...cities.values()].map(c=>({x:c.root.position.x,z:c.root.position.z,radius:c.root.scale.x*17*.65})),showsSite:(id:string)=>!!cities.get(id)?.root.visible,cityRoots:()=>[...cities.values()].map(c=>c.root).filter(root=>root.visible),dispose(){view.scene.remove(root);cities.forEach(c=>c.foundation.geometry.dispose());foundationMaterial.dispose();forests.forEach(t=>t.dispose());treeMaterials.forEach(m=>m.dispose());travelers.dispose();military.dispose();assets.dispose();}};
+ return {root,update,refresh,retryAssets:()=>{military.retry();travelers.retry();},showsTraveler:travelers.shows,revision:()=>revision,farmCenters:()=>[...cities.values()].map(c=>({x:c.root.position.x,z:c.root.position.z,radius:c.root.scale.x*17*.65})),showsSite:(id:string)=>!!cities.get(id)?.root.visible,cityRoots:()=>[...cities.values()].map(c=>c.root).filter(root=>root.visible),dispose(){view.scene.remove(root);cities.forEach(c=>c.foundation.geometry.dispose());foundationMaterial.dispose();outcrops?.dispose();forests.forEach(t=>{t.geometry.dispose();t.dispose();});treeMaterials.forEach(m=>m.dispose());travelers.dispose();military.dispose();assets.dispose();}};
 }
 import {unprojectGround as viewPosition} from './geography';

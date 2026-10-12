@@ -7,6 +7,8 @@ import {EXTENT,clamp,smooth,noise,forestCover,cityClearance,palettes,type Point,
 import {riverShape} from './riverShape';
 import {stoneGLSL} from './geologyMaterial';
 import {RELIEF_SCALE,softenRelief} from './relief';
+import {artWaterMaterial} from './waterMaterial';
+import {artSurfaceTexture} from './surfaceTexture';
 
 export async function createTerrain(report:(message:string)=>void,atlas?:Texture){
  const origin=projectGround(siteById.jiankang.lon,siteById.jiankang.lat);
@@ -62,18 +64,7 @@ export async function createTerrain(report:(message:string)=>void,atlas?:Texture
    float grain(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
    ${stoneGLSL}
   `).replace('#include <color_fragment>',`#include <color_fragment>
-   vec2 p=soilPoint.xz;float detail=1.-smoothstep(.08,.55,length(fwidth(p)));
-   float turf=geoNoise(vec3(p*.85,1.)),mottle=geoNoise(vec3(p*5.5,2.));
-   diffuseColor.rgb*=.75+turf*.29+mottle*.24+(grain(floor(p*65.))-.5)*.13*detail;
-   float grassPatch=smoothstep(.53,.76,mottle)*detail*(1.-smoothstep(.07,.3,soilSlope));
-   diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(1.08,1.10,.72),grassPatch*.48);
-   float exposure=smoothstep(.05,.25,soilSlope);
-   if(exposure>.01){float grainRock=mineral(soilPoint);diffuseColor.rgb*=mix(1.,(.72+grainRock*.52)*mix(1.,fracture(soilPoint),detail*.23),exposure);}
-   ${atlas?`vec3 grassTex=swatch(p*.48,vec2(0.,.5));
-   vec3 weights=pow(abs(normalize(soilNormal)),vec3(4.));weights/=max(.001,weights.x+weights.y+weights.z);
-   vec3 rockTex=swatch(soilPoint.zy*.4,vec2(.5,.5))*weights.x+swatch(p*.4,vec2(.5,.5))*weights.y+swatch(soilPoint.xy*.4,vec2(.5,.5))*weights.z;
-   float texDetail=mix(dot(grassTex,vec3(.3,.59,.11))*2.8+.45,dot(rockTex,vec3(.3,.59,.11))*2.0+.30,exposure);
-   diffuseColor.rgb*=mix(1.,clamp(texDetail,.52,1.40),.82*(1.-paperBlend));`:''}
+   ${artSurfaceTexture(!!atlas)}
    vec3 paperColor=mix(vec3(.57,.52,.37),vec3(.25,.31,.23),clamp(soilPoint.y/32.,0.,.65));
    diffuseColor.rgb=mix(diffuseColor.rgb,paperColor,paperBlend*.86);
   `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
@@ -96,22 +87,7 @@ export async function createTerrain(report:(message:string)=>void,atlas?:Texture
   }color.needsUpdate=true;
  }
  colorize('summer');
- const time={value:0},water=new MeshStandardMaterial({color:palettes.summer.water,roughness:.25,metalness:.08,side:DoubleSide,transparent:true,depthWrite:false});
- water.onBeforeCompile=shader=>{
-  shader.uniforms.flowTime=time;
-  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 streamUV;varying vec3 waterPoint;').replace('#include <begin_vertex>','#include <begin_vertex>\nstreamUV=uv;waterPoint=position;');
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 streamUV;varying vec3 waterPoint;uniform float flowTime;\n'+stoneGLSL).replace('#include <color_fragment>',`#include <color_fragment>
-   float shore=abs(streamUV.x*2.-1.),shallow=smoothstep(.42,.99,shore);
-   diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.23,.34,.30),shallow*.43);
-   float current=geoNoise(vec3(streamUV.y*.6-flowTime*.06,streamUV.x*3.,2.));
-   diffuseColor.rgb*=.94+current*.10;diffuseColor.a*=1.-smoothstep(.975,1.,shore);
-  `).replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-   vec3 flow=vec3(waterPoint.x*3.1,waterPoint.z*3.1-flowTime*.20,flowTime*.045);
-   float ripple=geoNoise(flow),dx=geoNoise(flow+vec3(.07,0,0))-ripple,dz=geoNoise(flow+vec3(0,.07,0))-ripple;
-   float detail=1.-smoothstep(.12,.8,length(fwidth(waterPoint)));
-   normal=normalize(normal+mat3(viewMatrix)*vec3(dx*.65,0.,dz*.65)*detail);
-  `).replace('#include <opaque_fragment>',`float fresnel=pow(1.-max(0.,dot(normal,normalize(vViewPosition))),3.);outgoingLight=mix(outgoingLight,vec3(.49,.57,.55),fresnel*.48);\n#include <opaque_fragment>`);
- };
+ const {water,time}=artWaterMaterial();
  function ribbon(points:Point[],width:number,material:MeshStandardMaterial,level?:(x:number,z:number)=>number){
   const pos:number[]=[],uv:number[]=[],idx:number[]=[];let distance=0;
   for(let i=0;i<points.length;i++){const p=points[i],a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],length=Math.hypot(b.x-a.x,b.z-a.z)||1;if(i)distance+=Math.hypot(p.x-a.x,p.z-a.z);

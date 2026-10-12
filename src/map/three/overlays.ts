@@ -1,3 +1,4 @@
+import {inkEdge} from '../artSample/paperInk';
 import {landscapeMaterial} from './landscapeMaterial';
 import {smoothGroundPath,pathSections} from './landscapePaths';
 import {bridgeGeometry,bridgeMaterial} from './bridgeGeometry';
@@ -28,6 +29,7 @@ export class CampaignOverlays{
    // Independent fill triangles intersect detailed relief. Near selection uses outlines only.
    if(zoom>6.2&&layer.type==='fill'&&['territory-hover','territory-selected','hierarchy-selected'].includes(layer.id))continue;
    if(terrainFills&&layer.type==='fill')continue;
+   if(flat&&['realm-tint','territory-tone','territory-border'].includes(layer.id))continue;
    const data=sources.get(layer.source!),paint=layer.paint??{};if(!data)continue;
    const positions:number[]=[],colors:number[]=[],bridges:BufferGeometry[]=[];
    const vertex=(p:Position,color:Color,alpha:number,elevation?:number)=>{const xy=projectGround(p[0],p[1]);positions.push(xy.x,elevation??((this.height(p[0],p[1])??0)+(layer.source==='roads'?.045+order*.005:.15+order*.015)),xy.z);colors.push(color.r,color.g,color.b,alpha);};
@@ -43,7 +45,7 @@ export class CampaignOverlays{
      }}
     }
     else if(layer.type==='line'){
-     const g=f.geometry,paths=g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:polygonRings(g).flat();const width=Number(evaluate(paint['line-width']??1,f,zoom,state))*unitsPerPixel;
+     const g=f.geometry,rawPaths=g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:polygonRings(g).flat();const paths=flat&&['realms','territories','frontiers','hierarchy'].includes(layer.source??'')?rawPaths.map(path=>path.flatMap((p,i)=>i===0?[p]:inkEdge(projectGround(...path[i-1] as [number,number]),projectGround(...p as [number,number])).map(q=>[(q.x/WORLD_KM+ORIGIN.x)*360-180,Math.atan(Math.sinh(Math.PI*(1-2*(q.z/WORLD_KM+ORIGIN.y))))*180/Math.PI]))):rawPaths;const width=Number(evaluate(paint['line-width']??1,f,zoom,state))*unitsPerPixel;
      if(layer.source==='roads'){
       for(const path of paths){
        if(bounds&&(Math.max(...path.map(p=>p[0]))<bounds[0]-1||Math.min(...path.map(p=>p[0]))>bounds[2]+1||Math.max(...path.map(p=>p[1]))<bounds[1]-1||Math.min(...path.map(p=>p[1]))>bounds[3]+1))continue;

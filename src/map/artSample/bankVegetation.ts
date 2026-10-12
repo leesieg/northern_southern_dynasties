@@ -4,7 +4,7 @@ import type {SampleTerrain} from './terrain';
 import {noise,type SampleSeason} from './layout';
 
 /** Small, broken reed colonies at dry bank edges; never an unbroken ribbon. */
-export function bankVegetation(terrain:SampleTerrain){
+export function bankVegetation(terrain:Pick<SampleTerrain,'height'|'channel'>,bounds={minX:-88,maxX:88,minZ:-72,maxZ:72}){
  const random=seededRandom(124546),positions:number[]=[],indices:number[]=[];
  for(let i=0;i<9;i++){
   const x=(random()-.5)*.46,z=(random()-.5)*.46,h=.24+random()*.36,a=random()*Math.PI,w=.025;
@@ -14,7 +14,7 @@ export function bankVegetation(terrain:SampleTerrain){
  const geometry=new BufferGeometry();geometry.setAttribute('position',new Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
  const items:{x:number;y:number;z:number;scale:number}[]=[];
  for(const line of terrain.channel.profiles)for(const p of line){
-  if(Math.abs(p.x)>88||Math.abs(p.z)>72||noise(p.x*.27,p.z*.27)<.48)continue;
+  if(p.x<bounds.minX||p.x>bounds.maxX||p.z<bounds.minZ||p.z>bounds.maxZ||noise(p.x*.27,p.z*.27)<.48)continue;
   for(const side of [-1,1])for(let j=0;j<3;j++){
    if(random()<.4)continue;
    const width=(side<0?p.left:p.right)+.12+random()*.4,x=p.x+p.nx*width*side+(random()-.5)*.45,z=p.z+p.nz*width*side+(random()-.5)*.45,bank=terrain.channel.sample(x,z),y=terrain.height(x,z);

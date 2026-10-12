@@ -1,3 +1,5 @@
+import {updatePaperCitySymbols} from './paperCitySymbols';
+import './paperCampaign.css';
 import {TravelerMotion} from './TravelerMotion';
 import {travelerPixels} from './TravelerModels';
 import {reportCampaignScene} from '../ui/campaignLoad';
@@ -112,7 +114,7 @@ export function WorldMap(props:Props){
     let armyPlacements=new globalThis.Map<string,ArmyMarkerPlacement>();
     let militaryLayerReady=false;
     let sceneryLayer:Pick<CampaignSceneryLayer,'siteAt'|'showsSite'>|undefined;
-    const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;portrait:HTMLButtonElement;id:string;capital:boolean}[]=[];
+    const places:{marker:Marker;button:HTMLButtonElement;badge:HTMLButtonElement;flag:HTMLImageElement;portrait:HTMLButtonElement;symbols:HTMLSpanElement;id:string;capital:boolean}[]=[];
     const people=new globalThis.Map<string,{marker:Marker;label:HTMLSpanElement;world?:World}>();
     const labels:{marker:Marker;data:typeof atlasLabels[number]}[]=[];
     const realmLabels=new globalThis.Map<RealmId,Marker>();
@@ -269,6 +271,7 @@ export function WorldMap(props:Props){
           estateButton.dataset.gameHint=estateSite.name+' · '+estateName(estate.family);
         }else if(estateButton)estateButton.hidden=true;
         for(const item of places){
+          updatePaperCitySymbols(item.symbols,p.world,item.id);
           const site=siteById[item.id],state=p.world.realm?.cities[item.id],controller=state?.controller??site.polity,owner=state?.owner??site.polity;
           const internal=controller!=='frontier'?civilWar(p.world,controller):undefined,rebel=internal?.civil?.cities.includes(item.id),name=regimeName(p.world,controller);
           item.marker.getElement().style.setProperty('--city-realm',polityStyle(p.world,controller).color);
@@ -346,7 +349,7 @@ export function WorldMap(props:Props){
       const initialPosition=position(current.current.world.people[0]);
       map=new AtlasMap({
         container,style:atlasStyle(),center:[initialPosition.lon,initialPosition.lat],zoom:CITY_VIEW_ZOOM,pitch:atlasPresentation(CITY_VIEW_ZOOM,current.current.tilted).pitch,bearing:0,
-        minZoom:1.1,maxZoom:12,
+        minZoom:1.1,maxZoom:13.3,
       });
       map.getCanvas().setAttribute('aria-label','全国三维地图，拖动平移，右键拖动旋转，滚轮缩放；右键单击查看操作，也可通过地点目录选择城邑');
       map.on('style.load',()=>{
@@ -364,9 +367,9 @@ export function WorldMap(props:Props){
           const flag=document.createElement('img');flag.alt='';flag.setAttribute('aria-hidden','true');flag.draggable=false;badge.append(flag);
           badge.onclick=event=>{event.stopPropagation();const realm=current.current.world.realm?.cities[s.id]?.controller??s.polity;if(realm!=='frontier')current.current.onDiplomacy(realm);};
           badge.ondblclick=event=>event.stopPropagation();badge.oncontextmenu=event=>{event.preventDefault();event.stopPropagation();};
-          const portrait=document.createElement('button');portrait.type='button';portrait.className='atlas-governor';element.append(portrait,badge,button);
+          const portrait=document.createElement('button');portrait.type='button';portrait.className='atlas-governor';const symbols=document.createElement('span');symbols.className='atlas-paper-city-symbols';element.append(portrait,badge,button,symbols);
           const marker=new Marker({element,anchor:'bottom',offset:[0,-7],opacityWhenCovered:.3}).setLngLat([s.lon,s.lat]).addTo(map);
-          places.push({marker,button,badge,flag,portrait,id:s.id,capital:!!s.capital});allMarkers.push(marker);
+          places.push({marker,button,badge,flag,portrait,symbols,id:s.id,capital:!!s.capital});allMarkers.push(marker);
         }
         estateButton=document.createElement('button');estateButton.type='button';estateButton.className='atlas-estate-marker';
         estateButton.onclick=event=>{event.stopPropagation();setMenu(null);current.current.onEstate();};

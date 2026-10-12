@@ -1,3 +1,4 @@
+import {RELIEF_SCALE} from '../artSample/relief';
 /** Mercator kilometres, right-handed Three.js X/east, Y/up, Z/south. */
 export const WORLD_KM=40075.016686,ORIGIN={x:(110+180)/360,y:(1-Math.log(Math.tan(Math.PI/4+32*Math.PI/360))/Math.PI)/2};
 export function mercator(lon:number,lat:number){return {x:(lon+180)/360,y:(1-Math.log(Math.tan(Math.PI/4+Math.max(-85,Math.min(85,lat))*Math.PI/360))/Math.PI)/2};}
@@ -11,6 +12,6 @@ export function gridHeight(values:Float32Array,m:DEMGrid,x:number,y:number):numb
  const i=Math.min(m.columns-2,Math.floor(col)),j=Math.min(m.rows-2,Math.floor(row)),u=col-i,v=row-j;
  return (values[j*m.columns+i]*(1-u)+values[j*m.columns+i+1]*u)*(1-v)+(values[(j+1)*m.columns+i]*(1-u)+values[(j+1)*m.columns+i+1]*u)*v;
 }
-export function campaignHeight(metres:number,lat:number){return Math.max(0,metres)*.01/Math.cos(lat*Math.PI/180);}
+export function campaignHeight(metres:number,_lat:number){return Math.max(0,metres)*RELIEF_SCALE;}
 export function zoomDistance(zoom:number){return 100*2**((11.3-zoom)*.75);}
 export function distanceZoom(distance:number){return 11.3-Math.log2(distance/100)/.75;}

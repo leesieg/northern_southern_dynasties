@@ -11,3 +11,6 @@ export function localTerrainMesh(source:DEMGrid,coarse:DEMGrid):DEMGrid{
  const east=coarse.west+Math.ceil((source.west+source.width-coarse.west)/dx)*dx,south=coarse.north+Math.ceil((source.north+source.height-coarse.north)/dy)*dy;
  return {west,north,width:east-west,height:south-north,columns:Math.min(1024,Math.ceil((east-west)/source.width*source.columns)),rows:Math.min(1024,Math.ceil((south-north)/source.height*source.rows))};
 }
+
+export const jiankangTerrain:ElevationManifest={zoom:11,west:1698,east:1701,north:830,south:833,tileSize:256};
+export function usesJiankangTerrain(lon:number,lat:number){return lon>=118.55&&lon<=118.95&&lat>=31.93&&lat<=32.23;}

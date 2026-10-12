@@ -1,0 +1,8 @@
+.atlas-paper-city-symbols{display:none;pointer-events:none;align-items:center;gap:3px;position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap}
+[data-paper="true"] .atlas-paper-city-symbols{display:flex}
+.atlas-paper-symbol{position:relative;display:inline-flex;width:19px;height:21px;align-items:center;justify-content:center;color:#314b35;filter:drop-shadow(0 1px 1px #ece4c6);pointer-events:auto}
+.atlas-paper-symbol svg{width:19px;height:19px;fill:#a8bb7c;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.atlas-paper-symbol b{position:absolute;right:-2px;top:-4px;font:700 10px Georgia,serif;color:#e8d8a6;text-shadow:1px 1px #29372b,-1px -1px #29372b}
+[data-paper="true"] .atlas-place-label{color:#384731;background:linear-gradient(90deg,#d7d2b7ed,#e6dfc7ed 75%,#d6cdb0df);border-color:#6b6c4e;box-shadow:0 1px 3px #343d3340;text-shadow:0 1px #efe8d0}
+[data-paper="true"] .atlas-place-label small{color:#59634d}
+[data-paper="true"] .atlas-army-marker{filter:drop-shadow(0 1px 2px #273527)}

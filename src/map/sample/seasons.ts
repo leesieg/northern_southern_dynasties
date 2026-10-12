@@ -1,10 +1,12 @@
 import {Color,Mesh,MeshStandardMaterial,type Scene} from 'three';
+import {palettes} from '../artSample/layout';
+const rgb=(hex:string)=>{const c=new Color(hex);return [c.r,c.g,c.b] as const;};
 
 export const seasons={
  spring:{name:'春',description:'新绿初生 · 山间薄雾',low:[.14,.23,.055],high:[.34,.43,.14],forest:[.07,.14,.035],field:[.32,.40,.09],leaf:'#91ae62',pine:'#627e58',snow:0,fog:'#cbd0ce',sun:'#fff0cf',sky:'#c5d6e5',intensity:2.8,water:'#326c75'},
- summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:[.12,.19,.045],high:[.32,.36,.12],forest:[.055,.115,.035],field:[.34,.39,.12],leaf:'#6e804e',pine:'#405f50',snow:0,fog:'#ccd1d2',sun:'#ffedc4',sky:'#c5d5e6',intensity:2.9,water:'#285d6b'},
- autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:[.32,.25,.08],high:[.56,.43,.19],forest:[.21,.15,.045],field:[.48,.37,.14],leaf:'#b38b43',pine:'#4f6243',snow:0,fog:'#cfc9c2',sun:'#ffe0ac',sky:'#c8d4e4',intensity:2.7,water:'#355e68'},
- winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:[.20,.22,.16],high:[.34,.35,.26],forest:[.09,.13,.11],field:[.29,.27,.20],leaf:'#777a64',pine:'#50655b',snow:.92,fog:'#ced8dc',sun:'#e4edff',sky:'#d5e5f3',intensity:2.15,water:'#678b9c'},
+ summer:{name:'夏',description:'林深田茂 · 山河苍翠',low:rgb(palettes.summer.ground),high:rgb(palettes.summer.grass),forest:rgb(palettes.summer.forest),field:rgb(palettes.summer.field),leaf:'#6e804e',pine:'#405f50',snow:0,fog:palettes.summer.fog,sun:palettes.summer.sun,sky:'#dee9f0',intensity:2.35,water:palettes.summer.water},
+ autumn:{name:'秋',description:'层林金褐 · 田野收黄',low:rgb(palettes.autumn.ground),high:rgb(palettes.autumn.grass),forest:rgb(palettes.autumn.forest),field:rgb(palettes.autumn.field),leaf:'#b38b43',pine:'#4f6243',snow:0,fog:palettes.autumn.fog,sun:palettes.autumn.sun,sky:'#dee9f0',intensity:2.35,water:palettes.autumn.water},
+ winter:{name:'冬',description:'山野覆雪 · 青瓦凝霜',low:rgb(palettes.winter.ground),high:rgb(palettes.winter.grass),forest:rgb(palettes.winter.forest),field:rgb(palettes.winter.field),leaf:'#777a64',pine:'#50655b',snow:.92,fog:palettes.winter.fog,sun:palettes.winter.sun,sky:'#dee9f0',intensity:2.15,water:palettes.winter.water},
 } as const;
 export type Season=keyof typeof seasons;
 export function createSeasonState(up:'y'|'z'='y'){

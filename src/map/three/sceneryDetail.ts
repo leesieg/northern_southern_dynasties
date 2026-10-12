@@ -9,4 +9,4 @@ export function sceneryTier(zoom:number,previous:SceneryTier='far'):SceneryTier{
  if(zoom>=(previous!=='far'?6:6.4))return 'middle';
  return 'far';
 }
-export const sceneryBudgets={far:{trees:0,shadows:false},middle:{trees:1000,shadows:false},near:{trees:2400,shadows:true}};
+export const sceneryBudgets={far:{trees:0,shadows:false},middle:{trees:7000,shadows:false},near:{trees:18000,shadows:true}};

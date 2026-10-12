@@ -21,10 +21,10 @@ export function riverSafeCity(p:GroundPoint,radius:number,segments:RiverSegment[
  const local=segments.filter(s=>Math.min(s.a.x,s.b.x)<p.x+radius*4&&Math.max(s.a.x,s.b.x)>p.x-radius*4&&Math.min(s.a.z,s.b.z)<p.z+radius*4&&Math.max(s.a.z,s.b.z)>p.z-radius*4);
  const clearance=(q:GroundPoint)=>Math.min(Infinity,...local.map(s=>nearestOnSegment(q,s.a,s.b).distance));
  const closest=local.map(s=>nearestOnSegment(p,s.a,s.b)).sort((a,b)=>a.distance-b.distance)[0];
- if(!closest||closest.distance>radius+1.2)return {...p,scale:1,radius,clearance:clearance(p)};
+ if(!closest||closest.distance>radius+3.2)return {...p,scale:1,radius,clearance:clearance(p)};
  const scale=.55,r=radius*scale,side=(q:GroundPoint)=>!southBank||((q.x-closest.x)*(-closest.dz)+(q.z-closest.z)*closest.dx)*Math.sign(closest.dx||1)>0;
  let best:GroundPoint|undefined;
- for(let d=0;d<=radius*3&&!best;d+=.5)for(let i=0;i<48;i++){const q={x:p.x+Math.cos(i*Math.PI/24)*d,z:p.z+Math.sin(i*Math.PI/24)*d};if(side(q)&&clearance(q)>=r+1.2){best=q;break;}}
+ for(let d=0;d<=radius*3&&!best;d+=.5)for(let i=0;i<48;i++){const q={x:p.x+Math.cos(i*Math.PI/24)*d,z:p.z+Math.sin(i*Math.PI/24)*d};if(side(q)&&clearance(q)>=r+3.2){best=q;break;}}
  // No safe placement: keep the nameplate, never put a city back into the water.
  return {...(best??p),scale:best?scale:0,radius:best?r:0,clearance:clearance(best??p)};
 }
