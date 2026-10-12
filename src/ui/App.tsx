@@ -169,7 +169,7 @@ function GameView(){
   useEffect(()=>{setLifestyleOpen(null);setWarDetail(null);setEngagement(null);placeScroll.current={};setArmyMove(null);setSelectedArmies([]);setServiceFocus({seq:0});setStaffTab('central');setStaffRegion('');setModal(null);setDrawer(null);setPanelTrail([]);setJournalOpen(false);setMapOptions(false);if(game.world){const home=game.world.people[0].location;setSelected(home);setTerritory('city:'+home);setLevel('city');setHistoryEvent(null);setCameraAction(a=>({type:'player',seq:a.seq+1}));}},[game.entry]);
 
   useGameAudio(game.page,game.pauses[0]?.id);
-  if(game.blocked)return <main className="blocking"><div className="brand-seal">风云</div><h1>山河暂歇</h1><p>{game.blocked}</p><button className="primary" onClick={()=>location.reload()}>重新载入</button></main>;
+  if(game.blocked)return <main className="blocking"><div className="brand-seal">风云</div><h1>山河暂歇</h1><p>{game.blocked}</p><button className="primary" onClick={game.reconnect}>重新连接</button></main>;
   const navigatePause=(event:PauseEvent)=>{
     game.dismissPause();game.dismiss();
     if(event.id.startsWith('unrest:')&&event.site){chooseCity(event.site);setCityTab('governance');focus('selected');}
