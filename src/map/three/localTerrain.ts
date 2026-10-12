@@ -2,6 +2,10 @@ import type {ElevationManifest} from './elevationTiles';
 import type {DEMGrid} from './geography';
 /** Source extent of the packaged z12 Terrarium samples, not invented relief. */
 export const yubiTerrain:ElevationManifest={zoom:12,west:3309,east:3312,north:1613,south:1616,tileSize:256};
+/** Display center on the measured terrace, ~163 m southwest of the survey anchor.
+ * This is a DEM-based placement adjustment, not a new archaeological coordinate.
+ * See docs/历史资料/城址位置与地形核验.md. */
+export const yubiCityCenter={lon:110.9455,lat:35.5704};
 export function usesYubiTerrain(lon:number,lat:number){return lon>=110.90&&lon<=111.01&&lat>=35.52&&lat<=35.62;}
 /** A small local DEM must replace whole coarse cells, otherwise their faces cover it.
  * Source samples remain untouched; only the rendered mesh is padded and resampled. */

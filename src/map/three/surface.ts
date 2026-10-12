@@ -1,7 +1,7 @@
 import {riverShape} from '../artSample/riverShape';
 import {softenRelief} from '../artSample/relief';
 import {artWaterMaterial} from '../artSample/waterMaterial';
-import {yubiTerrain,usesYubiTerrain,jiankangTerrain,usesJiankangTerrain,localTerrainMesh} from './localTerrain';
+import {yubiTerrain,yubiCityCenter,usesYubiTerrain,jiankangTerrain,usesJiankangTerrain,localTerrainMesh} from './localTerrain';
 import {riverSafeCity} from './landscapePaths';
 import {coarseSurfaceHeight,surfaceFootprintHeight} from './terrainSeam';
 import {elevationTiles,decodeElevation,type ElevationManifest} from './elevationTiles';
@@ -78,7 +78,7 @@ export async function countrySurface(_season:SeasonState,options:{signal?:AbortS
   for(const points of riverPaths)for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],segment={a,b};for(let x=Math.floor((Math.min(a.x,b.x)-1.4)/8);x<=Math.floor((Math.max(a.x,b.x)+1.4)/8);x++)for(let z=Math.floor((Math.min(a.z,b.z)-1.4)/8);z<=Math.floor((Math.max(a.z,b.z)+1.4)/8);z++){const key=x+':'+z,cell=riverCells.get(key)??[];cell.push(segment);riverCells.set(key,cell);}}
   channel=riverShape(riverPaths,(x,z)=>{const ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y);return sampledHeight(ll.lng,ll.lat)??0;},artOrigin);
   const segments=riverPaths.flatMap(path=>path.slice(1).map((b,i)=>({a:path[i],b})));
-  for(const site of sites){const anchor=projectGround(site.lon,site.lat),layout=site.id==='yubi'?{...anchor,scale:1,radius:campaignCityRadius(site,false),clearance:0}:riverSafeCity(anchor,campaignCityRadius(site,true)*1.12,segments,site.id==='jiankang');cityLayouts.set(site.id,layout);if(!layout.scale||site.id==='yubi')continue;const ll=geographic(layout.x/WORLD_KM+ORIGIN.x,layout.z/WORLD_KM+ORIGIN.y),cell=Math.floor(layout.x/48)+':'+Math.floor(layout.z/48),items=cityCells.get(cell)??[];items.push({lon:ll.lng,lat:ll.lat,x:layout.x,z:layout.z,radius:campaignCityRadius(site,!!site.capital)*layout.scale});cityCells.set(cell,items);}
+  for(const site of sites){const anchor=projectGround(site.lon,site.lat),layout=site.id==='yubi'?{...projectGround(yubiCityCenter.lon,yubiCityCenter.lat),scale:1,radius:campaignCityRadius(site,false),clearance:0}:riverSafeCity(anchor,campaignCityRadius(site,true)*1.12,segments,site.id==='jiankang');cityLayouts.set(site.id,layout);if(!layout.scale||site.id==='yubi')continue;const ll=geographic(layout.x/WORLD_KM+ORIGIN.x,layout.z/WORLD_KM+ORIGIN.y),cell=Math.floor(layout.x/48)+':'+Math.floor(layout.z/48),items=cityCells.get(cell)??[];items.push({lon:ll.lng,lat:ll.lat,x:layout.x,z:layout.z,radius:campaignCityRadius(site,!!site.capital)*layout.scale});cityCells.set(cell,items);}
  }
  function geometry(m:DEMGrid,step:number,cut?:DEMGrid,parent=meta,parentStep=8){
   const columns=Math.ceil(m.columns/step),rows=Math.ceil(m.rows/step),vertices:number[]=[],indices:number[]=[];
@@ -131,7 +131,7 @@ export async function countrySurface(_season:SeasonState,options:{signal?:AbortS
    // Decode ahead, but never replace terrain meshes in the middle of a gesture.
    while(!closed&&pendingKey===key&&current()&&!canApply())await new Promise<void>(resolve=>setTimeout(resolve,100));
    if(closed||pendingKey!==key||!current())return false;
-   regional=surrounding;detail={...next,values:softenRelief(next.values,next.meta.columns,next.meta.rows,store===jiankangStore?6:isLocal?4:1)};detailMesh=isLocal?localTerrainMesh(next.meta,regional!.meta,1):next.meta;detailKey=key;
+   regional=surrounding;detail={...next,values:softenRelief(next.values,next.meta.columns,next.meta.rows,store===jiankangStore?6:1)};detailMesh=isLocal?localTerrainMesh(next.meta,regional!.meta,1):next.meta;detailKey=key;
    // Keep river XY stable; refresh elevations without nine valley searches per point.
    for(const path of riverPaths)for(const point of path){const ll=geographic(point.x/WORLD_KM+ORIGIN.x,point.z/WORLD_KM+ORIGIN.y);point.y=sampledHeight(ll.lng,ll.lat)??point.y;}
    channel=riverShape(riverPaths,(x,z)=>{const ll=geographic(x/WORLD_KM+ORIGIN.x,z/WORLD_KM+ORIGIN.y);return sampledHeight(ll.lng,ll.lat)??0;},artOrigin);

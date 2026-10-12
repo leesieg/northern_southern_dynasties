@@ -6,6 +6,7 @@ import {siteById} from '../../data/scenario';
 import * as campaignAssets from '../CampaignSampleAssets';
 import {campaignActors,type ActorView} from './actors';
 import {projectGround} from './geography';
+import {yubiCityCenter} from './localTerrain';
 import * as vegetation from './vegetation';
 
 afterEach(()=>vi.restoreAllMocks());
@@ -15,8 +16,8 @@ it.each([['jiankang',9.5],['yubi',5.1]] as const)('grounds %s at the shared city
  const geometry=new BoxGeometry(23,3,17),material=new MeshStandardMaterial();
  vi.spyOn(campaignAssets,'loadCampaignSampleAssets').mockResolvedValue({city:()=>new Group().add(new Mesh(geometry,material)),prune:()=>{},dispose:()=>{geometry.dispose();material.dispose();},tree:geometry,trees:[],closeTrees:[],rocks:geometry});
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');world.realm!.armies=[];
- const site=siteById[id],p=projectGround(site.lon,site.lat),state={world,selected:site.id,tilted:true,sceneryDetail:false,militaryModels:false,armyMotion:false};let peak:number|null=12;
- const view:ActorView={scene:new Scene(),cityLayout:()=>undefined,height:()=>2,footprintHeight:b=>b.minX===b.maxX?2:peak,isLand:()=>true,isRiver:()=>false,isMoving:()=>false,project:([lon,lat])=>({x:200+(lon-site.lon)*10000,y:200+(lat-site.lat)*10000}),getZoom:()=>10,getSize:()=>({width:1200,height:800}),unitsPerPixel:()=>1,unitsPerPixelAt:()=>1,getTarget:()=>new Vector3(p.x,0,p.z),getViewKey:()=>'',repaint:()=>{},warning:()=>{}};
+ const site=siteById[id],p=id==='yubi'?projectGround(yubiCityCenter.lon,yubiCityCenter.lat):projectGround(site.lon,site.lat),state={world,selected:site.id,tilted:true,sceneryDetail:false,militaryModels:false,armyMotion:false};let peak:number|null=12;
+ const view:ActorView={scene:new Scene(),cityLayout:siteId=>siteId==='yubi'&&id==='yubi'?{...p,scale:1,radius:width*.65}:undefined,height:()=>2,footprintHeight:b=>b.minX===b.maxX?2:peak,isLand:()=>true,isRiver:()=>false,isMoving:()=>false,project:([lon,lat])=>({x:200+(lon-site.lon)*10000,y:200+(lat-site.lat)*10000}),getZoom:()=>10,getSize:()=>({width:1200,height:800}),unitsPerPixel:()=>1,unitsPerPixelAt:()=>1,getTarget:()=>new Vector3(p.x,0,p.z),getViewKey:()=>'',repaint:()=>{},warning:()=>{}};
  const actors=await campaignActors(view,()=>state,()=>undefined);
  try{
   actors.refresh();const city=actors.cityRoots().find(c=>c.userData.site===site.id)!;expect(city).toBeDefined();

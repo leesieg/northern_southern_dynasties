@@ -1,6 +1,7 @@
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import * as resources from '../resourceLoader';
 import {countrySurface} from './surface';
+import {yubiCityCenter} from './localTerrain';
 import {createSeasonState} from '../sample/seasons';
 import type {MapLoadProgress} from '../mapLoadState';
 // CPU resource lifecycle tests. Canvas stubs do not render or verify the interface.
@@ -24,7 +25,7 @@ it('applies only the latest request when the camera returns to an already pendin
  const surface=await countrySurface(createSeasonState());
  try{const before=surface.height(110,32),first=surface.refine(110,32);await vi.waitFor(()=>expect(pending.size).toBe(9));const firstPaths=[...pending.keys()],middle=surface.refine(125,35);await vi.waitFor(()=>expect(pending.size).toBe(18));const latest=surface.refine(110,32);await Promise.resolve();for(const path of firstPaths)pending.get(path)!(new Response(new Int16Array(65536).fill(4000).buffer));expect(await first).toBe(false);expect(await latest).toBe(true);expect(surface.height(110,32)).toBeGreaterThan(before!);for(const [path,resolve] of pending)if(!firstPaths.includes(path))resolve(new Response(new Int16Array(65536).fill(2000).buffer));expect(await middle).toBe(false);}finally{surface.dispose();}
 });
-it('loads measured local Yubi relief, preserves its anchor and returns to national terrain',async()=>{
+it('places Yubi on its measured terrace without changing the historical anchor or city scale',async()=>{
  const filesystemModule='node:fs/promises';
  const {readFile}=await import(/* @vite-ignore */ filesystemModule) as {readFile(path:string):Promise<Uint8Array<ArrayBuffer>>};
  vi.spyOn(resources,'mapResource').mockImplementation(async(path)=>{
@@ -35,7 +36,15 @@ it('loads measured local Yubi relief, preserves its anchor and returns to nation
   return base(path);
  });
  const {siteById}=await import('../../data/scenario'),{projectGround}=await import('./geography'),site=siteById.yubi,surface=await countrySurface(createSeasonState());
- try{expect(await surface.refine(site.lon,site.lat)).toBe(true);expect(surface.meshes).toHaveLength(3);expect(surface.meshes[1].userData.grid.columns).toBe(768);expect(surface.cityLayout('yubi')).toMatchObject({...projectGround(site.lon,site.lat),scale:1});
+ try{expect(await surface.refine(site.lon,site.lat)).toBe(true);expect(surface.meshes).toHaveLength(3);expect(surface.meshes[1].userData.grid.columns).toBe(768);expect(surface.cityLayout('yubi')).toMatchObject({...projectGround(yubiCityCenter.lon,yubiCityCenter.lat),scale:1});
+  expect(site.lon).toBeCloseTo(110.947222,6);expect(site.lat).toBeCloseTo(35.570833,6);
+  const center=projectGround(yubiCityCenter.lon,yubiCityCenter.lat),anchor=projectGround(site.lon,site.lat);
+  expect(Math.hypot(center.x-anchor.x,center.z-anchor.z)).toBeLessThan(.25);
+  const terrace=surface.renderedHeight(yubiCityCenter.lon,yubiCityCenter.lat)!;
+  // Packaged real DEM: north river valley plus east/west gullies are lower;
+  // the southern approach stays connected to the terrace. No synthetic cliff offsets.
+  for(const [lon,lat] of [[110.9455,35.573],[110.942,35.5704],[110.9495,35.5704]])expect(terrace-surface.renderedHeight(lon,lat)!).toBeGreaterThan(.2);
+  expect(Math.abs(terrace-surface.renderedHeight(110.9455,35.5694)!)).toBeLessThan(.25);
   // Modern measured plateau is above the riverward sample, without a fabricated height offset.
   expect(surface.height(site.lon,site.lat)!).toBeGreaterThan(surface.height(site.lon,35.576)!);
   expect(surface.renderedHeight(site.lon,site.lat)!).toBeGreaterThan(surface.renderedHeight(site.lon,35.576)!);
