@@ -1,29 +1,29 @@
-/* One owner for campaign city and army annotation layout across all scales. */
-.atlas-map .atlas-place{display:flex;align-items:center;position:absolute;gap:0;min-height:34px;background:#e3decb;border:1px solid #253026;border-left:3px solid var(--city-realm);box-shadow:0 2px 4px #10231966;pointer-events:none;isolation:isolate;z-index:3;font-family:var(--serif)}
+/* Shared city/army annotations: compact flags and ink symbols leave the landscape visible. */
+.atlas-map .atlas-place{display:grid;grid-template-columns:auto auto auto auto;align-items:end;justify-content:center;position:absolute;gap:3px;min-height:34px;background:none;border:0;box-shadow:none;pointer-events:none;isolation:isolate;z-index:3;font-family:var(--serif)}
 .atlas-place[hidden],.atlas-army-marker[hidden]{display:none!important}
 .atlas-map .atlas-place::after{content:'';position:absolute;left:50%;top:100%;width:var(--annotation-link-length,0px);height:1px;background:#766349a6;transform:rotate(var(--annotation-link-angle,0rad));transform-origin:left center;z-index:-1;pointer-events:none}
-.atlas-map .atlas-place-label{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;flex:none;min-height:34px;padding:3px 9px;background:transparent;color:#293329;border:0;border-radius:0;box-shadow:none;font:600 13px/16px var(--serif);letter-spacing:.06em;white-space:nowrap;text-shadow:none;pointer-events:auto}
-.atlas-map .atlas-place-label.capital{font-size:16px;letter-spacing:.12em}
-.atlas-map .atlas-place-label small{font:10px/13px var(--serif);color:#62694f;letter-spacing:.04em}
+.atlas-map .atlas-place-label{grid-row:2;grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:32px;padding:2px 7px 5px;background:none;color:#f1ead1;border:0;border-bottom:1px solid #c8b78799;border-radius:0;box-shadow:none;font:500 16px/20px var(--serif);letter-spacing:.12em;white-space:nowrap;text-shadow:0 1px 3px #1d2d20,0 2px 7px #1d2d20;pointer-events:auto}
+.atlas-map .atlas-place-label.capital{font-size:19px}
+.atlas-map .atlas-place-label small{order:-1;font:10px/13px var(--serif);color:#e2d4a6;letter-spacing:.08em}
 .atlas-map .atlas-place-label.county small,.atlas-map[data-scale=strategic] .atlas-place-label small{display:none}
-.atlas-map .atlas-place-label:hover{background:#d3cdb2;color:#182c23}
-.atlas-map .atlas-place.is-selected{outline:2px solid #dfbf71;outline-offset:2px}
-.atlas-map .atlas-place-label.is-selected{background:#334339;color:#f8edcf}
-.atlas-map .atlas-place-label.is-selected small{color:#d5cdae}
+.atlas-map .atlas-place-label:hover{background:#253a2cbb;color:#fff1b9}
+.atlas-map .atlas-place-label.is-selected{background:#334339e6;color:#f8edcf;border-bottom-color:#eed494}
 .atlas-map .atlas-place button:focus-visible{outline:2px solid #edc970;outline-offset:2px;z-index:4}
-.atlas-map .atlas-city-realm{display:grid;place-items:center;flex:none;width:29px;height:36px;min-height:0;padding:0;border:0;border-radius:0;background:#cbc8b5;box-shadow:none;pointer-events:auto}
-.atlas-map .atlas-city-realm img{display:block;width:27px;height:34px;object-fit:contain;pointer-events:none}
+.atlas-map .atlas-city-realm{grid-row:1;position:relative;display:grid;place-items:center;width:30px;height:36px;min-height:0;padding:0;border:2px solid #2d3426;border-radius:0;background:linear-gradient(100deg,#273a2d66,#ffffff20 60%,#182b2866),var(--city-realm);box-shadow:inset 0 0 0 1px #d3ba82,1px 2px 2px #24302055;pointer-events:auto}
+.atlas-map .atlas-city-realm::after{content:attr(data-realm-name);position:relative;color:#fff1c9;font:700 16px/17px var(--serif);text-shadow:1px 1px 2px #17281f;writing-mode:vertical-rl;max-height:32px;overflow:hidden}
+.atlas-map .atlas-city-realm img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:.2;pointer-events:none}
 .atlas-map .atlas-city-realm:disabled{opacity:1}
-.atlas-map .atlas-governor{display:grid;place-items:center;flex:none;width:33px;height:36px;min-height:0;margin:0;padding:0;border:0;border-right:1px solid #81795b;border-radius:0;background:#bdb69d;color:#394034;overflow:hidden;pointer-events:auto}
+.atlas-map .atlas-governor{grid-row:1;display:grid;place-items:center;width:30px;height:36px;min-height:0;margin:0;padding:0;border:2px solid #bca570;border-radius:45% 45% 40% 40%;background:#bdb69d;color:#394034;overflow:hidden;box-shadow:0 0 0 1px #273629;pointer-events:auto}
 .atlas-map .atlas-governor[hidden]{display:none}
 .atlas-map .atlas-governor canvas{display:block;width:100%;height:100%;object-fit:cover}
-.atlas-map .atlas-place>.atlas-estate-marker{position:relative;flex:none;width:30px;height:32px;min-height:0;margin:0 2px;padding:0;border:0;border-radius:0;background:#354839;pointer-events:auto;box-shadow:none}
+.atlas-map .atlas-place>.atlas-estate-marker{grid-row:1;position:relative;width:28px;height:32px;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:#354839b3;pointer-events:auto;box-shadow:none}
 .atlas-map .atlas-place>.atlas-estate-marker::before{width:24px;height:24px;margin:0}
 .atlas-map .atlas-place>.atlas-estate-marker::after{display:none}
-.atlas-paper-city-symbols{display:flex;align-items:center;gap:3px;flex:none;padding:2px 5px 2px 3px;border-left:1px solid #867e5c66;pointer-events:none}
+.atlas-paper-city-symbols{grid-row:1;display:grid;grid-template-columns:repeat(2,23px);align-items:center;gap:1px 2px;padding:0;border:0;pointer-events:none}
 .atlas-paper-city-symbols:empty{display:none}
-.atlas-map[data-scale=strategic] .atlas-paper-city-symbols{display:grid;grid-template-columns:repeat(3,23px);gap:0 2px}
 .atlas-map[data-scale=landscape] .atlas-place:not(.is-selected) .atlas-paper-city-symbols>:nth-child(n+4){display:none}
+.atlas-map[data-scale=strategic] .atlas-place-label{color:#3e513b;font-weight:600;border:0;text-shadow:0 1px 2px #dfddbd}
+.atlas-map[data-scale=strategic] .atlas-place-label:hover,.atlas-map[data-scale=strategic] .atlas-place-label.is-selected{background:#e3d9b7cc;color:#283c2e}
 .atlas-map .atlas-army-marker{position:absolute;display:block;width:var(--army-target-width,94px);height:var(--army-target-height,110px);min-height:0;margin:0;padding:0;background:none;border:0;border-radius:0;box-shadow:none;color:#f0e3be;font-family:var(--serif);text-align:center;cursor:pointer;isolation:isolate;z-index:5}
 .atlas-army-marker::after{content:'';position:absolute;left:50%;bottom:var(--army-foot,8px);width:var(--army-link-length,0px);height:1px;background:#7564488f;transform:rotate(var(--army-link-angle,0rad));transform-origin:left center;pointer-events:none;z-index:-1}
 .atlas-map .atlas-army-flag{position:absolute;left:calc(50% - 10px);top:0;width:35px;height:43px;object-fit:contain;filter:drop-shadow(1px 2px 1px #142119a0);pointer-events:none}

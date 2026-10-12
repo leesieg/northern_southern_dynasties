@@ -10,3 +10,6 @@ export function inkEdge(a:Point,b:Point):Point[]{
   points.push({x:x-dz/length*wobble,z:z+dx/length*wobble});}
  points[0]={...start};points[steps]={...end};return reverse?points.reverse():points;
 }
+
+/** Broad atlases need fewer ridge glyphs; preserve the approved local sheet unchanged. */
+export function paperRidgeLod(span:number){const regional=Math.max(1,Math.min(3,Math.sqrt(span/840)));return {spacing:regional,opacity:1/Math.sqrt(regional)};}

@@ -40,3 +40,6 @@ it('clears a mountain without changing zoom distance or blocking completion',()=
  expect(distanceZoom(Math.hypot(d*Math.sin(angle),d*Math.cos(angle)))).toBeCloseTo(12);
  expect(terrainSafePitch(d,requested,()=>0)).toBe(requested);
 });
+it('returns rotated close views to north-up when switching to the paper atlas',()=>{
+ for(const zoom of [4,8,11.7,13.3])for(const bearing of [-150,-30,45,170])expect(campaignZoomPose(zoom,false,bearing).bearing).toBe(0);
+});

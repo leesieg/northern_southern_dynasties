@@ -29,7 +29,7 @@ export function wheelZoomDelta(delta:number,mode:number,pageHeight:number){
 }
 export function campaignZoomPose(zoom:number,tilted:boolean,bearing:number){
  const t=clamp((zoom-4.8)/1.4,0,1);
- return {pitch:Math.max(.06,atlasPresentation(zoom,tilted).pitch),bearing:bearing*t*t*(3-2*t)};
+ return {pitch:Math.max(.06,atlasPresentation(zoom,tilted).pitch),bearing:tilted?bearing*t*t*(3-2*t):0};
 }
 
 /** Raise the viewing angle, not the camera radius, when a mountain blocks the orbit. */

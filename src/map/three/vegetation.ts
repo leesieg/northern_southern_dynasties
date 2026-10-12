@@ -22,3 +22,8 @@ export function vegetationCandidates(cx:number,cz:number,range:number,height:(x:
  for(let i=0;i<Math.max(...sectors.map(s=>s.length));i++)for(const sector of sectors)if(sector[i])ordered.push(sector[i]);
  return ordered;
 }
+
+/** Spend fine-mesh slots on the largest projected crowns, not random forest iteration order. */
+export function detailTreeCandidates<T>(points:readonly T[],pixels:(point:T)=>number,budget=1400){
+ return new Set(points.map(point=>({point,pixels:pixels(point)})).filter(p=>p.pixels>7).sort((a,b)=>b.pixels-a.pixels).slice(0,budget).map(p=>p.point));
+}

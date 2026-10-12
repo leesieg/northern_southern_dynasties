@@ -1,3 +1,4 @@
+import {paperRidgeLod} from './paperInk';
 import type {FeatureCollection} from 'geojson';
 import {CanvasTexture,Color,Group,Mesh,MeshBasicMaterial,SRGBColorSpace} from 'three';
 import {paperGeometry,type PaperBounds} from './paperGeometry';
@@ -46,18 +47,18 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  for(let i=0;i<18000;i++){const x=random()*SIZE,y=random()*SIZE;ctx.globalAlpha=.045+random()*.06;ctx.strokeStyle=i%3?'#ede1b9':'#5a6046';ctx.lineWidth=.5+random()*1.6;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+3,y-2,x+5+random()*22,y+(random()-.5)*5);ctx.stroke();}
  ctx.globalAlpha=1;
  // Hand-drawn ridge marks follow measured high ground; these are map symbols, not new mountains.
- const stamps:{x:number;z:number}[]=[];
- for(let z=-extentZ;z<extentZ;z+=2.7*step)for(let x=-extent;x<extent;x+=3.2*step){
-  const sx=x+(random()-.5)*3,sz=z+(random()-.5)*2,h=ground(sx,sz);
+ const stamps:{x:number;z:number}[]=[],ridge=paperRidgeLod(SPAN);
+ for(let z=-extentZ;z<extentZ;z+=2.7*step*ridge.spacing)for(let x=-extent;x<extent;x+=3.2*step*ridge.spacing){
+  const sx=x+(random()-.5)*3*step,sz=z+(random()-.5)*2*step,h=ground(sx,sz);
   if(h<.34||random()>.69||river(sx,sz)<2||towns.some(c=>Math.hypot(sx-c.x,sz-c.z)<5))continue;
   const slope=Math.abs(ground(sx+1,sz)-ground(sx-1,sz))+Math.abs(ground(sx,sz+1)-ground(sx,sz-1));
   if(slope<.08&&h<1.1)continue;
   const w=(1.3+random()*1.5)*SCALE*step,height=(1.0+Math.min(3,h)*.8)*SCALE*step,cx=px(sx),cy=px(sz);
-  ctx.strokeStyle='#3c513a';ctx.fillStyle='#526548';ctx.globalAlpha=.63;ctx.lineWidth=.23*SCALE*step;
+  ctx.strokeStyle='#3c513a';ctx.fillStyle='#526548';ctx.globalAlpha=.63*ridge.opacity;ctx.lineWidth=.23*SCALE*step;
   ctx.beginPath();ctx.moveTo(cx-w*1.5,cy+height*.45);ctx.lineTo(cx-w*.78,cy-height*.18);ctx.lineTo(cx-w*.44,cy+height*.12);ctx.moveTo(cx+w*.37,cy-height*.13);ctx.lineTo(cx+w*.69,cy-height*.39);ctx.lineTo(cx+w*1.4,cy+height*.36);ctx.stroke();
   ctx.beginPath();ctx.moveTo(cx-w,cy+height*.42);ctx.bezierCurveTo(cx-w*.62,cy+height*.12,cx-w*.30,cy-height*.60,cx,cy-height);ctx.bezierCurveTo(cx+w*.28,cy-height*.38,cx+w*.5,cy-height*.1,cx+w,cy+height*.34);ctx.stroke();
-  ctx.globalAlpha=.34;ctx.lineTo(cx+w*.10,cy+height*.14);ctx.lineTo(cx,cy-height);ctx.fill();
-  ctx.globalAlpha=.52;ctx.lineWidth=.16*SCALE*step;
+  ctx.globalAlpha=.34*ridge.opacity;ctx.lineTo(cx+w*.10,cy+height*.14);ctx.lineTo(cx,cy-height);ctx.fill();
+  ctx.globalAlpha=.52*ridge.opacity;ctx.lineWidth=.16*SCALE*step;
   for(let j=0;j<5;j++){ctx.beginPath();ctx.moveTo(cx+(j*.10-.15)*w,cy-height*(.86-j*.12));ctx.lineTo(cx+(.18+j*.15)*w,cy+height*(.14+j*.08));ctx.stroke();}
   stamps.push({x:sx,z:sz});
  }

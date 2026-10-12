@@ -1,3 +1,4 @@
+import {cityAnnotationOffset} from './three/cityScreenBounds';
 import {updatePaperCitySymbols} from './paperCitySymbols';
 import './paperCampaign.css';
 import {TravelerMotion} from './TravelerMotion';
@@ -180,7 +181,9 @@ export function WorldMap(props:Props){
       for(const entry of activityMarkers.values())entry.button.hidden=zoom<2.2;
       for(const entry of combatMarkers.values())entry.button.hidden=zoom<2.2;
       const viewport=container.getBoundingClientRect(),mapMarkers:{marker:Marker;offset:[number,number];bounds:ScreenRect}[]=[];
-      const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:[0,sceneryLayer?.showsSite(p.id)?25:-7] as [number,number]})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
+      const hudBounds=[...document.querySelectorAll<HTMLElement>('.map-command-dock')].map(element=>element.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({left:r.left-viewport.left-8,top:r.top-viewport.top-8,right:r.right-viewport.left+8,bottom:r.bottom-viewport.top+8}));
+      const cityBounds=new globalThis.Map(list.map(p=>[p.id,strategicView?null:map!.cityScreenBounds(p.id)]));
+      const annotations:{marker:Marker;offset:[number,number]}[]=[...list.map(p=>({marker:p.marker,offset:cityAnnotationOffset(map!.project([p.marker.getLngLat().lng,p.marker.getLngLat().lat]).y,cityBounds.get(p.id)??null,p.marker.getElement().offsetHeight)})),...[...combatMarkers.values()].map(p=>({marker:p.marker,offset:[-44,-38] as [number,number]})),...[...activityMarkers.values()].map(p=>({marker:p.marker,offset:[18,-22] as [number,number]})),...[...people.values()].map(p=>({marker:p.marker,offset:[0,-2] as [number,number]})),...labels.map(l=>({marker:l.marker,offset:[0,0] as [number,number]}))];
       // Measure the undocked rectangle, so last frame's offset cannot feed back into the next layout.
       for(const {marker,offset} of annotations){
         const element=marker.getElement();if(element.hidden)continue;
@@ -191,16 +194,17 @@ export function WorldMap(props:Props){
       const armyIds=annotationDensity(anchors.map((a,i)=>({...a,priority:armyDisplayState(current.current.world,armies[i])==='battle'?3:militaryArmyView(current.current.world,armies[i]).command?2:0,required:current.current.selectedArmies.includes(Number(a.key))})),view,zoom<6.2?4:zoom<9?8:12,90);
       const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available&&(armyIds.has(a.key)||a.combatSide)),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
       // Place settlement groups first, then cards against their final bounds. Models never move.
+      const fixedBounds=[...modelBounds,...[...cityBounds.values()].filter((b):b is ScreenRect=>!!b),...hudBounds];
       const placed:ScreenRect[]=[];
       for(const item of mapMarkers){
-        const dock=dockMapMarker(item.bounds,modelBounds,placed,view),offset:[number,number]=[item.offset[0]+dock.offset.x,item.offset[1]+dock.offset.y],previous=item.marker.getOffset();
+        const dock=dockMapMarker(item.bounds,fixedBounds,placed,view),offset:[number,number]=[item.offset[0]+dock.offset.x,item.offset[1]+dock.offset.y],previous=item.marker.getOffset();
         if(previous.x!==offset[0]||previous.y!==offset[1])item.marker.setOffset(offset);
         const element=item.marker.getElement();
         element.style.setProperty('--annotation-link-length',Math.hypot(dock.offset.x,dock.offset.y)>12?Math.hypot(offset[0],offset[1])+'px':'0px');
         element.style.setProperty('--annotation-link-angle',Math.atan2(-offset[1],-offset[0])+'rad');
         placed.push(dock.bounds);
       }
-      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>zoom>=2.2&&armyIds.has(a.key)&&!fixed.has(a.key)),[...placed,...modelBounds],view,strategicView,120)]);
+      armyPlacements=new globalThis.Map([...fixed,...layoutArmyCards(anchors.filter(a=>zoom>=2.2&&armyIds.has(a.key)&&!fixed.has(a.key)),[...placed,...fixedBounds],view,strategicView,120)]);
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
         const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=zoom<2.2||!placement;if(zoom<2.2||!placement)continue;
@@ -280,7 +284,7 @@ export function WorldMap(props:Props){
           const governor=state?.owner===state?.controller?state?.governor:undefined;updateMarkerPortrait(item.portrait,governor??undefined,p.world);item.portrait.setAttribute('aria-label',governor?'查看本城治理者':'查看'+site.name+'详情');item.portrait.onclick=event=>{event.stopPropagation();if(governor)current.current.onInspectPeople([governor]);else current.current.onSelect(site.id);};item.button.dataset.rebel=String(!!rebel);
           item.button.dataset.gameHint='法理：'+regimeName(p.world,owner)+' / 控制：'+name;
           item.button.setAttribute('aria-label',site.name+'，'+name+'控制，查看城域详情');
-          item.flag.src=armyHeraldry(controller,name,p.world);item.badge.disabled=controller==='frontier';
+          item.badge.dataset.realmName=name;item.flag.src=armyHeraldry(controller,name,p.world);item.badge.disabled=controller==='frontier';
           item.badge.dataset.gameHint=controller==='frontier'?'周边地区，尚无统一国家档案':name+' · 查看国家详情';item.badge.setAttribute('aria-label',item.badge.dataset.gameHint);
         }
         const currentArmies=p.world.realm?.armies??[];
