@@ -1,3 +1,4 @@
+import {ATLAS_PAPER_COLOR,paperCoverageMask} from './paperCoverage';
 import {paperRidgeLod} from './paperInk';
 import type {FeatureCollection} from 'geojson';
 import {CanvasTexture,Color,Group,Mesh,MeshBasicMaterial,SRGBColorSpace} from 'three';
@@ -26,9 +27,9 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  const towns=terrain.cities.map(c=>({...c,x:c.x-(options?origin.x:0),z:c.z-(options?origin.z:0)}));
  const local=(coordinates:number[])=>{const p=projectGround(coordinates[0],coordinates[1]);return {x:p.x-origin.x,z:p.z-origin.z};};
  const px=(v:number)=>(v+SPAN/2)*SCALE;
- ctx.fillStyle='#d6d3bd';ctx.fillRect(0,0,SIZE,SIZE);ctx.lineJoin='round';ctx.lineCap='round';
+ ctx.fillStyle=ATLAS_PAPER_COLOR;ctx.fillRect(0,0,SIZE,SIZE);ctx.lineJoin='round';ctx.lineCap='round';
  const polygon=(coordinates:number[][][][])=>{ctx.beginPath();for(const shape of coordinates)for(const ring of shape){ring.forEach((v,i)=>{const p=local(v);if(i===0)ctx.moveTo(px(p.x),px(p.z));else if(options){const a=projectGround(ring[i-1][0],ring[i-1][1]),b=projectGround(v[0],v[1]);for(const q of inkEdge(a,b))ctx.lineTo(px(q.x-origin.x),px(q.z-origin.z));}else for(const q of inkEdge(local(ring[i-1]),p))ctx.lineTo(px(q.x),px(q.z));});ctx.closePath();}};
- if(options?.land){ctx.fillStyle='#aec4bb';ctx.fillRect(0,0,SIZE,SIZE);for(const f of options.land.features){const coordinates=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];polygon(coordinates);ctx.fillStyle='#d6d3bd';ctx.fill('evenodd');}}
+ if(options?.land){ctx.fillStyle='#aec4bb';ctx.fillRect(0,0,SIZE,SIZE);for(const f of options.land.features){const coordinates=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[];polygon(coordinates);ctx.fillStyle=ATLAS_PAPER_COLOR;ctx.fill('evenodd');}}
  for(const feature of realmData.features){polygon(feature.geometry.type==='Polygon'?[feature.geometry.coordinates]:feature.geometry.type==='MultiPolygon'?feature.geometry.coordinates:[]);ctx.globalAlpha=.84;ctx.fillStyle=washes[String(feature.properties?.origin??feature.properties?.id)]??(options&&feature.properties?.color?new Color(String(feature.properties.color)).lerp(new Color('#d6d3bd'),.08).getStyle():washes.frontier);ctx.fill('evenodd');ctx.globalAlpha=.36;ctx.strokeStyle='#667061';ctx.lineWidth=2.6*SCALE;ctx.stroke();}
  // Uneven pigment density adds a broad paper wash without screen-space noise.
  for(let i=0;i<4600;i++){const x=random()*SIZE,y=random()*SIZE,r=(4+random()*14)*SCALE;ctx.globalAlpha=.038;ctx.fillStyle=i%3?'#e2d6ae':'#4b6655';ctx.beginPath();ctx.ellipse(x,y,r,r*(.3+random()*.6),random()*Math.PI,0,Math.PI*2);ctx.fill();}
@@ -78,9 +79,19 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  for(const town of towns){const x=px(town.x),y=px(town.z),s=(town.id==='jiankang'?1.4:1)*SCALE;
   for(const offset of [-1,0,1]){const cx=x+offset*s*.8,cy=y+(offset===0?-.5:.05)*s;ctx.beginPath();ctx.moveTo(cx-s*.6,cy);ctx.lineTo(cx,cy-s*.5);ctx.lineTo(cx+s*.6,cy);ctx.closePath();ctx.fill();ctx.strokeRect(cx-s*.36,cy+s*.10,s*.72,s*.48);}ctx.beginPath();ctx.moveTo(x-s*1.6,y+s*.9);ctx.lineTo(x+s*1.6,y+s*.9);ctx.stroke();}
  ctx.globalAlpha=1;
+ // The unmodeled area is blank substrate on this same sheet, not a second landscape painting.
+ // Apply the mask after ALL geography so no river, ridge or city leaks beyond coverage.
+ if(options){
+  const blank=document.createElement('canvas');blank.width=blank.height=SIZE;const bc=blank.getContext('2d')!;
+  bc.fillStyle=ATLAS_PAPER_COLOR;bc.fillRect(0,0,SIZE,SIZE);bc.fillStyle=bc.createPattern(fibre,'repeat')!;bc.fillRect(0,0,SIZE,SIZE);
+  const grain=seededRandom(5461012);
+  for(let i=0;i<4600;i++){const x=grain()*SIZE,y=grain()*SIZE,r=12+grain()*70;bc.globalAlpha=.025;bc.fillStyle=i%3?'#e2d6ae':'#69725c';bc.beginPath();bc.ellipse(x,y,r,r*(.3+grain()*.6),grain()*Math.PI,0,Math.PI*2);bc.fill();}
+  bc.globalAlpha=1;bc.globalCompositeOperation='destination-out';bc.drawImage(paperCoverageMask(realmData,origin,SPAN),0,0,SIZE,SIZE);
+  ctx.drawImage(blank,0,0);
+ }
  const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;texture.anisotropy=4;
  const material=new MeshBasicMaterial({map:texture,transparent:true,opacity:0,depthTest:!!options,depthWrite:false,toneMapped:false,fog:false});
  const plane=new Mesh(paperGeometry(origin,SPAN,options?.bounds),material);plane.rotation.x=-Math.PI/2;plane.position.set(options?origin.x:0,options?0.5:0.06,options?origin.z:0);plane.renderOrder=options?0:8;plane.frustumCulled=false;
  const root=new Group();root.add(plane);root.visible=false;
- return {root,dispose(){texture.dispose();material.dispose();plane.geometry.dispose();},stampCount:stamps.length,update(blend:number){root.visible=blend>.001;material.opacity=blend;}};
+ return {root,texture,dispose(){texture.dispose();material.dispose();plane.geometry.dispose();},stampCount:stamps.length,update(blend:number){root.visible=blend>.001;material.opacity=blend;}};
 }
