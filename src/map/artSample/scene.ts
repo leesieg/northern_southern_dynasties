@@ -9,6 +9,7 @@ import {mapResource} from '../resourceLoader';
 import {resourceTexture} from '../three/resourceTexture';
 import {createTerrain} from './terrain';
 import {createScenery} from './scenery';
+import {createPaperMap} from './paperMap';
 import {EXTENT,clamp,detailWeights,palettes,smooth,travelPose,views,type SampleSeason,type View} from './layout';
 
 export async function mountArtSample(container:HTMLElement,report:(message:string)=>void){
@@ -50,6 +51,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
   surfaceAtlas=await resourceTexture('art/campaign/terrain-atlas-v1.png',undefined,true);surfaceAtlas.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(closed){surfaceAtlas.dispose();throw new Error('样板已关闭');}
   const terrain=await createTerrain(report,surfaceAtlas);if(closed){terrain.root.traverse(o=>{if(o instanceof Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});throw new Error('样板已关闭');}scene.add(terrain.root);
   scenery=await createScenery(terrain,report);if(closed){scenery.dispose();throw new Error('样板已关闭');}scene.add(scenery.root);
+  const paperMap=createPaperMap(terrain);scene.add(paperMap.root);
   report('正在安置四名行旅与兵模…');
   const loader=new GLTFLoader(),paths=['han-male','han-female','xianbei-male','xianbei-female'].map(kind=>`art/campaign/travelers/${kind}-near.glb`);paths.push('art/military/spear-infantry-v2.glb');
   const models=await Promise.all(paths.map(async path=>loader.parseAsync(await mapResource(path).then(r=>r.arrayBuffer()),'')));
@@ -79,7 +81,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
    // Manual navigation retains geography and uses the same continuous material transition.
    const previousTarget=controls.target.clone();controls.target.x=clamp(controls.target.x,-EXTENT.width*.35,EXTENT.width*.35);controls.target.z=clamp(controls.target.z,-EXTENT.depth*.35,EXTENT.depth*.35);camera.position.add(controls.target.clone().sub(previousTarget));
    const distance=camera.position.distanceTo(controls.target);camera.lookAt(controls.target);camera.updateMatrixWorld();
-   const nextPaper=paper+(paperTarget-paper)*Math.min(1,dt*5);if(Math.abs(nextPaper-paper)>.0001){paper=nextPaper;dirty=true;}terrain.paperBlend.value=paper;
+   const nextPaper=paper+(paperTarget-paper)*Math.min(1,dt*5);if(Math.abs(nextPaper-paper)>.0001){paper=nextPaper;dirty=true;}terrain.paperBlend.value=paper;paperMap.update(paper);container.parentElement?.classList.toggle('is-paper',paper>.5);
    if(!reduced.matches){terrain.time.value=now*.001;dirty=true;}
    if(walking){walkTime+=dt;dirty=true;}
    const weights=detailWeights(distance);
@@ -97,7 +99,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
    const key=[...controls.target.toArray(),span].map(v=>v.toFixed(2)).join('|')+sun.color.getHex();renderer.shadowMap.needsUpdate=walking||key!==lastShadowKey;lastShadowKey=key;
    const fog=scene.fog as Fog;fog.near=Math.max(95,distance*1.12);fog.far=Math.max(320,Math.min(470,distance*2.65));
    composer.render();
-   for(const label of labels){projected.copy(label.point).project(camera);const visible=projected.z>-1&&projected.z<1&&(label.capital||distance>65);label.element.hidden=!visible;if(visible){label.element.style.left=(projected.x*.5+.5)*container.clientWidth+'px';label.element.style.top=(-projected.y*.5+.5)*container.clientHeight+'px';label.element.style.color=paper>.5?'#293c30':'';label.element.style.textShadow=paper>.5?'0 1px 4px #e5dfc6':'';}}
+   for(const label of labels){projected.copy(label.point);projected.y=label.point.y*(1-paper)+.06*paper;projected.project(camera);const visible=projected.z>-1&&projected.z<1&&(label.capital||distance>65);label.element.hidden=!visible;if(visible){label.element.style.left=(projected.x*.5+.5)*container.clientWidth+'px';label.element.style.top=(-projected.y*.5+.5)*container.clientHeight+'px';label.element.style.color=paper>.5?'#475b47':'';label.element.style.textShadow=paper>.5?'0 1px 2px #d2d2ad80':'';}}
   }
   frame=requestAnimationFrame(render);
   return {view,season:changeSeason,walk(enabled:boolean){walking=enabled;dirty=true;},dispose};
