@@ -22,9 +22,15 @@ export function riverSafeCity(p:GroundPoint,radius:number,segments:RiverSegment[
  const clearance=(q:GroundPoint)=>Math.min(Infinity,...local.map(s=>nearestOnSegment(q,s.a,s.b).distance));
  const closest=local.map(s=>nearestOnSegment(p,s.a,s.b)).sort((a,b)=>a.distance-b.distance)[0];
  if(!closest||closest.distance>radius+3.2)return {...p,scale:1,radius,clearance:clearance(p)};
- const scale=.55,r=radius*scale,side=(q:GroundPoint)=>!southBank||((q.x-closest.x)*(-closest.dz)+(q.z-closest.z)*closest.dx)*Math.sign(closest.dx||1)>0;
- let best:GroundPoint|undefined;
- for(let d=0;d<=radius*3&&!best;d+=.5)for(let i=0;i<48;i++){const q={x:p.x+Math.cos(i*Math.PI/24)*d,z:p.z+Math.sin(i*Math.PI/24)*d};if(side(q)&&clearance(q)>=r+3.2){best=q;break;}}
+ const side=(q:GroundPoint)=>!southBank||((q.x-closest.x)*(-closest.dz)+(q.z-closest.z)*closest.dx)*Math.sign(closest.dx||1)>0;
+ // Compact sample-sized cities should not be halved simply because a river is nearby.
+ // Try a short bankward adjustment at full scale before the constrained-site fallback.
+ let best:GroundPoint|undefined,scale=1;
+ for(const candidateScale of [1,.55]){scale=candidateScale;const r=radius*scale,maxShift=radius*(scale===1?.65:3);
+  for(let d=0;d<=maxShift&&!best;d+=.5)for(let i=0;i<48;i++){const q={x:p.x+Math.cos(i*Math.PI/24)*d,z:p.z+Math.sin(i*Math.PI/24)*d};if(side(q)&&clearance(q)>=r+3.2){best=q;break;}}
+  if(best)break;
+ }
+ const r=radius*scale;
  // No safe placement: keep the nameplate, never put a city back into the water.
  return {...(best??p),scale:best?scale:0,radius:best?r:0,clearance:clearance(best??p)};
 }

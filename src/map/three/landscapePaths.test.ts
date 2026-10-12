@@ -17,3 +17,10 @@ it('checks all segments in a meander instead of only the closest bank',()=>{
  const c=riverSafeCity({x:20,z:2},10,segs);for(const s of segs)expect(nearestOnSegment(c,s.a,s.b).distance-c.radius).toBeGreaterThanOrEqual(1.2);
  expect(riverSafeCity({x:200,z:200},10,segs).scale).toBe(1);
 });
+
+it('retains the sample scale when a short bankward adjustment clears the river',()=>{
+ const source=[{a:{x:-40,z:0},b:{x:40,z:0}}],p={x:0,z:8};
+ const city=riverSafeCity(p,6.175,source,true);
+ expect(city.scale).toBe(1);expect(city.clearance-city.radius).toBeGreaterThanOrEqual(3.2);
+ expect(Math.hypot(city.x-p.x,city.z-p.z)).toBeLessThanOrEqual(6.175*.65);
+});

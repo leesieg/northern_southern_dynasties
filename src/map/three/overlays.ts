@@ -29,7 +29,7 @@ export class CampaignOverlays{
    // Independent fill triangles intersect detailed relief. Near selection uses outlines only.
    if(zoom>6.2&&layer.type==='fill'&&['territory-hover','territory-selected','hierarchy-selected'].includes(layer.id))continue;
    if(terrainFills&&layer.type==='fill')continue;
-   if(flat&&['realm-tint','territory-tone','territory-border'].includes(layer.id))continue;
+   if(flat&&['realm-tint','territory-tone','territory-border','campaign-trails'].includes(layer.id))continue;
    const data=sources.get(layer.source!),paint=layer.paint??{};if(!data)continue;
    const positions:number[]=[],colors:number[]=[],bridges:BufferGeometry[]=[];
    const vertex=(p:Position,color:Color,alpha:number,elevation?:number)=>{const xy=projectGround(p[0],p[1]);positions.push(xy.x,elevation??((this.height(p[0],p[1])??0)+(layer.source==='roads'?.045+order*.005:.15+order*.015)),xy.z);colors.push(color.r,color.g,color.b,alpha);};
