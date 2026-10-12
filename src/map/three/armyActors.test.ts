@@ -27,7 +27,7 @@ it.each(['foot','spear','archer','lightHorse','heavyHorse','siege'] as const)('u
   actors.update(0);await vi.waitFor(()=>expect(repaint).toHaveBeenCalled());
   const rigName=['foot','spear','archer'].includes(kind)?'Rigged campaign infantry':'Rigged campaign '+kind;await vi.waitFor(()=>expect(scene.getObjectByName(rigName)).toBeDefined());expect(actors.update(1)).toBe(true);
   const rig=scene.getObjectByName(rigName)!,root=rig.parent!.parent!,at=armyMapPosition(army),p=projectGround(at.lon,at.lat);
-  expect(root.visible).toBe(true);expect(root.position.toArray()).toEqual([p.x,7.38,p.z]);
+  expect(root.visible).toBe(true);expect(root.scale.x).toBe(1);view.unitsPerPixelAt=()=>.2;actors.update(2);expect(root.scale.x).toBe(1);expect(root.position.toArray()).toEqual([p.x,7.38,p.z]);
   let mesh!:SkinnedMesh;rig.traverse(o=>{if(o instanceof SkinnedMesh)mesh=o;});expect(mesh.castShadow).toBe(false);const initial=mesh.skeleton.bones.map(b=>b.quaternion.clone());
   for(let i=1;i<=30;i++)actors.update(i*1000/60);
   expect(mesh.skeleton.bones.some((b,i)=>!b.quaternion.equals(initial[i]))).toBe(true);

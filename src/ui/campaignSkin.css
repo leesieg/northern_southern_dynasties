@@ -31,13 +31,6 @@
 .focused-shell .court-map-caption{text-align:center;gap:0}.focused-shell .court-map-caption strong{font-size:11px}.focused-shell .court-map-caption small{font-size:8px;white-space:nowrap}.focused-shell .court-map-button>.art-icon{width:23px!important;height:23px!important}.focused-shell .court-map-alert{right:0;top:2px}
 .focused-shell .map-command-dock .map-options-toggle{align-self:center;font-size:10px}
 .focused-shell .map-command-dock .art-icon{filter:var(--hud-icon-filter)}
-/* Parchment muster slips: faction binding, commander portrait, ink readings. */
-.focused-shell .atlas-map .atlas-place-label{color:#403a2b;text-shadow:0 1px #f6e9c8;background:#e2d1aaeb;border-color:#968361;border-bottom-color:var(--city-realm,#8c7954);box-shadow:0 1px 3px #4a412324}
-.focused-shell .atlas-map .atlas-place-label:is(:hover,.is-selected){background:#344337;color:#f9e6b9;border-color:#eed18c;text-shadow:none}
-.focused-shell .atlas-map .atlas-city-realm,.focused-shell .atlas-map .atlas-city-realm img{width:28px;height:34px;flex-basis:28px}
-.focused-shell .atlas-map .atlas-place>.atlas-estate-marker{width:32px;height:32px;flex-basis:32px;border:1px solid #87724c;border-radius:50%;background:radial-gradient(circle at 40% 28%,#f1e7ca,#cebb90);box-shadow:inset 0 0 0 2px #e4d7b4,inset 0 0 0 3px #a38c5c;filter:drop-shadow(0 2px 1px #17251b66)}
-.focused-shell .atlas-map .atlas-place>.atlas-estate-marker::before{width:24px;height:24px;filter:sepia(.7) saturate(.6) contrast(1.15)}
-.focused-shell .atlas-map .atlas-place>.atlas-estate-marker:hover{background:#f4e3b7;outline:1px solid #dfbd77}
 .focused-shell .atlas-map .atlas-activity-marker{width:38px;height:42px;min-height:0;padding:0;border:0;border-radius:50%;background:var(--bronze-seal) center top/38px 38px no-repeat;box-shadow:none;filter:drop-shadow(0 2px 2px #17231966);overflow:visible}
 .focused-shell .atlas-map .atlas-activity-marker::before{inset:7px;width:24px;height:24px;filter:sepia(.4) saturate(.8) drop-shadow(0 1px 1px #000)}
 .focused-shell .atlas-map .atlas-activity-marker::after{content:'';position:absolute;bottom:0;left:16px;width:6px;height:6px;transform:rotate(45deg);background:#343c2b;border-right:1px solid #c5ac73;border-bottom:1px solid #c5ac73;z-index:-1}

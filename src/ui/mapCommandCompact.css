@@ -39,10 +39,6 @@
 .focused-shell .chronicle-control{height:88px;min-height:88px;align-items:center;padding-block:6px 7px}
 .focused-shell .sovereign-strip{height:auto;min-height:76px;align-items:center}
 .focused-shell :is(.sovereign-strip,.chronicle-control){font-variant-numeric:tabular-nums}
-.focused-shell .atlas-map .atlas-place-label{letter-spacing:.04em}
-.focused-shell .atlas-map .atlas-place.is-selected{outline:2px solid #d6b86d;outline-offset:2px}
-.focused-shell .atlas-map .atlas-place.is-selected .atlas-place-label{color:#fff0ce;background:#26392d;text-shadow:none}
-.focused-shell .atlas-map .atlas-place :is(button):focus-visible{outline:2px solid #ead39c;outline-offset:2px}
 @media(max-width:850px){
  .focused-shell :is(.sovereign-strip,.chronicle-control){min-height:112px}
  .focused-shell .clock-utilities button{width:32px;height:32px;min-height:32px;padding:6px}

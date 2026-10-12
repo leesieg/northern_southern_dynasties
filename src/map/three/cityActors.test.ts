@@ -20,7 +20,8 @@ it('grounds the complete city above the footprint peak and updates its foundatio
  const actors=await campaignActors(view,()=>state,()=>undefined);
  try{
   actors.refresh();const city=actors.cityRoots().find(c=>c.userData.site===site.id)!;expect(city).toBeDefined();
-  expect(city.scale.x*23).toBeCloseTo(9.5);
+  expect(city.scale.x*23).toBeCloseTo(9.5);expect(actors.farmCenters().find(c=>c.x===p.x)?.radius).toBeCloseTo(9.5*.65);
+  expect((city.children[0] as Mesh).castShadow).toBe(true);
   expect(city.position.x).toBe(p.x);expect(city.position.z).toBe(p.z);expect(city.position.y-1.5*city.scale.y).toBeCloseTo(12.08);
   const foundation=city.children.at(-1) as Mesh,dispose=vi.spyOn(foundation.geometry,'dispose');peak=18;actors.refresh();
   expect(city.position.y-1.5*city.scale.y).toBeCloseTo(18.08);expect(dispose).toHaveBeenCalledOnce();expect(city.children).toHaveLength(2);

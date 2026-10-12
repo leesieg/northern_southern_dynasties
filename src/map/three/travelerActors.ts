@@ -1,6 +1,7 @@
+import {CAMPAIGN_BODY_SCALE} from '../unitScale';
 import {CircleGeometry,Mesh,MeshBasicMaterial,Group} from 'three';
 import type {ActorView,CampaignState} from './actors';
-import {travelerKind,travelerModelAssets,animateTraveler,travelerPixels,TRAVELER_MODEL_HEIGHT,type TravelerModel} from '../TravelerModels';
+import {travelerKind,travelerModelAssets,animateTraveler,type TravelerModel} from '../TravelerModels';
 import {ARMY_MODEL_ZOOM} from '../armyMapPresentation';
 import {armyModelHeading} from '../MilitaryModels';
 import {projectGround} from './geography';
@@ -18,7 +19,7 @@ export function travelerActors(view:ActorView,root:Group,warn:(message:string)=>
     const at=state.travelerPosition?.(person);if(!at)continue;const h=view.height(at.lon,at.lat);if(h===null)continue;
     const key=`${kind}-${zoom>=8?'near':'far'}` as const;let model=models.get(person.id);
     if(model?.key!==key){if(model)assets.release(model);model=assets.create(key,person.id);models.set(person.id,model);root.add(model.root);const shadow=new Mesh(shadowGeometry,shadowMaterial);shadow.rotation.x=-Math.PI/2;shadow.position.y=.012;shadow.scale.y=.7;model.root.add(shadow);}
-    keep.add(person.id);const p=projectGround(at.lon,at.lat);model.root.position.set(p.x,h+.035,p.z);model.root.rotation.y=at.heading===undefined?0:armyModelHeading(at.heading);model.root.scale.setScalar(view.unitsPerPixelAt(at.lon,at.lat)*travelerPixels()/TRAVELER_MODEL_HEIGHT);model.root.visible=!!model.body;
+    keep.add(person.id);const p=projectGround(at.lon,at.lat);model.root.position.set(p.x,h+.035,p.z);model.root.rotation.y=at.heading===undefined?0:armyModelHeading(at.heading);model.root.scale.setScalar(CAMPAIGN_BODY_SCALE);model.root.visible=!!model.body;
     const walking=state.travelerMoving?.(person)??false;
     moving=animateTraveler(model,now,walking,((state.speed??0)>0||walking)&&(state.travelerAnimation??state.armyMotion))||walking||moving;
    }

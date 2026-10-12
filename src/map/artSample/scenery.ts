@@ -1,3 +1,4 @@
+import {plantClearance} from './plantClearance';
 import {Box3,BufferGeometry,Color,Float32BufferAttribute,Group,InstancedMesh,Mesh,MeshStandardMaterial,Object3D,DoubleSide} from 'three';
 import {loadCampaignSampleAssets} from '../CampaignSampleAssets';
 import {seededRandom} from '../sample/geography';
@@ -15,12 +16,12 @@ export async function createScenery(terrain:SampleTerrain,report:(message:string
   const bounds=new Box3().setFromObject(city),scale=9.5*town.scale/(bounds.max.x-bounds.min.x);
   city.scale.setScalar(scale);city.position.set(town.x,town.height-bounds.min.y*scale+.035,town.z);city.traverse(o=>{if(o instanceof Mesh){o.castShadow=true;o.receiveShadow=true;}});root.add(city);
  }
+ const canPlant=plantClearance(outcrops.placements);
  const placements:{x:number;z:number;y:number;size:number;angle:number;variant:number;tint:number}[]=[];
  // World anchored clusters; thinning keeps the same trees rather than re-rolling the forest.
  for(let z=-EXTENT.depth*.49;z<EXTENT.depth*.49;z+=.85)for(let x=-EXTENT.width*.49;x<EXTENT.width*.49;x+=.85){
   const px=x+(random()-.5)*1.2,pz=z+(random()-.5)*1.2,y=terrain.height(px,pz),bank=terrain.channel.sample(px,pz),cover=forestCover(px,pz,y);
-  if(!plantable(px,pz,y,terrain.river(px,pz),terrain.cities)||(bank&&bank.edge<.85+bank.inner*.65)||random()>cover*(.62+forestCover(px+8,pz-12,y)*.36))continue;
-  if(outcrops.placements.some(p=>Math.hypot(px-p.x,pz-p.z)<p.width*.6))continue;
+  if(!plantable(px,pz,y,terrain.river(px,pz),terrain.cities)||!canPlant(px,pz,bank)||random()>cover*(.62+forestCover(px+8,pz-12,y)*.36))continue;
   if(Math.abs(terrain.height(px+.5,pz)-terrain.height(px-.5,pz))>2.6)continue;
   placements.push({x:px,z:pz,y,size:.5+cover*.65+random()*.95,angle:random()*Math.PI*2,variant:Math.floor(random()*3)+(Math.hypot(px,pz)<40?0:3),tint:.82+random()*.34});
  }

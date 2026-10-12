@@ -1,3 +1,4 @@
+import '../campaignSymbols.css';
 import {Vector3,type Camera} from 'three';
 import type {SampleTerrain} from './terrain';
 
@@ -36,6 +37,6 @@ export function createPaperSymbols(terrain:SampleTerrain,container:HTMLElement){
  }
  for(const [x,z,kind] of [[22,-29,'army'],[-19,-25,'horse'],[-8,-9,'port']] as const){const element=document.createElement('div');element.className='paper-resource-pin';element.innerHTML=`<span class="paper-map-icon icon-${kind}" tabindex="0" role="img" aria-label="${paperIconNames[kind]}样式预览">${paperIcon(kind)}<span class="paper-symbol-tip">${paperIconNames[kind]} · 样式预览</span></span>`;root.append(element);points.push({element,point:new Vector3(x,.08,z)});}
  const projected=new Vector3();root.hidden=true;
- return {update(camera:Camera,width:number,height:number,paper:number){root.hidden=paper<.8;if(root.hidden)return;root.style.opacity=String((paper-.8)*5);
-  for(const {element,point} of points){projected.copy(point).project(camera);element.hidden=projected.z < -1||projected.z>1||Math.abs(projected.x)>1.12||Math.abs(projected.y)>1.12;element.style.left=(projected.x*.5+.5)*width+'px';element.style.top=(-projected.y*.5+.5)*height+'px';}},dispose(){root.remove();}};
+ return {update(camera:Camera,width:number,height:number,paper:number){root.hidden=false;root.style.opacity='1';
+  for(const {element,point} of points){projected.copy(point);projected.y=terrain.height(point.x,point.z)*(1-paper)+.08;projected.project(camera);element.hidden=projected.z < -1||projected.z>1||Math.abs(projected.x)>1.12||Math.abs(projected.y)>1.12;element.style.left=(projected.x*.5+.5)*width+'px';element.style.top=(-projected.y*.5+.5)*height+'px';}},dispose(){root.remove();}};
 }

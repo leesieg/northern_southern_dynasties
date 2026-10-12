@@ -1,7 +1,7 @@
 import type {CityDetail} from '../campaignScenery';
 /** Display-only LOD. Hysteresis prevents rebuilding at every small wheel reversal. */
 export function cityDetailForPixels(pixels:number,previous:CityDetail='regional'):CityDetail{
- return pixels>=(previous==='close'?110:150)?'close':'regional';
+ return pixels>=(previous==='close'?45:65)?'close':'regional';
 }
 export type SceneryTier='far'|'middle'|'near';
 export function sceneryTier(zoom:number,previous:SceneryTier='far'):SceneryTier{
@@ -9,4 +9,4 @@ export function sceneryTier(zoom:number,previous:SceneryTier='far'):SceneryTier{
  if(zoom>=(previous!=='far'?6:6.4))return 'middle';
  return 'far';
 }
-export const sceneryBudgets={far:{trees:0,shadows:false},middle:{trees:7000,shadows:false},near:{trees:18000,shadows:true}};
+export const sceneryBudgets={far:{trees:0,shadows:false},middle:{trees:7000,shadows:true},near:{trees:18000,shadows:true}};

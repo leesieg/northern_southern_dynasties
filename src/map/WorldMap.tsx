@@ -1,7 +1,9 @@
 import {updatePaperCitySymbols} from './paperCitySymbols';
 import './paperCampaign.css';
 import {TravelerMotion} from './TravelerMotion';
-import {travelerPixels} from './TravelerModels';
+import {TRAVELER_MODEL_HEIGHT} from './TravelerModels';
+import {campaignUnitPixels} from './unitScale';
+import {armyCommander} from '../core/mobility';
 import {reportCampaignScene} from '../ui/campaignLoad';
 import {armyBattle,liveBattleArmies,armyDisplayState} from '../core/combatPresentation';
 import {ArmyMotion} from './ArmyMotion';
@@ -46,7 +48,7 @@ import { atlasStyle, POLITICAL_LAYERS, ROAD_LAYERS } from './atlasStyle';
 import { administration, administrationPath } from '../data/administration';
 import { territoryHit } from './territories';
 import type {CampaignSceneryLayer} from './CampaignLayer';
-import {armyShowsModel,armyMarkerFootprint,armyModelBadgeBottom,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
+import {armyShowsModel,armyMarkerFootprint,anchoredArmyModels,dockMapMarker,layoutArmyCards,type ArmyMarkerPlacement,type ScreenRect} from './armyMapPresentation';
 
 
 export type MapMode='diplomacy'|'political'|'domains'|'terrain'|'roads';
@@ -106,7 +108,7 @@ export function WorldMap(props:Props){
     const combatMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     const activityMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement}>();
     let estateButton:HTMLButtonElement|undefined;
-    const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement}>();
+    const armyMarkers=new globalThis.Map<string,{marker:Marker;button:HTMLDivElement;select:HTMLButtonElement;flag:HTMLImageElement;strength:HTMLSpanElement;label:HTMLElement;portrait:HTMLButtonElement}>();
     const motion=new ArmyMotion(),travelerMotion=new TravelerMotion();
     const travelers=()=>{travelerMotion.sync(current.current.world,performance.now(),current.current.speed>0,current.current.armyMotion);return travelerMotion.people;};
     const travelerPosition=(p:import('../core/types').Person)=>{travelers();return travelerMotion.position(p,performance.now());};
@@ -169,7 +171,7 @@ export function WorldMap(props:Props){
        }
        const at=travelerPosition(person),element=entry.marker.getElement();entry.marker.setLngLat([at.lon,at.lat]);element.setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name+' · 在途';
        if(entry.world!==world){const face=element.querySelector<HTMLElement>('.traveler-face');if(face)updateMarkerPortrait(face,person.id==='player'?(world.characterId??'fictional'):person.id,world);entry.world=world;}
-       element.dataset.model=String(map.showsTraveler(person.id));element.style.setProperty('--traveler-height',travelerPixels()+'px');
+       element.dataset.model=String(map.showsTraveler(person.id));element.style.setProperty('--traveler-height',(TRAVELER_MODEL_HEIGHT*campaignUnitPixels(map.unitsPerPixelAt(at.lon,at.lat)))+'px');
       }
       const travelerIds=annotationDensity([...people].filter(([id])=>travelingIds.has(id)).map(([id,entry])=>({key:id,point:map!.project([entry.marker.getLngLat().lng,entry.marker.getLngLat().lat]),priority:0,required:id==='player'||id===current.current.world.characterId})),{width:w,height:h},zoom<9?2:5,130);
       for(const [id,entry] of people){const self=id==='player'||id===current.current.world.characterId;entry.marker.getElement().hidden=!current.current.showTravelers||!travelingIds.has(id)||!travelerIds.has(id)||(!self&&(strategicView||zoom<7));}
@@ -185,7 +187,7 @@ export function WorldMap(props:Props){
         const rect=element.getBoundingClientRect();if(!rect.width||!rect.height)continue;const previous=marker.getOffset(),dx=previous.x-offset[0],dy=previous.y-offset[1];
         const bounds={left:rect.left-viewport.left-dx-6,top:rect.top-viewport.top-dy-6,right:rect.right-viewport.left-dx+6,bottom:rect.bottom-viewport.top-dy+6};if(bounds.right>0&&bounds.left<w&&bounds.bottom>0&&bounds.top<h){mapMarkers.push({marker,offset,bounds});}
       }
-      const anchors=armies.map((a,i)=>{const pos=armyPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,combatSide:(()=>{const b=armyBattle(current.current.world,a);return b?liveBattleArmies(current.current.world,b,'attack').some(v=>v.id===a.id)?'attack':'defend':undefined;})(),available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
+      const anchors=armies.map((a,i)=>{const pos=armyPosition(a);return {key:String(a.id??a.realm+':'+i),point:map!.project([pos.lon,pos.lat]),position:pos,pixels:campaignUnitPixels(map!.unitsPerPixelAt(pos.lon,pos.lat)),combatSide:(()=>{const b=armyBattle(current.current.world,a);return b?liveBattleArmies(current.current.world,b,'attack').some(v=>v.id===a.id)?'attack':'defend':undefined;})(),available:typeof a.id==='number'&&a.id>0};}),view={width:w,height:h};
       const armyIds=annotationDensity(anchors.map((a,i)=>({...a,priority:armyDisplayState(current.current.world,armies[i])==='battle'?3:militaryArmyView(current.current.world,armies[i]).command?2:0,required:current.current.selectedArmies.includes(Number(a.key))})),view,zoom<6.2?4:zoom<9?8:12,90);
       const fixed=models&&!strategicView?anchoredArmyModels(anchors.filter(a=>a.available&&(armyIds.has(a.key)||a.combatSide)),current.current.selectedArmies.map(String),view):new globalThis.Map<string,ArmyMarkerPlacement>(),modelBounds=[...fixed.values()].map(p=>p.bounds);
       // Place settlement groups first, then cards against their final bounds. Models never move.
@@ -202,12 +204,11 @@ export function WorldMap(props:Props){
       for(const [i,a] of armies.entries()){
         const item=armyMarkers.get(String(a.id??a.realm+':'+i));if(!item)continue;
         const placement=armyPlacements.get(String(a.id??a.realm+':'+i));item.button.hidden=zoom<2.2||!placement;if(zoom<2.2||!placement)continue;
-        const {offset,model}=placement,size=armyMarkerFootprint(model,strategicView);
+        const pos=armyPosition(a),{offset,model}=placement,size=armyMarkerFootprint(model,strategicView,campaignUnitPixels(map.unitsPerPixelAt(pos.lon,pos.lat)));
         item.button.dataset.presentation=model?'model':'card';
         item.button.style.setProperty('--army-target-width',(placement.combat?100:size.width)+'px');item.button.style.setProperty('--army-target-height',size.height+'px');item.button.style.setProperty('--army-foot',size.bottom+'px');
-        item.button.style.setProperty('--army-badge-bottom',armyModelBadgeBottom(map.getPitch())+'px');
         item.button.style.setProperty('--army-link-length',Math.hypot(offset.x,offset.y)>12?Math.hypot(offset.x,offset.y)+'px':'0px');item.button.style.setProperty('--army-link-angle',Math.atan2(-offset.y,-offset.x)+'rad');
-        const pos=armyPosition(a);item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);
+        item.marker.setLngLat([pos.lon,pos.lat]).setOffset([offset.x,offset.y+size.bottom]);
       }
       if(knownDomains){
         const outside=(marker:Marker)=>{const p=marker.getLngLat();return !knownDomains!.features.some(f=>waterMaskContains([p.lng,p.lat],f.geometry));};
@@ -287,23 +288,30 @@ export function WorldMap(props:Props){
         for(const [i,a] of currentArmies.entries()){
           const key=String(a.id??a.realm+':'+i);let item=armyMarkers.get(key);
           if(!item){
-            const button=document.createElement('button');button.type='button';button.className='atlas-army-marker';button.dataset.presentation='card';
+            const button=document.createElement('div');button.className='atlas-army-marker';button.dataset.presentation='card';button.setAttribute('role','group');
+            const select=document.createElement('button');select.type='button';select.className='atlas-army-select';
             const flag=document.createElement('img');flag.className='atlas-army-flag';flag.alt='';flag.setAttribute('aria-hidden','true');flag.draggable=false;
+            const portrait=document.createElement('button');portrait.type='button';portrait.className='atlas-army-commander campaign-portrait';
             const body=document.createElement('span');body.className='atlas-army-card-body';
             const label=document.createElement('small');label.className='atlas-army-label';
-            const strength=document.createElement('span');strength.className='atlas-army-strength';const morale=document.createElement('span');morale.className='atlas-army-morale';morale.setAttribute('aria-hidden','true');body.append(label,strength,morale);button.append(flag,body);
+            const strength=document.createElement('span');strength.className='atlas-army-strength';const morale=document.createElement('span');morale.className='atlas-army-morale';morale.setAttribute('aria-hidden','true');body.append(label,strength,morale);select.append(flag,body);button.append(select,portrait);
             button.onmousedown=event=>{if(event.shiftKey)event.stopPropagation();};
             button.ondblclick=event=>event.stopPropagation();
-            button.onclick=event=>{event.stopPropagation();const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(!army)return;if(army.id&&militaryArmyView(current.current.world,army).command)current.current.onSelectArmy(army.id,event.shiftKey);else current.current.onSelect(army.location);};
-            const marker=new Marker({element:button,anchor:'bottom',offset:[0,68]}).setLngLat([105,34]).addTo(map);item={marker,button,flag,strength,label};armyMarkers.set(key,item);
+            select.onclick=event=>{event.stopPropagation();const army=current.current.world.realm?.armies.find((b,j)=>String(b.id??b.realm+':'+j)===key);if(!army)return;if(army.id&&militaryArmyView(current.current.world,army).command)current.current.onSelectArmy(army.id,event.shiftKey);else current.current.onSelect(army.location);};
+            const marker=new Marker({element:button,anchor:'bottom',offset:[0,68]}).setLngLat([105,34]).addTo(map);item={marker,button,select,flag,strength,label,portrait};armyMarkers.set(key,item);
           }
           const {lon,lat}=armyPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
+          const commander=view.exact?armyCommander(p.world,a):undefined;
+          if(commander)updateMarkerPortrait(item.portrait,commander,p.world);else {item.portrait.replaceChildren();delete item.portrait.dataset.portraitKey;item.portrait.textContent=view.exact?'帅':'？';}
+          item.button.dataset.commander=commander?'assigned':view.exact?'vacant':'unknown';
+          item.portrait.disabled=!commander;item.portrait.setAttribute('aria-label',commander?'查看统帅详情':view.exact?'统帅空缺':'统帅未详');item.portrait.onclick=event=>{event.stopPropagation();if(commander)current.current.onInspectPeople([commander]);};
+          const commanderName=commander?getPerson(p.world,commander)?.name:undefined;
           item.flag.src=armyHeraldry(a.realm,name,p.world);item.button.dataset.state=armyDisplayState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+'第 '+(a.id??'')+' 军';item.strength.textContent=view.exact?view.strength:view.strength.replace('区域情报 ','估 ');
           item.button.style.setProperty('--army-morale',view.exact?Math.max(0,Math.min(100,a.morale))+'%':'0%');
-          item.button.dataset.gameHint=name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
-          item.button.setAttribute('aria-label',`${name}第 ${a.id} 军，${view.strength}${view.exact?' 人，士气 '+a.morale:''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
-          if(view.command)item.button.setAttribute('aria-pressed','false');else item.button.removeAttribute('aria-pressed');
+          item.button.dataset.gameHint=(commanderName?'统帅：'+commanderName+' / ':view.exact?'统帅空缺 / ':'统帅未详 / ')+name+' · 第 '+(a.id??'')+' 军 · '+view.strength+(view.exact?' 人 / 士气 '+a.morale+' / 随军粮 '+a.supply+(a.arrears?' / 欠饷 '+a.arrears:''):' · 公开军旗');
+          item.select.setAttribute('aria-label',`${name}第 ${a.id} 军，${commanderName?'统帅 '+commanderName:view.exact?'统帅空缺':'统帅未详'}，${view.strength}${view.exact?' 人，士气 '+a.morale:''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);
+          if(view.command)item.select.setAttribute('aria-pressed','false');else item.select.removeAttribute('aria-pressed');
         }
 
         const combats=engagementGroups(p.world);
@@ -323,7 +331,7 @@ export function WorldMap(props:Props){
          const item=group.items[0];entry.button.dataset.kind=item.kind;entry.button.textContent='';if(group.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(group.items.length);count.setAttribute('aria-hidden','true');entry.button.append(count);}entry.button.dataset.gameHint=group.items.map(i=>i.title+' · '+i.status+(i.days===null?'':' · '+i.days+'日')).join('\n');entry.button.setAttribute('aria-label',group.items.length===1?'查看'+item.title+'详情':'查看'+siteById[group.site].name+'的'+group.items.length+'项事务');entry.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=mapActivities(current.current.world).find(value=>value.site===group.site);if(!latest)return;if(latest.items.length===1)current.current.onActivity(latest.items[0]);else{current.current.onBrowseActivities();setActivitySite(group.site);}};}
         lastWorld=p.world;lastRoute=routeKey;
       }
-      for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.button.hasAttribute('aria-pressed'))item.button.setAttribute('aria-pressed',String(selected));}
+      for(const [key,item] of armyMarkers){const selected=p.selectedArmies.includes(Number(key));item.button.dataset.selected=String(selected);if(item.select.hasAttribute('aria-pressed'))item.select.setAttribute('aria-pressed',String(selected));}
       map.setPaintProperty('territory-fill','fill-color',p.mode==='diplomacy'?['match',['get','id'],...sites.flatMap(s=>[s.id,diplomaticColor(p.world,p.world.realm?.cities[s.id].controller??s.polity)]),'#77796e'] as unknown as ExpressionSpecification:['get','color']);
       map.setPaintProperty('territory-fill','fill-opacity',p.mode==='diplomacy'?.55:0);
       map.setPaintProperty('realm-tint','fill-opacity',p.mode==='diplomacy'?0:p.mode==='domains'?['interpolate',['linear'],['zoom'],3,.12,5,.06,8,.015]:['interpolate',['linear'],['zoom'],3,.48,4.8,.44,6.2,.10,8,.035]);

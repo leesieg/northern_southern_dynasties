@@ -137,20 +137,6 @@ dialog.territory-construction-dialog.territory-construction-dialog>header h2{mar
 
 .construction-live-quote>small{display:block;margin-top:7px}.construction-live-quote>small[role=status]{color:#dcc084!important}.construction-live-quote .estate-plot-cost{justify-content:flex-start;gap:12px}.construction-live-quote .estate-plot-cost b{font:23px var(--serif)}
 
-/* City craftsmanship: lacquer, woven ink and restrained bronze inlays. */
-.focused-shell .atlas-map .atlas-place.atlas-place{padding:3px;gap:0;background:linear-gradient(120deg,#34443a,#17281f 65%);border:1px solid #9f895e;border-radius:2px;box-shadow:0 3px 7px #07140db3,inset 0 0 0 1px #101e17,inset 0 0 0 2px #b69b5c3b;isolation:isolate}
-.focused-shell .atlas-map .atlas-place.atlas-place:has(.is-selected){border-color:#e4c985;box-shadow:0 3px 10px #07140dcc,0 0 0 2px #2d382a,inset 0 0 0 1px #e4c98560}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label{min-height:32px;margin:0;padding:3px 12px 3px 10px;border:0;border-left:1px solid #d1b87638;border-radius:0;background:linear-gradient(105deg,#e3d6b8,#f1e8d0 55%,#cec09b);box-shadow:inset 0 1px #fff7dfaa,inset 0 -1px #67583855;color:#303a2b;text-shadow:0 1px #fff4dc80;font-size:14px;font-weight:600;letter-spacing:2px;line-height:1.25;transition:background .15s,color .15s}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label small{font:10px/1.5 var(--serif);letter-spacing:1px;color:#6f6b50}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label.capital{font-size:17px;letter-spacing:3px;padding-inline:12px}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label:is(:hover,.is-selected){background:linear-gradient(110deg,#354737,#1c3025);color:#f3dfab;text-shadow:0 1px 2px #07160f;outline:none;box-shadow:inset 0 1px #c6ae6b55,inset 0 -1px #c6ae6b55}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-place-label:is(:hover,.is-selected) small{color:#caba8d}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-city-realm{width:27px;flex-basis:27px;height:34px;background:none;border:0;margin-inline:2px;filter:drop-shadow(0 1px 1px #030b06)}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-city-realm img{width:25px;height:32px}
-.focused-shell .atlas-map .atlas-place.atlas-place .atlas-governor{border:1px solid #c4ad78;border-radius:1px;box-shadow:0 0 0 1px #111e18;margin-right:3px;overflow:hidden}
-.focused-shell .atlas-map .atlas-place.atlas-place>.atlas-estate-marker{width:30px;height:30px;flex-basis:30px;margin:0 1px 0 5px;border-color:#a68a53;background:radial-gradient(circle at 40% 30%,#4b533a,#14251c);box-shadow:inset 0 0 0 2px #16271e,inset 0 0 0 3px #a58b4c66}
-.focused-shell .atlas-map .atlas-place.atlas-place button:focus-visible{outline:2px solid #ffe1a1;outline-offset:3px;z-index:3}
-
 .focused-shell .place-panel.territory-window.territory-window{--territory-dock:280px;--craft-line:#ad915455;--craft-gold:#d5b778;--craft-muted:#b1ae99;padding-inline:30px}
 .territory-window.territory-window::before{background-image:linear-gradient(90deg,#293a2825,transparent 35%,#71613c0c),url('/art/interface/person-ink-panel.svg?v=3')}
 .territory-window.territory-window .location-development::after{content:'';position:absolute;inset:46px 30px auto;height:1px;background:linear-gradient(90deg,#b9a06a88,transparent 28%,#b9a06a55 31%,#b9a06a55 91%,transparent);pointer-events:none}
@@ -195,7 +181,7 @@ dialog.territory-construction-dialog.territory-construction-dialog>.action-detai
 @media(max-height:780px){.focused-shell .place-panel.territory-window.territory-window{--territory-dock:235px}.territory-window.territory-window .territory-card-art{min-height:65px;height:85px}.territory-window.territory-window .city-summary-resource strong{font-size:19px}.territory-window.territory-window .territory-building-strip .building-artwork{height:113px}dialog.action-detail-dialog.paper-dialog.territory-construction-dialog{bottom:258px;height:calc(100svh - 360px)}}
 @media(max-width:1100px){.focused-shell .place-panel.territory-window.territory-window{padding-inline:16px}.territory-window.territory-window .city-summary-resources{padding-left:7px;gap:2px 5px}.focused-shell .territory-window.territory-window .city-icon-tabs>button{font-size:13px;gap:4px;letter-spacing:0}.territory-window.territory-window .territory-window-chrome{right:17px;gap:5px}}
 @media(max-width:720px){.focused-shell .place-panel.territory-window.territory-window{--territory-dock:260px}.territory-window.territory-window .territory-window-chrome{top:-37px}.territory-window.territory-window .location-development::after{display:none}.territory-window.territory-window .city-summary-resources{border:0}.territory-window.territory-window .city-summary-resource strong{font-size:16px}}
-@media(prefers-reduced-motion:reduce){.territory-window.territory-window button,.focused-shell .atlas-map .atlas-place.atlas-place button{transition:none}}
+@media(prefers-reduced-motion:reduce){.territory-window.territory-window button{transition:none}}
 .territory-window.territory-window::before{background-image:url('/art/territory/ink-weave.svg'),linear-gradient(90deg,#293a2825,transparent 35%,#71613c0c),url('/art/interface/person-ink-panel.svg?v=3');background-size:96px 96px,100% 100%,100% 100%;background-repeat:repeat,no-repeat,no-repeat}
 dialog.territory-construction-dialog.territory-construction-dialog::before,.ink-treasury-book::before{background-image:url('/art/territory/ink-weave.svg'),url('/art/interface/person-ink-panel.svg?v=3');background-size:96px 96px,100% 100%;background-repeat:repeat,no-repeat}
 dialog.action-detail-dialog.paper-dialog.territory-construction-dialog>header>button,dialog.action-detail-dialog.paper-dialog.treasury-window-dialog>header>button{border-radius:50%!important}

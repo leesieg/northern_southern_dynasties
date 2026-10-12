@@ -15,17 +15,16 @@ export interface ScreenPoint {x:number;y:number}
 export interface ScreenRect {left:number;top:number;right:number;bottom:number}
 export interface ArmyMarkerPlacement {combat?:boolean;offset:ScreenPoint;model:boolean;bounds:ScreenRect}
 // Both DOM hit targets and GPU models consume these screen placements. No world position is changed.
-export const armyMarkerFootprint=(model:boolean,strategic=false)=>model?{width:Math.ceil(3*ARMY_MODEL_PIXELS),height:Math.ceil(348*ARMY_MODEL_PIXELS/72),bottom:Math.ceil(132*ARMY_MODEL_PIXELS/72)}:strategic?{width:126,height:46,bottom:50}:{width:82,height:78,bottom:66};
-export const armyModelBadgeBottom=(pitch:number)=>Math.ceil(96*ARMY_MODEL_PIXELS/72*Math.cos(pitch*Math.PI/180))+36;
+export const armyMarkerFootprint=(model:boolean,_strategic=false,pixels=ARMY_MODEL_PIXELS)=>model?{width:Math.ceil(Math.max(94,3*pixels)),height:Math.ceil(348*pixels/72+110),bottom:Math.ceil(Math.max(8,132*pixels/72))}:{width:94,height:110,bottom:8};
 export const screenOverlap=(a:ScreenRect,b:ScreenRect)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
 /** One representative at each actual location; choosing another co-located army never moves the model. */
-export function anchoredArmyModels(armies:{key:string;point:ScreenPoint;position:{lon:number;lat:number};combatSide?:string}[],selected:readonly string[],viewport:{width:number;height:number}){
- const groups=new Map<string,typeof armies>(),placements=new Map<string,ArmyMarkerPlacement>(),size=armyMarkerFootprint(true);
+export function anchoredArmyModels(armies:{key:string;point:ScreenPoint;position:{lon:number;lat:number};combatSide?:string;pixels?:number}[],selected:readonly string[],viewport:{width:number;height:number}){
+ const groups=new Map<string,typeof armies>(),placements=new Map<string,ArmyMarkerPlacement>();
  for(const army of armies){const key=army.position.lon.toFixed(5)+':'+army.position.lat.toFixed(5),group=groups.get(key)??[];group.push(army);groups.set(key,group);}
  const priority=(a:typeof armies[number],b:typeof armies[number])=>Number(selected.includes(b.key))-Number(selected.includes(a.key))||a.key.localeCompare(b.key,undefined,{numeric:true});
  const leaders=[...groups.values()].map(group=>group.sort(priority)[0]).sort(priority);
  for(const lead of leaders){
-  const p=lead.point,bounds={left:p.x-size.width/2,right:p.x+size.width/2,top:p.y+size.bottom-size.height,bottom:p.y+size.bottom};
+  const size=armyMarkerFootprint(true,false,lead.pixels),p=lead.point,bounds={left:p.x-size.width/2,right:p.x+size.width/2,top:p.y+size.bottom-size.height,bottom:p.y+size.bottom};
   if(bounds.right<0||bounds.left>viewport.width||bounds.bottom<0||bounds.top>viewport.height)continue;
   if([...placements.values()].some(other=>screenOverlap(bounds,other.bounds)>0))continue; // Density changes representation, never coordinates.
   placements.set(lead.key,{model:true,offset:{x:0,y:0},bounds});

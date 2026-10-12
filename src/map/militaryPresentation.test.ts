@@ -2,7 +2,7 @@ import * as mapResources from './resourceLoader';
 import * as equipment from './MilitaryEquipment';
 import {afterEach,beforeAll,describe,expect,it,vi} from 'vitest';
 import {Box3,Camera,Color,DirectionalLight,FogExp2,HemisphereLight,Matrix4,Mesh,MeshStandardMaterial,PerspectiveCamera,Scene,SkinnedMesh,Texture,TextureLoader,Vector3} from 'three';
-import {ARMY_MODEL_PIXELS,anchoredArmyModels,armyMapPosition,armyMarkerFootprint,armyModelBadgeBottom,armyShowsModel,dockMapMarker,layoutArmyCards,screenOverlap,type ScreenRect} from './armyMapPresentation';
+import {ARMY_MODEL_PIXELS,anchoredArmyModels,armyMapPosition,armyMarkerFootprint,armyShowsModel,dockMapMarker,layoutArmyCards,screenOverlap,type ScreenRect} from './armyMapPresentation';
 import {addMilitaryLighting,militaryModelScale,militarySurfaceMaterial,positionMilitaryModel,updateMilitaryCamera} from './militaryRendering';
 import {animateMilitaryModel,militaryModelAssets} from './MilitaryModels';
 import type {Army} from '../core/realm';
@@ -148,7 +148,7 @@ describe('army camera and material contracts (no GPU or UI)',()=>{
     // Flying ammunition is an effect, not part of the army's fixed clickable silhouette.
     const bounds=new Box3();model.root.traverse(o=>{if(o instanceof SkinnedMesh){o.skeleton.update();o.computeBoundingBox();}if(o instanceof Mesh&&!o.name.startsWith('ProjectileMesh'))bounds.union(new Box3().setFromObject(o));});
     for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
-     const p=new Vector3(x,y,z).project(camera),screen={x:p.x*height*1.5/2,y:-p.y*height/2};extent.width=Math.max(extent.width,Math.abs(screen.x)*2);extent.above=Math.max(extent.above,-screen.y);extent.below=Math.max(extent.below,screen.y);expect(screen.y).toBeLessThan(armyModelBadgeBottom(pitch)-29);
+     const p=new Vector3(x,y,z).project(camera),screen={x:p.x*height*1.5/2,y:-p.y*height/2};extent.width=Math.max(extent.width,Math.abs(screen.x)*2);extent.above=Math.max(extent.above,-screen.y);extent.below=Math.max(extent.below,screen.y);
     }
    }
    expect(extent.width,JSON.stringify(extent)).toBeLessThanOrEqual(size.width);expect(extent.above,JSON.stringify(extent)).toBeLessThanOrEqual(size.height-size.bottom);expect(extent.below,JSON.stringify(extent)).toBeLessThanOrEqual(size.bottom);

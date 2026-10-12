@@ -2,11 +2,6 @@
 .map-bearing-glyph{font:22px/1 var(--serif);color:#e5ce96}
 .atlas-canvas .maplibregl-canvas{filter:sepia(.07) saturate(.9) contrast(1.025);outline:none}
 .atlas-paper{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,transparent 45%,#65503419 100%);z-index:1;box-shadow:inset 0 0 70px #68533815}
-.atlas-place{pointer-events:none;z-index:3}
-.atlas-place-label{pointer-events:auto;border:0;padding:3px 7px;font-family:var(--serif);font-size:14px;font-weight:600;letter-spacing:2px;background:transparent;color:#383b2c;text-shadow:0 0 3px #fff4d7,0 0 7px #f5edca,0 1px 1px #f7efce;white-space:nowrap}
-.atlas-place-label.capital{font-size:20px;color:#39392b;letter-spacing:4px}
-.atlas-place-label:hover:not(:disabled),.atlas-place-label.is-selected{background:#24392ce8;color:#f5e5b5;text-shadow:none;box-shadow:0 1px 8px #24322230}
-.atlas-place-label.is-selected{outline:1px solid #e3ce8a77;outline-offset:2px;border-radius:1px}
 .atlas-geographic-label{font-family:var(--serif);color:#536049;white-space:nowrap;pointer-events:none;user-select:none;font-size:17px;letter-spacing:5px;text-shadow:0 1px 4px #e6dfbc90;z-index:1}
 .atlas-geographic-label.realm{color:#4b4b35;font-size:clamp(34px,3.7vw,56px);font-weight:500;letter-spacing:16px;opacity:.75}
 .atlas-geographic-label.range{font-size:14px;color:#666b51;letter-spacing:7px}
@@ -57,7 +52,6 @@
 .territory-connections small{font-size:10px;color:#a0ad96;line-height:1.5}
 .map-stage .map-toolbox{right:15px;flex-wrap:wrap}
 @media(max-width:1180px){.territory-connections{padding-inline:17px}.territory-tooltip{width:210px}.atlas-scale-indicator{top:142px}.atlas-network-notice{top:169px}}
-.atlas-place-label.county{font-size:11px;letter-spacing:1px;font-weight:400}
 .atlas-geographic-label.prefecture{font-size:19px;letter-spacing:4px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.9}
 .atlas-estate-marker{display:grid;place-items:center;width:42px;height:46px;padding:3px;border:2px double #d8bb78;border-radius:50% 50% 8px 8px;background:linear-gradient(145deg,#614a35f5,#273d31f5);color:#f6e6bd;box-shadow:0 5px 13px #14251d88,inset 0 0 0 2px #16291d99;z-index:7;filter:drop-shadow(0 2px 3px #14251d77)}
 .atlas-map .atlas-estate-marker::before{margin-right:0}
@@ -131,7 +125,6 @@
 .city-detail-more .place-description{margin:0 0 12px;font-size:12px;line-height:1.8}
 .city-detail-more .place-facts{margin:0;border-bottom:0}
 .city-detail-more .hierarchy-explorer{padding:0 0 12px;border-bottom:0}
-.atlas-army-marker{background:#322b20;color:#eee0b9;border:2px solid #bc9c63;border-radius:2px;padding:5px 10px;font-size:12px;font-weight:bold;box-shadow:0 3px 9px #0006;cursor:pointer}.atlas-army-marker[hidden]{display:none}
 
 button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cursor:pointer}button.atlas-geographic-label.realm:focus-visible{outline:2px solid #d1b674;outline-offset:6px}
 
@@ -139,92 +132,20 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 
 .atlas-geographic-label.province{font-size:22px;letter-spacing:5px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.85}
 
-.atlas-army-marker[data-rebel=true]{background:#582f30;border-style:double!important;border-color:#d1a76b!important}
-.atlas-army-marker[data-selected=true]{outline:3px solid #f3d384;outline-offset:2px;box-shadow:0 0 0 5px #172b22bb,0 3px 12px #0009}
-
-/* Army banners and lacquered troop plates: the same heraldry as country details. */
-.atlas-army-marker{position:relative;display:flex;align-items:center;gap:0;width:var(--army-target-width,154px);height:var(--army-target-height,58px);min-height:58px;box-sizing:border-box;padding:0;border:0;border-radius:0;background:none;color:#eee0b9;font-family:var(--serif);text-align:left;box-shadow:none;cursor:pointer;isolation:isolate;z-index:5}
-.atlas-army-marker::after{content:'';position:absolute;left:50%;bottom:var(--army-foot,66px);width:var(--army-link-length,0px);height:1px;background:#7564488f;transform:rotate(var(--army-link-angle,0rad));transform-origin:left center;pointer-events:none;z-index:-1}
-.atlas-army-marker[hidden]{display:none}
-.atlas-army-flag{position:relative;z-index:2;display:block;flex:0 0 45px;width:45px;height:56px;object-fit:contain;border:0;background:none;clip-path:none;filter:drop-shadow(0 3px 2px #142119b3);pointer-events:none}
-.atlas-army-card-body{position:relative;display:flex;flex-direction:column;justify-content:center;gap:1px;min-width:0;flex:1;height:43px;box-sizing:border-box;margin-left:-3px;padding:3px 9px 4px 8px;border:1px solid #ac915c;border-radius:2px;background-color:#24362c;background-image:linear-gradient(90deg,#16271ded,#26382aea),url('/art/military/material-atlas.png');background-size:100% 100%,300% 200%;background-position:0 0;box-shadow:inset 0 0 0 1px #19231a,inset 0 0 0 2px #a88e5744,inset 0 3px 4px #f2e1aa18,0 3px 6px #09160b88;pointer-events:none}
-.atlas-army-card-body::before{content:'';position:absolute;inset:3px;border-top:1px solid #d2b8784d;border-bottom:1px solid #d2b8782e;pointer-events:none}
-.atlas-army-label{font:10px/1.1 var(--serif);letter-spacing:1px;color:#bbc2a6;white-space:nowrap}
-.atlas-army-strength{font:600 20px/1.12 var(--serif);letter-spacing:.4px;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #051409;white-space:nowrap}
-.atlas-army-marker[data-exact=true] .atlas-army-strength::after{content:' 人';font-size:10px;font-weight:400;color:#aeba9e;letter-spacing:0}
-.atlas-army-marker[data-exact=false] .atlas-army-strength{font-size:12px;letter-spacing:0}
-.atlas-army-marker:is(:hover,[data-selected=true]) .atlas-army-card-body{border-color:#e0c58c;color:#f3dfb8;box-shadow:inset 0 0 0 1px #19231a,inset 0 0 0 2px #c8ad7059,0 3px 9px #06180bb3}
-.atlas-army-marker:is(:hover,[data-selected=true]) .atlas-army-flag{filter:drop-shadow(0 3px 2px #142119b3) brightness(1.12)}
-.atlas-army-marker[data-selected=true]{outline:0;box-shadow:none}
-.atlas-army-marker[data-rebel=true]{background:none;border:0!important}.atlas-army-marker[data-rebel=true] .atlas-army-label{color:#d6aa8a}
-.atlas-army-marker[data-state=battle] .atlas-army-card-body{border-color:#b88165;box-shadow:inset 0 -2px #9b564980,0 3px 8px #1c160fa6}
-.atlas-army-marker[data-state=retreat] .atlas-army-card-body{border-color:#9b8873}.atlas-army-marker[data-state=training] .atlas-army-label{color:#dac696}
-.atlas-army-marker:focus-visible{outline:2px solid #dfc186;outline-offset:3px}
-.atlas-army-marker[data-presentation=model]{justify-content:center;align-items:flex-end;padding:0;border:0!important;background:none;box-shadow:none}
-.atlas-army-marker[data-presentation=model] .atlas-army-flag,.atlas-army-marker[data-presentation=model] .atlas-army-label{display:none}
-.atlas-army-marker[data-presentation=model] .atlas-army-card-body{position:absolute;bottom:calc(var(--army-foot,132px) - var(--army-badge-bottom,132px));flex:0 1 auto;min-width:74px;height:29px;margin:0;padding:3px 9px;text-align:center}
-.atlas-army-marker[data-presentation=model] .atlas-army-strength{font-size:17px}
-.atlas-army-marker[data-presentation=model][data-exact=false] .atlas-army-strength{font-size:11px}
-.atlas-army-marker[data-presentation=model][data-selected=true]::before{content:'';position:absolute;left:calc(50% - 45px);width:90px;bottom:calc(var(--army-foot,132px) + 5px);height:16px;border:1px solid #d7ba7c;border-radius:50%;box-shadow:0 0 0 1px #483e2866,inset 0 0 8px #ddc79922;pointer-events:none}
-.atlas-army-marker[data-presentation=model]:focus-visible{outline:2px solid #dfc186;outline-offset:3px}
-
 /* Scale-aware campaign atlas: the geography stays real beneath the paper. */
 .atlas-map{--atlas-paper-strength:1}
 .atlas-paper{opacity:calc(.05 + var(--atlas-paper-strength)*.95);background:radial-gradient(ellipse at 50% 42%,transparent 42%,#68513226),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23756545' opacity='.13' filter='url(%23grain)' d='M0 0h180v180H0z'/%3E%3C/svg%3E");box-shadow:inset 0 0 90px #68533823}
 .atlas-canvas .maplibregl-canvas{filter:saturate(.96) contrast(1.025)}
-.atlas-map .atlas-place-label{min-height:30px;border:1px solid #b9a17499;border-left:3px solid var(--city-realm,#8c7954);padding:3px 9px;color:#ece0bb;background:linear-gradient(90deg,#192d27ee,#25372cd9);text-shadow:0 1px 2px #101e18;box-shadow:0 2px 5px #14231f44;border-radius:1px;font-size:13px;letter-spacing:1px}
-.atlas-map .atlas-place-label.capital{font-size:17px;letter-spacing:3px;border-top:2px solid #c1a46a}
-.atlas-map .atlas-place-label.county{font-size:11px}
-.atlas-map .atlas-place-label:is(:hover,.is-selected){color:#fff0c2;background:#41513b;border-color:#eed18c;box-shadow:0 0 0 1px #594828,0 3px 8px #12201966}
-.atlas-map .atlas-place-label:focus-visible,.atlas-map .atlas-geographic-label:focus-visible{outline:2px solid #fff0bd;outline-offset:3px}
-.atlas-map .atlas-place-label{color:#403a2b;text-shadow:0 1px #f6e9c8;background:#e2d1aaeb;border-color:#968361;box-shadow:0 1px 3px #4a412324}
-.atlas-map .atlas-place-label:is(:hover,.is-selected){background:#344337;color:#f9e6b9;text-shadow:none}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.realm{color:#51432d;text-shadow:0 1px 2px #f3dfb4;opacity:.86}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#7b6c50}
 .atlas-map .atlas-traveler>span{border:1px solid #aa935f;border-radius:1px;background:#22382eed;color:#eee0bb;min-height:22px;line-height:20px;padding:1px 7px}
 .atlas-map .atlas-estate-marker{width:36px;height:39px;border-radius:3px;border-width:1px;background:#263b2f;box-shadow:0 2px 5px #10251c66}
 .atlas-map .atlas-estate-marker{background:#dcc79c;color:#403b2b}
 .atlas-map .atlas-activity-marker{box-shadow:0 2px 6px #10251c66;border-color:#d5bc80}
-.atlas-map .atlas-army-card-body{border-radius:1px}
 .atlas-map [hidden]{display:none!important}
-.atlas-map .atlas-army-marker[data-presentation=card]{min-height:46px}
-.atlas-map .atlas-army-marker[data-presentation=card] .atlas-army-flag{width:34px;flex-basis:34px;height:44px}
-.atlas-map .atlas-army-marker[data-presentation=card] .atlas-army-card-body{height:36px;padding:3px 6px;background:#ded0ac;color:#3d3d2c;border-color:#85734f}
-.atlas-map .atlas-army-label{color:#655a41;letter-spacing:0}
-.atlas-map .atlas-army-strength{font-size:16px;text-shadow:none}
-.atlas-map .atlas-army-marker[data-exact=false] .atlas-army-strength{font-size:11px}
-.atlas-map .atlas-army-marker[data-exact=true] .atlas-army-strength::after{color:#655a41}
-.atlas-map .atlas-army-marker[data-selected=true] .atlas-army-card-body{background:#344638;color:#ffebbb;border-color:#ffe2a0}
-.atlas-map .atlas-army-marker[data-selected=true] :is(.atlas-army-label,.atlas-army-strength::after){color:#e2d2ac}
-
-/* One settlement plaque: country, city and its estate move as a single annotation. */
-.atlas-map .atlas-place{display:flex;align-items:center;gap:0;pointer-events:none;min-height:34px;isolation:isolate}
-.atlas-map .atlas-place::after{content:'';position:absolute;left:50%;top:100%;width:var(--annotation-link-length,0px);height:1px;background:#766349a6;transform:rotate(var(--annotation-link-angle,0rad));transform-origin:left center;z-index:-1;pointer-events:none}
-.atlas-map .atlas-city-realm{display:grid;place-items:center;flex:0 0 32px;width:32px;height:38px;min-height:0;padding:0;border:0;background:transparent;box-shadow:none;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 1px 2px #16251b88);z-index:1}
-.atlas-map .atlas-city-realm img{display:block;width:32px;height:38px;object-fit:contain;pointer-events:none}
-.atlas-map .atlas-city-realm:disabled{opacity:1;cursor:default}
-.atlas-map .atlas-city-realm:hover:not(:disabled){background:transparent;filter:drop-shadow(0 0 3px #e8cf88)}
-.atlas-map .atlas-city-realm:focus-visible{outline:2px solid #ffe7a4;outline-offset:1px}
-.atlas-map .atlas-place-label{flex:none;margin-left:-2px;min-height:30px;border-left:1px solid #b9a17499;border-bottom:2px solid var(--city-realm,#8c7954);padding:3px 7px;font-size:12px;letter-spacing:1px}
-.atlas-map .atlas-place-label.capital{font-size:15px;letter-spacing:2px}
-.atlas-map .atlas-place-label.is-selected::before{display:none}
-.atlas-map .atlas-place>.atlas-estate-marker{position:relative;flex:0 0 30px;width:30px;height:30px;min-height:0;margin-left:3px;padding:0;border:1px solid #ad945f;border-radius:2px;pointer-events:auto;box-shadow:0 1px 3px #14251d66;filter:none}
-.atlas-map .atlas-place>.atlas-estate-marker::before{width:24px;height:24px;margin:0}
-.atlas-map .atlas-place>.atlas-estate-marker::after{display:none}
-.atlas-map .atlas-city-realm,.atlas-map .atlas-city-realm img{width:28px;height:34px;flex-basis:28px}
-.atlas-map .atlas-place-label{border-bottom-color:var(--city-realm,#8c7954)}
 
 .atlas-combat-marker{display:flex;align-items:center;justify-content:center;width:42px;height:42px;padding:4px;border:2px solid #c8ac69;border-radius:50%;background:#422e27;box-shadow:0 3px 10px #0a171dcc;cursor:pointer;z-index:6}
 .atlas-combat-marker[data-kind=siege]{border-radius:5px;background:#223d32}.atlas-combat-marker .art-icon{width:30px;height:30px;pointer-events:none}.atlas-combat-marker:hover{border-color:#f3d69a;background:#5b4130}.atlas-combat-marker:focus-visible{outline:3px solid #f3d69a;outline-offset:3px}
-
-/* Field standards and siege seals use the authoritative marker coordinates. */
-.atlas-map .atlas-army-marker .atlas-army-card-body{background:#223c2d;color:#f3e6c5;border:1px solid #ba9c62;border-radius:0;overflow:hidden;padding-bottom:9px}
-.atlas-map .atlas-army-label{color:#dbca9e}.atlas-map .atlas-army-marker[data-exact=true] .atlas-army-strength::after{color:#c1c9a8}
-.atlas-army-morale{position:absolute;left:4px;right:4px;bottom:3px;height:4px;background:#111f17;border:1px solid #7e8d5766}
-.atlas-army-morale::before{content:'';display:block;height:100%;width:var(--army-morale);background:#9db76c}
-.atlas-army-marker[data-exact=false] .atlas-army-morale{display:none}
-.atlas-army-marker[data-presentation=model] .atlas-army-card-body{display:flex;flex-direction:column;align-items:center;height:40px;min-width:100px;padding-left:30px}
-.atlas-army-marker[data-presentation=model] .atlas-army-flag{display:block;position:absolute;bottom:calc(var(--army-foot,132px) - var(--army-badge-bottom,132px));left:calc(50% - 52px);width:28px;height:40px;z-index:2;pointer-events:none}
 .atlas-combat-marker[data-kind=battle]{width:auto;min-width:174px;height:44px;border-radius:1px;padding:0;gap:0;background:#4b3029}
 .atlas-combat-side{display:flex;align-items:center;gap:4px;padding:3px 6px;background:#463027;font:15px var(--serif);color:#f4dfb4;pointer-events:none}
 .atlas-combat-side[data-side=defend]{background:#243d2b}.atlas-combat-side img{width:24px;height:34px;object-fit:contain}.atlas-combat-side b{white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -234,28 +155,10 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-siege-progress{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);padding:2px 7px;border:1px solid #b59a61;background:#213c2e;color:#f3e4bd;font:700 14px Georgia,serif;white-space:nowrap;pointer-events:none}
 
 .atlas-combat-siege-mini{position:absolute;top:calc(100% + 3px);right:0;background:#223c2d;color:#eaddb8;border:1px solid #ba9c62;padding:3px 7px;font:12px var(--serif);pointer-events:none}
-
-/* Approved campaign sample: ink-green city plates and restrained parchment strategy view. */
-.atlas-map .atlas-place-label{color:#efe3c4;background:linear-gradient(90deg,#17221cf5,#233028ee);border:1px solid #998460;box-shadow:0 3px 8px #10201855;min-height:34px;text-shadow:none;padding:5px 10px}
-.atlas-map .atlas-place-label small{color:#c4bda6}
-.atlas-map .atlas-place-label:is(:hover,.is-selected){background:#354130;border-color:#c8aa6a;color:#fff0c3}
-.atlas-map[data-scale=strategic] .atlas-place-label{background:#e4dfc9ed;color:#343e36;border-color:#9b967e;box-shadow:0 1px 4px #3b413126}
-.atlas-map[data-scale=strategic] .atlas-place-label small{color:#69705e}
-.atlas-map[data-scale=strategic] .atlas-place-label:is(:hover,.is-selected){background:#354130;color:#fff0c3}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.realm{font-family:var(--serif);font-weight:600;font-size:clamp(24px,2.6vw,38px);letter-spacing:9px;color:#354337;text-shadow:0 1px 3px #f0e9cf,0 0 10px #e5dec7;opacity:.92}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#6d7769;text-shadow:0 1px #e4dfcd}
 .atlas-map .atlas-paper{background:radial-gradient(ellipse at 50% 42%,transparent 48%,#374c432b);box-shadow:inset 0 0 85px #273d3522}
 .three-map-attribution{position:absolute;bottom:5px;right:8px;z-index:2;max-width:330px;font-size:10px;color:#d8d6c3;background:#24332cdd;padding:3px 6px}.three-map-attribution summary{cursor:pointer}.three-map-attribution p{margin:6px;line-height:1.7}.three-map-attribution a{color:#e8d5a2}.three-map-attribution[open]{padding:8px 12px;border:1px solid #998460}
-
-/* Strategic atlas: ink plaques over tinted illustrated paper. */
-.focused-shell .atlas-map [data-paper="true"] .atlas-place{background:transparent;box-shadow:none;min-height:26px}
-.focused-shell .atlas-map [data-paper="true"] .atlas-place-label{min-height:26px;padding:3px 13px 3px 7px;background:#192321;color:#f4efdb;border:0;box-shadow:none;font-size:13px;font-weight:600;letter-spacing:2px;clip-path:polygon(0 4%,94% 0,91% 17%,100% 28%,94% 49%,99% 64%,91% 93%,0 100%)}
-.focused-shell .atlas-map [data-paper="true"] .atlas-place-label small{display:none}
-.focused-shell .atlas-map [data-paper="true"] .atlas-place-label.is-selected{background:#443d27;color:#ffe49a}
-.focused-shell .atlas-map [data-paper="true"] .atlas-city-realm{background:transparent;width:25px;flex-basis:25px;height:30px}
-.focused-shell .atlas-map [data-paper="true"] .atlas-city-realm img{width:25px;height:30px}
-.focused-shell .atlas-map [data-paper="true"] .atlas-governor{width:25px;height:28px}
-.focused-shell .atlas-map [data-paper="true"] .atlas-place-label:focus-visible{clip-path:none;outline:2px solid #ffe49a;outline-offset:2px}
 
 /* The transparent lower part is the model hit area, anchored to its real feet. */
 .focused-shell .atlas-map .atlas-traveler[data-model="true"]{padding-bottom:var(--traveler-height,68px);min-width:44px;pointer-events:auto}
