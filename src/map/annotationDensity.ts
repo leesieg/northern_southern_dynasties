@@ -9,5 +9,5 @@ export function annotationDensity<T extends {key:string;point:{x:number;y:number
 /** Every known on-screen city keeps an entry; density limits only its expanded nameplate. */
 export function cityAnnotationModes<T extends {key:string;point:{x:number;y:number};priority:number;required?:boolean}>(items:T[],viewport:{width:number;height:number},zoom:number){
  const details=annotationDensity(items,viewport,zoom<6.2?6:zoom<9?10:16,zoom<9?150:115);
- return new Map(items.filter(i=>i.point.x>=0&&i.point.x<=viewport.width&&i.point.y>=0&&i.point.y<=viewport.height).map(i=>[i.key,details.has(i.key)?'detail' as const:'pin' as const]));
+ return new Map(items.filter(i=>i.point.x>=0&&i.point.x<=viewport.width&&i.point.y>=0&&i.point.y<=viewport.height).map(i=>[i.key,details.has(i.key)?'detail' as const:'compact' as const]));
 }

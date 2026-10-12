@@ -22,7 +22,7 @@ it('keeps every visible city clickable at every zoom even when nameplates exceed
  const viewport={width:800,height:600},items=Array.from({length:40},(_,i)=>({key:String(i),point:{x:100+i*2,y:100},priority:0,required:i===39})),before=structuredClone(items);
  for(const zoom of [1.4,3,5,7,10]){
   const modes=cityAnnotationModes(items,viewport,zoom);
-  expect(modes.size).toBe(40);expect(modes.get('39')).toBe('detail');expect([...modes.values()].filter(v=>v==='pin').length).toBeGreaterThan(30);
+  expect(modes.size).toBe(40);expect(modes.get('39')).toBe('detail');expect([...modes.values()].filter(v=>v==='compact').length).toBeGreaterThan(30);
  }
  expect(items).toEqual(before);
 });

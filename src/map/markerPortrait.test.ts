@@ -16,7 +16,7 @@ describe('map marker portrait lifecycle',()=>{
  });
  it('discards a stale result when the office becomes vacant',async()=>{
   let resolve!:(v:unknown)=>void;load.mockReturnValue(new Promise(r=>{resolve=r;}));const h=host();updateMarkerPortrait(h,'a',world);updateMarkerPortrait(h,undefined,world);resolve({});await Promise.resolve();
-  expect(h.textContent).toBe('城');expect(h.dataset.portraitKey).toBeUndefined();expect(h.replaceChildren).toHaveBeenCalledTimes(2);
+  expect(h.textContent).toBe('');expect(h.dataset.portraitKey).toBeUndefined();expect(h.replaceChildren).toHaveBeenCalledTimes(2);
  });
  it('ignores removed markers and allows failed portraits to retry',async()=>{
   load.mockRejectedValue(new Error('asset unavailable'));const h=host();updateMarkerPortrait(h,'a',world);await Promise.resolve();await Promise.resolve();expect(h.dataset.portraitKey).toBeUndefined();

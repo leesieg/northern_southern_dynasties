@@ -5,7 +5,7 @@ import type {World} from '../core/types';
 
 /** Share the portrait cache; discard late results after a marker changes or is removed. */
 export function updateMarkerPortrait(host:HTMLElement,id:string|undefined,world:World){
- if(!id){host.replaceChildren();delete host.dataset.portraitKey;host.textContent='城';return;}
+ if(!id){host.replaceChildren();delete host.dataset.portraitKey;host.textContent='';return;}
  const context=portraitContext(id,world),recipe=JSON.stringify(approvedPaintedRecipe(id,context)),life=JSON.stringify(context.life??null),key=id+recipe+life;
  if(host.dataset.portraitKey===key)return;
  host.dataset.portraitKey=key;host.replaceChildren();host.textContent='…';
