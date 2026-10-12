@@ -5,7 +5,7 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from 'three/addons/postprocessing/SSAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {TerrainTint} from './terrainTint';
-import {loadTableRoom,TABLE_COORDINATE} from './tableRoom';
+import {loadTableRoom,TABLE_COORDINATE,tableRoomStrength} from './tableRoom';
 import {CampaignZoomMotion,campaignZoomPose,wheelZoomDelta,terrainSafePitch} from './cameraMotion';
 import {cameraNearPlane} from './cameraDepth';
 import {atlasPaperStrength,normalizeAtlasCamera} from '../atlasPresentation';
@@ -204,6 +204,9 @@ export class ThreeCampaignMap{
    if(safePitch!==pitch)this.camera.position.copy(this.controls.target).add(new Vector3(radius*Math.sin(safePitch)*Math.sin(bearing),radius*Math.cos(safePitch),radius*Math.sin(safePitch)*Math.cos(bearing)));
    this.camera.lookAt(this.controls.target);this.camera.updateMatrixWorld();if(before.distanceToSquared(this.controls.target)>.0001)this.emit('move');const state=this.state?.();if(state){const value=state.seasonPreview??campaignSeason(state.world);if(value!==this.lastSeason){this.lastSeason=value;const p=seasons[value];this.season.set(value);this.surface!.setSeason(value);(this.scene.background as Color).set(p.fog);(this.scene.fog as Fog).color.set(p.fog);this.cloudMaterial.uniforms.fogColor.value.set(p.fog);this.sun.color.set(p.sun);this.sun.intensity=p.intensity;this.sky.color.set(value==='winter'?'#d7e1e6':p.sky);this.surface!.water.color.set(p.water);}}
    if(this.getZoom()<3.2&&!this.roomRequested)this.prepareRoom();this.room?.update(this.getZoom());
+   // Atlas ink stays on the desk, behind room props. The small separation also
+   // remains resolvable by the depth buffer at the outermost camera distance.
+   const inStudy=tableRoomStrength(this.getZoom())>0;this.cloudMaterial.depthTest=inStudy;this.clouds.position.y=inStudy?1:0;this.overlays.root.position.y=inStudy?2:0;
 
    const previousRevision=this.actors?.revision(),animate=this.actors?.update(now)??false,actorsChanged=previousRevision!==this.actors?.revision();const d=this.camera.position.distanceTo(this.controls.target),fog=this.scene.fog as Fog;const near=cameraNearPlane(d);if(Math.abs(this.camera.near-near)>.001){this.camera.near=near;this.camera.updateProjectionMatrix();}fog.near=Math.max(95,d*1.12);fog.far=d<260?Math.max(320,Math.min(470,d*2.65)):Math.max(470,d*2.65);this.surface!.time.value=now*.001;
    // Keep the light/shadow shader layout stable while crossing the landscape threshold.

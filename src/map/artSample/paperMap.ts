@@ -1,5 +1,6 @@
 import type {FeatureCollection} from 'geojson';
-import {CanvasTexture,Color,Group,Mesh,MeshBasicMaterial,PlaneGeometry,SRGBColorSpace} from 'three';
+import {CanvasTexture,Color,Group,Mesh,MeshBasicMaterial,SRGBColorSpace} from 'three';
+import {paperGeometry,type PaperBounds} from './paperGeometry';
 import {territories,territoryRealms} from '../territories';
 import {siteById} from '../../data/scenario';
 import {projectGround} from '../three/geography';
@@ -9,7 +10,7 @@ import {inkEdge} from './paperInk';
 import type {SampleTerrain} from './terrain';
 
 const SIZE=4096;
-export interface PaperMapOptions{center:{x:number;z:number};span:number;realms:FeatureCollection;territories:FeatureCollection;land?:FeatureCollection;}
+export interface PaperMapOptions{center:{x:number;z:number};span:number;realms:FeatureCollection;territories:FeatureCollection;land?:FeatureCollection;bounds?:PaperBounds;}
 export type PaperTerrain=Pick<SampleTerrain,'measured'|'river'|'channel'> & {cities:{id:string;x:number;z:number}[]};
 const washes:Record<string,string>={liang:'#6c966f',east:'#b67c9b',west:'#b19563',frontier:'#aba58e'};
 /** A separate printed atlas, anchored to the same geography. Existing polygons remain schematic. */
@@ -77,8 +78,8 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
   for(const offset of [-1,0,1]){const cx=x+offset*s*.8,cy=y+(offset===0?-.5:.05)*s;ctx.beginPath();ctx.moveTo(cx-s*.6,cy);ctx.lineTo(cx,cy-s*.5);ctx.lineTo(cx+s*.6,cy);ctx.closePath();ctx.fill();ctx.strokeRect(cx-s*.36,cy+s*.10,s*.72,s*.48);}ctx.beginPath();ctx.moveTo(x-s*1.6,y+s*.9);ctx.lineTo(x+s*1.6,y+s*.9);ctx.stroke();}
  ctx.globalAlpha=1;
  const texture=new CanvasTexture(canvas);texture.colorSpace=SRGBColorSpace;texture.anisotropy=4;
- const material=new MeshBasicMaterial({map:texture,transparent:true,opacity:0,depthTest:false,depthWrite:false,toneMapped:false,fog:false});
- const plane=new Mesh(new PlaneGeometry(SPAN,SPAN),material);plane.rotation.x=-Math.PI/2;plane.position.set(options?origin.x:0,.06,options?origin.z:0);plane.renderOrder=options?0:8;plane.frustumCulled=false;
+ const material=new MeshBasicMaterial({map:texture,transparent:true,opacity:0,depthTest:!!options,depthWrite:false,toneMapped:false,fog:false});
+ const plane=new Mesh(paperGeometry(origin,SPAN,options?.bounds),material);plane.rotation.x=-Math.PI/2;plane.position.set(options?origin.x:0,options?0.5:0.06,options?origin.z:0);plane.renderOrder=options?0:8;plane.frustumCulled=false;
  const root=new Group();root.add(plane);root.visible=false;
  return {root,dispose(){texture.dispose();material.dispose();plane.geometry.dispose();},stampCount:stamps.length,update(blend:number){root.visible=blend>.001;material.opacity=blend;}};
 }

@@ -14,7 +14,7 @@ export async function loadTableRoom(painting:Texture,wood?:Texture,signal?:Abort
  const timber=wood??await resourceTexture('art/campaign/study-walnut-v2.jpg',signal,true);timber.flipY=true;timber.wrapS=timber.wrapT=RepeatWrapping;timber.colorSpace=SRGBColorSpace;timber.anisotropy=4;
  let model:Group;try{model=(await new GLTFLoader().parseAsync(buffer,'')).scene;}catch(error){if(!wood)timber.dispose();throw error;}
  const root=new Group();root.add(model);root.scale.setScalar(1000);root.position.set(TABLE_CENTER.x,0,TABLE_CENTER.z);model.visible=false;
- const materials=new Set<MeshStandardMaterial>();model.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial){m.fog=false;m.transparent=true;
+ const materials=new Set<MeshStandardMaterial>();model.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=false;o.renderOrder=1;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof MeshStandardMaterial){m.fog=false;m.transparent=true;
  if(m.name==='Study window silk'){m.emissive.set('#cbd8dc');m.emissiveIntensity=.35;}
  if(m.name==='Study flame'){m.emissive.set('#ffb347');m.emissiveIntensity=2;}
  if(m.name==='Study screen silk'){m.map=painting;m.color.set('#526248');m.roughness=1;m.needsUpdate=true;}

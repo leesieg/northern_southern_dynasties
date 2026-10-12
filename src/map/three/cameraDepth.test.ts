@@ -17,10 +17,17 @@ it('composites flat distant overlays in explicit order and retains depth occlusi
  const layers=['realm-tint','territory-selected'].map(id=>({id,type:'fill',source:'territories',paint:{'fill-opacity':.4}})),sources=new Map([['territories',data]]);
  overlay.rebuild(layers,sources,3,.5,new Map(),undefined,true);
  const meshes=overlay.root.children as Mesh[];
- expect(meshes.map(m=>m.renderOrder)).toEqual([1,2]);
+ // Realm wash is already baked into the paper; selected territory remains an overlay.
+ expect(meshes.map(m=>m.renderOrder)).toEqual([2]);
  for(const m of meshes){const mat=m.material as MeshBasicMaterial;expect(mat.depthTest).toBe(false);expect(mat.depthWrite).toBe(false);}
  overlay.rebuild(layers,sources,3,.5,new Map(),undefined,false);
  expect(((overlay.root.children[0] as Mesh).material as MeshBasicMaterial).depthTest).toBe(true);
- overlay.rebuild(layers,sources,8,.05,new Map(),undefined,true);
+ overlay.rebuild([{...layers[1],id:'territory-fill'}],sources,8,.05,new Map(),undefined,true);
  expect(((overlay.root.children[0] as Mesh).material as MeshBasicMaterial).depthTest).toBe(true);overlay.clear();
+});
+it('lets study props occlude atlas overlays at the minimum camera scale',()=>{
+ const overlay=new CampaignOverlays(()=>0),source={type:'FeatureCollection' as const,features:[{type:'Feature' as const,properties:{},geometry:{type:'LineString' as const,coordinates:[[110,32],[111,32]]}}]};
+ overlay.rebuild([{id:'route-gold',type:'line',source:'route',paint:{'line-width':2}}],new Map([['route',source]]),1.1,10,new Map(),undefined,true);
+ const mesh=overlay.root.children[0] as Mesh;
+ expect((mesh.material as MeshBasicMaterial).depthTest).toBe(true);overlay.clear();
 });
