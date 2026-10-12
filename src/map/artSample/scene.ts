@@ -6,25 +6,27 @@ import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {SSAOPass} from 'three/addons/postprocessing/SSAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {mapResource} from '../resourceLoader';
+import {resourceTexture} from '../three/resourceTexture';
 import {createTerrain} from './terrain';
 import {createScenery} from './scenery';
 import {EXTENT,clamp,detailWeights,palettes,smooth,travelPose,views,type SampleSeason,type View} from './layout';
 
 export async function mountArtSample(container:HTMLElement,report:(message:string)=>void){
  const renderer=new WebGLRenderer({antialias:true,powerPreference:'high-performance'});
- renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(container.clientWidth,container.clientHeight);renderer.outputColorSpace=SRGBColorSpace;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(container.clientWidth,container.clientHeight);renderer.outputColorSpace=SRGBColorSpace;renderer.toneMapping=ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
  container.append(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','独立地图样板，拖动平移，右键旋转，滚轮缩放；方向键平移，Q E 旋转');
- const scene=new Scene();scene.background=new Color(palettes.autumn.fog);scene.fog=new Fog(palettes.autumn.fog,125,340);
+ const scene=new Scene();scene.background=new Color(palettes.summer.fog);scene.fog=new Fog(palettes.summer.fog,125,340);
  const camera=new PerspectiveCamera(39,container.clientWidth/container.clientHeight,.25,750);
  camera.position.fromArray(views.middle.eye);
  const controls=new MapControls(camera,renderer.domElement);controls.target.fromArray(views.middle.target);controls.enableDamping=false;controls.minDistance=22;controls.maxDistance=260;controls.minPolarAngle=.015;controls.maxPolarAngle=1.18;controls.zoomSpeed=.8;controls.panSpeed=.7;controls.mouseButtons={LEFT:MOUSE.PAN,MIDDLE:MOUSE.DOLLY,RIGHT:MOUSE.ROTATE};controls.update();
- const hemi=new HemisphereLight('#c5d5dc','#595135',1.05),sun=new DirectionalLight(palettes.autumn.sun,2.6);sun.position.set(-65,95,45);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=1;sun.shadow.camera.far=350;sun.shadow.bias=-.00014;sun.shadow.normalBias=.025;sun.shadow.radius=2;scene.add(hemi,sun,sun.target);
+ const hemi=new HemisphereLight('#dee9f0','#758568',1.35),sun=new DirectionalLight(palettes.summer.sun,2.35);sun.position.set(-65,95,45);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.near=1;sun.shadow.camera.far=350;sun.shadow.bias=-.00014;sun.shadow.normalBias=.025;sun.shadow.radius=2;scene.add(hemi,sun,sun.target);
  const composer=new EffectComposer(renderer),renderPass=new RenderPass(scene,camera),ao=new SSAOPass(scene,camera,container.clientWidth,container.clientHeight,12),output=new OutputPass();
- ao.kernelRadius=5;ao.minDistance=.0001;ao.maxDistance=.025;composer.addPass(renderPass);composer.addPass(ao);composer.addPass(output);
+ ao.kernelRadius=2.8;ao.minDistance=.0001;ao.maxDistance=.025;composer.addPass(renderPass);composer.addPass(ao);composer.addPass(output);
  let closed=false,frame=0,walking=false,last=0,walkTime=0,paper=0,paperTarget=0,dirty=true;
  let transition:{start:number;from:Vector3;to:Vector3;targetFrom:Vector3;targetTo:Vector3}|undefined;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ let surfaceAtlas:Texture|undefined;
  let scenery:Awaited<ReturnType<typeof createScenery>>|undefined;
  const actors:{root:Group;mixer:AnimationMixer;idle?:AnimationAction;walk?:AnimationAction;offset:number;moving:boolean;weight:number}[]=[];
  const labels:{element:HTMLElement;point:Vector3;capital:boolean}[]=[];
@@ -33,6 +35,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
   actors.forEach(a=>{a.mixer.stopAllAction();a.mixer.uncacheRoot(a.root);});
   const geometries=new Set<BufferGeometry>(),materials=new Set<Material>(),textures=new Set<Texture>();
   scene.traverse(o=>{if(o instanceof Mesh){geometries.add(o.geometry);for(const material of Array.isArray(o.material)?o.material:[o.material]){materials.add(material);for(const value of Object.values(material))if(value instanceof Texture)textures.add(value);}}});
+  if(surfaceAtlas)textures.add(surfaceAtlas);
   geometries.forEach(g=>g.dispose());textures.forEach(t=>t.dispose());materials.forEach(m=>m.dispose());scenery?.dispose();ao.dispose();output.dispose();composer.dispose();renderer.dispose();renderer.domElement.remove();labels.forEach(l=>l.element.remove());
  };
  const observer=new ResizeObserver(()=>{if(closed)return;const w=container.clientWidth,h=container.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);composer.setSize(w,h);dirty=true;});observer.observe(container);
@@ -44,7 +47,8 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
  renderer.domElement.addEventListener('keydown',keydown);window.addEventListener('pagehide',dispose,{once:true});
  controls.addEventListener('start',()=>{transition=undefined;});controls.addEventListener('change',()=>{dirty=true;});
  try{
-  const terrain=await createTerrain(report);if(closed){terrain.root.traverse(o=>{if(o instanceof Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});throw new Error('样板已关闭');}scene.add(terrain.root);
+  surfaceAtlas=await resourceTexture('art/campaign/terrain-atlas-v1.png',undefined,true);surfaceAtlas.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(closed){surfaceAtlas.dispose();throw new Error('样板已关闭');}
+  const terrain=await createTerrain(report,surfaceAtlas);if(closed){terrain.root.traverse(o=>{if(o instanceof Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});throw new Error('样板已关闭');}scene.add(terrain.root);
   scenery=await createScenery(terrain,report);if(closed){scenery.dispose();throw new Error('样板已关闭');}scene.add(scenery.root);
   report('正在安置四名行旅与兵模…');
   const loader=new GLTFLoader(),paths=['han-male','han-female','xianbei-male','xianbei-female'].map(kind=>`art/campaign/travelers/${kind}-near.glb`);paths.push('art/military/spear-infantry-v2.glb');
@@ -62,7 +66,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
    const offset=.5+i*.40,p=terrain.walkPath.getPointAt(travelPose(0,offset).u);root.position.set(p.x,terrain.height(p.x,p.z)+.07,p.z);root.rotation.y=-.55;scene.add(root);actors.push({root,mixer,idle,walk,offset,moving:i<4,weight:0});
   });
   for(const town of terrain.cities){const element=document.createElement('div');element.className='sample-label';element.innerHTML=(town.id==='jiankang'?'<small>梁 · 都城</small>':'')+'<span></span>';element.querySelector('span')!.textContent=town.name;document.getElementById('sample-labels')!.append(element);labels.push({element,point:new Vector3(town.x,town.height+.8,town.z+5*town.scale),capital:town.id==='jiankang'});}
-  const changeSeason=(value:SampleSeason)=>{terrain.colorize(value);scenery!.season(value);const p=palettes[value];terrain.water.color.set(p.water);sun.color.set(p.sun);sun.intensity=value==='winter'?2.25:2.6;hemi.color.set(value==='winter'?'#d7e1e6':'#c5d5dc');(scene.background as Color).set(p.fog);(scene.fog as Fog).color.set(p.fog);dirty=true;};
+  const changeSeason=(value:SampleSeason)=>{terrain.colorize(value);scenery!.season(value);const p=palettes[value];terrain.water.color.set(p.water);sun.color.set(p.sun);sun.intensity=value==='winter'?2.15:2.35;hemi.color.set(value==='winter'?'#d7e1e6':'#dee9f0');(scene.background as Color).set(p.fog);(scene.fog as Fog).color.set(p.fog);dirty=true;};
   const view=(value:View)=>{
    const v=views[value];paperTarget=value==='paper'?1:0;
    if(reduced.matches){camera.position.fromArray(v.eye);controls.target.fromArray(v.target);paper=paperTarget;controls.update();transition=undefined;}else transition={start:performance.now(),from:camera.position.clone(),to:new Vector3(...v.eye),targetFrom:controls.target.clone(),targetTo:new Vector3(...v.target)};
@@ -91,7 +95,7 @@ export async function mountArtSample(container:HTMLElement,report:(message:strin
    scenery!.update(distance,paper);ao.enabled=distance<170&&paper<.4;
    const span=clamp(distance*.62,28,120);sun.target.position.copy(controls.target);sun.position.copy(controls.target).add(new Vector3(-65,95,45));Object.assign(sun.shadow.camera,{left:-span,right:span,top:span,bottom:-span});sun.shadow.camera.updateProjectionMatrix();
    const key=[...controls.target.toArray(),span].map(v=>v.toFixed(2)).join('|')+sun.color.getHex();renderer.shadowMap.needsUpdate=walking||key!==lastShadowKey;lastShadowKey=key;
-   const fog=scene.fog as Fog;fog.near=Math.max(65,distance*.90);fog.far=Math.max(240,distance*2.3);
+   const fog=scene.fog as Fog;fog.near=Math.max(95,distance*1.12);fog.far=Math.max(320,Math.min(470,distance*2.65));
    composer.render();
    for(const label of labels){projected.copy(label.point).project(camera);const visible=projected.z>-1&&projected.z<1&&(label.capital||distance>65);label.element.hidden=!visible;if(visible){label.element.style.left=(projected.x*.5+.5)*container.clientWidth+'px';label.element.style.top=(-projected.y*.5+.5)*container.clientHeight+'px';label.element.style.color=paper>.5?'#293c30':'';label.element.style.textShadow=paper>.5?'0 1px 4px #e5dfc6':'';}}
   }

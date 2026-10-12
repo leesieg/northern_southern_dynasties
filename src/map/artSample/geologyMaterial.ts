@@ -1,4 +1,4 @@
-import {MeshStandardMaterial} from 'three';
+import {MeshStandardMaterial,type Texture} from 'three';
 
 // Domain-warped mineral patches and directional fractures, shared by embedded outcrops and terrain.
 export const stoneGLSL=`
@@ -8,9 +8,10 @@ export const stoneGLSL=`
  float fracture(vec3 p){float warp=geoNoise(p*.75)*.8;float vein=abs(sin((p.y*.8+p.x*.18+warp)*8.));return smoothstep(.015,.11,vein);}
 `;
 
-export function outcropMaterial(){
+export function outcropMaterial(atlas?:Texture){
  const material=new MeshStandardMaterial({vertexColors:true,roughness:.95});
  material.onBeforeCompile=shader=>{
+  shader.uniforms.rockAtlas={value:atlas??null};
   shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 rockPoint;varying vec3 rockNormal;')
    .replace('#include <begin_vertex>',`#include <begin_vertex>
     vec4 geoPosition=vec4(position,1.);vec3 geoNormal=normal;
@@ -19,19 +20,22 @@ export function outcropMaterial(){
     #endif
     rockPoint=(modelMatrix*geoPosition).xyz;rockNormal=normalize(mat3(modelMatrix)*geoNormal);
    `);
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 rockPoint;varying vec3 rockNormal;\n'+stoneGLSL)
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 rockPoint;varying vec3 rockNormal;uniform sampler2D rockAtlas;\n'+stoneGLSL)
    .replace('#include <color_fragment>',`#include <color_fragment>
     float grain=mineral(rockPoint),detail=1.-smoothstep(.08,.8,length(fwidth(rockPoint)));
-    float seams=mix(1.,fracture(rockPoint),detail*.15);
-    diffuseColor.rgb*=seams*(.82+grain*.33);
+    float seams=mix(1.,fracture(rockPoint),detail*.27);
+    diffuseColor.rgb*=seams*(.73+grain*.51);
+    ${atlas?`vec2 uv=vec2(rockPoint.x+rockPoint.z,rockPoint.y)*.55;
+    vec3 texel=texture2D(rockAtlas,vec2(.504,.504)+abs(fract(uv*.5)*2.-1.)*.492).rgb;
+    diffuseColor.rgb*=clamp(dot(texel,vec3(.3,.59,.11))*2.1+.3,.48,1.40);`:''}
     float moss=smoothstep(.4,.85,rockNormal.y)*smoothstep(.50,.73,geoNoise(rockPoint*.8));
     diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.67,.78,.49),moss*.32);
    `)
    .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
     float detailNormal=1.-smoothstep(.07,.45,length(fwidth(rockPoint)));float centre=mineral(rockPoint);
     vec3 grad=vec3(mineral(rockPoint+vec3(.04,0,0))-centre,mineral(rockPoint+vec3(0,.04,0))-centre,mineral(rockPoint+vec3(0,0,.04))-centre);
-    normal=normalize(normal-mat3(viewMatrix)*grad*.9*detailNormal);
+    normal=normalize(normal-mat3(viewMatrix)*grad*1.4*detailNormal);
    `);
  };
- material.customProgramCacheKey=()=> 'sample-weathered-outcrop-v1';return material;
+ material.customProgramCacheKey=()=> 'sample-weathered-outcrop-v2-'+!!atlas;return material;
 }

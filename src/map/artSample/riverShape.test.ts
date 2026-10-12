@@ -13,6 +13,13 @@ describe('natural river cross-sections',()=>{
   const river=riverShape([line],x=>Math.max(0,Math.sin(x*.5)*5+5)),p=river.profiles[0];
   for(let i=1;i<p.length;i++)expect(Math.abs(p[i].level-p[i-1].level)/(p[i].distance-p[i-1].distance)).toBeLessThanOrEqual(.008001);
  });
+ it('places the wider shallow bank on the inside of a bend',()=>{
+  const curve=Array.from({length:61},(_,i)=>({x:15*Math.cos(i*.02),z:15*Math.sin(i*.02)})),river=riverShape([curve],()=>.3),p=river.profiles[0][30];
+  expect(p.bend).toBeGreaterThan(0);expect(p.rightBank).toBeGreaterThan(p.leftBank);expect(p.right).toBeLessThan(p.left);
+  const inner=river.sample(p.x+p.nx*(p.right+.1),p.z+p.nz*(p.right+.1))!;
+  const outer=river.sample(p.x-p.nx*(p.left+.1),p.z-p.nz*(p.left+.1))!;
+  expect(inner.inner).toBeGreaterThan(outer.inner);
+ });
  it('carves a bed below water and joins banks to untouched terrain continuously',()=>{
   const river=riverShape([[{x:-20,z:0},{x:0,z:0},{x:20,z:0}]],()=>1),p=river.sample(0,0)!;
   expect(river.carve(1,p)).toBeLessThan(p.level);
