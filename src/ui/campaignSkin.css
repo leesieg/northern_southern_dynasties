@@ -36,15 +36,6 @@
 .focused-shell .atlas-map .atlas-activity-marker::after{content:'';position:absolute;bottom:0;left:16px;width:6px;height:6px;transform:rotate(45deg);background:#343c2b;border-right:1px solid #c5ac73;border-bottom:1px solid #c5ac73;z-index:-1}
 .atlas-activity-count{position:absolute;right:-4px;top:-3px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 2px;background:#e6d8b4;border:1px solid #82704b;border-radius:50%;color:#323d2b;font:11px/16px var(--serif);box-shadow:0 1px 2px #0005}
 .focused-shell .atlas-map .atlas-activity-marker[data-kind=military]::after{background:#743e2b}
-.focused-shell .atlas-map .atlas-traveler{pointer-events:auto;gap:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;cursor:pointer;filter:drop-shadow(0 2px 2px #1b291b77)}
-.focused-shell .atlas-map .atlas-traveler .traveler-pennant{position:relative;display:block;width:36px;height:40px;padding:0;border:0;border-radius:0;clip-path:none;transform:none;font-size:0;line-height:0;background:var(--bronze-seal) center top/36px 36px no-repeat;box-shadow:none;filter:none}
-.focused-shell .atlas-map .atlas-traveler .traveler-pennant::before{content:'';display:block;position:absolute;inset:7px 6px 9px;width:24px;height:24px;background:url('/art/interface/strategy-icons.png') 0% 100%/400% 400%;filter:sepia(.7) saturate(.5)}
-.focused-shell .atlas-map .atlas-traveler .traveler-pennant::after{content:'';display:block;position:absolute;left:15px;bottom:2px;width:6px;height:6px;background:#2d3528;border-right:1px solid #c4aa70;border-bottom:1px solid #c4aa70;transform:rotate(45deg)}
-.focused-shell .atlas-map .atlas-traveler>span{min-height:20px;line-height:18px;padding:1px 6px;border:1px solid #97815b;border-radius:0;background:#e3d3aeea;color:#3e392a;text-shadow:0 1px #f2e5c7;font:11px/18px var(--serif);box-shadow:0 1px 3px #26332544}
-.focused-shell .atlas-map .atlas-traveler.player .traveler-pennant{width:42px;height:45px;background-size:42px 42px}.focused-shell .atlas-map .atlas-traveler.player .traveler-pennant::before{inset:9px;width:25px;height:25px}.focused-shell .atlas-map .atlas-traveler.player .traveler-pennant::after{left:18px}
-.focused-shell .atlas-map .atlas-traveler.player>span{border-bottom:2px solid #986747;background:#eee0bc;color:#322e21}
-.focused-shell .atlas-map :is(.atlas-traveler,.atlas-activity-marker):hover{filter:brightness(1.12) drop-shadow(0 2px 3px #17231966)}
-.focused-shell .atlas-map .atlas-traveler:focus-visible{outline:2px solid #f8d992;outline-offset:3px}
 .focused-shell .chronicle-date>strong{white-space:normal;line-height:1.35;font-size:15px}
 .army-readiness>.army-readiness-meter{flex:1}.focused-shell .army-unit-order>small{color:#823f30}
 

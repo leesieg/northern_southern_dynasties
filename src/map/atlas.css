@@ -6,12 +6,6 @@
 .atlas-geographic-label.realm{color:#4b4b35;font-size:clamp(34px,3.7vw,56px);font-weight:500;letter-spacing:16px;opacity:.75}
 .atlas-geographic-label.range{font-size:14px;color:#666b51;letter-spacing:7px}
 .atlas-geographic-label.water{font-size:15px;color:#426f75;letter-spacing:6px;font-style:italic}
-.atlas-traveler{display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:4;gap:4px;filter:drop-shadow(0 2px 2px #22332955)}
-.atlas-traveler>span{font-family:var(--serif);font-size:10px;white-space:nowrap;color:#e7e3cb;background:#33463be8;padding:3px 6px;letter-spacing:1px}
-.traveler-pennant{display:block;width:12px;height:16px;background:#4c5d45;border-left:2px solid #dbceb0;clip-path:polygon(0 0,100% 0,75% 40%,100% 70%,12% 70%,12% 100%,0 100%)}
-.atlas-traveler.player{z-index:6;transform-origin:bottom}
-.atlas-traveler.player .traveler-pennant{width:24px;height:33px;border-left:2px solid #ecddad;background:#9b5539;font-family:var(--serif);font-style:normal;font-size:14px;color:#f8e6b6;padding:1px 0 0 5px;line-height:21px;clip-path:polygon(0 0,100% 0,88% 32%,100% 65%,9% 65%,9% 100%,0 100%)}
-.atlas-traveler.player>span{background:#493d2cf2;color:#f5dda4;font-size:11px;box-shadow:0 0 0 1px #ecd39666}
 .atlas-map .maplibregl-marker-covered{pointer-events:none}
 .atlas-map .maplibregl-ctrl-bottom-right{right:0;bottom:0;z-index:5;max-width:100%}
 .atlas-map .maplibregl-ctrl-attrib{font:9px/15px "PingFang SC",sans-serif;background:#e4e0cae8;color:#576452;margin:0!important;padding:1px 6px;max-width:100%;box-shadow:none;border-radius:0}
@@ -128,8 +122,6 @@
 
 button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cursor:pointer}button.atlas-geographic-label.realm:focus-visible{outline:2px solid #d1b674;outline-offset:6px}
 
-.atlas-traveler[hidden]{display:none!important}
-
 .atlas-geographic-label.province{font-size:22px;letter-spacing:5px;color:#5d472d;text-shadow:0 1px 4px #f5eccb;opacity:.85}
 
 /* Scale-aware campaign atlas: the geography stays real beneath the paper. */
@@ -138,7 +130,6 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-canvas .maplibregl-canvas{filter:saturate(.96) contrast(1.025)}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.realm{color:#51432d;text-shadow:0 1px 2px #f3dfb4;opacity:.86}
 .atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#7b6c50}
-.atlas-map .atlas-traveler>span{border:1px solid #aa935f;border-radius:1px;background:#22382eed;color:#eee0bb;min-height:22px;line-height:20px;padding:1px 7px}
 .atlas-map .atlas-estate-marker{width:36px;height:39px;border-radius:3px;border-width:1px;background:#263b2f;box-shadow:0 2px 5px #10251c66}
 .atlas-map .atlas-estate-marker{background:#dcc79c;color:#403b2b}
 .atlas-map .atlas-activity-marker{box-shadow:0 2px 6px #10251c66;border-color:#d5bc80}
@@ -159,7 +150,3 @@ button.atlas-geographic-label.realm{background:transparent;border:0;padding:0;cu
 .atlas-map[data-scale=strategic] .atlas-geographic-label.range{color:#6d7769;text-shadow:0 1px #e4dfcd}
 .atlas-map .atlas-paper{background:radial-gradient(ellipse at 50% 42%,transparent 48%,#374c432b);box-shadow:inset 0 0 85px #273d3522}
 .three-map-attribution{position:absolute;bottom:5px;right:8px;z-index:2;max-width:330px;font-size:10px;color:#d8d6c3;background:#24332cdd;padding:3px 6px}.three-map-attribution summary{cursor:pointer}.three-map-attribution p{margin:6px;line-height:1.7}.three-map-attribution a{color:#e8d5a2}.three-map-attribution[open]{padding:8px 12px;border:1px solid #998460}
-
-/* The transparent lower part is the model hit area, anchored to its real feet. */
-.focused-shell .atlas-map .atlas-traveler[data-model="true"]{padding-bottom:var(--traveler-height,68px);min-width:44px;pointer-events:auto}
-.focused-shell .atlas-map .atlas-traveler[data-model="true"]:is(:hover,:focus-visible)>span{top:auto;bottom:calc(var(--traveler-height,68px) + 48px)}

@@ -64,10 +64,6 @@ dialog.action-confirm-dialog>h2,dialog.pause-dialog:not(.pause-dialog--audience)
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) :is(button,input,select):focus-visible{outline:2px solid #a37b26;outline-offset:3px}
 :is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal,dialog.pause-dialog--audience){border-radius:0;border-color:#bba36a;box-shadow:0 0 0 1px #252b25,inset 0 0 0 2px #bba36a,0 18px 60px #0008}
 :is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal)>header h2{background:var(--campaign-brush) center/100% 100% no-repeat;color:#f4edda;text-shadow:none}
-.focused-shell .atlas-map .atlas-traveler .traveler-pennant{width:27px;height:33px;background:var(--traveler-flag) center/contain no-repeat}
-.focused-shell .atlas-map .atlas-traveler .traveler-pennant::before,.focused-shell .atlas-map .atlas-traveler .traveler-pennant::after{display:none}
-.traveler-face{width:34px;height:34px;border:2px solid #b9a468;background:#dbd4bd;border-radius:50%;overflow:hidden;margin-top:-3px;box-shadow:0 2px 4px #18231b88}
-.focused-shell .atlas-map .atlas-traveler>span{font-size:10px;background:#29372cec;color:#f5ebd0;text-shadow:none;border-color:#a28c5a}
 @media(max-width:1000px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{grid-template-columns:220px minmax(180px,1fr) 250px;gap:10px}.game-entry.is-selecting .roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}.game-entry.is-selecting .roster-heading>strong{font-size:15px;padding-inline:18px}}
 @media(max-width:760px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,1.3fr);overflow:auto}.game-entry.is-selecting .roster-hero{display:none}.game-entry.is-selecting .roster-columns--map .roster-profile{grid-column:2;grid-row:2}.game-entry.is-selecting .roster-columns--map .roster-map{min-height:240px}.game-entry.is-selecting .roster-explorer{min-height:240px}.game-entry.is-selecting .roster-profile{min-height:240px}.game-entry.is-selecting .roster-heading{flex-wrap:wrap}.game-entry.is-selecting .roster-heading input{flex:1}.regiment-preview{gap:12px}.regiment-preview dl{gap:8px}.regiment-preview>.troop-illustration{width:70px}}
 /* Paper-backed form contents keep a consistent readable ink colour. */
@@ -95,13 +91,4 @@ dialog.action-detail-dialog .single-choice-reason,dialog.person-selection-dialog
 .game-entry .entry-message-slot.is-error{border-color:#ab7157;color:#efc5a5}
 .game-entry.is-selecting .entry-message-slot{background:#dfded2;color:#424b3c}.game-entry.is-selecting .entry-message-slot.is-error{background:#ecdfd5;color:#7c3c2b}
 .game-entry.is-selecting .entry-launch{flex:none;min-height:50px;box-sizing:border-box}.game-entry.is-selecting .entry-launch .entry-note{max-height:50px;overflow:auto;min-width:0}
-/* A single portrait inside the former bronze map-medallion frame. */
-.focused-shell .atlas-map .atlas-traveler .traveler-face{position:relative;display:block;box-sizing:border-box;width:42px;height:45px;margin:0;padding:7px 7px 10px;border:0;border-radius:0;background:var(--bronze-seal) center top/42px 42px no-repeat;box-shadow:none;overflow:visible}
-.focused-shell .atlas-map .traveler-face canvas{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #bca36c;box-sizing:border-box}
-.focused-shell .atlas-map .traveler-face::after{content:'';position:absolute;left:18px;bottom:2px;width:6px;height:6px;background:#2d3528;border-right:1px solid #c4aa70;border-bottom:1px solid #c4aa70;transform:rotate(45deg)}
 @media(max-width:760px){.game-entry.is-selecting .roster-columns{overflow:auto;grid-template-rows:auto}.game-entry.is-selecting .roster-columns--map .roster-list{max-height:300px}.game-entry.is-selecting .roster-columns--map .roster-profile{grid-row:2;grid-column:1/-1}.game-entry.is-selecting .entry-message-slot{max-height:52px}}
-.focused-shell .atlas-map .atlas-traveler>span{display:none}
-.focused-shell .atlas-map .atlas-traveler:is(:hover,:focus-visible)>span{display:block;position:absolute;top:100%;left:50%;transform:translateX(-50%);white-space:nowrap}
-.focused-shell .atlas-map .atlas-traveler{min-width:36px;width:36px}
-.focused-shell .atlas-map .atlas-traveler .traveler-face{width:36px;height:40px;background-size:36px 36px;padding:5px 5px 9px}
-.focused-shell .atlas-map .traveler-face canvas{width:26px;height:26px}

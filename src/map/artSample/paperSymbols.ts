@@ -1,4 +1,5 @@
 import '../campaignSymbols.css';
+import '../campaignMarkerSkin.css';
 import {Vector3,type Camera} from 'three';
 import type {SampleTerrain} from './terrain';
 

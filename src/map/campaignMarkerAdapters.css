@@ -1,0 +1,40 @@
+/* Only game state/interaction adapters. Flag and face geometry lives in campaignMarkerSkin.css. */
+.atlas-map .atlas-city-realm.paper-banner{grid-row:1;position:relative;display:grid;place-items:center;min-height:0;margin:0;padding:0;border-radius:0;pointer-events:auto;writing-mode:horizontal-tb}
+.atlas-map .atlas-city-realm.paper-banner img{display:none}
+.atlas-map .atlas-city-realm.paper-banner:disabled{opacity:1}
+.atlas-map .atlas-traveler.paper-person{display:block;width:47px;height:97px;min-width:0;min-height:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;z-index:4;cursor:pointer;filter:none}
+.atlas-map .atlas-traveler.paper-person.player{z-index:6}
+.atlas-map .atlas-traveler.paper-person[hidden]{display:none}
+.atlas-map .atlas-traveler.paper-person[data-model=true]{height:calc(97px + var(--traveler-height,68px))}
+.atlas-map .atlas-traveler.paper-person:is(:hover,:focus-visible){filter:drop-shadow(0 0 3px #f5dd8e)}
+.atlas-map .atlas-traveler.paper-person:focus-visible{outline:2px solid #edd39a;outline-offset:3px}
+.atlas-map .atlas-army-visual.paper-person{left:50%;top:0;transform:translateX(-50%);height:97px}
+.atlas-map .atlas-army-commander.paper-person-face{display:block;min-height:0;padding:0;cursor:pointer;overflow:visible;color:#263a2a;pointer-events:auto}
+.atlas-map .atlas-army-commander.paper-person-face[hidden]{display:none}
+.atlas-map .atlas-army-commander.paper-person-face:focus-visible{outline:2px solid #f6df98;outline-offset:3px}
+.atlas-map .atlas-army-card-body.paper-person-title{display:flex;align-items:center;gap:5px;border:0;box-shadow:none}
+.atlas-map .atlas-army-label{font:inherit}
+.atlas-map .atlas-army-strength{font:inherit;font-variant-numeric:tabular-nums}
+.atlas-map .atlas-army-strength:empty{display:none}
+.atlas-map .atlas-army-morale.paper-strength{background:linear-gradient(to top,transparent var(--army-morale),#263426 var(--army-morale)),repeating-linear-gradient(0deg,#bfa249 0 3px,#524b28 3px 4px);pointer-events:none}
+.atlas-map .atlas-army-marker[data-exact=false] .atlas-army-morale{display:none}
+.atlas-map .atlas-army-symbol{position:absolute;left:14px;top:31px;pointer-events:none}
+.atlas-map .atlas-army-marker[data-commander=assigned] .atlas-army-symbol{display:none}
+.atlas-map .atlas-army-marker:not([data-commander=assigned]) .atlas-army-card-body{top:60px}
+.atlas-map .atlas-army-marker:not([data-commander=assigned]) .atlas-army-morale{top:3px;height:42px}
+.atlas-map .atlas-army-marker[data-strength=false] .atlas-army-card-body{display:none}
+.atlas-map .atlas-army-marker[data-selected=true] .paper-person-title{color:#f7dda0}
+.atlas-map .atlas-army-marker[data-rebel=true] .paper-person-title{background:#57352b}
+/* Remove old bronze seals / sprite-sheet backplates from actual map object entries. */
+.focused-shell .atlas-map :is(.atlas-activity-marker,.atlas-estate-marker){display:grid;place-items:center;position:relative;width:28px;height:30px;min-height:0;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;filter:none;overflow:visible;pointer-events:auto}
+.focused-shell .atlas-map :is(.atlas-activity-marker,.atlas-estate-marker)::before,.focused-shell .atlas-map :is(.atlas-activity-marker,.atlas-estate-marker)::after{display:none}
+.atlas-map .atlas-place>.atlas-estate-marker{grid-row:1}
+.focused-shell .atlas-map .atlas-combat-marker{display:flex;align-items:center;justify-content:center;width:30px;height:32px;min-width:0;min-height:0;gap:3px;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
+.focused-shell .atlas-map .atlas-combat-marker[data-kind=battle]{width:auto}
+.focused-shell .atlas-map .atlas-combat-side{padding:1px 3px;gap:3px;background:#202c24;color:#eee6cd;font:11px/15px var(--serif)}
+.focused-shell .atlas-map .atlas-combat-side .paper-banner{flex:none}
+.focused-shell .atlas-map .atlas-combat-marker[data-kind=siege]{margin-bottom:16px}
+.focused-shell .atlas-map .atlas-siege-progress,.focused-shell .atlas-map .atlas-combat-siege-mini{position:absolute;top:100%;left:50%;right:auto;transform:translateX(-50%);margin:0;padding:1px 4px;border:0;background:#202c24;color:#eee6cd;font:11px/15px var(--serif);white-space:nowrap}
+.focused-shell .atlas-map .atlas-activity-count{top:-5px;right:-5px;min-width:13px;height:14px;padding:0 2px;border:1px solid #263426;border-radius:0;background:#ddd0aa;color:#263426;box-shadow:none;font:10px/12px var(--serif)}
+.focused-shell .atlas-map :is(.atlas-activity-marker,.atlas-estate-marker,.atlas-combat-marker):hover{background:none;filter:drop-shadow(0 0 3px #f5dd8e)}
+.focused-shell .atlas-map :is(.atlas-activity-marker,.atlas-estate-marker,.atlas-combat-marker):focus-visible{outline:2px solid #edd39a;outline-offset:3px}

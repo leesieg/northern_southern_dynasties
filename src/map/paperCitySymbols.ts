@@ -20,3 +20,10 @@ export function updatePaperCitySymbols(element:HTMLElement,world:World,id:string
  const symbols=cityPaperSymbols(world,id),key=JSON.stringify(symbols);if(element.dataset.symbols===key)return;element.dataset.symbols=key;element.replaceChildren();
  for(const item of symbols){const node=document.createElement('span');node.className='atlas-paper-symbol icon-'+item.kind;node.setAttribute('role','img');node.setAttribute('aria-label',item.label);node.innerHTML=paperIcon(item.kind);if(item.value!==undefined){const n=document.createElement('b');n.textContent=String(item.value);node.append(n);}element.append(node);}
 }
+
+/** Public activity categories reuse the art sample's vocabulary, never illustrative sample values. */
+export function mapActivityIcon(item:Pick<import('../core/ongoing').OngoingItem,'id'|'kind'>):PaperIcon{
+ if(item.id.startsWith('trade:'))return 'trade';
+ if(item.id.startsWith('enterprise:'))return 'coin';
+ return item.kind==='military'?'army':item.kind==='construction'?'city':'objective';
+}
