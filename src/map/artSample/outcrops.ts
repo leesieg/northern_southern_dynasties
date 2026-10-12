@@ -15,13 +15,19 @@ export function outcropPlacements(terrain:Pick<SampleTerrain,'height'|'channel'|
   const ax=x+(random()-.5)*5,az=z+(random()-.5)*5,h=terrain.height(ax,az),dx=terrain.height(ax+.7,az)-terrain.height(ax-.7,az),dz=terrain.height(ax,az+.7)-terrain.height(ax,az-.7),slope=Math.hypot(dx,dz)/1.4;
   if(h<.8||slope<.12||slope>1.6||!safe(ax,az)||random()<.32)continue;
   const angle=Math.atan2(-dx,-dz),main=2.2+random()*2.1,count=random()<.35?3:2;
+  let previousVariant=-1;
   // One exposed face, a lower shoulder and a downslope talus apron share a geological direction.
   for(let j=0;j<count;j++){
    const width=main*(j===0?1:j===1?.64:.40),offset=j===0?0:j===1?main*(.32+random()*.18):main*.77,side=(random()-.5)*main*.40;
    const px=ax-dx/(slope*1.4)*offset-dz/(slope*1.4)*side,pz=az-dz/(slope*1.4)*offset+dx/(slope*1.4)*side;
    if(!safe(px,pz))continue;
    const samples=[terrain.height(px,pz),terrain.height(px-width*.20,pz),terrain.height(px+width*.20,pz),terrain.height(px,pz-width*.20),terrain.height(px,pz+width*.20)];
-   items.push({x:px,z:pz,y:Math.min(...samples)-width*.07,width,angle:angle+(random()-.5)*.28,variant:j===2?2:[0,1,3,4][Math.floor(random()*4)],tint:.87+random()*.16,pitch:Math.min(.25,Math.atan(slope)*.35),depth:.82+random()*.28,rise:(j===0?1.15:j===1?.85:.70)+random()*.16});
+   const placement={x:px,z:pz,y:Math.min(...samples)-width*.07,width,angle:angle+(random()-.5)*.28,variant:j===2?2:[0,1,3,4][Math.floor(random()*4)],tint:.87+random()*.16,pitch:Math.min(.25,Math.atan(slope)*.35),depth:.82+random()*.28,rise:(j===0?1.15:j===1?.85:.70)+random()*.16};
+   // Adjacent copies of the split-face asset read as paired standing boulders.
+   // Keep the seeded layout, but expose a lower bedrock face and a different shoulder profile.
+   if(placement.variant===previousVariant)placement.variant=previousVariant===3?0:3;
+   if(placement.variant===4){placement.rise*=.64;placement.depth*=1.12;placement.y-=width*.06;placement.tint*=.93;}
+   previousVariant=placement.variant;items.push(placement);
   }
  }
  for(const line of terrain.channel.profiles)for(let i=4;i<line.length;i+=9){
