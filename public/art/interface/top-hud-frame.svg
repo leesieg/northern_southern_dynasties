@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" preserveAspectRatio="none">
+ <defs><filter id="edge" x="-3%" y="-6%" width="106%" height="112%"><feTurbulence type="fractalNoise" baseFrequency=".21 .3" numOctaves="3" seed="21" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4"/></filter><pattern id="fiber" width="9" height="7" patternUnits="userSpaceOnUse"><path d="M0 1h5m1 4h3M3 0v3m4 1v3" stroke="#c5b17d" opacity=".055" stroke-width=".6"/></pattern></defs>
+ <path d="M7 7 38 5 115 7 224 4 327 6 411 4 492 6 592 5 595 52 592 106 595 154 551 151 462 155 362 152 264 155 167 152 68 155 5 152 8 106 5 54Z" fill="#1b2b24" filter="url(#edge)"/>
+ <path d="M10 10H590V150H10Z" fill="url(#fiber)" stroke="#998254" stroke-width=".8"/>
+ <g fill="none" stroke="#b49a62" stroke-width=".8"><path d="M12 24q12 0 12-12M12 18h6v-6M576 12q0 12 12 12M582 12v6h6M12 136q12 0 12 12M12 142h6v6M576 148q0-12 12-12M582 148v-6h6"/></g>
+</svg>

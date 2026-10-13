@@ -90,6 +90,7 @@ import './dialogContrast.css';
 import './detailActions.css';
 import './operationsWindow.css';
 import './operationsChrome.css';
+import './topHud.css';
 
 type IconName='play'|'pause'|'pin'|'layers'|'compass'|'plus'|'minus'|'arrow'|'close'|'save'|'menu';
 function Icon({name,size=18}:{name:IconName;size?:number}){

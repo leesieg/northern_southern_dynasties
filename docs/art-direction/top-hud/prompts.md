@@ -1,0 +1,33 @@
+# 顶部组件效果图提示词
+
+生成方式：内置 image_gen；仅用于待确认预期图。
+
+## 组件细节图
+
+Use case: ui-mockup. Create a high fidelity landscape 3:2 UI component design board for the top HUD of Chinese historical strategy RPG 风云南北朝, using the supplied overview as visual style reference. This board is a PROPOSED DESIGN, NOT an actual game screenshot. Quiet warm grey parchment background with faint fibers, no fake game map, no browser frame. Large clean Chinese Songti headings, crisp controls, ample gap. Heading: 顶部界面 · 细节预览. Small subtitle: 美术目标 · 待确认.
+Keep restrained dark ink-green, thin antique gold double rules, clipped corners, softly broken dry-ink edges, cinnabar accents and worn soft silk, matching supplied reference, but REMOVE ALL heavy round bronze medallions from flags and controls. Icons painted/embroidered directly on cloth. Original hand-painted small item illustrations, not emoji.
+Upper half two enlarged component specimens side by side:
+LEFT heading 人物与行箧: square Xiao Yan ink-line portrait, 萧衍 / 梁君主 / 建康 · 驻留; resource grid 3x2 with clearly separated icon/label/value: 盘缠 520钱, 行粮 120日, 影响力 50, 功绩 20, 威望 0, 压力 0. Thin worn gilt portrait edge and hairline dividers, subtle charcoal green parchment backing. No giant coins, no extra resource metrics.
+RIGHT heading 历日与时间: pale parchment date 546 年 1 月 1 日, smaller 第1日; red seal 已暂停; muted cinnabar rectangular framed play 继续; three small speed tabs 1× 3× 7×, first selected in pale paper; green narrow 推进一日; two tiny square icons menu and save. No round buttons. Under it a small separate running-state variation showing 3× highlighted and a button 暂停, labelled 运行状态. These are alternative state specimens not duplicate controls within a single live HUD.
+Lower half heading 绢旗与事项. Four separated LARGE slim fabric flags in one row with subtle ochre/teal/plum/cinnabar colors, SMALL separate labels above each: 待处理, 进行中, 同类聚合, 战争. The flag shapes differ subtly (square tail, notch, angled cut, twin points), short thin bronze top bar, soft tactile cloth and elegant fine embroidered border.
+Flag1 ochre: embroidered book icon, 选择重心, red stamp 待办; NO percentage/bar.
+Flag2 muted teal: scroll icon, 营建, slim embroidered progress line at 40%, 还需12日.
+Flag3 muted plum: family branch painted icon, 婚事, tiny square parchment corner badge 3.
+Flag4 muted cinnabar: crossed spear icon, 战事, +12, 已持续8日.
+Below flags show a compact opened parchment aggregation popover attached visually to 婚事 flag: heading 婚事 · 3项, tiny diamond X close, three concise rows 长子婚议 / 次子婚议 / 族人婚议 each with small portrait and 查看 button. No final action or automatic game submission.
+Bottom small exact disclaimer: 旗帜状态为展示示例，实际内容以存档为准.
+No giant calligraphic flourish, no highly glossy metal, no SaaS cards, no neon, no excessive drop shadows, no unrelated maps, no implementation code. Deliver sharp detailed readable artifact suitable for visual approval.
+
+## 整体图
+
+Use case: ui-mockup.
+Create one polished high resolution landscape 16:10 in-game UI concept screenshot for the Chinese historical strategy RPG 风云南北朝.
+Input 1 is the EDIT TARGET actual paused game map screenshot. Input 2 is STYLE REFERENCE ONLY for the already approved dark ink-green panels, fine aged-gold clipped-corner button frames and parchment tabs. DO NOT place the person modal in the result.
+Change ONLY the top HUD band (roughly top 125 pixels at input scale). Preserve the existing winter map, geography, city markers, left vertical round navigation icons, bottom-right minimap and the map's muted colors. Do not beautify or replace the terrain. This is a believable implementable overlay concept, not promotional art.
+REDESIGN:
+Three independent lightweight clusters, no full-width header, no giant title, no large dark rectangular backing behind everything. Enough map gaps between clusters. Left cluster anchored 12px from top and left, 470px wide by about100px. Center flags start around x540 leaving right region clear. Right compact time control anchored 12px from top/right, roughly355px by100px. Keep total HUD footprint compact with 75%+ screen open map.
+LEFT character and personal resources: reuse Xiao Yan small square linework portrait in a narrow aged gold frame, next to Chinese name 萧衍 in elegant readable Songti; small identity line 梁君主; location 建康 · 驻留. Six clear resource values in compact 3 columns x2 rows with tiny hand-painted thematic icons and concise labels: 盘缠 520钱, 行粮 120日, 影响力 50, 功绩 20, 威望 0, 压力 0. Never call these public funds. Dark muted malachite ink #1b2b24 on worn fibers, irregular dry-brush paper edges mostly on bottom, restrained hairline gold separators, no strong bevel or glossy metal. Tiny cinnabar personal seal accent optional. Readable 15-17px equivalent resource text.
+CENTER: ONLY TWO pending flags from the actual save, not fake wars: 选择重心 / 待办, and 婚事 / 3. Each slim about62px x100px. Fine short bronze crossbar; woven soft silk, hand-painted icon directly on cloth (no heavy round bronze badge); one desaturated olive ochre flag, one dusty muted plum flag. Fine gold embroidered borders, short bottom notch, realistic restrained folds, no tassel mess. Label readable, pending stamp small red ink; grouped number 3 a tiny square parchment corner tag. The flags are not connected by a giant backing. No fake progress bar for waiting items.
+RIGHT: a small calendar slip and time control using same dark ink-green/fine gilt corners, subtle pale-paper date inset saying 546 年 1 月 1 日 and smaller 第1日. Date is legible and not an invented era conversion. Status 已暂停 in cinnabar seal style. Primary rectangular play control with triangular play symbol and 继续 in muted cinnabar lacquer, fine old-gold double-line frame; not a giant circular button. Speed single selection 1× 3× 7× as small paper tabs, 1× selected. 推进一日 secondary narrow framed button. Menu and save via two discrete small line-art icons at far right, no copper disc backplates. Arrange in two concise rows with comfortable spacing and no overlap.
+Palette: ink green #1b2b24, parchment #e9ddbd, old gold #ad925e, cinnabar #874d3c, plum #65515c. Fine paper fibers, matte lacquer, cloth weave, weathered edges but clean legible text. Typography Chinese Songti for readable UI, only name subtly calligraphic. Cohesive with reference2, reduce heavy decorative clutter.
+Do not add explanatory arrows, captions, design-board headings, watermarks, sample notices or any other panels to this full-screen concept.

@@ -49,6 +49,7 @@
 | --- | --- |
 | 行动与后果界面目标 | [目标说明与提示词](art-direction/ck3-action-feedback-target.md)、[预期效果图](art-direction/ck3-action-feedback-target.png) |
 | 左侧操作栏沉浸感（已实施，待审美确认） | [目标图册](art-direction/left-operations-tabs/index.html)、[逐页实机对照](art-direction/left-operations-tabs/comparison.html)、[实施与验证](实施记录/左侧操作栏效果图落地.md) |
+| 顶部资源、时间与待办（已实施，待审美确认） | [预期效果、实机与验证](art-direction/top-hud/README.md) |
 | 人物外观与遗传 | [人物形象与遗传设计](art-direction/人物形象与遗传设计.md) |
 | 人物分层素材 | [生成提示词](art-direction/人物分层素材提示词.md) |
 | 生活重心插画 | [插画提示词](art-direction/lifestyle-art-prompts.md) |
