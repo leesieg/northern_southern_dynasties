@@ -21,6 +21,6 @@ export function OperationsHeader({world,realm,scene,title,onBack,onClose}:{world
   <OperationsArt scene={scene as OperationsScene} className="operations-header-illustration"/>
   {person&&<span className="operations-identity-portrait"><CharacterPortrait characterId={person} world={world} compact/></span>}
   <div className="operations-heading"><h2>{title}</h2><p>{person?politicalName(person,world):'山河之间'}<span>{person?politicalTitle(world,person):''}</span></p><small>{!realm&&siteById[world.people[0].location]?.name}</small></div>
-  <div className="operations-window-actions">{onBack&&<button aria-label="返回上一级" onClick={onBack}>‹</button>}<button autoFocus aria-label="关闭窗口" onClick={onClose}>×</button></div>
+  <div className="operations-window-actions">{onBack&&<button className="operations-back" aria-label="返回上一级" onClick={onBack}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h18"/></svg><span>返回</span></button>}<button autoFocus aria-label="关闭窗口" onClick={onClose}>×</button></div>
  </header>;
 }

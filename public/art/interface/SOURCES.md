@@ -1,5 +1,9 @@
 # 界面美术来源
 
+## operations-ink-frame.svg / operations-button-frame.svg / operations-close.svg / operations-paper-tab.svg
+
+2026-10-13 根据已确认效果图的控件语言制作的原创矢量界面资产。分别为九宫格切片墨刷外框、旧金折角按钮细线、菱形关闭控件、毛边纸签遮罩；未提取商业游戏素材。`operationsChrome.css` 仅用于界面装饰，实际文字、交互区域、焦点及操作规则由前端保留。
+
 ## operations-scenes-wide.png / operations-scenes.png
 
 2026-10-13 使用内置 imagegen 生成的原创南北朝题材淡彩水墨场景图集，不含文字、游戏数值或 UI。依据本会话已确认的左侧操作栏目标图制作，没有提取商业游戏素材。运行使用 `operations-scenes-wide.png`（1536×1024，2 列×4 行，每格 768×256），依次为案牍、使节、军营、密议、庄园、档案、朝殿、公库；`OperationsArt` 以 SVG viewBox 保持比例裁切。早期 4 列×2 行图集 `operations-scenes.png` 保留来源但不用于最终运行。
