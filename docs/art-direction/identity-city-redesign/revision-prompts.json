@@ -1,0 +1,14 @@
+[
+  [
+    "06-city-migration-people",
+    "Keep art and fourpanel layout. Remove top-left vertical sidebar entirely and put one compact horizontal icontext citytabrow under title with EXACT 营建 民政 公务 军务 公库 迁运 人物 出行 沿革, 迁运 selected paperbrush. Add same compact rowto bottomleft人物page with 人物 selected. Do notinventotherprimarytabs. Remove top English anddecorativepoems. In bottomright change “选择执行官员—河东·运送公粮” to “选择县令人选”, because graintransport does NOT require appointing anofficer. Remove political令resource andfictionalstatrequirements; showthree rows 相关能力 — / 任用条件 依实际规则 / 撤换后果 待选人后预览. In top-right expenseledger use 原地公粮500粮,中央公款—钱,中央公粮—粮,最早抵达—日,预计损耗—%; remove extra invented10% charge. Replace false warning 启运后不可随意变更 with 撤回仍有损耗，已用经费不退. Preserve buttons/illustrations, only correcttheseitems. No gameupdates."
+  ],
+  [
+    "07-city-travel-history",
+    "Keep fourpanels andinkart. Remove top-leftvertical navigation and bottom-left “城邑概览 所属变迁 城事记 名士遗踪 地理风物” tabrow. Both LEFT panels musthave samecompacthorizontalcitytabs exact 营建 民政 公务 军务 公库 迁运 人物 出行 沿革, top 出行 selected andbottom 沿革 selected by paperbrush. Top-right备粮form REMOVE rice/grain/forage categories; only 行粮30日份 and 私财支出—钱 with 本人私财. Remove inventedpassdocumentsinspectionrequirements andwrite 通行条件以当前外交与道路状态为准. Bottom-left timeline remove all named fabricated eventsanddates, replace three demonstrative rows 第1日 县令到任 / 第30日 实际控制变化 / 第60日 和约交割 with 示例记录 clear. Keep columns 日期/事项/法理归属/实际控制, use 西魏ochreand东魏mulberryclothflags referencedsecondimage, neverblue魏/红梁. Bottomright title沿革条目, selected第30日, brief 占领改变实际控制，法理归属待和约处理, remove namedhistoricalpeople and fakehistorysource quote. Only 返回/查看人物 ifobject exists. Remove outer Englishandpoem. No fabricated historical anecdotes. Allfinepaperbuttonsframes preserve."
+  ],
+  [
+    "08-city-detail-controls",
+    "Keep fourquadrantstyle andpositions. Top-left营建书 remove 木材/石料 resourcecosts and falsecondition先修城垣道路. Insteadpaperledger 公款费用—钱 / 工期—日 / 每期维护—钱 / 资金来源本城公库, blockedcondition 未取得本城治理或统辖权限, final确认动工 trulygraydisabled to match blockedstate. Building choicespreservepaintings. Top-right regionalcards 官职 must县令 for长安, not太守; use generic 长安县令 and empty 县令待任, do not add fictitiousduke. Bottom-left授官 replace formal3year/temp1year with 正式授官：文书送达并到任后生效 / 临时代行：仅空缺可选，到任后90日. Remove 资历要求名望不低于70 and replace 任用资格：以实际规则复核; remove 任期三年. Replace危险button“删除” inbottomrightcontrolsheet with 撤回, keepdestructivecolor. Remove English/poems. Finefont,brushselectedtabs,squareX remain. Use legitimatecompactcontrols nottallslabs. This is artwork not rulechanges."
+  ]
+]

@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-13",
+  "status": "proposal_not_implemented",
+  "generator": "built-in image_gen.imagegen",
+  "licenseNote": "Original generated concept art. Historical sources inform motifs only, not authenticated heraldry.",
+  "images": [
+    {
+      "file": "01-identity-system-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-16f02b62-c6c9-449b-badf-99edec9b891e.png"
+    },
+    {
+      "file": "02-family-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-2ca0fa6c-a909-4d07-8822-ca64ddd9d211.png"
+    },
+    {
+      "file": "03-city-build-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-cfbb96b0-dd46-4244-9f3e-b6d4d12337a2.png"
+    },
+    {
+      "file": "04-city-civil-service-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-2db4807d-af63-449e-9b64-6c081ab04933.png"
+    },
+    {
+      "file": "05-city-military-treasury-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-0bda431b-81a3-4cbe-ab61-aba794a4af71.png"
+    },
+    {
+      "file": "06-city-migration-people-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-dd7293b8-7200-4eb7-ad17-dba6ee7d7153.png"
+    },
+    {
+      "file": "07-city-travel-history-v3.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-f7b56771-a6ae-41cc-8425-7ce5f0107fdd.png"
+    },
+    {
+      "file": "08-city-detail-controls-v2.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-b681f4ec-0022-489f-9000-737f71da198b.png"
+    }
+  ],
+  "finalTravelCorrection": "Edit this image ONLY three tiny areas. In TOP RIGHT panel change the gold bottom-right button text from 确认出发 to 确认备粮. Directly above its footer add small text 备粮不会自动启程. In two LEFT panels, the horizontal nine-tab row must have DARK INK GREEN background for unselected tabs and WARM IVORY PAPER BRUSH background with DARK INK text for the selected tab (出行 in top panel; 沿革 in bottom panel). Do not change any label, position, size, paintings, other buttons or content. Keep exact fourpanel composition. This is precision UI color and text correction, no new elements."
+}
