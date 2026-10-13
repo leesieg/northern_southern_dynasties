@@ -1,64 +1,65 @@
 /* Approved top-hud/components-v1: ink on cloth, calendar paper and restrained gilt. */
-.focused-shell :is(.sovereign-strip,.chronicle-control){top:10px;height:108px;min-height:108px;border:0;border-radius:0;background:none;box-shadow:none;border-image:url('/art/interface/top-hud-frame.svg') 28 fill / 18px / 4px stretch;color:#e9ddbd;padding:12px 14px;gap:12px;filter:drop-shadow(0 3px 3px #07130c44)}
-.focused-shell .sovereign-strip{left:10px;width:500px;max-width:calc(100vw - 20px)}
-.focused-shell .player-hud-identity{flex:0 0 174px;gap:12px;align-items:center;background:none;border:0;border-radius:0;box-shadow:none;min-height:78px}
+.focused-shell :is(.sovereign-strip,.chronicle-control){top:8px;height:84px;min-height:84px;border:0;border-radius:0;background:none;box-shadow:none;border-image:url('/art/interface/top-hud-frame.svg') 28 fill / 14px / 3px stretch;color:#e9ddbd;padding:10px;gap:9px;filter:drop-shadow(0 3px 3px #07130c44)}
+.focused-shell .sovereign-strip{left:8px;width:420px;max-width:calc(100vw - 20px)}
+.focused-shell .player-hud-identity{flex:0 0 138px;gap:9px;align-items:center;background:none;border:0;border-radius:0;box-shadow:none;min-height:60px}
 .focused-shell .player-hud-identity:hover{background:none;filter:brightness(1.12)}
-.focused-shell .player-hud-identity .painted-portrait.compact{width:68px;height:68px;flex:0 0 68px;aspect-ratio:1;border:1px solid #ddc28c;border-radius:0;box-shadow:0 0 0 3px #1b2b24,0 0 0 4px #ae9055}
+.focused-shell .player-hud-identity .painted-portrait.compact{width:50px;height:50px;flex:0 0 50px;aspect-ratio:1;border:1px solid #ddc28c;border-radius:0;box-shadow:0 0 0 3px #1b2b24,0 0 0 4px #ae9055}
 .focused-shell .player-hud-identity>span{display:grid;gap:5px;min-width:0}
-.focused-shell .player-hud-identity strong{font:23px/1.15 var(--serif);color:#f0dfb5;letter-spacing:2px;text-shadow:none}
-.focused-shell .player-hud-identity small{font:12px/1.25 var(--serif);color:#d2c7a8;white-space:nowrap}
+.focused-shell .player-hud-identity strong{font:16px/1.15 var(--serif);color:#f0dfb5;letter-spacing:1px;text-shadow:none}
+.focused-shell .player-hud-identity small{font:10px/1.25 var(--serif);color:#d2c7a8;white-space:nowrap}
 .focused-shell .player-hud-identity .player-hud-office{color:#e5d4a8}
-.focused-shell .sovereign-strip .realm-resources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:1fr 1fr;align-items:center;gap:8px 10px;margin:0;padding-left:12px;border-left:1px solid #b39a6060;flex:1;min-width:0}
+.focused-shell .sovereign-strip .realm-resources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:1fr 1fr;align-items:center;gap:5px 8px;margin:0;padding-left:9px;border-left:1px solid #b39a6060;flex:1;min-width:0}
 .focused-shell .sovereign-strip .art-resource{display:flex;gap:5px;min-width:0;padding:0;border:0}
 .hud-art{display:block;flex:none;overflow:hidden;mix-blend-mode:lighten}
-.focused-shell .sovereign-strip .hud-art{width:30px;height:32px}
+.focused-shell .sovereign-strip .hud-art{width:23px;height:25px}
 .focused-shell .sovereign-strip .art-resource-value{display:block;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.1}
-.focused-shell .sovereign-strip .art-resource-value>small:not(.art-unit){display:block;font:12px/1.1 var(--serif);margin-bottom:3px;color:#d8c8a1}
-.focused-shell .sovereign-strip .art-resource-value>b{font:18px/1.1 var(--serif);color:#f0e3c4}
+.focused-shell .sovereign-strip .art-resource-value>small:not(.art-unit){display:block;font:10px/1.1 var(--serif);margin-bottom:3px;color:#d8c8a1}
+.focused-shell .sovereign-strip .art-resource-value>b{font:14px/1.1 var(--serif);color:#f0e3c4}
 .focused-shell .sovereign-strip .art-unit{display:inline;font:11px var(--serif);margin-left:3px;color:#dfd2af}
-.focused-shell .chronicle-control{right:10px;width:474px;gap:9px;justify-content:space-between}
-.focused-shell .chronicle-date{min-width:156px;max-width:168px;min-height:78px;align-content:center;gap:8px;padding:9px 10px;color:#292d22;background:linear-gradient(#eee1c1dc,#e7d8b6dc),url('/art/campaign/national-parchment.webp') center/550px;clip-path:polygon(1% 2%,7% 0,18% 2%,36% 0,51% 2%,71% 0,90% 2%,99% 0,100% 20%,99% 43%,100% 68%,99% 100%,82% 98%,61% 100%,38% 98%,19% 100%,0 98%,1% 72%,0 46%)}
-.focused-shell .chronicle-date>strong{white-space:nowrap;font:18px/1.3 var(--serif);color:#292d22}
-.focused-shell .chronicle-date>div{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font:12px/1.3 var(--serif);color:#423c2c}
-.focused-shell .chronicle-date .clock-paused{padding:1px 3px;color:#8b4437;border:2px double #995447;font:700 14px/1.1 var(--serif);transform:rotate(-2deg)}
-.focused-shell .chronicle-date .clock-running{color:#475943;font:12px var(--serif)}
-.focused-shell .chronicle-control .clock-play:is(.is-paused,.is-running){flex:0 0 60px;width:60px;height:78px;min-height:78px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;padding:8px;border:0;border-radius:0;box-shadow:none;border-image:url('/art/interface/operations-button-frame.svg') 12 / 8px / 0 stretch;background:repeating-linear-gradient(120deg,#f7daab0c 0 1px,transparent 1px 4px),linear-gradient(115deg,#965d46,#713f32);filter:none;clip-path:polygon(4px 0,calc(100% - 4px) 0,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px),0 4px)}
-.focused-shell .clock-play svg{width:25px;height:25px;fill:#e7c895}
-.focused-shell .clock-play small{white-space:nowrap;font:18px/1 var(--serif);color:#f1dfb6}
-.focused-shell .chronicle-control .speed-dial{display:grid;grid-template-columns:repeat(3,40px);gap:5px}
-.focused-shell .chronicle-control .tally-speed{width:40px;min-width:40px;height:35px;min-height:35px;padding:3px;border:1px solid #ad925e;border-radius:2px;background:#1b2b24;box-shadow:none;font:16px var(--serif);color:#e9ddbd}
+.focused-shell .chronicle-control{right:8px;width:380px;gap:6px;justify-content:space-between}
+.focused-shell .chronicle-date{min-width:126px;max-width:136px;min-height:60px;align-content:center;gap:5px;padding:7px 8px;color:#292d22;background:linear-gradient(#eee1c1dc,#e7d8b6dc),url('/art/campaign/national-parchment.webp') center/550px;clip-path:polygon(1% 2%,7% 0,18% 2%,36% 0,51% 2%,71% 0,90% 2%,99% 0,100% 20%,99% 43%,100% 68%,99% 100%,82% 98%,61% 100%,38% 98%,19% 100%,0 98%,1% 72%,0 46%)}
+.focused-shell .chronicle-date>strong{white-space:nowrap;font:14px/1.3 var(--serif);color:#292d22}
+.focused-shell .chronicle-date>div{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font:10px/1.3 var(--serif);color:#423c2c}
+.focused-shell .chronicle-date .clock-paused{padding:1px 3px;color:#8b4437;border:2px double #995447;font:700 11px/1.1 var(--serif);transform:rotate(-2deg)}
+.focused-shell .chronicle-date .clock-running{color:#475943;font:10px var(--serif)}
+.focused-shell .chronicle-control .clock-play:is(.is-paused,.is-running){flex:0 0 44px;width:44px;height:60px;min-height:60px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:6px;border:0;border-radius:0;box-shadow:none;border-image:url('/art/interface/operations-button-frame.svg') 12 / 8px / 0 stretch;background:repeating-linear-gradient(120deg,#f7daab0c 0 1px,transparent 1px 4px),linear-gradient(115deg,#965d46,#713f32);filter:none;clip-path:polygon(4px 0,calc(100% - 4px) 0,100% 4px,100% calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,0 calc(100% - 4px),0 4px)}
+.focused-shell .clock-play svg{width:19px;height:19px;fill:#e7c895}
+.focused-shell .clock-play small{white-space:nowrap;font:13px/1 var(--serif);color:#f1dfb6}
+.focused-shell .chronicle-control .speed-dial{display:grid;grid-template-columns:repeat(3,30px);gap:4px}
+.focused-shell .chronicle-control .tally-speed{width:30px;min-width:30px;height:28px;min-height:28px;padding:3px;border:1px solid #ad925e;border-radius:2px;background:#1b2b24;box-shadow:none;font:12px var(--serif);color:#e9ddbd}
 .focused-shell .chronicle-control .tally-speed[aria-pressed=true]{background:linear-gradient(#eee1c1e8,#e7d8b6e8),url('/art/campaign/national-parchment.webp') center/500px;border-color:#c4a775;box-shadow:none;color:#292d22}
-.focused-shell .chronicle-control .clock-step{height:35px;min-height:35px;border:1px solid #ad925e;border-radius:2px;padding:4px 6px;background:#25372c;color:#e9ddbd;font:14px var(--serif)}
-.focused-shell .clock-utilities{gap:6px;padding:0;border:0}
-.focused-shell .chronicle-control .clock-utilities button{width:32px;height:34px;min-height:34px;padding:5px;border:1px solid #ad925e99;border-radius:2px;background:#1b2b24;box-shadow:none}
-.focused-shell .clock-utilities svg{width:22px;height:22px;stroke:#e1c78c}
+.focused-shell .chronicle-control .clock-step{height:28px;min-height:28px;border:1px solid #ad925e;border-radius:2px;padding:3px 4px;background:#25372c;color:#e9ddbd;font:11px var(--serif)}
+.focused-shell .clock-utilities{gap:4px;padding:0;border:0}
+.focused-shell .chronicle-control .clock-utilities button{width:28px;height:28px;min-height:28px;padding:4px;border:1px solid #ad925e99;border-radius:2px;background:#1b2b24;box-shadow:none}
+.focused-shell .clock-utilities svg{width:18px;height:18px;stroke:#e1c78c}
 .focused-shell .chronicle-control button:not(:disabled):hover{filter:brightness(1.15)}
 .focused-shell :is(.player-hud-identity,.chronicle-control button):focus-visible{outline:2px solid #d3b475;outline-offset:3px}
-.focused-shell .command-rail{margin-top:124px;max-height:calc(100% - 124px)}
+.focused-shell .command-rail{margin-top:98px;max-height:calc(100% - 98px)}
 
-.focused-shell .ongoing-flags{padding-top:10px}
-.focused-shell .ongoing-flag-entry>.hover-hint,.focused-shell .ongoing-flag-entry>.ongoing-flag,.focused-shell .ongoing-flag{height:132px}
+.focused-shell .ongoing-flags{padding-top:8px}
+.focused-shell .ongoing-flag-entry>.hover-hint,.focused-shell .ongoing-flag-entry>.ongoing-flag,.focused-shell .ongoing-flag{height:104px}
 .focused-shell .ongoing-flag{width:calc(100% - 4px);filter:drop-shadow(0 3px 2px #15201855);color:#f1e3bf}
-.focused-shell .ongoing-flag-content{inset:17px 8px 23px;gap:6px;background:none;text-shadow:0 1px 1px #22251d80}
-.focused-shell .ongoing-flag-seal{width:38px;height:38px;flex:0 0 38px;background:none;box-shadow:none}
-.focused-shell .ongoing-flag-name{font:14px/1.25 var(--serif);letter-spacing:0;overflow:hidden;max-width:100%}
-.focused-shell .ongoing-countdown{font:12px/1.2 var(--serif)}
-.focused-shell .ongoing-flag[data-todo=true] .ongoing-countdown{color:#6e332c;border:2px double #81483b;background:#d7b76d44;padding:1px 2px;font:700 12px/1.05 var(--serif);transform:rotate(-2deg);text-shadow:none}
+.focused-shell .ongoing-flag-content{inset:12px 6px 18px;gap:3px;background:none;text-shadow:0 1px 1px #22251d80}
+.focused-shell .ongoing-flag-seal{width:28px;height:28px;flex:0 0 28px;background:none;box-shadow:none}
+.focused-shell .ongoing-flag-content .hud-art{width:28px;height:28px}
+.focused-shell .ongoing-flag-name{font:11px/1.25 var(--serif);letter-spacing:0;overflow:hidden;max-width:100%}
+.focused-shell .ongoing-countdown{font:10px/1.2 var(--serif)}
+.focused-shell .ongoing-flag[data-todo=true] .ongoing-countdown{color:#6e332c;border:2px double #81483b;background:#d7b76d44;padding:1px 2px;font:700 10px/1.05 var(--serif);transform:rotate(-2deg);text-shadow:none}
 .focused-shell .ongoing-progress{display:flex;align-items:center;gap:3px;width:100%;font:10px/1 var(--serif)}
 .focused-shell .ongoing-progress .ongoing-meter{flex:1;height:5px;border-color:#d6c38c99;border-radius:0}
 .focused-shell .ongoing-meter i{background:#ddcc99}
-.focused-shell .ongoing-flag-count{top:12px;right:5px;min-width:21px;height:23px;border:1px solid #af965e;border-radius:0;background:#e9ddbd;color:#332e22;font:16px var(--serif);box-shadow:0 1px 3px #20231955}
-.focused-shell .ongoing-war-flag .ongoing-flag-content{gap:3px;inset:13px 7px 19px}
+.focused-shell .ongoing-flag-count{top:9px;right:4px;min-width:17px;height:19px;border:1px solid #af965e;border-radius:0;background:#e9ddbd;color:#332e22;font:12px var(--serif);box-shadow:0 1px 3px #20231955}
+.focused-shell .ongoing-war-flag .ongoing-flag-content{gap:2px;inset:10px 5px 16px}
 .focused-shell .ongoing-war-flag .realm-flag{position:absolute;top:0;left:-1px;width:15px;height:18px;opacity:.8}
 .focused-shell .ongoing-war-flag .realm-flag svg{width:15px;height:18px}
-.focused-shell .ongoing-war-score{font:16px/1 var(--serif);color:#f0d9b3}
+.focused-shell .ongoing-war-score{font:13px/1 var(--serif);color:#f0d9b3}
 .focused-shell .ongoing-war-score[data-positive=true]{color:#f0d9b3}
 .focused-shell .ongoing-war-flag .ongoing-countdown{font-size:10px;letter-spacing:-.2px}
-.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag{height:111px}
-.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry>.hover-hint{height:111px}
-.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-content{inset:15px 3px 15px;gap:4px}
-.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-seal{width:30px;height:30px;flex-basis:30px}
-.focused-shell .ongoing-flags[data-compact=true] .hud-art{width:30px;height:30px}
+.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag{height:96px}
+.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry>.hover-hint{height:96px}
+.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-content{inset:12px 3px 12px;gap:3px}
+.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-seal{width:25px;height:25px;flex-basis:25px}
+.focused-shell .ongoing-flags[data-compact=true] .hud-art{width:25px;height:25px}
 .focused-shell .ongoing-flags[data-compact=true] .ongoing-progress small{display:none}
 
 dialog.paper-dialog.ongoing-group-dialog[data-anchored]{--dialog-ink:#332f24;--dialog-muted:#71644b;width:min(400px,calc(100vw - 24px));padding:12px 14px;border:1px solid #8b754d;border-radius:2px;background:linear-gradient(#eee1c1e8,#e7d8b6e8),url('/art/campaign/national-parchment.webp') center/600px;color:var(--dialog-ink);box-shadow:0 5px 16px #14221766;max-height:65dvh}
@@ -78,12 +79,21 @@ dialog.paper-dialog.ongoing-group-dialog[data-anchored] .ongoing-group-clock{gri
 dialog.paper-dialog.ongoing-group-dialog[data-anchored] .ongoing-group-actions{grid-column:2;grid-row:2;margin:0}
 dialog.paper-dialog.ongoing-group-dialog[data-anchored] .ongoing-group-actions button{min-width:64px;min-height:34px;padding:5px 8px;background:#23372c;border:0;border-image:url('/art/interface/operations-button-frame.svg') 12 / 8px / 0 stretch;border-radius:0;color:#ead9b1;font:14px var(--serif)}
 dialog.paper-dialog.ongoing-group-dialog[data-anchored] button:focus-visible{outline:2px solid #874d3c;outline-offset:2px}
-@media(max-width:1100px){
- .focused-shell .sovereign-strip{width:470px;gap:8px;padding-inline:12px}.focused-shell .player-hud-identity{flex-basis:157px;gap:9px}.focused-shell .player-hud-identity .painted-portrait.compact{width:60px;height:60px;flex-basis:60px}.focused-shell .chronicle-control{width:438px;gap:7px;padding-inline:10px}.focused-shell .chronicle-date{min-width:140px;padding-inline:7px}.focused-shell .chronicle-date>strong{font-size:16px}.focused-shell .chronicle-control .clock-play:is(.is-paused,.is-running){width:54px;flex-basis:54px}.focused-shell .chronicle-control .speed-dial{grid-template-columns:repeat(3,36px)}.focused-shell .chronicle-control .tally-speed{width:36px;min-width:36px}
-}
-@media(max-width:950px){
- .focused-shell :is(.sovereign-strip,.chronicle-control){position:absolute;height:108px;min-height:108px;width:calc(50% - 16px);padding:10px;gap:7px}.focused-shell .player-hud-identity{flex:0 0 122px;flex-direction:row;gap:7px}.focused-shell .player-hud-identity .painted-portrait.compact{width:48px;height:48px;flex-basis:48px}.focused-shell .player-hud-identity strong{font-size:18px}.focused-shell .player-hud-identity small{font-size:10px}.focused-shell .sovereign-strip .realm-resources{gap:8px 5px;padding-left:7px}.focused-shell .sovereign-strip .hud-art{width:20px;height:25px}.focused-shell .sovereign-strip .art-resource-value>b{font-size:16px}.focused-shell .sovereign-strip .art-resource-value>small:not(.art-unit){font-size:10px}.focused-shell .chronicle-date{min-width:116px;max-width:130px;padding:7px}.focused-shell .chronicle-date>strong{font-size:14px}.focused-shell .chronicle-date>div{font-size:10px}.focused-shell .chronicle-control .speed-dial{grid-template-columns:repeat(3,28px);gap:3px}.focused-shell .chronicle-control .tally-speed{width:28px;min-width:28px;font-size:13px}.focused-shell .chronicle-control .clock-play:is(.is-paused,.is-running){width:42px;flex-basis:42px}.focused-shell .clock-play small{font-size:15px}.focused-shell .chronicle-control .clock-utilities button{width:28px;min-width:28px;padding:4px}.focused-shell .chronicle-control .clock-step{font-size:11px;padding-inline:2px}
+@media(max-width:850px){
+ .focused-shell :is(.sovereign-strip,.chronicle-control){width:calc(50% - 14px);gap:6px;padding:8px}
+ .focused-shell .player-hud-identity{flex:0 0 118px;flex-direction:row;gap:7px}
+ .focused-shell .player-hud-identity .painted-portrait.compact{width:42px;height:42px;flex-basis:42px}
+ .focused-shell .player-hud-identity strong{font-size:16px}
+ .focused-shell .sovereign-strip .realm-resources{gap:5px;padding-left:7px}
+ .focused-shell .sovereign-strip .hud-art{width:20px;height:23px}
+ .focused-shell .chronicle-date{min-width:112px;max-width:124px;padding-inline:6px}
+ .focused-shell .chronicle-date>strong{font-size:13px}
+ .focused-shell .chronicle-control .clock-play:is(.is-paused,.is-running){width:40px;flex-basis:40px}
+ .focused-shell .chronicle-control .speed-dial{grid-template-columns:repeat(3,28px);gap:3px}
+ .focused-shell .chronicle-control .tally-speed{width:28px;min-width:28px}
 }
 @media(max-width:720px){
- .focused-shell .sovereign-strip{width:calc(100% - 20px)}.focused-shell .chronicle-control{top:126px;left:78px;right:10px;width:auto}.focused-shell .player-hud-identity{flex-basis:150px}.focused-shell .sovereign-strip .hud-art{width:27px;height:30px}.focused-shell .chronicle-control .speed-dial{grid-template-columns:repeat(3,34px)}.focused-shell .chronicle-control .tally-speed{width:34px;min-width:34px}
+ .focused-shell .sovereign-strip{width:calc(100% - 16px)}
+ .focused-shell .chronicle-control{top:100px;left:78px;right:8px;width:auto}
+ .focused-shell .player-hud-identity{flex-basis:138px}
 }
