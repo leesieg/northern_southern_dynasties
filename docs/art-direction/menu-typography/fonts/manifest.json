@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-14",
+  "purpose": "Proposal-only web subsets. Not the complete game font distribution.",
+  "sources": {
+    "wenkai-OFL.txt": "https://raw.githubusercontent.com/lxgw/LxgwWenKai-Screen/main/OFL.txt",
+    "zhuque.zip": "https://github.com/TrionesType/zhuque/releases/download/v0.212/ZhuqueFangsong-v0.212.zip",
+    "zhuque-OFL.txt": "https://raw.githubusercontent.com/TrionesType/zhuque/main/LICENSE.txt",
+    "mashanzheng.ttf": "https://raw.githubusercontent.com/google/fonts/main/ofl/mashanzheng/MaShanZheng-Regular.ttf",
+    "mashanzheng-OFL.txt": "https://raw.githubusercontent.com/google/fonts/main/ofl/mashanzheng/OFL.txt",
+    "source-serif-Regular.otf": "https://raw.githubusercontent.com/adobe-fonts/source-han-serif/release/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf",
+    "source-serif-SemiBold.otf": "https://raw.githubusercontent.com/adobe-fonts/source-han-serif/release/OTF/SimplifiedChinese/SourceHanSerifSC-SemiBold.otf",
+    "source-serif-OFL.txt": "https://raw.githubusercontent.com/adobe-fonts/source-han-serif/release/LICENSE.txt",
+    "wenkai-screen.ttf": "https://github.com/lxgw/LxgwWenKai-Screen/releases/download/v1.522/LXGWWenKaiScreen.ttf"
+  },
+  "fonts": [
+    {
+      "file": "serif-regular.woff2",
+      "original": "source-serif-Regular.otf",
+      "version": [
+        "Version 2.003;hotconv 1.1.1;makeotfexe 2.6.0"
+      ],
+      "sha256_original": "78aa7a328fd974df2d688c8a9fd74a33d8334dfa84ab24d9d11efb2ffc464117",
+      "sha256_subset": "d98890f099341f0f234ab87e745e6758359f539eee167b14d17d0faf1e48ef51",
+      "size": 878600,
+      "fixture": "萧衍宇文泰高欢侯莫陈独孤信尔朱荣崔季舒郗徽玉璧邺城建康荥阳鄱阳鄢陵蠡县爨瓒赕颍川契苾",
+      "fixture_missing": "",
+      "subset_requested_characters": 1915,
+      "license": "source-serif-OFL.txt",
+      "renamed_family": "MenuSampleSerif"
+    },
+    {
+      "file": "serif-semibold.woff2",
+      "original": "source-serif-SemiBold.otf",
+      "version": [
+        "Version 2.003;hotconv 1.1.1;makeotfexe 2.6.0"
+      ],
+      "sha256_original": "faf16caeaf207e1926e01af8d9f1a8e71b0e9d8f51bf3b5d9a78f9f30e7e3e31",
+      "sha256_subset": "53a7f54074cff47d83a1a493f32a042ae24b3293a72cf6d3a531284e125674dc",
+      "size": 895800,
+      "fixture": "萧衍宇文泰高欢侯莫陈独孤信尔朱荣崔季舒郗徽玉璧邺城建康荥阳鄱阳鄢陵蠡县爨瓒赕颍川契苾",
+      "fixture_missing": "",
+      "subset_requested_characters": 1915,
+      "license": "source-serif-OFL.txt",
+      "renamed_family": "MenuSampleSerif"
+    },
+    {
+      "file": "wenkai.woff2",
+      "original": "wenkai-screen.ttf",
+      "version": [
+        "Version 1.522;March 19,2026"
+      ],
+      "sha256_original": "cd1a6fa39c4ea42fd8f4e289945789b0e510cf7016435640f8893cdad9b220f3",
+      "sha256_subset": "3f1a8c8e60c50fe8ea554734972a3e3848eabeca752153c004cd0a7912346f80",
+      "size": 495364,
+      "fixture": "萧衍宇文泰高欢侯莫陈独孤信尔朱荣崔季舒郗徽玉璧邺城建康荥阳鄱阳鄢陵蠡县爨瓒赕颍川契苾",
+      "fixture_missing": "",
+      "subset_requested_characters": 1915,
+      "license": "wenkai-OFL.txt",
+      "renamed_family": "MenuSampleKai"
+    },
+    {
+      "file": "zhuque.woff2",
+      "original": "zhuque/ZhuqueFangsong-Regular.ttf",
+      "version": [
+        "Version 0.212"
+      ],
+      "sha256_original": "558c62730844fe54ba220146ed62f859d4e2880188d92d985f8921c6e3743bc4",
+      "sha256_subset": "549f43c36bc2dc641f1c315a20de1d7ff1bb789605881598e6d88e2f50937534",
+      "size": 634688,
+      "fixture": "萧衍宇文泰高欢侯莫陈独孤信尔朱荣崔季舒郗徽玉璧邺城建康荥阳鄱阳鄢陵蠡县爨瓒赕颍川契苾",
+      "fixture_missing": "",
+      "subset_requested_characters": 1915,
+      "license": "zhuque-OFL.txt",
+      "renamed_family": "MenuSampleFang"
+    },
+    {
+      "file": "mashanzheng.woff2",
+      "original": "mashanzheng.ttf",
+      "version": [
+        "Version 2.003"
+      ],
+      "sha256_original": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb",
+      "sha256_subset": "bb28b488c94397d84c28beaf06afcd4f6a42d6825b89158086ae40eb0f6fd979",
+      "size": 781740,
+      "fixture": "萧衍宇文泰高欢侯莫陈独孤信尔朱荣崔季舒郗徽玉璧邺城建康荥阳鄱阳鄢陵蠡县爨瓒赕颍川契苾",
+      "fixture_missing": "苾",
+      "subset_requested_characters": 1915,
+      "license": "mashanzheng-OFL.txt",
+      "renamed_family": "MenuSampleBrush"
+    }
+  ]
+}
