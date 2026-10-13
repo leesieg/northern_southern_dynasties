@@ -1,3 +1,5 @@
+import {updateBanner} from '../ui/heraldry';
+import {realmOrigin as bannerOrigin} from '../core/polityRuntime';
 import {armyMarkerAppearance} from './armyMarkerAppearance';
 import {paperIcon} from './artSample/paperSymbols';
 import {cityAnnotationOffset} from './three/cityScreenBounds';
@@ -174,7 +176,7 @@ export function WorldMap(props:Props){
         const face=document.createElement('div');face.className='traveler-face paper-person-face';face.setAttribute('aria-hidden','true');const flag=document.createElement('span');flag.className='paper-person-flag';flag.setAttribute('aria-hidden','true');const label=document.createElement('span');label.className='paper-person-title';element.append(flag,face,label);
         const marker=new Marker({element,anchor:'bottom',offset:[0,-2],opacityWhenCovered:.5}).setLngLat([0,0]).addTo(map);entry={marker,label};people.set(person.id,entry);allMarkers.push(marker);
        }
-       const at=travelerPosition(person),element=entry.marker.getElement();entry.marker.setLngLat([at.lon,at.lat]);element.setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name;const realm=allegianceRealm(world,person.id==='player'?(world.characterId??'fictional'):person.id),flag=element.querySelector<HTMLElement>('.paper-person-flag')!;flag.textContent=realm?regimeName(world,realm):'旅';flag.dataset.long=String(flag.textContent.length>1);element.style.setProperty('--marker-realm',realm?polityStyle(world,realm).color:'#406e67');
+       const at=travelerPosition(person),element=entry.marker.getElement();entry.marker.setLngLat([at.lon,at.lat]);element.setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name;const realm=allegianceRealm(world,person.id==='player'?(world.characterId??'fictional'):person.id),flag=element.querySelector<HTMLElement>('.paper-person-flag')!;updateBanner(flag,realm?regimeName(world,realm):'旅',realm?bannerOrigin(world,realm):'frontier');element.style.setProperty('--marker-realm',realm?polityStyle(world,realm).color:'#406e67');
        if(entry.world!==world){const face=element.querySelector<HTMLElement>('.traveler-face');if(face)updateMarkerPortrait(face,person.id==='player'?(world.characterId??'fictional'):person.id,world);entry.world=world;}
        element.dataset.model=String(map.showsTraveler(person.id));element.style.setProperty('--traveler-height',(TRAVELER_MODEL_HEIGHT*campaignUnitPixels(map.unitsPerPixelAt(at.lon,at.lat)))+'px');
       }
@@ -288,7 +290,7 @@ export function WorldMap(props:Props){
           item.button.dataset.rebel=String(!!rebel);
 
           item.button.setAttribute('aria-label',site.name+'，'+name+'控制，查看城域详情');
-          item.badge.dataset.realmName=name;item.badge.dataset.long=String(name.length>1);item.badge.style.setProperty('--marker-realm',polityStyle(p.world,controller).color);item.badge.lastChild!.textContent=name;item.badge.disabled=controller==='frontier';
+          item.badge.dataset.realmName=name;item.badge.dataset.long=String(name.length>1);item.badge.style.setProperty('--marker-realm',polityStyle(p.world,controller).color);updateBanner(item.badge.lastChild as HTMLElement,name,bannerOrigin(p.world,controller));item.badge.disabled=controller==='frontier';
           item.badge.setAttribute('aria-label',controller==='frontier'?'周边地区，尚无统一国家档案':name+' · 查看国家详情');
         }
         const currentArmies=p.world.realm?.armies??[];
@@ -316,7 +318,7 @@ export function WorldMap(props:Props){
           item.button.dataset.commander=commander?'assigned':view.exact?'vacant':'unknown';
           item.portrait.hidden=!commander;item.portrait.disabled=!commander;item.portrait.setAttribute('aria-label',commander?'查看统帅详情':view.exact?'统帅空缺':'统帅未详');item.portrait.onclick=event=>{event.stopPropagation();if(commander)current.current.onInspectPeople([commander]);};
           const commanderName=commander?getPerson(p.world,commander)?.name:undefined;
-          item.flag.textContent=name;item.flag.dataset.long=String(name.length>1);item.button.style.setProperty('--marker-realm',polityStyle(p.world,a.realm).color);item.button.dataset.state=armyDisplayState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+(commanderName??('第 '+(a.id??'')+' 军'));item.strength.textContent=appearance.strength;item.button.dataset.strength=String(!!appearance.strength);
+          updateBanner(item.flag,name,bannerOrigin(p.world,a.realm));item.button.style.setProperty('--marker-realm',polityStyle(p.world,a.realm).color);item.button.dataset.state=armyDisplayState(p.world,a);item.label.textContent=(rebel?'举兵 · ':'')+(commanderName??('第 '+(a.id??'')+' 军'));item.strength.textContent=appearance.strength;item.button.dataset.strength=String(!!appearance.strength);
           item.button.style.setProperty('--army-morale',view.exact?Math.max(0,Math.min(100,a.morale))+'%':'0%');
 
           item.select.setAttribute('aria-label',`${name}第 ${a.id} 军，${commanderName?'统帅 '+commanderName:view.exact?'统帅空缺':'统帅未详'}，${view.strength}${view.exact?' 人，士气 '+a.morale:''}，${view.command?'点击选择，Shift 点击可多选':'查看驻地'}`);

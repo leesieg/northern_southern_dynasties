@@ -1,6 +1,6 @@
 {
   "date": "2026-10-13",
-  "status": "proposal_not_implemented",
+  "status": "implemented_locally_pending_user_visual_acceptance",
   "generator": "built-in image_gen.imagegen",
   "licenseNote": "Original generated concept art. Historical sources inform motifs only, not authenticated heraldry.",
   "images": [
@@ -37,5 +37,27 @@
       "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-b681f4ec-0022-489f-9000-737f71da198b.png"
     }
   ],
-  "finalTravelCorrection": "Edit this image ONLY three tiny areas. In TOP RIGHT panel change the gold bottom-right button text from 确认出发 to 确认备粮. Directly above its footer add small text 备粮不会自动启程. In two LEFT panels, the horizontal nine-tab row must have DARK INK GREEN background for unselected tabs and WARM IVORY PAPER BRUSH background with DARK INK text for the selected tab (出行 in top panel; 沿革 in bottom panel). Do not change any label, position, size, paintings, other buttons or content. Keep exact fourpanel composition. This is precision UI color and text correction, no new elements."
+  "finalTravelCorrection": "Edit this image ONLY three tiny areas. In TOP RIGHT panel change the gold bottom-right button text from 确认出发 to 确认备粮. Directly above its footer add small text 备粮不会自动启程. In two LEFT panels, the horizontal nine-tab row must have DARK INK GREEN background for unselected tabs and WARM IVORY PAPER BRUSH background with DARK INK text for the selected tab (出行 in top panel; 沿革 in bottom panel). Do not change any label, position, size, paintings, other buttons or content. Keep exact fourpanel composition. This is precision UI color and text correction, no new elements.",
+  "implementationDate": "2026-10-14",
+  "runtimeAssets": [
+    {
+      "file": "public/art/interface/family-estate-banner-v1.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-6bc919fd-3d22-4140-861a-06945e70d556.png",
+      "size": [
+        2172,
+        724
+      ],
+      "brief": "原创南北朝宅院横幅，沿用家族目标图的墨绿、旧金、纸色；无文字，家族信息由界面叠加。"
+    },
+    {
+      "file": "public/art/territory/buildings-paper-atlas-v1.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-4ff3bc3d-eb29-4967-a1bf-cf816d345450.png",
+      "reference": "public/art/territory/buildings-atlas.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "brief": "既有市肆、城仓、驿舍各三级建筑的透明背景版本；逐格裁切由 BuildingArtwork SVG clipPath 完成。"
+    }
+  ]
 }

@@ -5,15 +5,12 @@ import {ClanBadge} from './ClanRanking';
 import {lifeOf,ageLabel,isDeceased} from '../core/lifeState';
 import { RelationshipSummary } from './RelationshipSummary';
 import { useState } from 'react';
-import type { CSSProperties } from 'react';
+import {FamilyCrest} from './FamilyCrest';
+export {FamilyCrest} from './FamilyCrest';
 import {families,familyById} from '../data/families';
 import { familyStanding,prestigeReasons } from '../core/family';
 import type { World } from '../core/types';
 import './family.css';
-export function FamilyCrest({family,small=false}:{family:string;small?:boolean}){
- const f=familyById[family];if(!f)return null;
- return <span className={'family-crest'+(small?' small':'')} style={{'--clan-color':f.color} as CSSProperties} aria-label={f.name+'族徽'}><span>{f.surname}</span></span>;
-}
 export function FamilyPanel({world,selected,chapter,onSelect,onPerson}:{world:World;selected:string;chapter:'tree'|'contributions';onSelect:(id:string)=>void;onPerson:(id:string)=>void}){
  const [query,setQuery]=useState('');
  const person=familyPersonOf(world,selected)!??familyPersonOf(world,world.characterId??'fictional')!,family=familyById[person.family],members=familyMembersOf(world,family.id),standing=familyStanding(world,person.id);
@@ -26,11 +23,11 @@ export function FamilyPanel({world,selected,chapter,onSelect,onPerson}:{world:Wo
  const roots=members.filter(p=>!parentLinksOf(world).some(r=>r.child===p.id&&familyPersonOf(world,r.parent)!.family===family.id));
  return <div className="family-panel">
  <label className="family-switch">家族 <select aria-label="选择家族" value={family.id} onChange={e=>choose(familyMembersOf(world,e.target.value).find(p=>p.status==='roster')?.id??familyMembersOf(world,e.target.value)[0].id)}>{families.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
- <div className="family-banner detail-landscape detail-landscape--family"><FamilyCrest family={family.id}/><div><span className="eyebrow">{family.originKind==='设定'?'籍贯':family.originKind} · {family.origin.split('（')[0]}</span><h3>{family.name}</h3><ClanBadge world={world} person={person.id}/><p>{standing.rank.name} · 家族威望 <strong>{standing.total}</strong></p></div></div>
+ <div className="family-banner detail-landscape detail-landscape--family"><FamilyCrest family={family.id}/><div><span className="eyebrow">{family.originKind} · {family.origin.split('（')[0]}</span><h3>{family.name}</h3><ClanBadge world={world} person={person.id}/><p>{standing.rank.name} · 家族威望 <strong>{standing.total}</strong></p></div></div>
  <section className="family-assets"><h4>家业</h4><p>{allEstates(world).filter(e=>e.disposed===undefined&&e.family===family.id).length} 处庄园 · {allEstates(world).filter(e=>e.disposed===undefined&&e.family===family.id).reduce((n,e)=>n+e.population,0).toLocaleString()} 庄户 · 庄粮 {allEstates(world).filter(e=>e.disposed===undefined&&e.family===family.id).reduce((n,e)=>n+e.grain,0)}。各庄归实际所有者支配，家产不换算门第。</p></section>
  <section className="family-standing" aria-label="家族威望加成"><progress aria-label="家族等级进度" value={standing.next?standing.total-standing.rank.threshold:1} max={standing.next?standing.next.threshold-standing.rank.threshold:1}/><p>{standing.next?`距「${standing.next.name}」还需 ${standing.next.threshold-standing.total} 威望`:'已达最高家族等级'}</p><div className="family-buffs"><span>外交 <b>+{standing.diplomacy}</b></span><span>每月 1 日压力恢复 <b>+{standing.calm}</b></span></div><small>家族成员共享加成，解锁世业不消耗累计威望。</small></section>
- {chapter==='tree'&&<section id="family-tree"><h3>家族树 <small>世系 · 点击查看族人</small></h3><div className="family-tree" role="group" aria-label={family.name+'家族树'}><ul>{roots.map(p=>node(p.id))}</ul></div>{roots.length>1&&<p className="small-note">{roots.length} 条支系</p>}
- <article className="family-person"><div className="family-person-heading"><CharacterPortrait characterId={person.id} name={person.name} world={world} compact/><div><h3>{person.name}</h3><small>{isDeceased(world,person.id)?'已故':status[person.status]} · 个人累计贡献 {world.families?.prestige[person.id]??0}</small></div></div>{person.status!=='ancestor'&&<p>{person.description.split('。')[0]}。</p>}<RelationshipSummary world={world} person={person.id} onPerson={onPerson}/><button className="primary" onClick={()=>onPerson(person.id)}>人物详情 →</button>
+ {chapter==='tree'&&<section id="family-tree"><div className="family-tree-column"><h3>世系 <small>点击选中族人</small></h3><div className="family-tree" role="group" aria-label={family.name+'家族树'}><ul>{roots.map(p=>node(p.id))}</ul></div>{roots.length>1&&<p className="small-note">{roots.length} 条支系</p>}
+ </div><article className="family-person"><div className="family-person-heading"><CharacterPortrait characterId={person.id} name={person.name} world={world} compact/><div><h3>{person.name}</h3><small>{isDeceased(world,person.id)?'已故':status[person.status]} · 个人累计贡献 {world.families?.prestige[person.id]??0}</small></div></div>{person.status!=='ancestor'&&<p>{person.description.split('。')[0]}。</p>}<RelationshipSummary world={world} person={person.id} onPerson={onPerson}/><button className="family-person-open" onClick={()=>onPerson(person.id)}>查看人物 ›</button>
  <h4>祖先 · {ancestors.length} 位</h4><div className="family-relatives">{ancestors.map(p=><button key={p.id} onClick={()=>onPerson(p.id)}><CharacterPortrait characterId={p.id} name={p.name} world={world} compact/><span>{p.name}</span></button>)}{!ancestors.length&&<small>父母不详。</small>}</div>
  <h4>后代 · {descendants.length} 位</h4><div className="family-relatives">{descendants.map(p=><button key={p.id} onClick={()=>onPerson(p.id)}><CharacterPortrait characterId={p.id} name={p.name} world={world} compact/><span>{p.name}</span></button>)}{!descendants.length&&<small>暂无后代记载。</small>}</div>
  <section className="detail-record-group"><h4>人物与亲属史料</h4>{person.sources.map(s=><p key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.title} ↗</a></p>)}{parentLinksOf(world).filter(r=>r.child===person.id||r.parent===person.id).map(r=><p key={r.parent+r.child}>{familyPersonOf(world,r.parent)!.name} → {familyPersonOf(world,r.child)!.name}（{r.kind}） · {r.source.url?<a href={r.source.url} target="_blank" rel="noreferrer">依据 ↗</a>:<span>{r.source.title}</span>}</p>)}{!person.sources.length&&<p>虚构人物，无历史家谱。</p>}</section></article></section>}
