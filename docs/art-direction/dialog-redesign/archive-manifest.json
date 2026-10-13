@@ -1,0 +1,81 @@
+{
+  "images": [
+    {
+      "file": "01-war-overview.png",
+      "title": "战争·战况",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-b8482287-9e19-41e1-9024-6614bc89a26e.png",
+      "sha256": "f7e0819c61681fbeb112cf4450b99daf20d6f98c2df634e1c5fbb10bd8b10d2f"
+    },
+    {
+      "file": "02-war-pages.png",
+      "title": "战争·战报、议和、野战、围城",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-d52e65f1-b8dd-497a-9721-c264d9300124.png",
+      "sha256": "30801910e08f6ff7be3d832102370c97acde6af241e9d5b62a0bc98bb9e31c34"
+    },
+    {
+      "file": "03-military-orders.png",
+      "title": "军令·征募、联合调度、军需、处置",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-d7683683-b63f-4c93-a63d-ed9b19cd2940.png",
+      "sha256": "e69039f3b266f097f39e3617df15a0229529e495e60bb5abd9d49d750b8ddeec"
+    },
+    {
+      "file": "04-governance-orders.png",
+      "title": "政务·委任、拨款、迁运、查核",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-1342b7a7-05a8-4281-8ea6-8248cae5ba46.png",
+      "sha256": "70bb3457a2fb1ffbbbf0d60b7eeb6a7de7b20c73cd5c4732f12c6300a57da55d"
+    },
+    {
+      "file": "05-political-petitions.png",
+      "title": "交涉·政治议案、归附、爵位、谋略",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-f1475bb5-d553-401b-af18-ad7bf69b9160.png",
+      "sha256": "eb7b4a320b25d9e8bb9fa97eab5c6c739c696276dd20dc6cba14a21ad47b7b06"
+    },
+    {
+      "file": "06-private-affairs.png",
+      "title": "私事·家事、养护、持家、行旅",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-02dfabab-b594-4854-81c2-61dcbcbb2788.png",
+      "sha256": "6b7a24f0d506f25a603ac459cd1ae106ff556150a12813afc57dbfb2a6b8c3c2"
+    },
+    {
+      "file": "07-events-decisions.png",
+      "title": "事件·军报、奏事、朝代、通知",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-0479bc89-23ba-4e4d-abac-640af96e9fc5.png",
+      "sha256": "8c1be1d7a5772724b73da043c380a41560ceebda938a67f1cf38673287d76b4a"
+    },
+    {
+      "file": "08-system-windows.png",
+      "title": "系统·菜单、存档、声音、确认",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-3d51a11b-7075-4bb1-b38f-a7e0732a1b2a.png",
+      "sha256": "8b3d8f676656802a69d79de231b46509b1b1a8f9d6e0136fced727c908042bb4"
+    },
+    {
+      "file": "09-succession-offices.png",
+      "title": "人事·铨选、议谥、站队、家业交接",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-b74ad514-e21a-49f7-8a79-cefdf05667d0.png",
+      "sha256": "470ec88d7e7d8326079c8e671d2d54c165cecf1ea7c50909899a4ff031bb4099"
+    },
+    {
+      "file": "10-contracts-policies.png",
+      "title": "行动·商约、地方诉求、案卷、政策",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-f214a350-bfd8-4e27-ae73-1b5659651d8e.png",
+      "sha256": "864ac67e86a2d4eb5de2cd77c2f9ea89edce24b7654dda573631ef45d6690256"
+    }
+  ],
+  "drafts": [
+    {
+      "file": "drafts/02-war-pages.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-3f8d1167-b5f7-4dc3-b14c-f353900ebba4.png",
+      "sha256": "89000773abe484220116449193c49388904dd0571f4faed501ae8c97de4185e6"
+    },
+    {
+      "file": "drafts/03-military-orders.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-1e33595e-6ca3-4666-86cb-57fe7b790a1e.png",
+      "sha256": "729cdd7c4134ee48aafb4665a8fa407b966467c1b0b120c438a9f31add7436b2"
+    },
+    {
+      "file": "drafts/07-events-decisions.png",
+      "source": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-78255bb7-9398-4f65-ad5c-1aa327743f99.png",
+      "sha256": "5d3ea0d316c511c20e22a9c84516a47442d512d5d9fe5c0772113ae47c2a95c6"
+    }
+  ]
+}

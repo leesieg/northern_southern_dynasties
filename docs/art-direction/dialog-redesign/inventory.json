@@ -1,0 +1,1752 @@
+{
+  "date": "2026-10-13",
+  "method": "Static JSX opening/self-closing dialog, ActionDialog, ConfirmAction, DetailSurface and *Dialog call sites; not unique runtime states, not browser verification",
+  "callSites": 151,
+  "files": 72,
+  "entries": [
+    {
+      "file": "src/ui/ActionDialog.tsx",
+      "line": 11,
+      "tag": "dialog",
+      "label": "{'action-detail-dialog paper-dialog '+className}",
+      "scope": "公共弹窗底座与确认模板",
+      "boards": [
+        "08",
+        "全部"
+      ]
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "line": 218,
+      "tag": "PauseDialog",
+      "label": "",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "line": 232,
+      "tag": "WarDetailsDialog",
+      "label": "",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "line": 233,
+      "tag": "EngagementDialog",
+      "label": "",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "line": 249,
+      "tag": "DetailSurface",
+      "label": "{`modal ${modal==='estate'||modal==='staff'||modal==='retinue'?'':'left-utility-drawer'} ${['realm','diplomacy','military','wealth','intrigue','directory'].includes(modal)?'operations-window ':''}${modal==='realm'?'realm-modal':modal==='directory'?'directory-modal':modal==='estate'?'estate-modal estate-detail-window':modal==='staff'?'audience-modal':modal==='retinue'?'staff-modal retinue-modal':''}`}",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "line": 267,
+      "tag": "PersonDialog",
+      "label": "",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/App.tsx",
+      "line": 271,
+      "tag": "LifestyleDialog",
+      "label": "",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/AppointmentReview.tsx",
+      "line": 17,
+      "tag": "ConfirmAction",
+      "label": "{'批准 '+changed.length+' 项任命调整？'}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/AppointmentReview.tsx",
+      "line": 17,
+      "tag": "PersonSelectionDialog",
+      "label": "{localTitle(editing)}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyDeploymentDialog.tsx",
+      "line": 18,
+      "tag": "ActionDialog",
+      "label": "\"联合军令\"",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyDock.tsx",
+      "line": 85,
+      "tag": "ConfirmAction",
+      "label": "{'遣散第 '+retiring.id+' 军？'}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyDock.tsx",
+      "line": 86,
+      "tag": "ConfirmAction",
+      "label": "{`合并 ${ids.length} 支军队？`}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyDock.tsx",
+      "line": 87,
+      "tag": "ConfirmAction",
+      "label": "{`遣散 ${ids.length} 支军队？`}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyDock.tsx",
+      "line": 88,
+      "tag": "PersonSelectionDialog",
+      "label": "{'第 '+selected.id+' 军 · 任命将领'}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyOrganizationPanel.tsx",
+      "line": 26,
+      "tag": "ActionDialog",
+      "label": "{'征募 · '+troopKinds[kind].name}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmyOrganizationPanel.tsx",
+      "line": 27,
+      "tag": "ConfirmAction",
+      "label": "{reorganize.label}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ArmySupplyStatus.tsx",
+      "line": 27,
+      "tag": "ConfirmAction",
+      "label": "{'移驻'+siteById[relocation.site!].name}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/AssignmentPanel.tsx",
+      "line": 73,
+      "tag": "ConfirmAction",
+      "label": "'撤回差事？'",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CampaignLoading.tsx",
+      "line": 19,
+      "tag": "dialog",
+      "label": "{'campaign-loading'+(state.phase==='revealing'?' is-revealing':'')}",
+      "scope": "全屏入口与载入保留；新局覆盖／失败反馈复用系统规范",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/CareerSystems.tsx",
+      "line": 23,
+      "tag": "ConfirmAction",
+      "label": "{label}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CareerSystems.tsx",
+      "line": 28,
+      "tag": "CampaignCommissionDialog",
+      "label": "",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CareerSystems.tsx",
+      "line": 35,
+      "tag": "ActionDialog",
+      "label": "{'战役委任 · 第 '+(a?.id??'—')+' 军'}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CityManagement.tsx",
+      "line": 27,
+      "tag": "ConfirmAction",
+      "label": "{confirm.action==='tax'?'确认调整税制？':'确认赈济？'}",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/CityManagement.tsx",
+      "line": 29,
+      "tag": "ConfirmAction",
+      "label": "\"确认修筑城防？\"",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/CombatDetails.tsx",
+      "line": 27,
+      "tag": "ActionDialog",
+      "label": "\"war-details-dialog engagement-dialog combat-details-dialog\"",
+      "scope": "战争详情与结算",
+      "boards": [
+        "01",
+        "02"
+      ]
+    },
+    {
+      "file": "src/ui/CommandConfirmation.tsx",
+      "line": 13,
+      "tag": "ConfirmAction",
+      "label": "{label}",
+      "scope": "公共弹窗底座与确认模板",
+      "boards": [
+        "08",
+        "全部"
+      ]
+    },
+    {
+      "file": "src/ui/CommercePanel.tsx",
+      "line": 15,
+      "tag": "ConfirmAction",
+      "label": "'确认商旅操作'",
+      "scope": "经营合同与确认",
+      "boards": [
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ConfirmAction.tsx",
+      "line": 11,
+      "tag": "dialog",
+      "label": "\"action-confirm-dialog paper-dialog\"",
+      "scope": "公共弹窗底座与确认模板",
+      "boards": [
+        "08",
+        "全部"
+      ]
+    },
+    {
+      "file": "src/ui/CoordinatedServicePanel.tsx",
+      "line": 20,
+      "tag": "CoordinatedServiceDialog",
+      "label": "",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CoordinatedServicePanel.tsx",
+      "line": 25,
+      "tag": "ActionDialog",
+      "label": "\"统筹辖县\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CourtTreasuryPanel.tsx",
+      "line": 45,
+      "tag": "ActionDialog",
+      "label": "\"公库往来账目\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CourtTreasuryPanel.tsx",
+      "line": 46,
+      "tag": "ActionDialog",
+      "label": "\"拨款批复\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CourtTreasuryPanel.tsx",
+      "line": 47,
+      "tag": "ActionDialog",
+      "label": "\"地方请款奏事\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CourtTreasuryPanel.tsx",
+      "line": 48,
+      "tag": "ActionDialog",
+      "label": "\"treasury-window-dialog\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CourtTreasuryPanel.tsx",
+      "line": 49,
+      "tag": "ActionDialog",
+      "label": "\"发起拨款\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CourtTreasuryPanel.tsx",
+      "line": 50,
+      "tag": "ConfirmAction",
+      "label": "{'下令 '+siteById[reliefSite].name+' 平粜？'}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CustodyPanel.tsx",
+      "line": 39,
+      "tag": "ActionDialog",
+      "label": "{(p?self?'囚中交涉 · ':'人物处置 · ':'国内拘捕 · ')+officeName(person,w)}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/CustodyPanel.tsx",
+      "line": 50,
+      "tag": "PersonSelectionDialog",
+      "label": "{pick==='exchange'?'选择换俘对象':pick==='guarantor'?'选择担保人':'选择游说者'}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/DetailSurface.tsx",
+      "line": 9,
+      "tag": "dialog",
+      "label": "",
+      "scope": "公共弹窗底座与确认模板",
+      "boards": [
+        "08",
+        "全部"
+      ]
+    },
+    {
+      "file": "src/ui/Development.tsx",
+      "line": 90,
+      "tag": "ActionDialog",
+      "label": "{`下令营建 · ${definitions[selected!].name}`}",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/Development.tsx",
+      "line": 106,
+      "tag": "ActionDialog",
+      "label": "\"territory-construction-dialog\"",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/DiplomacyPanel.tsx",
+      "line": 78,
+      "tag": "ActionDialog",
+      "label": "{diplomacyActions[action]}",
+      "scope": "前轮交涉／宣战预览保留；进行中战争与最终确认统一",
+      "boards": [
+        "01",
+        "02",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/DiplomacyPanel.tsx",
+      "line": 82,
+      "tag": "ConfirmAction",
+      "label": "{missionReply.action==='accept'?'接纳使团议案':'拒绝使团议案'}",
+      "scope": "前轮交涉／宣战预览保留；进行中战争与最终确认统一",
+      "boards": [
+        "01",
+        "02",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/DutiesPanel.tsx",
+      "line": 32,
+      "tag": "ConfirmAction",
+      "label": "'撤回天水粮务？'",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/EconomyAction.tsx",
+      "line": 11,
+      "tag": "ConfirmAction",
+      "label": "{label}",
+      "scope": "经营合同与确认",
+      "boards": [
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/EnterpriseLedger.tsx",
+      "line": 19,
+      "tag": "ConfirmAction",
+      "label": "{label}",
+      "scope": "经营合同与确认",
+      "boards": [
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/EnterpriseLedger.tsx",
+      "line": 32,
+      "tag": "ActionDialog",
+      "label": "{siteById[e.site].name+' · '+kind+'承包'}",
+      "scope": "经营合同与确认",
+      "boards": [
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/EstateWorkshop.tsx",
+      "line": 71,
+      "tag": "ActionDialog",
+      "label": "{{found:'开办庄园',tenants:'招佃安置',rent:'调整租额',relief:'庄粮赈济',withdraw:'提取行粮'}[draft.action]}",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/FamilyMarriagePanel.tsx",
+      "line": 20,
+      "tag": "ActionDialog",
+      "label": "\"家族议婚\"",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/GameAudio.tsx",
+      "line": 19,
+      "tag": "ActionDialog",
+      "label": "\"山河之声\"",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/GameEntry.tsx",
+      "line": 41,
+      "tag": "ConfirmAction",
+      "label": "{'以'+(getCharacter(world,selectedCharacter)?.name??'沈行舟')+'开始新局？'}",
+      "scope": "全屏入口与载入保留；新局覆盖／失败反馈复用系统规范",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/GovernancePolicyPanel.tsx",
+      "line": 48,
+      "tag": "ActionDialog",
+      "label": "{'调整 · '+policyLabels[editing]}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/GovernmentAudit.tsx",
+      "line": 41,
+      "tag": "ActionDialog",
+      "label": "\"委托查核\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/GovernmentAudit.tsx",
+      "line": 44,
+      "tag": "ActionDialog",
+      "label": "\"公库查核案卷\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/GovernmentPanel.tsx",
+      "line": 22,
+      "tag": "ConfirmAction",
+      "label": "{label}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/GovernmentPanel.tsx",
+      "line": 29,
+      "tag": "ConfirmAction",
+      "label": "\"撤回议程\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/GovernmentPanel.tsx",
+      "line": 31,
+      "tag": "ConfirmAction",
+      "label": "\"议政协商\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/GovernmentPanel.tsx",
+      "line": 31,
+      "tag": "ActionDialog",
+      "label": "\"政体与法令\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/HouseholdLifePanel.tsx",
+      "line": 39,
+      "tag": "ActionDialog",
+      "label": "\"家庭安排\"",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/HouseholdPlansPanel.tsx",
+      "line": 23,
+      "tag": "ActionDialog",
+      "label": "{labels[action]+' · '+politicalName(target,w)}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/InkTreasury.tsx",
+      "line": 42,
+      "tag": "ActionDialog",
+      "label": "{page==='ledger'?title+' · 账目':page==='requests'?'拨款文书':page==='allocate'?'选择拨款辖区':'征收与留用规则'}",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/InkTreasury.tsx",
+      "line": 48,
+      "tag": "ConfirmAction",
+      "label": "\"确认下令平粜？\"",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/InkTreasury.tsx",
+      "line": 49,
+      "tag": "FiscalTransferDialog",
+      "label": "",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/InkTreasury.tsx",
+      "line": 56,
+      "tag": "ActionDialog",
+      "label": "{(request?'向上级请款':'拨付公款')+' · '+territoryNodes[territory].name}",
+      "scope": "已有城市／营建／庄园／公库／婚配布局保留，通用业务确认补齐",
+      "boards": [
+        "04",
+        "06",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/IntriguePanel.tsx",
+      "line": 63,
+      "tag": "ActionDialog",
+      "label": "\"发起谋略\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/IntriguePanel.tsx",
+      "line": 65,
+      "tag": "ActionDialog",
+      "label": "{schemeInfo[draft.kind].name+' · 筹划谋略'}",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/IntriguePanel.tsx",
+      "line": 70,
+      "tag": "ConfirmAction",
+      "label": "\"撤回谋略\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/LifeDetails.tsx",
+      "line": 46,
+      "tag": "ActionDialog",
+      "label": "{careTitle+' · '+recipient}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/LifestylePanel.tsx",
+      "line": 17,
+      "tag": "LifestyleDialog",
+      "label": "",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/LifestylePanel.tsx",
+      "line": 26,
+      "tag": "ActionDialog",
+      "label": "{w.people[0].name+' · 生活重心'}",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/LocalAdministration.tsx",
+      "line": 41,
+      "tag": "PersonSelectionDialog",
+      "label": "{localTitle(t)}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/LocalAdministration.tsx",
+      "line": 41,
+      "tag": "ConfirmAction",
+      "label": "{delegation?'授权辖下授官':'收回授官权'}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/LocalAdministration.tsx",
+      "line": 41,
+      "tag": "ConfirmAction",
+      "label": "{'撤免'+officeName(holder,w)+'的'+localTitle(t)+'职务？'}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/MapPersonPanel.tsx",
+      "line": 106,
+      "tag": "ActionDialog",
+      "label": "{(order==='provision'?'补充行粮':'请求返国通行')+' · '+name}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/MarriageChoice.tsx",
+      "line": 22,
+      "tag": "MarriageSelectionDialog",
+      "label": "",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/MarriageChoice.tsx",
+      "line": 34,
+      "tag": "ActionDialog",
+      "label": "\"查找婚配对象\"",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/MilitaryAftermathPanel.tsx",
+      "line": 29,
+      "tag": "ActionDialog",
+      "label": "{'第 '+army+' 军 · '+choice.label}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryAftermathPanel.tsx",
+      "line": 34,
+      "tag": "ConfirmAction",
+      "label": "{'第 '+army+' 军 · '+choice.label}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryChoiceDialog.tsx",
+      "line": 27,
+      "tag": "ActionDialog",
+      "label": "{title}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryHub.tsx",
+      "line": 81,
+      "tag": "RecruitmentPlanDialog",
+      "label": "",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryHub.tsx",
+      "line": 82,
+      "tag": "ArmyDeploymentDialog",
+      "label": "",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryHub.tsx",
+      "line": 83,
+      "tag": "ActionDialog",
+      "label": "\"私募部曲\"",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryHub.tsx",
+      "line": 90,
+      "tag": "MilitaryChoiceDialog",
+      "label": "",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MilitaryHub.tsx",
+      "line": 91,
+      "tag": "ConfirmAction",
+      "label": "{confirm.title}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/MobilityPanel.tsx",
+      "line": 38,
+      "tag": "ActionDialog",
+      "label": "{estate?'estate-management-dialog':undefined}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/MobilityPanel.tsx",
+      "line": 54,
+      "tag": "ActionDialog",
+      "label": "{estate?'estate-management-dialog':undefined}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/OfficeHierarchy.tsx",
+      "line": 42,
+      "tag": "PersonSelectionDialog",
+      "label": "{ministries[office].name}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/OfficeHierarchy.tsx",
+      "line": 42,
+      "tag": "ConfirmAction",
+      "label": "\"免职\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/OfficialActions.tsx",
+      "line": 23,
+      "tag": "PersonSelectionDialog",
+      "label": "{chief?'委办公务':'履行职掌'}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/OngoingFlags.tsx",
+      "line": 41,
+      "tag": "dialog",
+      "label": "\"ongoing-group-dialog paper-dialog\"",
+      "scope": "已改旗帜与聚合清单保留",
+      "boards": []
+    },
+    {
+      "file": "src/ui/OngoingFlags.tsx",
+      "line": 62,
+      "tag": "OngoingItemsDialog",
+      "label": "{designs[active.kind].label}",
+      "scope": "已改旗帜与聚合清单保留",
+      "boards": []
+    },
+    {
+      "file": "src/ui/PactRequestPanel.tsx",
+      "line": 19,
+      "tag": "ActionDialog",
+      "label": "{pact?'归附议案与待遇':'提出归附请求'}",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PauseDialog.tsx",
+      "line": 54,
+      "tag": "dialog",
+      "label": "\"pause-dialog paper-dialog\"",
+      "scope": "必须裁决与纯通知分开",
+      "boards": [
+        "07",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PauseDialog.tsx",
+      "line": 55,
+      "tag": "dialog",
+      "label": "\"pause-dialog paper-dialog succession-event-dialog\"",
+      "scope": "必须裁决与纯通知分开",
+      "boards": [
+        "07",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PauseDialog.tsx",
+      "line": 56,
+      "tag": "dialog",
+      "label": "\"pause-dialog paper-dialog dynasty-event-dialog\"",
+      "scope": "必须裁决与纯通知分开",
+      "boards": [
+        "07",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PauseDialog.tsx",
+      "line": 57,
+      "tag": "dialog",
+      "label": "{`pause-dialog ${audience?'pause-dialog--audience':'paper-dialog'} ${event.kind==='battle'?'battle-result-dialog':''}`}",
+      "scope": "必须裁决与纯通知分开",
+      "boards": [
+        "07",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PersonDialog.tsx",
+      "line": 11,
+      "tag": "dialog",
+      "label": "\"person-ink-dialog\"",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/PersonSelection.tsx",
+      "line": 24,
+      "tag": "ActionDialog",
+      "label": "{title}",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/PersonSelection.tsx",
+      "line": 55,
+      "tag": "PersonSelectionDialog",
+      "label": "{title}",
+      "scope": "已有独立重构，保留并纳入未来公共样式回归",
+      "boards": []
+    },
+    {
+      "file": "src/ui/PersonalEconomyPanel.tsx",
+      "line": 52,
+      "tag": "LivingStandardDialog",
+      "label": "",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PersonalEconomyPanel.tsx",
+      "line": 52,
+      "tag": "EconomyTransferDialog",
+      "label": "",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PersonalEconomyPanel.tsx",
+      "line": 62,
+      "tag": "ActionDialog",
+      "label": "{title}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PersonalEconomyPanel.tsx",
+      "line": 75,
+      "tag": "ActionDialog",
+      "label": "\"living-standard-dialog\"",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PoliticalIdentity.tsx",
+      "line": 33,
+      "tag": "ConfirmAction",
+      "label": "{command.action==='support'?'支持君位宣称':'撤回拥立支持'}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PoliticalIdentity.tsx",
+      "line": 43,
+      "tag": "ActionDialog",
+      "label": "\"册封与晋爵\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PoliticalIdentity.tsx",
+      "line": 44,
+      "tag": "ConfirmAction",
+      "label": "\"撤销爵位\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PoliticalIdentity.tsx",
+      "line": 51,
+      "tag": "ActionDialog",
+      "label": "\"为前任议谥\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/PopulationPanel.tsx",
+      "line": 16,
+      "tag": "ActionDialog",
+      "label": "{{assisted:'招徕安置',forced:'强制迁徙',raid:'掠夺人口',grain:'运送公粮'}[kind]}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 45,
+      "tag": "ActionDialog",
+      "label": "\"faction-dialog\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 46,
+      "tag": "ActionDialog",
+      "label": "\"faction-dialog\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 47,
+      "tag": "ActionDialog",
+      "label": "\"faction-dialog\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 48,
+      "tag": "ActionDialog",
+      "label": "\"faction-dialog\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 49,
+      "tag": "ActionDialog",
+      "label": "\"faction-dialog\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 50,
+      "tag": "ActionDialog",
+      "label": "\"faction-dialog\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PowerPoliticsPanel.tsx",
+      "line": 51,
+      "tag": "ConfirmAction",
+      "label": "\"确认政治安排\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/PublicSuccessionPanel.tsx",
+      "line": 20,
+      "tag": "PersonSelectionDialog",
+      "label": "{office==='ruler'?'议定君位继承':'议定执政继任'}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/RealmPanel.tsx",
+      "line": 32,
+      "tag": "ConfirmAction",
+      "label": "{eventChoice==='fund'?'拨付处理':'暂缓处理'}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/RecruitmentPlanDialog.tsx",
+      "line": 18,
+      "tag": "ActionDialog",
+      "label": "\"征募与集结\"",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/RegimentCards.tsx",
+      "line": 18,
+      "tag": "ActionDialog",
+      "label": "{'第 '+army.id+' 军 · '+troopKinds[unit.kind].name}",
+      "scope": "军事二级弹窗，主页面保留",
+      "boards": [
+        "02",
+        "03",
+        "08",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/RelationshipPanel.tsx",
+      "line": 43,
+      "tag": "ConfirmAction",
+      "label": "{label}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/RelationshipPanel.tsx",
+      "line": 46,
+      "tag": "ConfirmAction",
+      "label": "\"撤回交好\"",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/RelationshipPanel.tsx",
+      "line": 54,
+      "tag": "ActionDialog",
+      "label": "{names[active]+' · '+relationName(target.id,w)}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/ResignationPanel.tsx",
+      "line": 13,
+      "tag": "ConfirmAction",
+      "label": "{'辞去'+post.name}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/RetinuePanel.tsx",
+      "line": 28,
+      "tag": "PersonSelectionDialog",
+      "label": "{'任命 · '+retinuePosts[selected].name}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/SaveBrowser.tsx",
+      "line": 27,
+      "tag": "ConfirmAction",
+      "label": "{confirmation.title}",
+      "scope": "菜单、指南、存档、声音部分；其他已改窗口保留",
+      "boards": [
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/ServicePanel.tsx",
+      "line": 34,
+      "tag": "ActionDialog",
+      "label": "{(isChief?'议定':'上书')+' · '+servicePriorities[selected]}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/ServicePanel.tsx",
+      "line": 55,
+      "tag": "ActionDialog",
+      "label": "\"service-commission-dialog\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 54,
+      "tag": "ActionDialog",
+      "label": "\"议定安定国策\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 111,
+      "tag": "ActionDialog",
+      "label": "{causeView==='wars'?'战线与实控':'地方压力与应对'}",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 112,
+      "tag": "ActionDialog",
+      "label": "\"朝局阶段画像 · 仅供预览\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 113,
+      "tag": "ActionDialog",
+      "label": "\"集团奏议\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 114,
+      "tag": "ActionDialog",
+      "label": "\"起兵与另立\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 115,
+      "tag": "ConfirmAction",
+      "label": "\"撤回承统议程？\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SituationPanel.tsx",
+      "line": 116,
+      "tag": "PersonSelectionDialog",
+      "label": "\"游说同道\"",
+      "scope": "交涉／政治二级文书，主页面保留",
+      "boards": [
+        "05",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/SocialPanel.tsx",
+      "line": 28,
+      "tag": "ConfirmAction",
+      "label": "{'交接家业予 '+getCharacter(w,s.heir)?.name+'？'}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/SocialPanel.tsx",
+      "line": 31,
+      "tag": "ActionDialog",
+      "label": "{draftTitle}",
+      "scope": "私人行动与交接，已改主页面保留",
+      "boards": [
+        "06",
+        "08",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/StaffChamber.tsx",
+      "line": 146,
+      "tag": "ActionDialog",
+      "label": "\"爵位与殊礼\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/StaffChamber.tsx",
+      "line": 155,
+      "tag": "ConfirmAction",
+      "label": "\"请求军务授权\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/StaffChamber.tsx",
+      "line": 156,
+      "tag": "ActionDialog",
+      "label": "\"地方任职文书\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/StaffChamber.tsx",
+      "line": 157,
+      "tag": "ActionDialog",
+      "label": "{politicalName(person,w)+' · 官爵与任职'}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/StaffChamber.tsx",
+      "line": 158,
+      "tag": "PersonSelectionDialog",
+      "label": "{(executive?'任命 · ':'请任 · ')+ministries[office].name}",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/StaffChamber.tsx",
+      "line": 162,
+      "tag": "ConfirmAction",
+      "label": "\"免职\"",
+      "scope": "任官批复／继承／议谥，已改选人器保留",
+      "boards": [
+        "05",
+        "09"
+      ]
+    },
+    {
+      "file": "src/ui/TreasuryPanel.tsx",
+      "line": 29,
+      "tag": "ConfirmAction",
+      "label": "\"确认下令平粜？\"",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/UnrestPanel.tsx",
+      "line": 29,
+      "tag": "ActionDialog",
+      "label": "{'地方诉求 · '+demandNames[q.demand]}",
+      "scope": "政务操作与案卷，已改主页面保留",
+      "boards": [
+        "04",
+        "07",
+        "10"
+      ]
+    },
+    {
+      "file": "src/ui/WarDeclaration.tsx",
+      "line": 37,
+      "tag": "dialog",
+      "label": "\"war-declaration paper-dialog\"",
+      "scope": "前轮交涉／宣战预览保留；进行中战争与最终确认统一",
+      "boards": [
+        "01",
+        "02",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/WarDeclaration.tsx",
+      "line": 38,
+      "tag": "dialog",
+      "label": "\"war-declaration paper-dialog\"",
+      "scope": "前轮交涉／宣战预览保留；进行中战争与最终确认统一",
+      "boards": [
+        "01",
+        "02",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/WarDeclaration.tsx",
+      "line": 50,
+      "tag": "ConfirmAction",
+      "label": "\"确认宣战\"",
+      "scope": "前轮交涉／宣战预览保留；进行中战争与最终确认统一",
+      "boards": [
+        "01",
+        "02",
+        "08"
+      ]
+    },
+    {
+      "file": "src/ui/WarDetails.tsx",
+      "line": 48,
+      "tag": "EngagementDialog",
+      "label": "",
+      "scope": "战争详情与结算",
+      "boards": [
+        "01",
+        "02"
+      ]
+    },
+    {
+      "file": "src/ui/WarDetails.tsx",
+      "line": 54,
+      "tag": "ActionDialog",
+      "label": "\"war-details-dialog\"",
+      "scope": "战争详情与结算",
+      "boards": [
+        "01",
+        "02"
+      ]
+    },
+    {
+      "file": "src/ui/WarSettlement.tsx",
+      "line": 60,
+      "tag": "ConfirmAction",
+      "label": "{offerConfirm?'接受议和提议':'拒绝议和提议'}",
+      "scope": "战争详情与结算",
+      "boards": [
+        "01",
+        "02"
+      ]
+    },
+    {
+      "file": "src/ui/WarSettlement.tsx",
+      "line": 60,
+      "tag": "ConfirmAction",
+      "label": "{'确认议和 · '+labels[confirm]}",
+      "scope": "战争详情与结算",
+      "boards": [
+        "01",
+        "02"
+      ]
+    }
+  ]
+}

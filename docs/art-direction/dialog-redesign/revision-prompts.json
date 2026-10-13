@@ -1,0 +1,17 @@
+[
+  {
+    "index": 2,
+    "prompt": "Edit this war interface concept board. Preserve the 2x2 layout, all ink painting, typography, window borders and action hierarchy. Correct identity and semantic content ONLY throughout all four panes: the war is 玉璧之战, attacker 东魏 with a purple 魏 banner, defender 周 with ochre 周 banner. Replace every 陈 or 陈军 / 齐 or 齐军 side label with 东魏 / 周 respectively; remove all individual historical commander names and reign-year claims, use '攻方统帅' and '守方统帅', dates '记录示意'. Unknown military quantities must read '兵力未详' or '损失未详', NOT 数万 or 数千. Peace preview county claims and treaty outcomes are illustrative: label '随草案核算'. Exactly one checkbox per occupied territory: checked '保留割让', unchecking means return, not two independent checkboxes. Keep tabs horizontal. In top-left last action should be 查看战役. No new mechanics or dates. Keep '设计预览 · 非实机 · 数值示意' visible.",
+    "path": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-3f8d1167-b5f7-4dc3-b14c-f353900ebba4.png"
+  },
+  {
+    "index": 3,
+    "prompt": "Edit ONLY the lower-left quadrant of this 2x2 military UI board, preserve the other three quadrants and all style. The heading should be '补给与指挥'. Three supply priority choices 后备 常规 前线 must compare actual dispatch priority, not imaginary food percentages. Remove ALL 70%,50%,30% and any food reserve fractions. Replace comparison rows with '分配顺序', '对其他军队影响', '每日耗粮'. 后备 values '剩余粮源 / 先保其他军队 / 不变'; 常规 values '通常次序 / 按现行顺序 / 不变'; 前线 values '优先调粮 / 可能推迟其他军队 / 不变'. Keep 常规 selected. Keep separate 指挥方式 controls with 亲自下令 and 自主行军. Footer note '不增发粮食，不改变每日军粮消耗'. National reserve policy is a different action and NOT part of these options. Same paper/ink/gold visual system and fixed footer. Ensure small '设计预览 · 非实机 · 数值示意' remains.",
+    "path": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-1e33595e-6ca3-4666-86cb-57fe7b790a1e.png"
+  },
+  {
+    "index": 7,
+    "prompt": "Edit this 2x2 event UI concept board, preserve the art direction, hierarchy and 4 pane composition. Fix rules: LOWER LEFT 朝代更替 must NEVER imply automatic money loss. Replace '国库重整 -20%' with '钱粮原账保留'; other facts '国号随事件更新' '官职按实况交接' '原有债务保留'. Remove historical personal names, reign dates and specific historical claims; label the two portrait roles 前任 / 继任 and use no assumed dynasty sequence, show '按本局结算'. UPPER LEFT military dispatch remove exact invented casualty numbers and controlled-percent values, replace values with '以战报为准'; remove -5000 and all automatic bonus claims, choices 继续围城 议降 撤围 only give concise neutral consequences without fake amounts. These three are navigational previews without radio selected state; button 前往军议 enters actual decision. Upper right retain required-decision style no X; replace invented fiscal/民心 changes with '按请款核算', '按批复结算'. All bottom notification panels only 知道了 plus optional 查看城邑 link. DO NOT add dismiss X to mandatory decisions. Preserve painting and clear text.",
+    "path": "/Users/siegsieg/.codex/generated_images/01a12ac0-f224-76f1-a5f7-0c856bf96ba8/exec-78255bb7-9398-4f65-ad5c-1aa327743f99.png"
+  }
+]
