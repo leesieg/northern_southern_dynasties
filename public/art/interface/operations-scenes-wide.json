@@ -1,0 +1,17 @@
+{
+  "source": "Built-in imagegen; original project artwork",
+  "date": "2026-10-13",
+  "file": "operations-scenes-wide.png",
+  "layout": "2 columns × 4 rows; 3:1 tiles",
+  "tiles": [
+    "government",
+    "diplomacy",
+    "military",
+    "intrigue",
+    "household",
+    "directory",
+    "court",
+    "treasury"
+  ],
+  "prompt": "Generate a game-production illustration sprite sheet matching the approved sixth-century Chinese ink-and-watercolor parchment UI. Exact layout TWO COLUMNS and FOUR ROWS, eight equally sized WIDE PANORAMIC landscape paintings. Total canvas landscape 3:2. Each tile therefore 3:1 panorama, 768x256 in a 1536x1024 canvas. Zero gutters, NO WORDS, NO UI, NO LETTERING, no headings. Keep the scene subjects small and naturally proportioned; horizontal compositions with visible environments. Row1 LEFT: riverside Jiankang government pavilion, officials writing and granary town beyond, RIGHT: two anonymous envoys exchanging a sealed letter in a garden pavilion. Row2 LEFT: military encampment, troops drilling, siege engines, distant fortified city; RIGHT: secret correspondence in a bamboo-screened candlelit study, two tiny anonymous figures. Row3 LEFT: country estate amidst rice fields, tiled cottages, grain stores, ox cart; RIGHT: scholarly archive interior with scribes, bamboo slips and registers. Row4 LEFT: imperial court hall in sixth-century China, empty central throne dais, small standing courtiers; RIGHT: treasury warehouse, grain sacks, jars of copper cash and a clerk's desk. Color palette faded ivory, moss greens, warm grey, charcoal ink, restrained ochre. Fine expressive ink contours with crosshatching and layered watercolor, airy atmospheric distance. Not photorealistic. No named characters, no black overlays, no distortions. Artwork extends to every tile edge."
+}

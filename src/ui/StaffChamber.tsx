@@ -1,3 +1,4 @@
+import {OperationsArt} from './OperationsHeader';
 import {afterCommand} from './actionFeedback';
 import {CourtIcon} from './CourtIcon';
 import {NobilityPanel,RulerHistoryPanel} from './PoliticalIdentity';
@@ -74,8 +75,8 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
  const ministryIcons:Record<MinistryId,ArtName>={secretariat:'influence',personnel:'person',finance:'coins',military:'army',censorate:'diligent'};
  const pages:{id:CourtTab;label:string;icon:ArtName;detail:string}[]=[
   {id:'central',label:'朝会',icon:'renown',detail:'君位、掌政、五项中枢职掌与继承安排'},
-  {id:'factions',label:'发起派系',icon:'gregarious',detail:'发起派系、争取支持、公开呈请与查看当前议案'},
-  {id:'local',label:'地方官署',icon:'city',detail:'按真实州郡县辖区查阅、授官与请任'},
+  {id:'factions',label:'派系',icon:'gregarious',detail:'发起派系、争取支持、公开呈请与查看当前议案'},
+  {id:'local',label:'官署',icon:'city',detail:'按真实州郡县辖区查阅、授官与请任'},
   {id:'situation',label:'朝局',icon:'influence',detail:'局势、地方压力与政治集团'},
   {id:'government',label:'国策',icon:'estate',detail:'现行政体、任用准则、通道与赋役落实'},
   {id:'finance',label:'财赋',icon:'coins',detail:'中央公库、地方拨款与公款查核'},
@@ -102,7 +103,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
   </div>
   <div className="court-workspace">
    <nav className="court-rail" aria-label="朝廷事务">
-    {pages.map(page=><HoverHint key={page.id} label={page.label} content={page.detail}><button className="court-rail-button" aria-label={page.label} aria-pressed={active===page.id} onClick={()=>onTab(page.id)}>{page.id==='central'?<CourtIcon/>:page.id==='situation'?<CourtIcon name={court.phase}/>:<ArtIcon name={page.icon} size={32}/>}{page.id==='central'&&<small aria-hidden="true">{occupied}/5</small>}{page.id==='local'&&localRequests.length>0&&<small aria-hidden="true">{localRequests.length}</small>}</button></HoverHint>)}
+    {pages.map(page=><button key={page.id} className="court-rail-button" aria-label={page.label} aria-pressed={active===page.id} onClick={()=>onTab(page.id)}>{page.id==='central'?<CourtIcon/>:page.id==='situation'?<CourtIcon name={court.phase}/>:<ArtIcon name={page.icon} size={32}/>}<span>{page.label}</span>{page.id==='central'&&<small aria-hidden="true">{occupied}/5</small>}{page.id==='local'&&localRequests.length>0&&<small aria-hidden="true">{localRequests.length}</small>}</button>)}
    </nav>
    <main className={'court-page court-page--'+active} aria-label={pages.find(page=>page.id===active)?.label??'朝会'}>
     {active==='factions'&&<PowerPoliticsPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson}/>}
@@ -136,7 +137,7 @@ export function StaffChamber({world:w,realm:targetRealm,pending,send,onPerson,on
     {active==='government'&&<GovernancePolicyPanel world={w} realm={realm} pending={pending} send={send} onPerson={onPerson} onTerritory={onTerritory} onService={onService}/>}
     {active==='finance'&&<div className="court-finance-desk">{own?<>
      <section className="court-scroll-pane"><CourtTreasuryPanel world={w} compact pending={pending} send={send} onPerson={onPerson} initialTab={treasuryTab}/></section>
-     <section className="court-scroll-pane" data-emphasis={financeView==='audit'}><GovernmentAuditPanel world={w} compact pending={pending} send={send} onPerson={onPerson}/></section>
+     <section className="court-scroll-pane" data-emphasis={financeView==='audit'}><OperationsArt scene="treasury" className="court-finance-art"/><GovernmentAuditPanel world={w} compact pending={pending} send={send} onPerson={onPerson}/></section>
     </>:<section className="court-foreign-finance"><h3>中央财赋</h3><dl><div><dt>公款存量</dt><dd>{w.realm!.treasuries[realm].coins} 钱</dd></div><div><dt>公粮存量</dt><dd>{w.realm!.treasuries[realm].grain}</dd></div><div><dt>下月预计收入</dt><dd>{forecast.income} 钱</dd></div><div><dt>下月预计支出</dt><dd>{forecast.expense} 钱</dd></div></dl><p>他国公库仅供查阅</p></section>}</div>}
     {active==='history'&&<RulerHistoryPanel pending={pending} send={send} world={w} realm={realm} onPerson={onPerson}/>}
     {active==='history'&&<NationalJournal world={w} realm={realm} onPerson={onPerson} onService={task=>{if(own)onService(task);}}/>}

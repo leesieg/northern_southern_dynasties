@@ -1,3 +1,5 @@
+import {useState} from 'react';
+import {OperationsArt} from './OperationsHeader';
 import {terrainSceneStyle,personTerrainSite} from './terrainScene';
 import {serviceNeed} from '../core/serviceNeeds';
 import {localSites} from '../core/localAdministration';
@@ -24,14 +26,18 @@ export function RealmIdentitySummary({world:w,onPerson,onCity,onCourt}:{world:Wo
 }
 
 export function RealmOverview({world:w,onTab,onCity,onTerritory}:{world:World;onTab:(t:RealmTab)=>void;onCity:(id:string)=>void;onTerritory:(id:string)=>void}){
+ const [selected,setSelected]=useState('');
  const r=playerRealm(w),central=executive(w),attention=serviceAttention(w),councilAttention=attention.filter(key=>key.startsWith('council')).length,dutyCount=attention.length-councilAttention+(dutyAttention(w)?1:0);
  const held=officeHierarchy(w).filter(n=>n.active&&n.holder===w.characterId&&n.realm===r),local=held.filter(n=>!!n.territory),campaigns=w.militaryCampaigns?.items.filter(q=>q.status==='active'&&q.commander===w.characterId)??[],home=w.people[0].location,governed=central?Object.keys(w.realm!.cities).filter(site=>w.realm!.cities[site].controller===r):[...new Set([...local.map(n=>n.site).filter((v):v is string=>!!v),...local.flatMap(n=>localSites(w,n.territory!,r))])],priority=governed.map(site=>({site,...serviceNeed(w,'relief',site)})).sort((a,b)=>b.score-a.score)[0];
  const localTerritory=local.find(n=>n.territory&&['province','prefecture'].includes(territoryNodes[n.territory]?.level))?.territory;
  const openLocal=()=>central?onTerritory('realm:'+r):localTerritory?onTerritory(localTerritory):onCity(governed[0]??home);
- return <div className="realm-overview">
-  {dutyCount>0&&<button className="realm-attention" onClick={()=>onTab('duties')}><ArtIcon name="diligent"/>有 {dutyCount} 项差事文书等你处理 <span>›</span></button>}
-  {councilAttention>0&&<button className="realm-attention" onClick={()=>onTab('council')}><ArtIcon name="influence"/>有 {councilAttention} 项议事文书等你处理 <span>›</span></button>}
-  {(campaigns.length>0||priority||governed.length>0)&&<section className="realm-overview-section"><h3>{campaigns.length?'战役职掌':central?'本国要务':'辖区要务'}</h3><div className="realm-entry-grid">{campaigns.map(q=><button key={q.id} className="realm-entry" onClick={()=>onCity(q.target)}><ArtIcon name="army" size={36}/><span><strong>{siteById[q.target].name}战役</strong><small>{q.reason||'执行委任'} · 余 {Math.max(0,q.deadline-w.day)} 日</small></span><span aria-hidden="true">›</span></button>)}{priority&&<button className="realm-entry" onClick={()=>onCity(priority.site)}><ArtIcon name="grain" size={36}/><span><strong>{siteById[priority.site].name}</strong><small>{priority.reason} · {priority.neglect}</small></span><span aria-hidden="true">›</span></button>}{governed.length>1&&<button className="realm-entry" onClick={openLocal}><ArtIcon name="city" size={36}/><span><strong>{central?'浏览州郡':'统筹辖区'}</strong><small>{central?'查看本国州郡与城邑':'下级任职与跨县公务'}</small></span><span aria-hidden="true">›</span></button>}</div></section>}
-  {dutyCount===0&&councilAttention===0&&campaigns.length===0&&!priority&&<p className="realm-quiet">当前没有待办文书，也没有职责范围内的地方或战役要务。</p>}
- </div>;
+ const entries=[
+  ...(dutyCount?[{id:'duties',title:'待办差事文书',detail:dutyCount+' 项文书等待办理',scene:'realm' as const,action:()=>onTab('duties'),label:'查阅差事'}]:[]),
+  ...(councilAttention?[{id:'council',title:'议事文书',detail:councilAttention+' 项议事等待裁定',scene:'realm' as const,action:()=>onTab('council'),label:'查阅议事'}]:[]),
+  ...campaigns.map(q=>({id:'campaign-'+q.id,title:siteById[q.target].name+'战役',detail:(q.reason||'执行委任')+' · 限期余 '+Math.max(0,q.deadline-w.day)+' 日',scene:'military' as const,action:()=>onCity(q.target),label:'查看目标城邑'})),
+  ...(priority?[{id:priority.site,title:siteById[priority.site].name+'地方事务',detail:priority.reason,scene:'realm' as const,action:()=>onCity(priority.site),label:'查看城邑'}]:[]),
+  ...(governed.length>1?[{id:'lands',title:central?'本国州郡':'统筹辖区',detail:'职责范围内 '+governed.length+' 处城邑，按实际统属办理公务。',scene:'directory' as const,action:openLocal,label:'查看辖区'}]:[]),
+ ];
+ const entry=entries.find(e=>e.id===selected)??entries[0];
+ return <div className="realm-overview operations-master-detail"><aside className="operations-roster" aria-label="政务文书"><h3>案头文书</h3>{!dutyCount&&!councilAttention&&<small>当前没有待决公文</small>}{entries.map(e=><button key={e.id} aria-pressed={e.id===entry?.id} onClick={()=>setSelected(e.id)}><span><strong>{e.title}</strong><small>{e.detail}</small></span></button>)}</aside><section className="operations-selected government-dossier">{entry?<><h3>{entry.title}</h3><OperationsArt scene={entry.scene} className="government-dossier-art"/><p>{entry.detail}</p>{entry.id===priority?.site&&<p>暂缓：{priority.neglect}</p>}<footer><button onClick={entry.action}>{entry.label}</button>{entry.scene==='realm'&&<button onClick={()=>onTab('duties')}>拟定差事</button>}</footer></>:<><OperationsArt scene="realm" className="government-dossier-art"/><h3>案牍暂清</h3><p>当前没有待办文书，也没有职责范围内的地方或战役要务。</p></>}</section></div>;
 }

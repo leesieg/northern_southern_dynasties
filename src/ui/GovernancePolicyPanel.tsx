@@ -1,3 +1,4 @@
+import {OperationsArt} from './OperationsHeader';
 import {afterCommand} from './actionFeedback';
 import {politicalAction} from '../core/politicalActions';
 import {courtOf} from '../core/court';
@@ -28,7 +29,7 @@ export function GovernancePolicyPanel({world:w,realm,pending,send,onPerson,onTer
  return <div className="governance-policy-panel court-policy-desk">
   <GovernmentPanel world={w} realm={realm} compact pending={pending} send={send}/>
   <section className="court-policy-rules"><header className="court-desk-heading"><h3>治理准则</h3></header>
-   <div className="governance-rule-grid">{policyDimensions.map(d=>{const definition=policyDefinition(d,rules[d])!;return <section className="court-rule" key={d}>
+   <div className="governance-rule-grid">{policyDimensions.map(d=>{const definition=policyDefinition(d,rules[d])!;return <section className="court-rule" key={d}><OperationsArt scene={d==='appointment'?'directory':d==='access'?'staff':d==='cultural'?'diplomacy':'wealth'}/>
     <ArtIcon name={d==='appointment'?'influence':d==='access'?'person':d==='cultural'?'gregarious':'coins'} size={30}/>
     <HoverHint label={policyLabels[d]} content={definition.effect}><div tabIndex={0}><small>{policyLabels[d]}</small><strong>{definition.name}</strong><p className="court-rule-effect">{definition.effect}</p></div></HoverHint>
     {own&&<HoverHint label={'调整'+policyLabels[d]} content={executive?'100 本国公款、20 本人影响力、60 个有效日；启办支持 −8，颁行才换规则。':'须由本国实际执政者调整'}><button className="court-icon-button" aria-label={'调整'+policyLabels[d]} disabled={pending||!executive} onClick={()=>{setEditing(d);setDraft(rules[d]);}}><ArtIcon name="diligent" size={23}/></button></HoverHint>}

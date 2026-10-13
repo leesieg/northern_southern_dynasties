@@ -1,0 +1,17 @@
+{
+  "source": "Built-in imagegen; original project artwork",
+  "date": "2026-10-13",
+  "file": "operations-scenes.png",
+  "layout": "4 columns × 2 rows; CSS atlas",
+  "tiles": [
+    "政务",
+    "邦交",
+    "军事",
+    "谋略",
+    "家计",
+    "名录",
+    "朝廷",
+    "公库"
+  ],
+  "prompt": "Create a production-ready illustration atlas for a sixth-century Chinese historical strategy RPG UI, matching the attached approved concept sheets' ink-line watercolor on warm fibrous ivory paper, muted moss greens, soot ink, antique ochre and vermilion accents. This is ART ONLY, absolutely NO TEXT, letters, numbers, UI, captions, borders, labels or portraits of named figures. Exactly 4 columns x 2 rows of equally sized rectangular illustrations, flush tile boundaries with no gutters, 3:2 total image ratio. Each tile has balanced full scenic painting suitable for cropping into a wide header. Row1 left to right: 1 riverside Jiankang city and scholars' government desk with scrolls and official seal; 2 two anonymous sixth-century diplomatic envoys exchanging a sealed silk letter in a pavilion overlooking river; 3 soldiers drilling in a military encampment with watchtower, plain unlettered flags and distant city wall; 4 secret correspondence on a desk behind a bamboo screen, lamp and anonymous two figures whispering. Row2 left to right: 5 lush family country estate with tiled roofs, rice fields, ox cart and granary; 6 scholars compiling registers at desks in a timber archive with neatly stacked bamboo slips; 7 court hall interior with empty central throne dais, standing anonymous courtiers tiny in scale, golden muted lighting; 8 public treasury grain sacks, ceramic coin jars, ledger table and a clerk, river landscape beyond. Strong painted detail, fine hatching, subdued pigments, natural old paper showing through. Original artwork, no modern objects. Keep all artwork graceful, no black fades or UI overlays; CSS will overlay real text."
+}
