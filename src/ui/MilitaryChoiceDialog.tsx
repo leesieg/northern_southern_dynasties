@@ -4,6 +4,7 @@ import type {World,GameCommand} from '../core/types';
 import {playerRealm} from '../core/realm';
 import {militaryCareerReason,type MilitaryCareerCommand} from '../core/militaryCareer';
 import {ActionDialog} from './ActionDialog';
+import type {DialogScene} from './DialogArt';
 import {SingleChoiceCards} from './SingleChoiceCards';
 
 export type MilitaryChoice={kind:'automation'|'priority';army:number}|{kind:'supplyPolicy'};
@@ -24,8 +25,8 @@ export function MilitaryChoiceDialog({world:w,choice,pending,send,onClose}:{worl
  ];
  const command:MilitaryCareerCommand=choice.kind==='supplyPolicy'?{type:'militaryCareer',action:'supplyPolicy',policy:value as 'civilian'|'normal'|'emergency'}:choice.kind==='automation'?{type:'militaryCareer',action:'automation',army:choice.army,control:value as 'direct'|'delegated'}:{type:'militaryCareer',action:'priority',army:choice.army,priority:Number(value)};
  const reason=militaryCareerReason(w,command),label=options.find(option=>option.id===value)?.title??'',title=choice.kind==='supplyPolicy'?'国家征粮政策':`第 ${choice.army} 军 · ${choice.kind==='automation'?'指挥方式':'补给优先级'}`;
- return <ActionDialog title={title} onClose={onClose} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||militaryCareerReason(w,command))return;void afterCommand(send(command),()=>{onClose();});}}>确认 · {label}</button>}>
-  <SingleChoiceCards label="选择方案" value={value} onChange={setValue} options={options} disabled={pending}/>
+ return <ActionDialog art="military" title={title} onClose={onClose} actions={<button className="primary" disabled={pending||!!reason} onClick={()=>{if(pending||militaryCareerReason(w,command))return;void afterCommand(send(command),()=>{onClose();});}}>确认 · {label}</button>}>
+  <SingleChoiceCards label="选择方案" value={value} onChange={setValue} options={options.map(option=>({...option,art:(choice.kind==='supplyPolicy'?(option.id==='civilian'?'wealth':option.id==='normal'?'commerce':'dispatch'):choice.kind==='automation'?'dispatch':option.id==='0'?'realm':option.id==='1'?'commerce':'military') as DialogScene}))} disabled={pending}/>
   <p>{choice.kind==='supplyPolicy'?'作用于本国军需调运；不会立即增发粮食，也不改变每日军粮消耗。':'仅调整本军；兵员、将领、供饷账户与当前库存不变。'}</p>
   {reason&&<p role="status" className="military-warning">{reason}</p>}
  </ActionDialog>;

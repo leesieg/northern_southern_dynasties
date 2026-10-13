@@ -1,0 +1,407 @@
+/* Shared production specification for the approved paper dossiers.
+   Portal dialogs own these styles; none relies on a .focused-shell ancestor. */
+:root{--dossier-paper:#e5dcc5;--dossier-ink:#30372e;--dossier-muted:#6a6655;--dossier-gold:#a78c52;--dossier-edge:#9c845c55;--dossier-dark:#1c2721;--dossier-red:#854a3d;--dossier-texture:url('/art/interface/dialog-paper.svg')}
+.dialog-art{display:block;overflow:hidden;pointer-events:none;min-width:0}
+.dialog-art>svg{display:block;width:100%;height:100%}
+dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration,.pause-dialog){
+ --dialog-paper:var(--dossier-paper);--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);
+ padding:10px;max-height:calc(100dvh - 48px);border:0;border-radius:0;
+ border-image:url('/art/interface/operations-ink-frame.svg') 28 fill / 20px / 5px stretch;
+ background:none;box-shadow:none;filter:drop-shadow(0 8px 16px #0006);font:14px/1.65 var(--serif);
+}
+dialog.paper-dialog.action-detail-dialog{width:min(800px,calc(100vw - 40px))}
+dialog.paper-dialog.action-confirm-dialog{width:min(500px,calc(100vw - 40px))}
+dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)::backdrop{background:#111b174d;backdrop-filter:blur(1px)}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>header{
+ position:relative;isolation:isolate;flex:none;min-height:64px;padding:14px 20px;gap:12px;overflow:hidden;
+ background:var(--dossier-texture);border:0;border-bottom:1px solid var(--dossier-edge);color:var(--dossier-ink);
+}
+dialog.paper-dialog .dialog-heading-copy{position:relative;z-index:1;flex:1;min-width:0;padding-right:20px}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>header :is(h2,h3){
+ --dialog-ink:var(--dossier-ink);margin:0;padding:0;letter-spacing:1px;font:24px/1.3 var(--serif);text-shadow:none;color:var(--dossier-ink);
+}
+dialog.paper-dialog .dialog-heading-copy>p{margin:5px 0 0;font-size:12px}
+dialog.paper-dialog .dialog-heading-art{position:absolute;inset:0 45px 0 auto;width:46%;height:100%;opacity:.48;z-index:-1;mask-image:linear-gradient(90deg,transparent,#000 36%,#000 85%,transparent)}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>:is(.action-detail-body,.action-confirm-detail,.war-declaration-body){
+ min-height:0;padding:18px 20px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;
+ background:var(--dossier-texture);border:0;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink);font:14px/1.65 var(--serif);
+}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>footer{
+ flex:none;min-height:62px;padding:12px 20px;gap:10px;margin:0;background:var(--dossier-texture);border-top:1px solid var(--dossier-edge);--dialog-ink:var(--dossier-ink);
+}
+/* Consistent low ornament commands, independent of content/background ink. */
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>footer>button,
+.focused-shell .modal.operations-window :is(.campaign-action,.detail-action-card,.command-button,.primary,.government-dossier footer>button,.government-court-entry button,.private-estate>button,.directory-row-actions>button,.directory-locate,.intrigue-section-heading>button),
+.focused-shell dialog.person-ink-dialog .person-sheet--ink :is(.campaign-action,.detail-action-entry,.primary),
+.focused-shell .modal.audience-modal :is(.campaign-action,.primary){
+ min-height:36px;padding:7px 17px;border:1px solid #99835b;border-image:none;border-radius:1px;clip-path:none;
+ background:linear-gradient(#ffffff08,#0000000a),#26372c;--dialog-ink:#f0e3c3;color:var(--dialog-ink);
+ box-shadow:inset 0 0 0 2px #141e1744;font:14px/1.3 var(--serif);letter-spacing:.5px;text-shadow:none;
+}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>footer>button.primary,
+.focused-shell .modal.operations-window :is(.primary,.operations-main-action),
+.focused-shell dialog.person-ink-dialog .person-sheet--ink .primary,
+.focused-shell .modal.audience-modal .primary{background:linear-gradient(#b1945a,#92743e);--dialog-ink:#fff1d2;color:var(--dialog-ink);border-color:#ae915a}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>footer>button.danger,
+.focused-shell :is(.operations-window,.person-ink-dialog,.audience-modal) .campaign-action.danger{background:linear-gradient(#966352,#754536);--dialog-ink:#fff0d5;border-color:#91614e;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog :is(button,select,input:not([type=radio]):not([type=checkbox]),textarea){font-family:var(--serif);border-radius:1px}
+dialog.paper-dialog.paper-dialog :is(select,input:not([type=radio]):not([type=checkbox]),textarea){
+ --dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink);background:#ede5d2;border:1px solid #9e896666;min-height:34px;padding:5px 8px;max-width:100%;font-size:14px;
+}
+dialog.paper-dialog.paper-dialog :is(input,textarea)::placeholder{color:#777364}
+dialog.paper-dialog :is(input[type=radio],input[type=checkbox]){accent-color:#91763f;width:16px;height:16px;flex:none}
+dialog.paper-dialog.paper-dialog :is(.action-summary,.single-choice-card,.construction-plan-card,.military-recruit-site,.person-option,.muster-service-card,.military-choice){
+ --dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink);background:#f2ebd730;border:1px solid var(--dossier-edge);border-radius:1px;box-shadow:none;
+}
+dialog.paper-dialog.paper-dialog :is(.single-choice-card,.construction-plan-card,.military-recruit-site,.person-option,.muster-service-card,.military-choice):is(.is-selected,[aria-pressed=true],[data-selected=true],:has(input:checked)){
+ background:#bba16b1a;border-color:#a18a54;box-shadow:inset 0 0 0 1px #c5ac7544;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);
+}
+dialog.paper-dialog.paper-dialog :is(.single-choice-description,.construction-plan-description,.construction-plan-state){font-size:12px;line-height:1.65}
+dialog.paper-dialog.paper-dialog :is(.single-choice-reason,.service-warning,.military-warning,.pause-error){background:#ac684b0d;border-left:2px solid #985b43;padding:6px 10px;font-size:12px}
+dialog.paper-dialog.paper-dialog :is(button:disabled,[data-unavailable=true]){filter:saturate(.3);opacity:.65}
+dialog.paper-dialog :is(button,input,select,textarea):focus-visible{outline:2px solid #94733e;outline-offset:3px}
+/* Tabs are complete on both native dialogs and embedded detail views. */
+dialog.paper-dialog .detail-tabs{display:flex;flex:none;align-items:stretch;gap:0;margin:0 0 16px;padding:0;border:0;border-block:1px solid #a78c5255;background:#253329}
+dialog.paper-dialog .detail-tabs.detail-tabs--equal{display:grid;grid-template-columns:repeat(var(--detail-tab-count),minmax(0,1fr))}
+dialog.paper-dialog.paper-dialog .detail-tabs>button{display:flex;flex-direction:row;justify-content:center;align-items:center;gap:7px;min-width:0;min-height:38px;margin:0;padding:7px 12px;border:0;border-radius:0;background:none;--dialog-ink:#dcd3b9;--dialog-muted:#c2bba6;color:var(--dialog-ink);font:15px/1.3 var(--serif);box-shadow:none}
+dialog.paper-dialog .detail-tabs>button .art-icon{width:21px!important;height:21px!important;filter:none;flex:none}
+dialog.paper-dialog.paper-dialog .detail-tabs>button[aria-pressed=true]{background:var(--dossier-texture);--dialog-ink:#30372e;--dialog-muted:#6a6655;color:var(--dialog-ink);box-shadow:inset 0 -2px #aa8b4d;mask:url('/art/interface/operations-paper-tab.svg') center/100% 100% no-repeat}
+/* Existing dossiers use exactly the same close silhouette and compact control scale. */
+.focused-shell :is(.operations-window,.audience-modal,.operations-journal) button:is([aria-label="关闭窗口"],[aria-label="关闭抽屉"]),
+.focused-shell dialog.person-ink-dialog .person-window-chrome button[aria-label="关闭人物详情"],
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.war-declaration)>header button[aria-label^="关闭"]{
+ width:36px;height:36px;min-width:36px;min-height:36px;padding:0;border:0;clip-path:none;border-radius:0;background:transparent url('/art/interface/operations-close.svg?v=20261013') center/36px no-repeat;box-shadow:none;color:transparent;--dialog-ink:transparent;font-size:0;flex:none;z-index:2;
+}
+.focused-shell .operations-window .detail-tabs>button,
+.focused-shell dialog.person-ink-dialog :is(.person-information>.detail-tabs,.person-page-content .detail-tabs)>button{min-height:38px;font-size:15px;padding:7px 9px;letter-spacing:0}
+.focused-shell .operations-window>.operations-header{min-height:92px;height:92px;padding:10px 62px 8px 20px}
+.focused-shell .operations-window .operations-heading h2{font-size:26px;letter-spacing:2px}
+.focused-shell .operations-window .operations-heading p{font-size:14px}
+.focused-shell .operations-window .operations-window-actions{top:4px;right:3px;gap:6px}
+.focused-shell .operations-window .operations-window-actions .operations-back{height:36px;min-height:36px;font-size:13px;padding:5px 8px}
+.focused-shell .modal.operations-window{font-size:14px;line-height:1.65}
+.focused-shell .modal.operations-window :is(.detail-page-content,.economy-page,.operations-page,.diplomacy-page-content){background-image:var(--dossier-texture);border-radius:0}
+.focused-shell .modal.operations-window :is(h3,h4){letter-spacing:.5px}
+.focused-shell .person-ink-dialog .person-window-chrome{right:26px;top:24px}
+.focused-shell dialog.person-ink-dialog .person-dossier-footer .campaign-action{font-size:14px;min-height:36px;padding:7px 10px}
+.focused-shell dialog.person-ink-dialog .person-dossier-footer .campaign-action .art-icon{width:20px!important;height:20px!important}
+/* Shared decision-sheet visual grammar. Specific business layouts remain explicit. */
+dialog.paper-dialog .decision-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:0;padding:12px 0;border-block:1px solid var(--dossier-edge);background:none}
+dialog.paper-dialog .decision-metrics>div{min-width:0;padding:4px 12px;border:0;border-right:1px solid var(--dossier-edge);border-radius:0;background:none}
+dialog.paper-dialog .decision-metrics>div:last-child{border-right:0}
+dialog.paper-dialog .decision-metrics dt{font-size:12px}
+dialog.paper-dialog .decision-metrics dd{font:17px/1.5 var(--serif);margin:5px 0 0}
+dialog.paper-dialog .single-choice-cards{gap:12px}
+dialog.paper-dialog .single-choice-card{padding:12px;min-width:0}
+dialog.paper-dialog .single-choice-card strong{font:17px/1.4 var(--serif)}
+dialog.paper-dialog .route-summary{background:none;border-block:1px solid var(--dossier-edge);padding:12px 0}
+dialog.paper-dialog[data-art] .action-summary{padding:12px 14px}
+dialog.paper-dialog:is([data-art="military"],[data-art="dispatch"],[data-art="migration"],[data-art="commerce"],[data-art="treasury"]){width:min(960px,calc(100vw - 40px))}
+@media(max-width:760px){
+ dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration){max-height:calc(100dvh - 28px);width:calc(100vw - 24px);padding:7px}
+ dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>:is(header,footer,.action-detail-body,.action-confirm-detail,.war-declaration-body){padding:12px 14px}
+ dialog.paper-dialog.paper-dialog .detail-tabs>button{font-size:14px;padding:6px;gap:4px;flex-wrap:wrap}
+ dialog.paper-dialog .dialog-heading-art{opacity:.25}
+ dialog.paper-dialog .dialog-heading-copy{padding-right:0}
+ dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>header :is(h2,h3){font-size:21px}
+ .focused-shell .operations-window>.operations-header{min-height:80px;height:80px}
+}
+/* Army dossiers: source, draft and consequences stay separately readable. */
+dialog.paper-dialog.military-recruitment-dialog{width:min(1180px,calc(100vw - 40px))}
+dialog.paper-dialog .military-plan-body{display:grid;grid-template-columns:minmax(210px,.85fr) minmax(280px,1.15fr) minmax(240px,1fr);gap:20px;align-items:start}
+dialog.paper-dialog .military-plan-parameters{grid-column:2;grid-row:1;display:grid;gap:14px}
+dialog.paper-dialog .military-recruit-source{grid-column:1;grid-row:1}
+dialog.paper-dialog .military-recruit-preview{grid-column:3;grid-row:1;border-left:1px solid var(--dossier-edge);padding-left:18px}
+dialog.paper-dialog .military-plan-note{grid-column:1/-1;margin:0;font-size:12px;color:var(--dossier-muted);border-top:1px solid var(--dossier-edge);padding-top:10px}
+dialog.paper-dialog :is(.military-plan-body,.military-deployment-detail) h3{margin:0 0 12px;font:18px/1.4 var(--serif);border-bottom:1px solid var(--dossier-edge);padding-bottom:8px}
+dialog.paper-dialog .military-recruit-sites{display:grid;grid-template-columns:1fr;gap:7px;max-height:450px;overflow:auto;scrollbar-width:thin}
+dialog.paper-dialog .military-recruit-site{padding:9px;display:grid;grid-template-columns:1fr auto;gap:6px}
+dialog.paper-dialog .military-recruit-site small{grid-column:1/-1;font-size:11px}
+dialog.paper-dialog .military-recruit-count input{width:58px}
+dialog.paper-dialog .military-recruit-preview .decision-metrics{grid-template-columns:1fr;padding:0}
+dialog.paper-dialog .military-recruit-preview .decision-metrics>div{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border:0;border-bottom:1px solid var(--dossier-edge)}
+dialog.paper-dialog .military-recruit-preview .decision-metrics dd{margin:0;font-size:16px}
+dialog.paper-dialog .troop-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+dialog.paper-dialog .troop-choice-grid>label{padding:8px;border:1px solid var(--dossier-edge);background:#eee5cb44;position:relative;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.paper-dialog .troop-choice-grid>label.is-selected{border-color:var(--dossier-gold);background:#bba16b22}
+dialog.paper-dialog .troop-choice-grid>label :is(span,small){font-size:11px}
+dialog.paper-dialog .military-deployment-detail{display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,1.15fr);gap:18px}
+dialog.paper-dialog .military-deployment-roster{grid-column:1;grid-row:1/3}
+dialog.paper-dialog .military-deployment-orders{grid-column:2;grid-row:1}
+dialog.paper-dialog .military-deployment-preview{grid-column:2;grid-row:2}
+dialog.paper-dialog .military-deployment-list{max-height:450px;overflow:auto;scrollbar-width:thin}
+dialog.paper-dialog .military-deployment-list .military-record{padding:10px 0;border:0;border-bottom:1px solid var(--dossier-edge);background:none}
+dialog.paper-dialog .military-deployment-list .military-record>label{display:flex;align-items:center;gap:10px}
+dialog.paper-dialog .army-order-identity{display:flex;gap:10px;align-items:center}
+dialog.paper-dialog .military-choice-group{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+dialog.paper-dialog .military-choice{padding:8px;display:flex;align-items:start;gap:6px;font-size:13px}
+dialog.paper-dialog .military-choice small{display:block;font-size:11px}
+dialog.paper-dialog .military-deployment-preview>p{font-size:12px}
+dialog.paper-dialog .single-choice-card:has(.single-choice-art){position:relative;display:grid;grid-template-columns:20px 1fr;overflow:hidden;align-content:start;padding-top:110px}
+dialog.paper-dialog .single-choice-art{position:absolute;top:0;left:0;width:100%;height:100px;mask-image:linear-gradient(#000 70%,transparent);opacity:.9}
+dialog.paper-dialog .single-choice-card:has(.single-choice-art) .single-choice-state{grid-column:2}
+@media(max-width:900px){dialog.paper-dialog .military-plan-body{grid-template-columns:1fr 1fr}dialog.paper-dialog .military-recruit-preview{grid-column:1/-1;grid-row:2;border-left:0;padding-left:0}dialog.paper-dialog .military-recruit-preview .decision-metrics{grid-template-columns:repeat(3,1fr)}dialog.paper-dialog .military-recruit-preview .decision-metrics>div{display:block}}
+@media(max-width:650px){dialog.paper-dialog :is(.military-plan-body,.military-deployment-detail){display:flex;flex-direction:column}dialog.paper-dialog :is(.military-plan-body,.military-deployment-detail)>*{width:100%}}
+/* Reference boards use dark lacquer title rails, paper commands and painted feet. */
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>header{background:linear-gradient(90deg,#18251fef,#28342bec),url('/art/interface/dialog-paper.svg');border-bottom:1px solid #b29863;--dialog-ink:#ecdfbe;--dialog-muted:#c5bda6;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>header :is(h2,h3){--dialog-ink:#ecdfbe;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .dialog-heading-copy>p{--dialog-ink:#d1c7ad;--dialog-muted:#c5bda6;color:var(--dialog-ink)}
+dialog.paper-dialog .dialog-heading-art{opacity:.13;mix-blend-mode:luminosity}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>footer{position:relative;isolation:isolate;overflow:hidden;min-height:68px}
+dialog.paper-dialog .dialog-footer-art{position:absolute;z-index:-1;left:0;bottom:0;width:48%;height:100px;opacity:.65;mask-image:linear-gradient(90deg,#000,transparent),linear-gradient(transparent,#000 35%);mask-composite:intersect}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>footer>button:not(.primary):not(.danger){background:#ece3cbcc;--dialog-ink:var(--dossier-ink);color:var(--dialog-ink);box-shadow:inset 0 0 0 2px #eee6d233}
+dialog.paper-dialog.custody-dialog{width:min(1040px,calc(100vw - 40px))}
+dialog.paper-dialog.custody-dialog>.action-detail-body{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(360px,1.7fr);gap:22px}
+dialog.paper-dialog .custody-subject{display:flex;flex-direction:column;align-items:start;background:none;border:0;padding:0 16px 0 0;border-right:1px solid var(--dossier-edge)}
+dialog.paper-dialog .custody-subject>button{width:112px;flex:none;padding:0;background:none;border:0}
+dialog.paper-dialog .custody-subject p{font-size:12px;margin:8px 0}
+dialog.paper-dialog .custody-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
+dialog.paper-dialog .custody-choices>label{display:flex;flex-direction:column;gap:8px;padding:12px;background:#eae1cb55;border:1px solid var(--dossier-edge);border-radius:0;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.paper-dialog .custody-choices>label.selected{border-color:var(--dossier-gold);background:#bba16b22}
+dialog.paper-dialog .care-dossier{display:grid;grid-template-columns:42% 1fr;gap:22px;align-items:center}
+dialog.paper-dialog .care-dossier-art{height:260px;mask-image:linear-gradient(90deg,#000 80%,transparent)}
+dialog.paper-dialog .care-dossier-art>svg{width:auto;height:100%;max-width:none;transform:translateX(-28%)}
+dialog.paper-dialog .care-dossier p{margin:0 0 16px}
+dialog.paper-dialog.person-selection-dialog{width:min(1120px,calc(100vw - 40px))}
+dialog.paper-dialog .person-selection-filters{gap:8px;padding:10px 0;border-block:1px solid var(--dossier-edge);background:none}
+dialog.paper-dialog .person-selection-comparison{grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:18px}
+dialog.paper-dialog .person-selection-list{gap:6px}
+dialog.paper-dialog .person-option{padding:10px;gap:12px;grid-template-columns:56px 1fr auto}
+dialog.paper-dialog .person-option-portrait{width:56px;height:84px}
+dialog.paper-dialog .person-selection-preview{background:#c7b48713;border:0;border-left:1px solid var(--dossier-edge);padding:14px;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.paper-dialog .person-selection-preview-identity>.character-portrait{width:96px;height:144px}
+dialog.paper-dialog .person-option-info{font-size:12px;line-height:1.6}
+dialog.paper-dialog .person-option-info>strong{font-size:17px}
+dialog.paper-dialog .service-commission{gap:20px}
+dialog.paper-dialog .service-commission :is(.service-commission-picks,.service-commission-order){background:none;border:0;padding:0}
+dialog.paper-dialog .service-commission-order{border-left:1px solid var(--dossier-edge);padding-left:20px}
+dialog.paper-dialog .service-commission :is(.service-commission-recommended,.service-choice-overview){background:#c7b48712;border:1px solid var(--dossier-edge);border-radius:0;padding:12px;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.paper-dialog .service-commission h3{font-size:19px}
+dialog.paper-dialog .service-commission-kinds button{background:none;border:1px solid var(--dossier-edge);border-radius:0;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.paper-dialog .service-commission-kinds button[aria-pressed=true]{background:#ad925c22;border-color:var(--dossier-gold)}
+@media(max-width:760px){dialog.paper-dialog.custody-dialog>.action-detail-body,dialog.paper-dialog .care-dossier{display:block}dialog.paper-dialog .care-dossier-art{height:130px}dialog.paper-dialog .care-dossier-art>svg{width:100%;transform:none}dialog.paper-dialog .custody-subject{display:flex;flex-direction:row;border:0;padding:0;gap:14px}dialog.paper-dialog .person-selection-comparison{grid-template-columns:1fr}}
+/* Cell clipping keeps neighboring soldiers outside the chosen unit's portrait. */
+dialog.paper-dialog .troop-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+dialog.paper-dialog .troop-choice-grid>label{grid-template-rows:108px auto auto auto;padding:6px;gap:3px}
+dialog.paper-dialog .troop-choice-grid .troop-illustration{height:108px;width:100%;overflow:hidden}
+dialog.paper-dialog .military-recruit-select{display:flex;gap:8px;align-items:center}
+dialog.paper-dialog .military-recruit-select .county-artwork{width:44px;height:40px;flex:none}
+dialog.paper-dialog .military-plan-body{grid-template-columns:minmax(225px,.9fr) minmax(330px,1.2fr) minmax(245px,1fr)}
+dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.action-confirm-dialog,.war-declaration)>header :is(h2,h3){text-align:left}
+dialog.paper-dialog .migration-order-layout{display:grid;grid-template-columns:1.1fr 1fr;gap:24px}
+dialog.paper-dialog .migration-order-layout>aside{border-left:1px solid var(--dossier-edge);padding-left:22px}
+dialog.paper-dialog .migration-order-art{height:160px;margin-bottom:18px;mask-image:linear-gradient(#000 75%,transparent)}
+dialog.paper-dialog .migration-order-layout h3{font:18px var(--serif);margin:0 0 16px}
+dialog.paper-dialog .migration-order-layout .decision-metrics{grid-template-columns:1fr 1fr}
+/* System journals and compact sound desk, drawn on the same paper as orders. */
+.focused-shell .modal:has(>.game-menu-actions){width:min(570px,calc(100vw - 40px));padding:12px;border-image:url('/art/interface/operations-ink-frame.svg') 28 fill / 20px / 5px stretch}
+.focused-shell .game-menu-actions{padding:18px;background:var(--dossier-texture);--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink)}
+.focused-shell .game-menu-actions>.menu-resume{min-height:42px;background:#aa8e56;border:1px solid #877044;color:#fbf0d4;font:18px var(--serif);box-shadow:none}
+.focused-shell .game-menu-actions .menu-return-seal{border:0;font-size:24px}
+.focused-shell .menu-chronicle-actions{gap:8px}
+.focused-shell .menu-chronicle-actions>button{min-height:50px;background:#d7c8a622;border:1px solid var(--dossier-edge);color:var(--dossier-ink);font:14px var(--serif);border-radius:0;box-shadow:none}
+.focused-shell .game-menu-actions>.sound-console,dialog.sound-dialog .sound-console{background:none;border:0;box-shadow:none;padding:14px 0;color:var(--dossier-ink);--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+.focused-shell .game-menu-actions .sound-console :is(h3,small,span,output,button,a),dialog.sound-dialog .sound-console :is(h3,small,span,output,button,a){color:var(--dossier-ink)}
+.focused-shell .game-menu-actions .sound-console input,dialog.sound-dialog .sound-console input{accent-color:var(--dossier-gold)}
+.focused-shell .game-menu-actions>p{font:12px var(--serif);color:var(--dossier-muted)}
+.focused-shell .modal:has(>.save-browser){padding:12px;border-image:url('/art/interface/operations-ink-frame.svg') 28 fill / 20px / 5px stretch}
+.focused-shell .modal>.save-browser{padding:16px;background:var(--dossier-texture);color:var(--dossier-ink)}
+.focused-shell .save-browser :is(.save-vault-heading h3,.save-vault-list h4,.save-storage-note,.save-vault-note){color:var(--dossier-ink)}
+.focused-shell .save-vault-row{background:#e4d9bc44;box-shadow:none;border:1px solid var(--dossier-edge);min-height:82px}
+.focused-shell .save-vault-row[aria-pressed=true]{background:#c6ad7044;border-color:var(--dossier-gold);box-shadow:inset 3px 0 #a88b4d}
+.focused-shell .save-vault-row :is(strong,span,small,time){color:var(--dossier-ink)}
+.focused-shell .save-spine{background:#9c81552a}
+.focused-shell .save-vault-preview{box-shadow:none;background:var(--dossier-texture)}
+.focused-shell .save-vault-tools button{color:var(--dossier-ink);border:1px solid var(--dossier-edge);min-height:36px}
+.focused-shell .save-vault-preview .save-read-seal{background:#ad8e50;color:#fff2d4;min-height:36px;box-shadow:none}
+/* Narrated notices retain distinct mandatory-decision and acknowledgement behavior. */
+dialog.paper-dialog.pause-dialog{background:var(--dossier-texture);color:var(--dossier-ink);width:min(850px,calc(100vw - 40px));padding:12px;overflow:auto;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.pause-dialog .pause-paper-content{position:relative;padding:0 20px 16px;isolation:isolate}
+dialog.pause-dialog .pause-paper-content>header{margin:0 -20px 20px;background:#243128;padding:14px 20px;color:#ecdfbe}
+dialog.pause-dialog .pause-paper-content>header :is(h2,.eyebrow){color:#ecdfbe;--dialog-ink:#ecdfbe;font-family:var(--serif)}
+dialog.pause-dialog .pause-event-illustration{height:180px;float:right;width:40%;margin:0 0 14px 20px;mask-image:linear-gradient(90deg,transparent,#000 20%),linear-gradient(#000 70%,transparent);mask-composite:intersect}
+dialog.pause-dialog .pause-paper-content>header{position:relative}
+dialog.pause-dialog .pause-paper-content>footer{clear:both;position:sticky;bottom:0;padding:12px 0 0;background:var(--dossier-texture);border-top:1px solid var(--dossier-edge)}
+dialog.pause-dialog .pause-paper-content>footer>button{min-height:36px;padding:8px 22px;border:1px solid #a88b4d;background:#aa8d52;color:#fff1d0;font:14px var(--serif);border-radius:0}
+dialog.paper-dialog .appointment-review{padding:12px}
+dialog.paper-dialog .appointment-review :is(p,small){color:var(--dossier-muted)}
+dialog.paper-dialog .appointment-list article{grid-template-columns:1fr 1fr 40px;padding:12px 0;border-bottom-color:var(--dossier-edge)}
+dialog.paper-dialog :is(.political-options,.political-suggestions) :is(label,button){background:#c4ad781a;border:1px solid var(--dossier-edge);color:var(--dossier-ink);border-radius:0}
+dialog.paper-dialog .political-options label:has(input:checked),dialog.paper-dialog .political-suggestions button[aria-pressed=true]{border-color:var(--dossier-gold);background:#c4ad783a}
+dialog.paper-dialog .political-succession-chain{border-bottom:1px solid var(--dossier-edge);padding-bottom:16px}
+@media(max-width:900px){dialog.paper-dialog .military-plan-body{grid-template-columns:1fr 1.2fr}}
+@media(max-width:650px){dialog.paper-dialog .migration-order-layout{display:block}dialog.paper-dialog .migration-order-layout>aside{border:0;padding:16px 0}dialog.paper-dialog .troop-choice-grid{grid-template-columns:repeat(2,1fr)}}
+/* Prior dossier details: match type scale, inset dividers and control geometry. */
+.focused-shell .operations-window :is(h3){font-size:21px;margin-bottom:12px}
+.focused-shell .operations-window h4{font-size:17px}
+.focused-shell .operations-window small{font-size:12px}
+.focused-shell .operations-window :is(input:not([type=file]):not([type=checkbox]):not([type=radio]),select){min-height:34px;font-size:14px}
+.focused-shell .operations-window :is(.realm-entry,.realm-attention,.assignment-card,.military-alerts>button,.military-record-main,.military-generals>button,.intrigue-person-link){border-radius:0;min-height:46px;padding:10px;border-color:var(--dossier-edge)}
+.focused-shell .operations-window :is(.military-record,.scheme-record,.service-council,.realm-overview-section,.realm-event,.diplomacy-fact,.diplomacy-treaties>article,.private-estate,.living-summary,.economy-section){border-radius:0;padding:12px;margin-bottom:12px;border-color:var(--dossier-edge)}
+.focused-shell .operations-window .operations-identity-portrait{width:62px;height:76px}
+.focused-shell .operations-window :is(.detail-page-content,.economy-page,.operations-page){padding:16px 20px}
+.focused-shell .person-ink-dialog :is(.person-demographics,.person-standing small,.person-named-trait small,.person-dossier-traits>span){font-size:14px}
+.focused-shell .person-ink-dialog :is(.ability-point small,.ability-point b){font-size:16px}
+.focused-shell .person-ink-dialog .person-standing b{font-size:17px}
+.focused-shell .person-ink-dialog .person-dossier-traits{min-height:50px;gap:12px}
+.focused-shell .person-ink-dialog .person-dossier-traits .trait-badge{width:36px;height:36px;min-width:36px;min-height:36px}
+.focused-shell .person-ink-dialog .person-page-content{font-size:14px}
+.focused-shell .person-ink-dialog .person-page-content :is(p,small){line-height:1.65}
+.focused-shell .person-ink-dialog .person-allegiance-row strong{font-size:16px}
+.focused-shell .person-ink-dialog .person-allegiance-row small{font-size:13px}
+.focused-shell .modal.estate-modal>header h2{background:none;border:0;box-shadow:none;font-size:24px;padding:8px 24px;letter-spacing:1px}
+.focused-shell .modal.estate-modal>header h2::before,.focused-shell .modal.estate-modal>header h2::after{content:none}
+/* Paper business sheets retain clear ink even when embedded legacy cards were dark. */
+dialog.paper-dialog .action-detail-body :is(.court-fiscal-grant,.economy-parameters,.political-grant-layout,.government-audit-parameters){gap:18px;align-items:start}
+dialog.paper-dialog .action-detail-body :is(.court-fiscal-ledger,.court-fiscal-requests,.audit-report,.political-input,.service-choice-overview){--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink)}
+dialog.paper-dialog .court-fiscal-ledger>article{display:grid;grid-template-columns:1fr auto;gap:5px 16px;padding:12px 0;border:0;border-bottom:1px solid var(--dossier-edge);background:none}
+dialog.paper-dialog .court-fiscal-ledger>article>small{grid-column:1/-1;color:var(--dossier-muted)}
+dialog.paper-dialog .court-fiscal-grant{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+dialog.paper-dialog .court-fiscal-grant>p{grid-column:1/-1;padding-top:10px;border-top:1px solid var(--dossier-edge)}
+dialog.paper-dialog .government-audit-parameters{display:grid;grid-template-columns:1fr 1fr}
+dialog.paper-dialog :is(.court-fiscal-grant,.government-audit-parameters,.economy-parameters) label{display:flex;flex-direction:column;gap:7px}
+dialog.paper-dialog .living-standard-dialog .single-choice-list{grid-template-columns:repeat(3,1fr)}
+dialog.paper-dialog.living-standard-dialog .single-choice-content>strong{display:flex;flex-direction:column;gap:10px}
+dialog.paper-dialog.living-standard-dialog .single-choice-content>strong .operations-art{width:100%;height:110px}
+dialog.paper-dialog .single-choice-list{gap:10px}
+dialog.paper-dialog .regiment-preview{display:grid;grid-template-columns:160px 1fr;gap:22px;align-items:center}
+dialog.paper-dialog .regiment-preview .troop-illustration{width:160px;height:240px;overflow:hidden}
+dialog.paper-dialog .regiment-preview dl{display:grid;grid-template-columns:110px 1fr;gap:12px}
+dialog.paper-dialog .regiment-preview dd{margin:0}
+dialog.paper-dialog .event-decision>footer{display:flex;align-items:center;justify-content:flex-end;gap:14px;position:sticky;bottom:0;background:var(--dossier-texture);border-top:1px solid var(--dossier-edge);padding:12px 0;clear:both}
+dialog.paper-dialog .event-decision>footer>button{min-height:36px;background:#a98a4e;color:#fff0d2;border:1px solid #8d7343;padding:8px 18px;font:14px var(--serif)}
+dialog.paper-dialog .event-decision .single-choice-list{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+dialog.paper-dialog.pause-dialog>header{padding:14px 20px;background:#243128;color:#ecdfbe;--dialog-ink:#ecdfbe;border-bottom:1px solid var(--dossier-gold)}
+dialog.paper-dialog.pause-dialog>header h2{font:24px var(--serif);color:#ecdfbe;margin:0}
+dialog.paper-dialog.pause-dialog>.event-decision{padding:0 20px 10px}
+dialog.paper-dialog.pause-dialog>p{margin:16px 20px}
+/* War rail: compact opposing portraits and an uninterrupted title / banner band. */
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>header{min-height:70px}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>header h2{font-size:27px;text-align:center}
+dialog.paper-dialog.war-details-dialog .dialog-heading-copy>p{text-align:center}
+dialog.paper-dialog.war-details-dialog .war-details-parties{padding:0;margin-inline:-18px;gap:0;background:#202b24;border-top:1px solid #a38d5b66}
+dialog.paper-dialog.paper-dialog.war-details-dialog .war-details-parties>article{min-height:78px;padding:8px 22px;background:transparent;border-bottom:1px solid #a38d5b66}
+dialog.paper-dialog.paper-dialog.war-details-dialog .war-details-parties>article:nth-child(2){border-left:1px solid #a38d5b66;background:transparent}
+dialog.paper-dialog .war-details .war-party-portrait{width:58px;height:58px}
+dialog.paper-dialog .war-party-portrait .painted-portrait{width:58px;height:58px;aspect-ratio:1}
+dialog.paper-dialog.paper-dialog .war-details-parties>article>div>button{border:0!important;min-height:0;padding:0;background:none!important;color:#eadbbd;text-align:left;font:15px var(--serif);box-shadow:none}
+dialog.paper-dialog .war-details>.hover-hint{margin:5px 0;font-size:11px}
+dialog.paper-dialog .war-details>.detail-tabs{margin:0;min-height:38px}
+dialog.paper-dialog .war-details>.detail-tabs>button{min-height:38px}
+dialog.paper-dialog .war-overview-grid{gap:12px;padding:12px 0}
+dialog.paper-dialog .war-score .war-facts>span{padding:4px 0}
+dialog.paper-dialog .war-score-scale{padding-top:22px}
+dialog.paper-dialog .war-target>.dialog-art{height:110px;width:48%}
+dialog.paper-dialog.paper-dialog.war-details-dialog>footer{min-height:56px;padding-block:10px}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>.action-detail-body{padding:0 18px}
+dialog.paper-dialog.war-details-dialog .war-treaty-sheet{overflow:hidden;align-items:stretch}
+dialog.paper-dialog.war-details-dialog .war-treaty-editor{min-height:0;overflow:auto;padding-right:8px;scrollbar-width:thin}
+dialog.paper-dialog.war-details-dialog .war-treaty-preview{position:static;display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:12px}
+dialog.paper-dialog .war-treaty-preview-content{min-height:0;overflow:auto;scrollbar-width:thin;flex:1}
+dialog.paper-dialog.war-details-dialog .war-treaty-preview>.dialog-art{height:65px;width:100%;flex:none;margin:8px 0}
+dialog.paper-dialog.war-details-dialog .war-treaty-preview>footer{flex:none;margin-top:6px;padding-top:8px}
+dialog.paper-dialog .war-treaty-preview>footer .service-warning{margin:0 0 6px;padding:4px 8px;font-size:11px}
+dialog.paper-dialog .war-treaty-plans{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+dialog.paper-dialog .war-treaty-plans>label{padding:9px;min-height:56px}
+dialog.paper-dialog .war-treaty-plans strong{font-size:14px}
+dialog.paper-dialog.war-details-dialog .war-report-dossier{align-items:stretch;overflow:hidden}
+dialog.paper-dialog .war-report-timeline{overflow:auto;min-height:0;scrollbar-width:thin}
+dialog.paper-dialog .war-report-paper{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+dialog.paper-dialog .war-report-paper>.dialog-art{height:100px;flex:none}
+dialog.paper-dialog .war-report-facts{flex:1;min-height:0;overflow:auto;scrollbar-width:thin}
+dialog.paper-dialog .war-report-paper>footer{flex:none;margin-top:8px}
+@media(max-width:760px){dialog.paper-dialog.war-details-dialog .war-treaty-sheet{display:block;overflow:auto}dialog.paper-dialog.war-details-dialog .war-treaty-preview{min-height:400px;margin-top:16px}dialog.paper-dialog .war-treaty-editor{overflow:visible}}
+dialog.paper-dialog .single-choice-list:has(.single-choice-art){display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+dialog.paper-dialog .single-choice-card:has(.single-choice-art){min-height:245px}
+dialog.paper-dialog .single-choice-art{background-size:200% 400%}
+@media(max-width:650px){dialog.paper-dialog .single-choice-list:has(.single-choice-art){grid-template-columns:1fr}dialog.paper-dialog .single-choice-card:has(.single-choice-art){min-height:210px}}
+/* These insets were dark in legacy dialogs. Their paper variants must own both ink tokens. */
+dialog.paper-dialog.paper-dialog .military-deployment-list .military-record,
+dialog.paper-dialog.paper-dialog .military-deployment-detail .military-choice,
+dialog.paper-dialog.paper-dialog .service-commission :is(.service-choice-overview,.service-board-section),
+dialog.paper-dialog.paper-dialog :is(.political-options label,.political-suggestions>button,.government-audit-parameters,.court-fiscal-grant){
+ --dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink);background:#ede5d12a;border-color:var(--dossier-edge)
+}
+dialog.paper-dialog.paper-dialog .military-deployment-detail .military-choice:has(input:checked){background:#c5ad7333;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);border-color:var(--dossier-gold)}
+dialog.paper-dialog.paper-dialog .political-options label:has(input:checked){--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);background:#c5ad7333}
+dialog.paper-dialog.paper-dialog .military-record:has(input[type=checkbox]:checked){background:#c5ad7333;--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted)}
+dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-filters{grid-template-columns:repeat(5,minmax(0,1fr));gap:7px 12px}
+dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-filters>label{display:grid;grid-template-columns:1fr;gap:4px;align-items:start;font-size:11px;white-space:nowrap}
+dialog.paper-dialog.person-selection-dialog .person-selection-ability-filter{grid-template-columns:1fr 1fr!important}
+dialog.paper-dialog.person-selection-dialog .person-selection-sort{grid-column:span 2}
+dialog.paper-dialog.person-selection-dialog .person-selection-checks{grid-column:span 2;align-self:end;flex-wrap:wrap;font-size:11px}
+dialog.paper-dialog.paper-dialog.person-selection-dialog button.person-option{--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink);background:#f0e7ce66;border:1px solid var(--dossier-edge);padding:8px;min-height:110px}
+dialog.paper-dialog.paper-dialog.person-selection-dialog button.person-option[aria-pressed=true]{background:#c6ad7033;border-color:var(--dossier-gold)}
+dialog.paper-dialog.person-selection-dialog .person-option-info{line-height:1.35;gap:2px}
+dialog.paper-dialog.person-selection-dialog .person-option-info :is(span,small){font-size:11px}
+@media(max-width:760px){dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-filters{grid-template-columns:repeat(2,1fr)}}
+.focused-shell .modal.operations-window .household-enterprises .enterprise-ledger>header{--dialog-ink:var(--dossier-ink);--dialog-muted:var(--dossier-muted);color:var(--dialog-ink)}
+.focused-shell .modal.operations-window .household-enterprises .enterprise-ledger>header :is(h3,p,small,strong){color:var(--dossier-ink)}
+.focused-shell .modal.operations-window :is(.private-estate>button,.directory-row-actions>button,.directory-locate,.intrigue-section-heading>button){min-height:36px;padding:7px 16px;border:1px solid #99835b;border-image:none;clip-path:none;border-radius:1px;background:#26372c;color:#f0e3c3;box-shadow:none;font:14px/1.3 var(--serif)}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>footer{background:#202b24;justify-content:space-between;border-top:1px solid #a38d5b66}
+dialog.paper-dialog.war-details-dialog>footer .dialog-footer-art{display:none}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>footer>button:not(.primary){background:#202b24;color:#eadfc3;--dialog-ink:#eadfc3}
+
+/* Utility entries use a compact standalone sheet, not the full-height legacy drawer. */
+.focused-shell section.modal.left-utility-drawer:is([data-detail="menu"],[data-detail="saves"]){position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);height:auto;max-height:calc(100dvh - 40px);width:min(570px,calc(100vw - 40px));padding:9px;background:#202c23;border:1px solid #95815a;border-image:url('/art/interface/operations-ink-frame.svg') 28 fill / 18px / 4px stretch;overflow:auto;box-shadow:0 18px 65px #0d170d77;animation:none}
+.focused-shell section.modal.left-utility-drawer[data-detail="saves"]{width:min(1040px,calc(100vw - 40px))}
+.focused-shell section.modal.left-utility-drawer:is([data-detail="menu"],[data-detail="saves"])>.dynasty-drawer-header{min-height:64px;height:64px;border:0;padding:8px 20px;margin:0;box-shadow:none}
+.focused-shell section.modal.left-utility-drawer:is([data-detail="menu"],[data-detail="saves"]) .drawer-ornament{display:none}
+.focused-shell section.modal.left-utility-drawer:is([data-detail="menu"],[data-detail="saves"]) .drawer-medallion{width:32px;height:32px;min-width:32px;min-height:32px;border:1px solid #b49a67;border-radius:0;background:#213127;box-shadow:none;color:#eadabd}
+.focused-shell .game-menu-actions .sound-console :is(button,.sound-silence),dialog.sound-dialog .sound-console :is(button,.sound-silence){background:#e8dfc7;border:1px solid #a78c5277;color:#344033;min-height:32px;padding:5px 12px;border-radius:0;box-shadow:none}
+.focused-shell .game-menu-actions .sound-console input[type=range],dialog.sound-dialog .sound-console input[type=range]{background:transparent;border:0;box-shadow:none}
+dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-ability-filter{grid-template-columns:1fr 1fr;grid-column:span 2}
+dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-ability-filter>span{grid-column:1/-1}
+dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-checks{grid-column:span 1;display:grid;gap:3px;font-size:11px}
+dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-checks>label{font-size:11px}
+dialog.paper-dialog.person-selection-dialog--compare{height:min(940px,calc(100dvh - 32px));max-height:calc(100dvh - 32px)}
+@media(max-width:760px){dialog.paper-dialog.paper-dialog.person-selection-dialog .person-selection-checks{grid-column:1/-1;display:flex;flex-wrap:wrap}}
+
+/* Reports and treaties reserve more of the window for reading and drafting. */
+dialog.paper-dialog.paper-dialog.war-details-dialog:has(.war-details[data-page]:not([data-page="overview"]))>header{min-height:64px;padding-block:9px}
+dialog.paper-dialog.paper-dialog .war-details[data-page]:not([data-page="overview"]) .war-details-parties>article{min-height:66px;padding-block:6px}
+.war-details[data-page]:not([data-page="overview"]) .war-details-parties>article>div:not(.war-allies){display:grid;grid-template-columns:auto auto;gap:3px 16px;align-items:center}
+.war-details[data-page]:not([data-page="overview"]) .war-party-portrait{width:44px;height:44px}
+.war-details[data-page]:not([data-page="overview"]) .war-details-parties>article>div>small{font-size:11px}
+dialog.paper-dialog.paper-dialog.war-details-dialog .war-details>.detail-tabs{min-height:44px;padding:4px 0}
+dialog.paper-dialog.paper-dialog.war-details-dialog .war-details>.detail-tabs>button{min-height:36px;padding-block:5px}
+@media(max-height:800px){.war-treaty-preview>.dialog-art{height:42px;margin-block:5px}.war-treaty-preview{padding:10px 12px}.war-treaty-preview>footer{padding-top:6px;margin-top:6px}.war-treaty-preview>footer>small{font-size:10px}.war-treaty-preview h4{margin-top:5px}}
+.focused-shell .utility-drawer-host:has(>[data-detail="menu"]),.focused-shell .utility-drawer-host:has(>[data-detail="saves"]){background:none;border:0;box-shadow:none;overflow:visible}
+/* The legacy drawer width is !important; neutralize it only for system sheets. */
+.focused-shell section.modal.left-utility-drawer[data-detail="menu"]{width:min(570px,calc(100vw - 40px))!important}
+.focused-shell section.modal.left-utility-drawer[data-detail="saves"]{width:min(1040px,calc(100vw - 40px))!important}
+@media(max-height:800px){
+ dialog.paper-dialog.war-details-dialog .war-treaty-preview>.dialog-art{height:38px;margin:5px 0}
+ dialog.paper-dialog .war-report-paper>.dialog-art{height:64px;margin-block:8px}
+ dialog.paper-dialog .war-report-losses{padding-block:7px}
+ dialog.paper-dialog .war-treaty-totals{padding-block:6px;gap:4px}
+ dialog.paper-dialog .war-treaty-preview>footer>small{display:none}
+}
+/* Paused notices have direct children, unlike ActionDialog's paper body. */
+dialog.paper-dialog.paper-dialog.pause-dialog{border-image:url('/art/interface/operations-ink-frame.svg') 28 / 20px / 5px stretch;background:var(--dossier-texture)}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience) header h2{background:none;box-shadow:none;text-shadow:none;padding:0;text-align:left}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience) header h2::before,dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience) header h2::after{display:none}
+dialog.paper-dialog.paper-dialog.pause-dialog>.event-decision,dialog.paper-dialog.paper-dialog.pause-dialog>.pause-paper-content{background:var(--dossier-texture)}
+
+dialog.paper-dialog.paper-dialog.pause-dialog .event-decision>footer>button.primary{background:#a88c50;color:#fff1d1;border:1px solid #8d713e;box-shadow:inset 0 0 0 2px #e3d09c33;min-height:36px;padding:8px 20px;font:14px var(--serif);border-radius:0}
+.focused-shell .territory-window.territory-window .territory-window-chrome>button,.focused-shell .territory-window.territory-window .territory-page-close{width:34px;height:34px;min-width:34px;min-height:34px;border-radius:0;border:1px solid #a9915d;background:#213127!important;box-shadow:none;color:#eadabd;font:24px/1 var(--serif)}
+.focused-shell .territory-window.territory-window .territory-window-chrome>button:hover,.focused-shell .territory-window.territory-window .territory-page-close:hover{background:#354337!important;box-shadow:none;border-color:#d1b477}
+
+.focused-shell .operations-journal .journal-footer>button{min-height:36px;padding:7px 17px;border:1px solid #99835b;border-image:none;border-radius:0;clip-path:none;background:#26372c;color:#f0e3c3;font:14px/1.3 var(--serif);box-shadow:none}
+.focused-shell .modal.operations-window .government-dossier footer>.operations-main-action,.focused-shell .modal.operations-window .government-court-entry .operations-main-action{background:linear-gradient(#b1945a,#92743e);color:#fff1d2;border-color:#ae915a}
+
+.focused-shell .modal.estate-modal.estate-detail-window>header .drawer-actions button{width:36px;height:36px;min-width:36px;min-height:36px;padding:8px;border:1px solid #a9915d;border-radius:0;background:#213127;color:#eadabd;box-shadow:none;font-size:14px}
+.focused-shell .modal.estate-modal.estate-detail-window>header .drawer-actions button svg{display:block;width:18px;height:18px}
+.focused-shell .modal.estate-modal.estate-detail-window>header .drawer-actions button[aria-label="返回上页"] svg{transform:rotate(180deg)}
+.focused-shell .modal.estate-modal.estate-detail-window .estate-workspace>.detail-tabs{min-height:48px;padding:5px 12px}
+.focused-shell .modal.estate-modal.estate-detail-window .estate-workspace>.detail-tabs>button{min-height:36px;height:36px;font-size:16px;gap:7px;padding:6px 14px}
+.focused-shell .modal.estate-modal.estate-detail-window .estate-workspace>.detail-tabs>button[aria-pressed=true]{mask:url('/art/interface/operations-paper-tab.svg') center/100% 100% no-repeat;border:0}
+.focused-shell .modal.estate-modal.estate-detail-window .estate-workspace>.detail-tabs .art-icon{width:22px!important;height:22px!important}
+dialog.paper-dialog.paper-dialog.pause-dialog .pause-paper-content>footer>button.primary{background:#a88c50;color:#fff1d1;border:1px solid #8d713e;box-shadow:inset 0 0 0 2px #e3d09c33;min-height:36px;padding:8px 20px;font:14px var(--serif);border-radius:0}
+/* Family lists own thumbnail dimensions; the full portrait must never size the row. */
+.focused-shell dialog.person-ink-dialog .household-roster{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+.focused-shell dialog.person-ink-dialog .household-person{min-width:0;padding:9px;gap:10px;align-items:center}
+.focused-shell dialog.person-ink-dialog .household-person>.painted-portrait{display:block;width:48px;height:48px;min-width:48px;aspect-ratio:1;flex:0 0 48px;margin:0}
+.focused-shell dialog.person-ink-dialog .household-person>.painted-portrait .painted-portrait-frame{width:100%;height:100%;aspect-ratio:1}
+.focused-shell dialog.person-ink-dialog .household-person>div:not(.painted-portrait){flex:1;min-width:0;line-height:1.5}
+.focused-shell dialog.person-ink-dialog .household-person strong{font:15px var(--serif)}

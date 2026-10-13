@@ -1,0 +1,16 @@
+{
+  "source": "Original project artwork, built-in imagegen",
+  "date": "2026-10-13",
+  "layout": "2 columns, 4 rows; 768x256 tiles",
+  "tiles": [
+    "fortress",
+    "dispatch",
+    "care",
+    "succession",
+    "commerce",
+    "migration",
+    "rites",
+    "custody"
+  ],
+  "prompt": "Generate a production artwork sprite sheet for approved Chinese sixth-century strategy RPG parchment dialogs. EXACTLY two columns and four rows, eight equal 3:1 panoramic tiles, zero gutter, total1536x1024. Pure illustrations only, NO TEXT, NO NUMBERS, NO UI, NO BORDER, NO SIGNS OR INSCRIPTIONS. Elegant detailed Chinese ink line and muted watercolor wash on ivory paper #e5dcc5, warm grey stone, moss greenery, tiny earthy ochre accents. Flat painted forms, no photorealism, no fantasy ornate armor, no modernity. Subjects scaled modestly, environment supports rather than dominates small humans. Each tile softly fades to clean ivory near left/right edges, no black overlay. Row1left: Yubi-inspired fortress atop a broad flat yellow loess plateau with sheer yellow-earth cliffs on three sides and a river below, earthen/timber fortifications, NOT mountains or pointed karst, no palace. Row1right: officers in a military tent examining blank scroll dispatches, distant infantry camp and flags without symbols. Row2left: sixth-century domestic sickroom, patient lying on bed and caregiver preparing herbs, modest tasteful private scene. Row2right: two generations handing over a family register in a manor courtyard, book chests and fields beyond. Row3left: caravan carts and grain warehouse, merchant checking blank document, coins and sacks. Row3right: migrating peasant households with ox carts and grain along a winding river road toward a small walled settlement. Row4left: ceremonial official receiving a blank imperial document in a restrained palace hall, no crown bead curtains, no identifying face. Row4right: guarded official in a simple administrative hall, captor clerk examining papers, dignified nonviolent detention interview, no torture. Beautiful restrained fine ink crosshatching and soft watercolor terrain consistent with historical parchment UI, all eight tile subjects distinct and usable independently."
+}

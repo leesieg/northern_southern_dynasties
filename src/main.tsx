@@ -8,6 +8,7 @@ import './ui/campaignSetup.css';
 import './ui/experience.css';
 import './ui/decisionPresentation.css';
 import './ui/immersiveInterface.css';
+import './ui/dialogDesign.css';
 
 if (import.meta.env.BASE_URL.startsWith('/games/fengyun-nanbeichao/')) {
   let owner: string | undefined;

@@ -30,3 +30,88 @@ dialog.paper-dialog.engagement-dialog .engagement-dispatch{--dialog-ink:#29382e;
 .war-details-claimant{display:flex;flex-wrap:wrap;gap:8px 16px;padding:9px;border:1px solid #b69c6340;color:#e6d6b4;font:12px/1.6 var(--sans)}
 .war-details-claimant p{flex-basis:100%;margin:0;color:#b8c0a7}
 .war-details-claimant button{padding:2px 5px;border:0;background:transparent;color:#dbc083}
+
+/* Approved military dossier: one heading, compact parties, a signed advantage scale. */
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog){width:min(1120px,calc(100vw - 40px));height:min(850px,calc(100dvh - 48px))}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>header{background:#1c2721;--dialog-ink:#ecdfbe;--dialog-muted:#c6c3ac;min-height:80px}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>header :is(h2,p){--dialog-ink:#ecdfbe;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog.war-details-dialog:not(.engagement-dialog)>.action-detail-body{padding:0 18px;display:flex;overflow:hidden}
+dialog.paper-dialog.war-details-dialog .dialog-heading-art{opacity:.55;width:50%}
+.war-details-dialog .war-details{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.war-details-dialog .war-details>.detail-tabs{flex:none;margin:0;padding:0}
+.war-details-dialog .war-details>.war-details-content,.war-details-dialog .war-report-dossier,.war-details-dialog .war-treaty-sheet{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;overscroll-behavior:contain}
+.war-details .war-details-parties{gap:18px;padding:12px 0;flex:none}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-details .war-details-parties>article{position:relative;min-height:84px;padding:8px 12px;border:0;border-bottom:1px solid #a38d5b66;background:#25342c;--dialog-ink:#ebdfc2;--dialog-muted:#c4c5b0;gap:12px}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-details .war-details-parties>article:nth-child(2){background:#34382c}
+.war-details .war-party-portrait{width:50px;height:68px;flex:none;background:none!important;border:0!important;padding:0!important;overflow:hidden}
+.war-party-portrait .painted-portrait{width:100%;height:100%;aspect-ratio:2/3}
+.war-details-parties>article>div>button{background:none!important;border:0;padding:0;text-align:left;font:13px var(--serif)}
+.war-details .war-details-parties strong{font-size:15px;font-weight:500}
+.war-details .war-details-parties .war-allies{max-width:100px}
+.war-details>.hover-hint{flex:none;font-size:11px;margin:0 0 8px}
+.war-overview-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;padding:16px 0;align-content:start;align-items:start}
+.war-overview-grid>.war-score{grid-column:1;grid-row:1;border:1px solid var(--dossier-edge);padding:12px 16px}
+.war-overview-grid>.war-participant-columns{grid-column:2;grid-row:1;display:block;margin:0;padding:10px 12px;background:#233029;--dialog-ink:#ebdfc2;--dialog-muted:#bcc0ac}
+.war-overview-grid>.war-target{grid-column:1;grid-row:2;border:1px solid var(--dossier-edge);padding:12px 16px}
+.war-overview-grid>.war-current-occupations{grid-column:2;grid-row:2;border:1px solid var(--dossier-edge);padding:12px 14px}
+.war-overview-grid>.war-current-engagements,.war-overview-grid>.war-captive-list{grid-column:1/-1}
+.war-overview-grid>.war-current-engagements{padding-top:4px;border-top:1px solid var(--dossier-edge)}
+.war-overview-grid h4{font-size:17px;margin:0 0 12px}
+.war-score-scale{padding:27px 4px 7px;margin:4px 0}
+.war-score-ruler{height:13px;position:relative;border-block:1px solid #5a5b4c;background:repeating-linear-gradient(90deg,#656653 0 1px,transparent 1px 5%);margin:0 16px}
+.war-score-origin{position:absolute;left:50%;top:-5px;bottom:-5px;border-left:2px solid #3b4335}
+.war-score-marker{position:absolute;left:var(--war-score-position);bottom:14px;transform:translateX(-50%);font:17px/1.2 var(--serif);text-align:center;white-space:nowrap}
+.war-score-marker>i{display:block;width:0;height:0;margin:3px auto -1px;border-inline:5px solid transparent;border-top:7px solid #414938}
+.war-score-scale .war-score-labels{margin:7px 0 0;display:grid;grid-template-columns:1fr 1fr 1fr;font-size:11px}
+.war-score-labels>span:nth-child(2){text-align:center}.war-score-labels>span:last-child{text-align:right}
+.war-score .war-facts{display:block;padding:0;border-top:1px solid var(--dossier-edge)}
+.war-score .war-facts>span{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--dossier-edge);font-size:13px}
+.war-score .war-facts b{font:18px var(--serif)}
+.war-target>.dialog-art{float:right;width:45%;height:100px;margin:0 0 8px 14px;mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent)}
+.war-target p,.war-current-occupations p{font-size:12px;line-height:1.7}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-participant-columns article{background:none;border:0;border-bottom:1px solid #a68c5650;padding:10px 0;--dialog-ink:#ebdfc2;--dialog-muted:#bcc0ac}
+.war-participant-columns .war-leader{width:40px;height:40px}.war-participant-columns .war-leader .painted-portrait{width:40px;height:40px}
+.war-details .war-occupation-list{grid-template-columns:1fr}
+.war-occupation-list article{border:0;border-bottom:1px solid var(--dossier-edge);padding:7px 0}
+.war-report-dossier{display:grid;grid-template-columns:minmax(180px,30%) minmax(0,1fr);gap:18px;padding:16px 0;align-items:start}
+.war-report-timeline{display:grid;gap:8px;align-content:start}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-report-timeline button{display:flex;align-items:center;gap:10px;padding:12px 10px;background:#e4d9bd60;border:1px solid var(--dossier-edge);--dialog-ink:#30372e;--dialog-muted:#6a6655;text-align:left;box-shadow:none;border-radius:0}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-report-timeline button[aria-pressed=true]{border-color:#9f8146;background:#cbb98940;box-shadow:inset 3px 0 #9f8146}
+.war-report-timeline strong{font-size:15px}.war-report-timeline small{display:block;font-size:11px;margin-top:5px}
+.war-report-paper{border:1px solid var(--dossier-edge);padding:14px 16px;min-width:0}
+.war-report-paper>header{display:flex;justify-content:space-between;align-items:center;gap:12px}.war-report-paper>header h3{margin:0;font-size:21px}
+.war-report-paper>.dialog-art{height:160px;margin:14px -8px;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 90%,transparent)}
+.war-report-losses{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-block:1px solid var(--dossier-edge);padding:12px 0}.war-report-losses b{display:block;font:21px var(--serif);margin-top:8px}
+.war-report-paper>footer{display:flex;justify-content:flex-end;border-top:1px solid var(--dossier-edge);padding-top:12px;margin-top:20px}
+.war-report-paper>footer button{padding:7px 16px;border:1px solid #9f8146;background:#9a7a3e!important;--dialog-ink:#fff0cf;color:var(--dialog-ink)}
+.war-treaty-sheet{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;padding:16px 0;align-items:start}
+.war-treaty-sheet:not(:has(.war-treaty-preview)){grid-template-columns:1fr}
+.war-treaty-editor{min-width:0}
+.war-treaty-plans{display:grid;gap:6px;margin:0 0 14px;padding:0;border:0}
+.war-treaty-plans legend{font:18px var(--serif);margin-bottom:10px}
+.war-treaty-plans>label{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--dossier-edge);background:#f3eddb28;cursor:pointer}
+.war-treaty-plans>label[data-selected=true]{border-color:#9f8146;background:#cbb98930;box-shadow:inset 0 0 0 1px #bda57055}
+.war-treaty-plans strong{font:16px var(--serif)}.war-treaty-plans small{font-size:11px;margin-top:3px}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-treaty-editor .war-settlement-facts{--dialog-ink:#30372e;--dialog-muted:#6a6655;background:none;border:0;border-block:1px solid var(--dossier-edge);padding:8px 0;font-size:12px}
+.war-treaty-editor .war-settlement-claims{border:0;border-bottom:1px solid var(--dossier-edge);padding:12px 0;margin:0}
+.war-treaty-editor .war-settlement-claims>p{font-size:11px;line-height:1.7}
+.war-treaty-editor .war-settlement-claims label{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:6px 0}
+.war-treaty-preview{position:sticky;top:0;border:1px solid var(--dossier-edge);padding:14px 16px;min-width:0;background:#f1e9d560}
+.war-treaty-preview>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.war-treaty-preview h3{font:22px var(--serif);margin:0}.war-treaty-preview h4{font:16px var(--serif);margin:12px 0 6px}
+.war-treaty-preview>.dialog-art{height:100px;margin:12px -8px;opacity:.85;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 90%,transparent)}
+.war-treaty-preview p{font-size:12px;line-height:1.7}
+.war-treaty-totals{display:grid;grid-template-columns:1fr 1fr;border-block:1px solid var(--dossier-edge);padding:10px 0;gap:10px}.war-treaty-totals dt{font-size:12px}.war-treaty-totals dd{margin:4px 0 0;font:23px var(--serif)}
+.war-treaty-factors p{display:flex;justify-content:space-between;margin:4px 0!important;gap:12px}
+.war-treaty-preview>footer{border-top:1px solid var(--dossier-edge);padding-top:12px;margin-top:12px}
+.war-treaty-preview>footer>button{display:block;margin-left:auto;min-height:36px;padding:7px 18px;background:#9a7a3e!important;--dialog-ink:#fff0cf;border:1px solid #aa925d;color:var(--dialog-ink);font:15px var(--serif)}
+.war-treaty-preview>footer>small{display:block;font-size:11px;margin-top:6px;text-align:right}
+@media(max-width:760px){
+ .war-overview-grid,.war-treaty-sheet{grid-template-columns:1fr}
+ .war-overview-grid>:is(.war-score,.war-participant-columns,.war-target,.war-current-occupations){grid-column:1;grid-row:auto}
+ .war-treaty-preview{position:static}
+ .war-report-dossier{grid-template-columns:1fr}.war-report-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .war-details .war-details-parties{gap:8px}.war-details-parties .war-party-portrait{display:none}
+ dialog.paper-dialog.paper-dialog.war-details-dialog>.action-detail-body{padding:0 12px}
+ .war-details .war-details-parties article{padding:6px}.war-details .war-details-parties strong{font-size:13px}
+}
