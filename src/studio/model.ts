@@ -32,6 +32,9 @@ export const fields:Record<Target,Record<string,Field>>={
  states:{home:reference,polity:{type:'text',values:['liang','east','west']},role:{type:'text',values:['ruler','regent','prince','commander','scholar']},title:text,coins:money,food:money,npcCoins:money,playable:{type:'boolean'},office:reference},
 };
 export function validId(id:unknown):asserts id is string {if(typeof id!=='string'||!/^[a-z][a-z0-9:_-]{0,99}$/.test(id)||['constructor','prototype','__proto__'].includes(id))throw new StudioError('ID','实体 ID 无效。',{fieldPath:'id'});}
+export function validEntityId(target:Target,id:unknown,base?:ContentPackage){
+ if(typeof id==='string'&&base&&((target==='people'||target==='states')&&Object.hasOwn(base.tables.characters.characterById as object,id)||target==='families'&&(base.tables.families.families as {id:string}[]).some(f=>f.id===id)))return;validId(id);
+}
 function fieldValue(target:Target,field:string,value:unknown){
  const rule=Object.hasOwn(fields[target],field)?fields[target][field]:undefined,path=target+'.'+field;
  if(!rule)throw new StudioError('FIELD','不支持的字段：'+path,{fieldPath:path});
@@ -39,7 +42,7 @@ function fieldValue(target:Target,field:string,value:unknown){
  if(target==='scenarios'&&field==='strategy')assertStrategy(value);if(target==='geography')assertBoundaries(value);
  if(!valid)throw new StudioError('TYPE','字段类型或范围错误：'+path,{fieldPath:path});
 }
-function entityValue(target:Target,id:string,value:unknown){
+function entityValue(target:Target,id:string,value:unknown,base?:ContentPackage){
  if(!value||typeof value!=='object'||Array.isArray(value))throw new StudioError('TYPE','实体必须是对象。');
  if(target==='events'){assertEventShape(value);if(value.id!==id||id==='hou-jing')throw new StudioError('ID','保留或不一致的事件 ID');return;}
  if(target==='eventTests'){assertEventTest(value);if(value.id!==id)throw new StudioError('ID','测试 ID 不一致');return;}
@@ -49,7 +52,7 @@ function entityValue(target:Target,id:string,value:unknown){
  for(const key of Object.keys(fields[target]))fieldValue(target,key,item[key]);
  if(target==='scenarios'){
   if(!item.states||typeof item.states!=='object'||Array.isArray(item.states))throw new StudioError('TYPE','剧本状态必须是对象。');
-  for(const [pid,state] of Object.entries(item.states)){validId(pid);entityValue('states',pid,state);}
+  for(const [pid,state] of Object.entries(item.states)){validEntityId('states',pid,base);entityValue('states',pid,state,base);}
  }
 }
 export function projectDraft(base:ContentPackage):Draft {
@@ -58,6 +61,16 @@ export function projectDraft(base:ContentPackage):Draft {
  for(const f of t.families.families)families[f.id]={id:f.id,name:f.name,surname:f.surname,origin:f.origin};
  for(const s of t.scripts.gameScripts)scenarios[s.id]={id:s.id,name:s.name,year:s.year,month:s.month??1,day:s.day??1,description:s.description,defaultCharacter:s.defaultCharacter,seed:t.campaignSetup.campaignSetup.seed,treasuryCoins:t.campaignSetup.campaignSetup.treasury.coins,treasuryGrain:t.campaignSetup.campaignSetup.treasury.grain,states:{},strategy:clone(t.campaignSetup.campaignSetup.strategy??null)};
  return {...projectGeography(base),people,families,scenarios,events:Object.fromEntries((t.authoredEvents?.authoredEventDefinitions??[]).map((e:EventDefinition)=>[e.id,clone(e)])),eventTests:{}};
+}
+/** Validate the complete author document, including fields a diff would ignore. */
+export function assertDraft(value:unknown,base:ContentPackage):asserts value is Draft {
+ const targets=['sites','roads','geography','people','families','scenarios','events','eventTests'] as const;
+ if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join(',')!==[...targets].sort().join(','))throw new StudioError('DOCUMENT','作者草稿集合不完整或含未知集合。');
+ const d=value as Draft;
+ for(const target of targets){const items=d[target];if(!items||typeof items!=='object'||Array.isArray(items)||Object.keys(items).length>10000)throw new StudioError('DOCUMENT','作者集合无效或超过 10000 项。');for(const [id,item] of Object.entries(items)){validEntityId(target,id,base);entityValue(target,id,item,base);}}
+ const original=projectDraft(base);
+ if(Object.keys(d.sites).sort().join(',')!==Object.keys(original.sites).sort().join(',')||Object.keys(d.geography).join(',')!=='map'||!Object.keys(d.scenarios).length||Object.keys(original.people).some(id=>!d.people[id]))throw new StudioError('DOCUMENT','基础地点、人物或唯一地理设置不可移除；至少保留一个剧本。');
+ for(const id of Object.keys(d.people))if(!original.people[id]&&(id==='fictional'||id.startsWith('born-')||Object.hasOwn(base.tables.relationships.relationshipPersonById as object,id)||Object.hasOwn(base.tables.families.familyPersonById as object,id)))throw new StudioError('ID','作者人物使用了保留 ID。');
 }
 export function effectiveState(draft:Draft,base:ContentPackage,scenarioId:string,id:string):PersonState {
  const override=draft.scenarios[scenarioId]?.states[id];if(override)return clone(override);
@@ -77,13 +90,13 @@ export function applyOperations(draft:Draft,base:ContentPackage,operations:Opera
  for(const op of operations){
   if(!op||typeof op!=='object'||Object.keys(op).some(k=>!['target','id','scenarioId','field','before','after'].includes(k))||!Object.hasOwn(fields,op.target)||!Object.hasOwn(op,'before')||!Object.hasOwn(op,'after'))throw new StudioError('OPERATION','未知操作或未授权作用域。');
   if(Object.hasOwn(op,'field')&&(typeof op.field!=='string'||!Object.hasOwn(fields[op.target],op.field)))throw new StudioError('FIELD','未知字段。',{fieldPath:op.target+'.'+String(op.field)});
-  validId(op.id);if(op.target==='sites'&&(!next.sites[op.id]||!op.field))throw new StudioError('SCOPE','地点仅支持既有 ID 的字段编辑');if(op.target==='geography'&&(op.id!=='map'||!op.field))throw new StudioError('SCOPE','地理设置仅支持 map 字段编辑');if(op.target==='states'){validId(op.scenarioId);if(!next.people[op.id])throw new StudioError('REFERENCE','人物不存在。');}else if(op.scenarioId!==undefined)throw new StudioError('SCOPE','此操作不接受剧本作用域。');
+  validEntityId(op.target,op.id,base);if(op.target==='sites'&&(!next.sites[op.id]||!op.field))throw new StudioError('SCOPE','地点仅支持既有 ID 的字段编辑');if(op.target==='geography'&&(op.id!=='map'||!op.field))throw new StudioError('SCOPE','地理设置仅支持 map 字段编辑');if(op.target==='states'){validId(op.scenarioId);if(!next.people[op.id])throw new StudioError('REFERENCE','人物不存在。');}else if(op.scenarioId!==undefined)throw new StudioError('SCOPE','此操作不接受剧本作用域。');
   const actual=currentValue(next,base,op);if(!equal(actual,op.before))throw new StudioError('CONFLICT','原值已变化，请重新读取并审阅。',{operation:op,actual},409);
   if(op.target==='people'&&actual===null&&!op.field){const t=base.tables as Record<string,any>;if(op.id==='fictional'||op.id.startsWith('born-')||t.relationships.relationshipPersonById[op.id]||t.families.familyPersonById[op.id]||t.campaignSetup.campaignSetup.people.some((p:any)=>p.id===op.id))throw new StudioError('ID','此人物 ID 已由基础人物、先祖或模拟角色保留。');}
   const items=collection(next,op) as Record<string,any>;
-  if(op.field){fieldValue(op.target,op.field,op.after);if(!items[op.id]){if(op.target!=='states')throw new StudioError('REFERENCE','实体不存在。');items[op.id]=effectiveState(next,base,op.scenarioId!,op.id);}items[op.id][op.field]=clone(op.after);if(op.target==='events'||op.target==='eventTests')entityValue(op.target,op.id,items[op.id]);}
+  if(op.field){fieldValue(op.target,op.field,op.after);if(!items[op.id]){if(op.target!=='states')throw new StudioError('REFERENCE','实体不存在。');items[op.id]=effectiveState(next,base,op.scenarioId!,op.id);}items[op.id][op.field]=clone(op.after);if(op.target==='events'||op.target==='eventTests')entityValue(op.target,op.id,items[op.id],base);}
   else if(op.after===null){if(op.target==='scenarios'&&Object.keys(next.scenarios).length===1)throw new StudioError('REFERENCE','至少保留一个剧本。');if(op.target==='people'&&(base.tables.characters.characterById as Record<string,unknown>)[op.id])throw new StudioError('SCOPE','基础人物请取消可玩资格；当前规则不支持删除官方人物。');delete items[op.id];}
-  else {if(actual!==null&&op.target!=='states')throw new StudioError('OPERATION','已有实体须使用字段更新。');entityValue(op.target,op.id,op.after);items[op.id]=clone(op.after);}
+  else {if(actual!==null&&op.target!=='states')throw new StudioError('OPERATION','已有实体须使用字段更新。');entityValue(op.target,op.id,op.after,base);items[op.id]=clone(op.after);}
  }
  // A delete cannot leave references. Invalid editable fields can otherwise remain
  // in an explicit draft; compilation/preview is blocked until repaired.

@@ -11,6 +11,10 @@ try{
  assert.equal((await request({origin:'https://untrusted.example'})).status,403);
  const wrongHost=await new Promise((resolve,reject)=>{const req=httpRequest(origin+'/__studio/api',{method:'POST',headers:{host:'untrusted.example',origin,'x-studio-token':token,'content-type':'application/json'}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);req.end('{"method":"schema","input":{}}');});assert.equal(wrongHost,403);
  assert.equal((await request({}, {method:'snapshot',input:{path:'../trusted'}})).status,400);
+ assert.equal((await request({}, {method:'snapshot',input:{padding:'x'.repeat(1024*1024)}})).status,413);
+ assert.equal((await request({}, {method:'migrationPreview',input:JSON.parse('{"source":{"__proto__":{"polluted":true}}}')})).status,400);
+ assert.equal((await request({}, {method:'recoveryPreview',input:{slot:'../state.json'}})).status,400);
+ const invalidUTF8=await fetch(origin+'/__studio/api',{method:'POST',headers:{'content-type':'application/json',origin,'x-studio-token':token},body:Buffer.from([0x7b,0x22,0x78,0x22,0x3a,0x22,0xff,0x22,0x7d])});assert.equal(invalidUTF8.status,400);
  // Split a multibyte character across transport chunks: large imports must not corrupt Chinese content.
  const streamed=await new Promise((resolve,reject)=>{const data=Buffer.from(JSON.stringify({method:'search',input:{target:'people',query:'萧'}})),at=data.indexOf(Buffer.from('萧'))+1;const req=httpRequest(origin+'/__studio/api',{method:'POST',headers:{'content-type':'application/json',origin,'x-studio-token':token}},res=>{const chunks=[];res.on('data',c=>chunks.push(c));res.on('end',()=>resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))));});req.on('error',reject);req.write(data.subarray(0,at));setTimeout(()=>req.end(data.subarray(at)),20);});assert.equal(streamed.ok,true);assert.ok(streamed.result.length);
  const valid=await request();assert.equal(valid.status,200);assert.equal((await valid.json()).result.version,1);
