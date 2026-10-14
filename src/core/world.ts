@@ -57,51 +57,15 @@ import { commission,evaluateCampaign } from './campaign';
 import {initializeEstates,actEstate,advanceEstateAI} from './estates';
 import {migrateManpower} from './manpower';
 import { newHoldings, beginConstruction, advanceConstruction, provisionCost } from './construction';
-import { CONTENT_VERSION, roads, siteById, sites } from '../data/scenario';
-import type { ArmyBatchCommand, GameCommand, Person, RoutePlan, World } from './types';
+import { CONTENT_VERSION, siteById } from '../data/scenario';
+import {officialMap} from '../data/officialMap';
+import type { ArmyBatchCommand, GameCommand, Person, World } from './types';
 import {ensureEconomy, actPersonalEconomy, advancePersonalEconomy} from './personalEconomyAdapter';
 
-export function distanceBetween(a: string, b: string): number {
-  const p = siteById[a], q = siteById[b];
-  const lat = (p.lat + q.lat) * Math.PI / 360;
-  return Math.hypot((p.lon - q.lon) * Math.cos(lat), p.lat - q.lat) * 111;
-}
-// Static road topology; permissions are still evaluated against live world state for every route.
-const roadLinks=new Map<string,Map<string,number>>(),routeLinks=new Map<string,Map<string,number>>();
-for(const edge of roads){
-  const days=edge.days??Math.max(1,Math.ceil(distanceBetween(edge.from,edge.to)*edge.factor/40));
-  for(const [from,to] of [[edge.from,edge.to],[edge.to,edge.from]]){
-    const links=roadLinks.get(from)??new Map<string,number>();if(!links.has(to))links.set(to,days);roadLinks.set(from,links);
-    if(!edge.legacyOnly){const active=routeLinks.get(from)??new Map<string,number>();if(!active.has(to))active.set(to,days);routeLinks.set(from,active);}
-  }
-}
-export function legDays(a: string, b: string): number {
-  const days=roadLinks.get(a)?.get(b);if(days===undefined)throw new Error('这两处地点之间没有已开放的道路。');return days;
-}
-export function planRoute(from: string, to: string,allowed:(id:string)=>boolean=()=>true): RoutePlan | null {
-  if (!siteById[from] || !siteById[to] || from === to) return null;
-  const cost: Record<string, number> = { [from]: 0 }, prev: Record<string, string> = {};
-  const unvisited = new Set(sites.map(s => s.id));
-  while (unvisited.size) {
-    let current:string|undefined,best=Infinity;
-    for(const id of unvisited)if((cost[id]??Infinity)<best){current=id;best=cost[id];}
-    if(current===undefined)break;
-    if (current === to) {
-      const route = [to];
-      while (route[0] !== from) route.unshift(prev[route[0]]);
-      const durations = route.slice(1).map((id, i) => legDays(route[i], id));
-      const days = durations.reduce((sum, n) => sum + n, 0);
-      return {route, durations, days, food: days, distance: Math.round(route.slice(1).reduce((sum,id,i) => sum + distanceBetween(route[i],id),0))};
-    }
-    unvisited.delete(current);
-    for (const [next,days] of routeLinks.get(current)??[]) {
-      if (!unvisited.has(next)||!allowed(next)) continue;
-      const nextCost = cost[current] + days;
-      if (nextCost < (cost[next] ?? Infinity)) { cost[next] = nextCost; prev[next] = current; }
-    }
-  }
-  return null;
-}
+// Existing rule callers retain their API while the map owns its immutable route cache.
+export const distanceBetween=officialMap.distanceBetween;
+export const legDays=officialMap.legDays;
+export const planRoute=officialMap.planRoute;
 export function newWorld(): World {
   return {
     version: 2, life:newLifeState({day:0,scriptId:DEFAULT_SCRIPT}), families:newFamilyState(), lifestyles:{version:2,people:{}}, identities:initialIdentities(), scriptId:DEFAULT_SCRIPT, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,

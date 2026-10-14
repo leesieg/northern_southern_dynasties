@@ -1,0 +1,22 @@
+Use case: ui-mockup
+Asset type: high fidelity Chinese desktop SCENARIO EDITOR expected appearance. Use supplied reference only for visual system and application chrome. Create a distinct screen.
+Wide 16:10 image, crisp readable Chinese UI, professional practical content-authoring application, no device frame.
+Same ink-green #213E38 header/nav, pale paper gray #EEEDE6 work surfaces, dark ink #26332D, muted old gold #AF9258 accents. Compact well-aligned forms and clear hierarchy; controlled Chinese serif headings and sans-serif controls. No marketing slogans, no dates of saving, no decorative text.
+Header “风云南北朝 · 创作台”, package “南北朝内容包”, scenario “江左新篇 · 546”, “本地草稿”, controls “撤销”, “校验”, a DISABLED muted button “隔离试玩”, “导出草稿”.
+Thin disclaimer strip “概念预览 · 架空剧本与示例数据”.
+Far left narrow rail: 剧本 [selected] / 地图 / 人物 / 事件 / 政权 / 资产.
+Next left object browser about 215px title “剧本库”, search. Two rows with small painted landscape thumbnails: “三国并立” subtitle “546 · 官方基线”; “江左新篇” SELECTED subtitle “546 · 架空草稿”. Lower section “当前剧本内容” with compact navigable rows “人物与家族”, “政权与外交”, “地方与资源”, “事件与规则”. Bottom fixed button “＋ 新建剧本”.
+Center about 760px wide: breadcrumb “剧本 / 江左新篇”, title “江左新篇” with small badge “架空草稿”, subtitle “复制自 三国并立 · 546”. Tabs one row “基本信息 [selected] / 初始世界 / 人物政权 / 经济军务 / 事件规则 / 开局引导”.
+Section “剧本信息”: two-column form fields “剧本名称  江左新篇”, “类型  架空”, “开始日期  546 年 1 月 1 日”, “基础内容  南北朝内容包 0.1”. Neutral helper “修改日期后，人物年龄重新计算；官职与局势仍需复核”.
+Next section “初始世界预览” with small action “进入地图编辑”. Wide beautiful map preview ~620x300px showing Chinese rivers, green hills, restrained gray-blue sea, city markers “长安”, “洛阳”, “邺城”, “建康”. Important: this is a schematic artistic map; DO NOT put ANY realm names or any realm-colored boundaries, no Qi, no new historical assertions. Only small city models and name markers, no sprawling unrealistic labels. Footer on map “地理示意 · 以内容包实际数据为准”. Above map small chips “共享地图” and “当前剧本覆盖”.
+Below map compact section “开局人物” with 3 small SQUARE watercolor portraits and short labels “沈明远 / 陆怀安 / 元令仪”, badge “作者设定”, outline “管理人物”. Do not create made-up historical source claims.
+Right panel about 340px: heading “开局检查”, prominent amber status “尚不可试玩”, brief “1 项错误 · 2 项待复核”. Three readable rows:
+red error “梁的君主尚未配置” button “前往政权”
+amber warning “复制后的任职尚待复核” button “查看人物”
+amber warning “剧本介绍缺少设定说明” button “补充说明”.
+Small note “示例检查结果”.
+Next section “依赖与版本” rows “基础包  0.1”, “当前草稿  r18”, “资源清单  查看”, no fake pass.
+Next compact section “AI 协作”, text “检查复制剧本后的遗漏与引用”, chip “仅当前剧本”, outline button “生成复核提案”. No chat bubbles.
+Bottom of right panel persistent action area: neutral “保存草稿” enabled, “隔离试玩” visibly DISABLED, tiny reason “请先解决开局错误”; no positive test success.
+Bottom global status/footer “草稿可保存，错误修复后才能试玩” left, “本地工作区” right.
+Make selection, metadata, dependencies and unresolved authoring work obvious. This screen should feel like assembling a playable world, not a marketing dashboard. Tight but readable alignment, no giant statistics, no repeated AI card grid.

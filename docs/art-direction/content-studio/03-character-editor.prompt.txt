@@ -1,0 +1,16 @@
+Use case: ui-mockup
+Asset type: expected appearance concept screenshot of a Chinese historical game CHARACTER EDITOR. Create one new screen, using the supplied prior editor screenshot ONLY as visual reference for colors, typography and application chrome, not as content to copy.
+Landscape 16:10, extremely high quality crisp Chinese text, desktop application filling frame, no device. Product “风云南北朝 · 创作台”.
+Ink green #213E38 header and slim navigation rail, pale paper gray #EEEDE6 work area, dark #26332D text, restrained old gold #AF9258 selected states. Compact efficient editing workspace, clear Chinese sans-serif controls, subtle Chinese serif title, fine separators, readable text, no fantasy ornament. Design a serious tool for human developers and AI, not the game player detail modal.
+Header: product name, dropdown “南北朝内容包”, “三国并立 · 546”, “本地草稿”, right controls “撤销”, “校验”, “隔离试玩”, “导出”. Thin strip below “概念预览 · 示例人物与设定”.
+Far left narrow icon rail: 剧本 / 地图 / 人物 [selected] / 事件 / 政权 / 资产.
+Left browser about 230px: “人物库” search “搜索姓名或 ID”, small filter buttons “当前剧本” “全部文化”; compact list rows with small SQUARE painted portraits, fictional character names “沈明远” selected, “陆怀安”, “崔景和”, “元令仪”, “谢清和”. Each row has one small status or family. Bottom fixed button “＋ 新建人物”. Do not invent historical attribution for these fictional people.
+Center wide authoring workspace about 760px: breadcrumb 人物 / 沈明远; prominent name “沈明远”, small ID “demo:shen-mingyuan”, neutral badge “作者设定”. Scope row very clearly “编辑范围：当前剧本” and subdued note “共享档案保持原值”. Tabs one row “基本档案 / 能力特质 / 家族关系 / 剧本状态 [selected] / 游戏预览”.
+At top of main body, small identity summary: an elegant 2:3 half-body painted portrait of a young adult Han Chinese male scholar in restrained historically inspired plain pale green robe, flat delicate line and watercolor style, NOT 3D, NOT huge, max 170px wide and 255px tall. Next to portrait compact read-only rows “文化  汉”, “家族  沈氏”, “档案类型  虚构人物”, “共享档案  查看”. Do not put visual trait badges on portrait. A divider separates shared identity from editable scenario state.
+Below grouped aligned fields: heading “本剧本身份”; rows “存活状态  在世”, “所在地  建康 [search icon]”, “效忠政权  梁 [search icon]”, “官职  未任职 [选择职位]”, checkbox “允许作为开局人物”. A narrow note “任职资格与兼任限制将在校验时检查”.
+Next section “私人资源”, fields two columns “私财  180” “私粮  90”, a small explicit note “示例初始值 · 与地方公库分别核算”.
+Next section “关联对象”, outline buttons “配置庄园” “关联军队”; no fake current ownership.
+Right inspection panel about 330px: title “修改范围与引用”, scope mini card “当前剧本” bold “三国并立 · 546”, “共享人物库未修改”. Tabs “引用 / 变更 / AI 协作” with 变更 selected.
+Display a clear REVIEW of one LOCAL pending form change “未提交修改”, field 所在地, old “未设置”, new “建康”, author “人类编辑”. Button “检查影响” and gold “保存到草稿”. Below “AI 协作” text “检查此人物的任职与关系引用”, chip “仅当前人物”, outline button “生成检查提案”. Do not show approval already passed.
+Bottom dock under center “检查结果 / 变更记录”, warning “当前修改尚未校验” and action “运行校验”. Footer “草稿 r18” “本地工作区”.
+Prioritize comfortable readable field sizes, left aligned labels, precise spacing, compact object navigation, obvious mutable scope. No huge portrait, no large charts, no decorative slogans, no dates, no fake test success.

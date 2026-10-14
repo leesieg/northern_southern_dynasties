@@ -1,0 +1,22 @@
+Use case: ui-mockup
+Create ONE high fidelity Chinese desktop web content editor concept screenshot for 风云南北朝, wide 16:10, high resolution. Fill frame with usable application, no device mockup. This is the EVENT EDITING + AI CHANGE REVIEW screen. Crisp Chinese text, polished production UI.
+Visual system: ink-green #213E38 top header and narrow left rail, ivory gray #EEEDE6 panels, dark ink #26332D, old gold #AF9258 selected controls, small amber diagnostics. Restrained Chinese serif product title, modern Chinese sans controls, compact efficient forms, hairline separators, subtly rounded rectangles. No neon, no huge cards, no decorative sci-fi.
+Header exactly “风云南北朝 · 创作台”, selector “南北朝内容包”, “三国并立 · 546”, “本地草稿”, buttons “撤销”, “校验”, gold “隔离试玩”, “导出”. Discreet strip “概念预览 · 示例事件与检查结果”.
+Narrow far-left rail icons and labels 剧本 / 地图 / 人物 / 事件 [selected] / 政权 / 资产.
+Next left browser width 210px title “事件库”, search, folders “政务事件”, “人物事件”, “历史事件”. Rows under 政务事件 “地方赈济” selected, “地方巡察”; 人物事件 “求学拜师”; 历史事件 “侯景事件”. Small status badges “草稿”, “已注册”. Bottom left button “＋ 新建事件”.
+Center authoring area ~52% width: breadcrumb “事件 / 地方赈济”, title “地方赈济” with small muted “作者设定”. Tabs “编辑” [selected], “结构预览”, “游戏预览”. This is STRUCTURED FORM first, NOT a complex drag-drop node editor.
+Below title a horizontal simple 3-stage visual breadcrumb “触发条件 → 玩家选择 → 结算收尾”.
+Several organized form sections with readable controls:
+“参与对象” fields “执行者  当地有权官员”, “目标  当前县域”, “绑定时机  触发时固定”.
+“触发条件” simple nested condition rows and ALL pill: “全部满足”, “地方存在粮食缺口”, “执行者拥有办理权限”, “当前没有同类赈济事务”. Beside each row small edit icon.
+“选择与后果” segmented options “拨粮赈济” selected / “暂缓办理”. Selected option detail fields “资源来源  地方公粮”, “调用行动  既有赈济规则”, “数量  按缺口预估”; small note “费用、审批与实际效果由游戏规则计算”. Avoid fabricating actual numeric effects.
+“异常与收尾” concise rows “执行者失去权限  重新检查承办资格”, “目标失效  结束并保留记录”.
+Right panel width ~360px occupying full content height titled “AI 协作” with tabs “任务 / 提案” proposal selected.
+Task quote “为赈济事件补充权限检查和退出分支”.
+Clear scoped chip “仅修改当前事件”, status “提案待审阅”, revision “基于草稿 r18”.
+Change summary “2 项修改 · 1 个事件”.
+Two diff blocks with sensible before/after: “触发条件” removed pale-red “仅检查粮食缺口”, added pale-green “增加执行者权限检查”; “异常处理” pale-red “未定义退出分支”, pale-green “补充目标失效处理”.
+Compact validation area “校验结果” rows green check “结构与引用通过”, amber dot “隔离行为测试尚未运行”. This panel must NEVER imply unrun testing succeeded.
+Secondary button “查看完整差异”. Sticky footer in panel: gold button “应用到草稿”, outline “退回修改”, small text “应用前将重新检查版本与冲突”.
+Bottom dock under center only “调试 / 变更记录”, simple three-row diagnostic with title “为什么未触发？” then ✓ “目标存在” / ✓ “执行者具有权限” / ○ “当前没有粮食缺口”. Visible label “示例测试场景”.
+Footer “本地工作区” and “草稿 r18”. Make this a coherent editor with clear distinction between editing, proposing, applying, validating and playing. High information density but no unreadable tiny text. No map, no large illustration, no code wall, no chat-bubble wall.

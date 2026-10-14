@@ -2,6 +2,8 @@ import { DEFAULT_SCRIPT } from '../data/scripts';
 import { parseWorld, serializeWorld } from './save';
 import {assertSaveSize} from './saveCapacity';
 import type { SaveInfo, World } from './types';
+import {latestSaveInfo} from './simulationStorage';
+export {latestSaveInfo} from './simulationStorage';
 
 interface SaveRecord extends SaveInfo { data: string }
 const DB_NAME = 'fynbc-world-v1';
@@ -42,10 +44,6 @@ async function readRecords(): Promise<SaveRecord[]> {
     tx.oncomplete = () => { db.close(); resolve(request.result as SaveRecord[]); };
     tx.onerror = tx.onabort = () => { db.close(); reject(new Error('读取本地存档失败。')); };
   });
-}
-export function latestSaveInfo(slots:SaveInfo[]):SaveInfo|undefined{
-  const ordered=[...slots].sort((a,b)=>b.savedAt-a.savedAt);
-  return ordered.find(s=>s.id!=='previous-run')??ordered[0];
 }
 export async function listSaves(): Promise<SaveInfo[]> {
   if (REMOTE) return [...((await remote()).saves??[])].sort((a,b)=>b.savedAt-a.savedAt);
