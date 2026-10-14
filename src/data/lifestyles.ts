@@ -1,5 +1,6 @@
+import {selectContent} from '../core/contentBinding';
 /** Original game balance, not historical facts or CK3 values. Percentages add against the base. */
-export const lifestyleBranches={
+export let lifestyleBranches={
  stewardship:{name:'管理',icon:'city',description:'职责内理政，或经营自己的家业',affinity:['frugal','diligent']},
  diplomacy:{name:'外交',icon:'gregarious',description:'奉使交邦，或经营朋友与亲族',affinity:['gregarious','generous']},
  martial:{name:'军事',icon:'army',description:'统率公军，或修武供养自己的部曲',affinity:['diligent','steadfast']},
@@ -27,11 +28,11 @@ const focuses:Record<string,Focus>={
  private_intrigue:{branch:'intrigue',scope:'private',name:'谋身营势',effect:'本人隐秘计谋成功 +3；暴露 -3 个百分点',bonus:{intrigueSuccess:3,intrigueSecrecy:3}},
 };
 /** Aliases accept old commands/saves; only eight canonical focuses appear in the UI. */
-export const legacyFocusMap:Record<string,string>={architecture:'private_stewardship',domain:'public_stewardship',agriculture:'public_stewardship',etiquette:'private_diplomacy',generosity:'private_diplomacy',family:'private_diplomacy',strategy:'public_martial',supply:'public_martial',command:'public_martial',intelligence:'public_intrigue',subterfuge:'private_intrigue',coercion:'private_intrigue'};
-export const lifestyleFocuses:Record<string,Focus>={...focuses,...Object.fromEntries(Object.entries(legacyFocusMap).map(([id,next])=>[id,{...focuses[next],legacy:true}]))};
+export let legacyFocusMap:Record<string,string>={architecture:'private_stewardship',domain:'public_stewardship',agriculture:'public_stewardship',etiquette:'private_diplomacy',generosity:'private_diplomacy',family:'private_diplomacy',strategy:'public_martial',supply:'public_martial',command:'public_martial',intelligence:'public_intrigue',subterfuge:'private_intrigue',coercion:'private_intrigue'};
+export let lifestyleFocuses:Record<string,Focus>={...focuses,...Object.fromEntries(Object.entries(legacyFocusMap).map(([id,next])=>[id,{...focuses[next],legacy:true}]))};
 export interface LifestylePerk {branch:LifestyleBranch;scope:LifestyleScope;name:string;effect:string;requires:string[];bonus:Partial<LifestyleBonus>;tier:number;side:0|1;mastery?:boolean}
 const perk=(branch:LifestyleBranch,scope:LifestyleScope,name:string,effect:string,bonus:Partial<LifestyleBonus>,requires:string[]=[],tier=0,mastery=false):LifestylePerk=>({branch,scope,name,effect,bonus,requires,tier,side:scope==='private'?1:0,...(mastery?{mastery:true}:{})});
-export const lifestylePerks:Record<string,LifestylePerk>={
+export let lifestylePerks:Record<string,LifestylePerk>={
  // Existing IDs and prerequisite paths remain valid. Common skills are optional.
  surveying:perk('stewardship','common','审度物料','公私新工程各自造价 -3%',{buildCost:3,estateBuildCost:3}),
  orderly:perk('stewardship','common','筹划有序','公私新工程各自工期 -3%',{buildTime:3,estateBuildTime:3}),
@@ -115,10 +116,13 @@ export const lifestylePerks:Record<string,LifestylePerk>={
  schemer:perk('intrigue','private','谋略家','本人计谋成功 +3；暴露 -3 个百分点',{intrigueSuccess:3,intrigueSecrecy:3},['leverage','persuasion'],2,true),
 };
 /** Validate old saves against their original graph before migrating to the expanded graph. */
-export const legacyPerkPrereqs:Record<string,string[]>={observers:[],cover:['observers'],persuasion:['observers'],leverage:['cover'],schemer:['leverage','persuasion'],drill:[],logistics:['drill'],siegecraft:['drill'],veterans:['logistics'],strategist:['veterans','siegecraft'],surveying:[],crews:['surveying'],ledgers:['surveying'],husbandry:['crews'],administrator:['husbandry','ledgers'],courtesy:[],gifting:['courtesy'],mediation:['courtesy'],patience:['gifting'],network:['patience','mediation']};
-export const LIFESTYLE_XP_PER_POINT=360;
-export const LIFESTYLE_SWITCH_DAYS=90;
-export const LIFESTYLE_MONTHLY_BASE=18;
-export const LIFESTYLE_MONTHLY_CAP=22;
+export let legacyPerkPrereqs:Record<string,string[]>={observers:[],cover:['observers'],persuasion:['observers'],leverage:['cover'],schemer:['leverage','persuasion'],drill:[],logistics:['drill'],siegecraft:['drill'],veterans:['logistics'],strategist:['veterans','siegecraft'],surveying:[],crews:['surveying'],ledgers:['surveying'],husbandry:['crews'],administrator:['husbandry','ledgers'],courtesy:[],gifting:['courtesy'],mediation:['courtesy'],patience:['gifting'],network:['patience','mediation']};
+export let LIFESTYLE_XP_PER_POINT=360;
+export let LIFESTYLE_SWITCH_DAYS=90;
+export let LIFESTYLE_MONTHLY_BASE=18;
+export let LIFESTYLE_MONTHLY_CAP=22;
 export const branchPerks=(branch:LifestyleBranch)=>Object.entries(lifestylePerks).filter(([,p])=>p.branch===branch);
-export const branchFocuses=(branch:LifestyleBranch)=>Object.entries(focuses).filter(([,f])=>f.branch===branch);
+export const branchFocuses=(branch:LifestyleBranch)=>Object.entries(lifestyleFocuses).filter(([,f])=>!f.legacy&&f.branch===branch);
+
+// Compiled data is selected before any importing rule module can execute.
+({lifestyleBranches,legacyFocusMap,lifestyleFocuses,lifestylePerks,legacyPerkPrereqs,LIFESTYLE_XP_PER_POINT,LIFESTYLE_SWITCH_DAYS,LIFESTYLE_MONTHLY_BASE,LIFESTYLE_MONTHLY_CAP}=selectContent('lifestyles',{lifestyleBranches,legacyFocusMap,lifestyleFocuses,lifestylePerks,legacyPerkPrereqs,LIFESTYLE_XP_PER_POINT,LIFESTYLE_SWITCH_DAYS,LIFESTYLE_MONTHLY_BASE,LIFESTYLE_MONTHLY_CAP}));

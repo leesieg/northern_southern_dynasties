@@ -1,8 +1,9 @@
+import {selectContent} from '../core/contentBinding';
 import type {Road} from '../core/types';
 /** Reviewed transport corridors between modeled sites, not an exhaustive 546 road atlas.
  * `via` is a chosen playable corridor, not a claim that all historical travelers took it.
  * Evidence and the retained/uncertain edges are recorded in 城址位置与地形核验.md. */
-export const roadRevisions:{from:string;to:string;via:string[];factor:number;reason:string}[]=[
+export let roadRevisions:{from:string;to:string;via:string[];factor:number;reason:string}[]=[
  {from:'ye',to:'jinyang',via:['linshui','wuan'],factor:1.6,reason:'并邺通道经滏口；临水与武安接入干线，古壶关口不冒充现有壶关县治。'},
  {from:'ye',to:'wuan',via:['linshui'],factor:1,reason:'临水在所选滏口通道的东段，不能保留绕过它的平行捷径。'},
  {from:'ye',to:'jicheng',via:['yiyang-weiyin','zhongshan','zhuoxian'],factor:1.2,reason:'河北平原北上通道经沿线现有节点；邺与蓟不再视为一段接壤。'},
@@ -39,3 +40,6 @@ export function reviseRoadNetwork(original:Road[]):Road[]{
  }
  return roads;
 }
+
+// Compiled data is selected before any importing rule module can execute.
+({roadRevisions}=selectContent('roadNetwork',{roadRevisions}));

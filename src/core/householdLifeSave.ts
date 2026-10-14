@@ -5,7 +5,7 @@ import {relationshipPersonById} from '../data/relationships';
 import {familyById} from '../data/families';
 import {siteById} from '../data/scenario';
 import {validGenome} from './genetics';
-import {isMonthStart} from './calendar';
+import {isMonthAnchor} from './calendar';
 const obj=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const n=(v:unknown,max=1e9):v is number=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;
 const str=(v:unknown,max=200):v is string=>typeof v==='string'&&v.length>0&&v.length<=max;
@@ -26,7 +26,7 @@ export function validGeneratedPeople(w:World){
 export function validHouseholdLife(w:World){
  const s=w.householdLife;if(s===undefined)return !Object.keys(w.generatedPeople??{}).length;
  const person=(v:unknown)=>str(v)&&!!getPerson(w,v);
- if(!obj(s)||s.version!==1||!n(s.since,w.day)||!n(s.lastMonthly,w.day)||!isMonthStart(s.lastMonthly,w.scriptId)||!n(s.seed,0xffffffff)||!n(s.nextId)||s.nextId<1||!obj(s.plans)||!obj(s.rest)||!obj(s.bills)||!obj(s.milestones)||!Array.isArray(s.pregnancies)||s.pregnancies.length>2000||!Array.isArray(s.moments)||s.moments.length>10000)return false;
+ if(!obj(s)||s.version!==1||!n(s.since,w.day)||!n(s.lastMonthly,w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)||!n(s.seed,0xffffffff)||!n(s.nextId)||s.nextId<1||!obj(s.plans)||!obj(s.rest)||!obj(s.bills)||!obj(s.milestones)||!Array.isArray(s.pregnancies)||s.pregnancies.length>2000||!Array.isArray(s.moments)||s.moments.length>10000)return false;
  const ids=new Set<number>(),keys=new Set<string>(),mothers=new Set<string>(),children=new Set<string>();
  for(const p of s.pregnancies){
   if(!obj(p)||!n(p.id,s.nextId-1)||!p.id||ids.has(p.id)||!person(p.father)||!person(p.mother)||getPerson(w,p.father)?.sex!=='male'||getPerson(w,p.mother)?.sex!=='female'||!str(p.family)||![getPerson(w,p.father)?.family,getPerson(w,p.mother)?.family].includes(p.family)||!n(p.since,w.day)||p.due!==p.since+270||!['expecting','born','ended'].includes(String(p.status)))return false;ids.add(p.id);

@@ -6,7 +6,7 @@ import {validCulture} from '../data/cultures';
 import {validRealmIdentities} from './politySeparation';
 import {worldRealms} from './polityRuntime';
 import {validRealmStrategy} from './realmStrategy';
-import {isMonthStart,nextMonthStart} from './calendar';
+import {isMonthAnchor,isMonthStart,nextMonthStart} from './calendar';
 import {validCivil} from './civilWars';
 import {validAnnexations} from './polityLifecycle';
 import {activeWars,warRealmSide,validClaimantWar} from './wars';
@@ -40,15 +40,15 @@ export function validRealm(w:World):boolean {
  const s=w.realm;if(!obj(s)||s.version!==1||!obj(s.cities)||Object.keys(s.cities).length!==sites.length||!obj(s.treasuries))return false;
  for(const id of sites.map(s=>s.id)){const c=s.cities[id];if(!obj(c)||c.estatePolicy!==undefined&&!['compact','survey','equalized'].includes(String(c.estatePolicy))||c.cultureId!==undefined&&!validCulture(c.cultureId)||c.culturalExemption!==undefined&&(!obj(c.culturalExemption)||typeof c.culturalExemption.leader!=='string'||!getPerson(w,c.culturalExemption.leader)||!int(c.culturalExemption.since,0,w.day))||(!realm(c.owner)&&c.owner!=='frontier')||(!realm(c.controller)&&c.controller!=='frontier')||!(c.population===undefined?int(c.households,100,10000):int(c.population,100,1_000_000))||(c.grain!==undefined&&!int(c.grain))||(c.irrigation!==undefined&&!int(c.irrigation,0,10))||!int(c.order,0,100)||!int(c.prosperity,0,100)||!['light','normal','heavy'].includes(String(c.tax))||(c.governor!==null&&(typeof c.governor!=='string'||! getPerson(w,c.governor)!||allegianceRealm(w,c.governor)!==c.owner))||c.occupiedSince!==undefined&&(!int(c.occupiedSince,0,w.day)||c.owner===c.controller)||c.integration!==undefined&&(!obj(c.integration)||!int(c.integration.since,0,w.day)||!int(c.integration.progress,0,99)||typeof c.integration.funded!=='boolean'||c.owner==='frontier')||c.fortification!==undefined&&(!obj(c.fortification)||!int(c.fortification.level,0,3)||c.fortification.due!==null&&!int(c.fortification.due,w.day,w.day+120)))return false;}
  for(const c of Object.values(s.cities))if(c.administration!==undefined&&(!obj(c.administration)||!int(c.administration.day,0,w.day)||!int(c.administration.need)||!int(c.administration.paid,0,c.administration.need)))return false;
- for(const c of Object.values(s.cities))if(c.militaryRequisition!==undefined&&(!obj(c.militaryRequisition)||!int(c.militaryRequisition.month,0,w.day)||!isMonthStart(c.militaryRequisition.month,w.scriptId)||!int(c.militaryRequisition.grain,0,1e9)||c.militaryRequisition.burden!==Math.ceil(c.militaryRequisition.grain/100)))return false;
+ for(const c of Object.values(s.cities))if(c.militaryRequisition!==undefined&&(!obj(c.militaryRequisition)||!int(c.militaryRequisition.month,0,w.day)||!isMonthAnchor(c.militaryRequisition.month,w.scriptId)||!int(c.militaryRequisition.grain,0,1e9)||c.militaryRequisition.burden!==Math.ceil(c.militaryRequisition.grain/100)))return false;
  if(s.foodVersion!==undefined&&s.foodVersion!==2)return false;
  if(Object.keys(s.treasuries).length!==worldRealms(w).length)return false;
  for(const id of worldRealms(w)){const t=s.treasuries[id];if(!obj(t)||!int(t.coins)||!int(t.grain)||!int(t.lastIncome)||!int(t.lastExpense)||!int(t.lastFood,-1_000_000,1_000_000))return false;}
  if(s.supplyPolicies!==undefined&&(!obj(s.supplyPolicies)||Object.entries(s.supplyPolicies).some(([r,p])=>!realm(r)||!['civilian','normal','emergency'].includes(p!))))return false;
  if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!historicalCharacters.every(p=>Object.hasOwn(s.personalInfluence!,p.id))||Object.entries(s.personalInfluence).some(([id,n])=>! getPerson(w,id)!||!int(n,0,999))))return false;
- if(s.lastInfluenceIncome!==undefined&&(!int(s.lastInfluenceIncome,0,w.day)||!isMonthStart(s.lastInfluenceIncome,w.scriptId)))return false;
+ if(s.lastInfluenceIncome!==undefined&&(!int(s.lastInfluenceIncome,0,w.day)||!isMonthAnchor(s.lastInfluenceIncome,w.scriptId)))return false;
  if(s.lastMilitaryDay!==undefined&&!int(s.lastMilitaryDay,0,w.day))return false;
- if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthStart(s.lastMonthly,w.scriptId)))return false;
+ if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)))return false;
  if(!int(s.influence,0,999)||typeof s.mandate!=='boolean'||!int(s.lastEvent,0,w.day)||!obj(s.truces))return false;
  for(const [key,day] of Object.entries(s.truces)){if(!worldRealms(w).some(a=>worldRealms(w).some(b=>a!==b&&[a,b].sort().join('|')===key))||!int(day,0,w.day+360))return false;}
  if(!Array.isArray(s.offices)||s.offices.length>Object.keys(territoryNodes).length||new Set(s.offices.map(o=>(o?.realm??s.cities[o?.site]?.owner)+'|'+(o?.territory??'county:'+o?.site))).size!==s.offices.length)return false;

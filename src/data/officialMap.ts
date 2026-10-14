@@ -1,5 +1,5 @@
 import {createMapRegistry} from '../core/mapRegistry';
 import {roads,sites} from './scenario';
 
-/** Compatibility adapter for existing rules; editor snapshots use their own registry. */
+/** Existing rule API; each package's module realm builds its own map and cache. */
 export const officialMap=createMapRegistry(sites,roads);

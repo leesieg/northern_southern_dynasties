@@ -1,3 +1,4 @@
+import {contentLock,assertSaveContent} from './contentBinding';
 import {validHistorical} from './historicalValidation';
 import {ensureHistorical} from './historicalEvents';
 import {assertSaveSize} from './saveCapacity';
@@ -20,7 +21,7 @@ import {validPacts} from './allegiancePacts';
 import {migrateArmyFood} from './armyOrganization';
 import {ensureCustody} from './custody';
 import {validCustody} from './custodySave';
-import {isMonthStart} from './calendar';
+import {isMonthAnchor} from './calendar';
 import {validResignations} from './resignation';
 import {validCoordinated} from './coordinatedService';
 import {validCommerce} from './commerce';
@@ -100,7 +101,7 @@ export function validateWorld(value: unknown): asserts value is World {
   if(value.retinue!==undefined&&(value.mode!=='sandbox'||!validRetinue(value.retinue,Number(value.day),value.scriptId as string|undefined,value as unknown as World)))return fail();
   const h=value.holdings;
   if(!obj(h)||!Array.isArray(h.governedCities)||!h.governedCities.every(site)||new Set(h.governedCities).size!==h.governedCities.length||!obj(h.cities)||!obj(h.estate))return fail();
-  if(h.lastMonthly!==undefined&&(!integer(h.lastMonthly,0,value.day)||!isMonthStart(Number(h.lastMonthly),value.scriptId as string|undefined)))return fail();
+  if(h.lastMonthly!==undefined&&(!integer(h.lastMonthly,0,value.day)||!isMonthAnchor(Number(h.lastMonthly),value.scriptId as string|undefined)))return fail();
   if(typeof h.estate.family!=='string'||!Object.hasOwn(familyById,h.estate.family)||!site(h.estate.location))return fail();
   const checkHolding=(holding:unknown,scope:'city'|'estate')=>{
     if(!obj(holding)||!obj(holding.levels))return false;
@@ -180,15 +181,17 @@ export function serializeWorld(world: World): string {
   upgradeContent(world);migrateEstates(world);migrateManpower(world);
   validateWorld(world);
   const payload = JSON.stringify(world);
-  return JSON.stringify({ format:'fynbc-save', version:1, checksum:checksum(payload), payload });
+  return JSON.stringify({ format:'fynbc-save', version:1, content:contentLock(), scriptId:world.scriptId??DEFAULT_SCRIPT, checksum:checksum(payload), payload });
 }
 export function parseWorld(source: string): World {
   assertSaveSize(source);
   let envelope: unknown;
   try { envelope = JSON.parse(source); } catch { throw new Error('无法读取这个存档文件。'); }
   if (!obj(envelope) || envelope.format !== 'fynbc-save' || envelope.version !== 1 || typeof envelope.payload !== 'string' || checksum(envelope.payload) !== envelope.checksum) throw new Error('存档格式或校验值错误，当前进度未改变。');
+  assertSaveContent(envelope.content);
   let world: unknown;
   try { world = JSON.parse(envelope.payload); } catch { throw new Error('存档数据不完整。'); }
+  if(envelope.scriptId!==undefined&&(!obj(world)||envelope.scriptId!==(world.scriptId??DEFAULT_SCRIPT)))throw new Error('存档头与世界剧本不一致。');
   if(obj(world)&&world.version===1){
     if(Object.hasOwn(world,'holdings'))throw new Error('旧版存档含不合法的家产字段。');
     world={...world,version:2,holdings:newHoldings()};

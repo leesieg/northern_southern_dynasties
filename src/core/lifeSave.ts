@@ -1,5 +1,5 @@
 import {worldRealms} from './polityRuntime';
-import {isMonthStart,monthStart} from './calendar';
+import {isMonthAnchor,monthStart} from './calendar';
 import {birthRecords} from '../data/lifespans';
 import {getPerson} from './personRegistry';
 import {isAlive,lifeOf} from './lifeState';
@@ -9,7 +9,7 @@ const int=(n:unknown,min:number,max:number):n is number=>typeof n==='number'&&Nu
 export function validLife(w:World){
  const ids=[...Object.keys(birthRecords),...Object.keys(w.generatedPeople??{})];
  const s:unknown=w.life;if(s===undefined)return true;
- if(!obj(s)||s.version!==1||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthStart(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.people)||Object.keys(s.people).length!==ids.length)return false;
+ if(!obj(s)||s.version!==1||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.people)||Object.keys(s.people).length!==ids.length)return false;
  for(const id of ids){
   const p=s.people[id];if(!obj(p)||!int(p.health,0,100)||!int(p.careUntil,0,w.day+90)||(p.injuryUntil!==undefined&&!int(p.injuryUntil,0,w.day+60)))return false;
   if(p.illness!==null&&(!obj(p.illness)||!['fever','wasting','cold','flux'].includes(String(p.illness.kind))||!int(p.illness.since,s.since,w.day)||!int(p.illness.severity,1,3)))return false;

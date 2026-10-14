@@ -1,7 +1,8 @@
+import {selectContent} from '../core/contentBinding';
 import {paintedBounds,type FeatureBounds} from './paintedRoster';
 /** Observed pixel rectangles in 1024×1536 complete Xianbei variants.
  * Order: left/right brow, left/right eye, nose, mouth. These are image coordinates, not ancestry data. */
-export const wholePortraitBounds:Record<string,FeatureBounds[]>={
+export let wholePortraitBounds:Record<string,FeatureBounds[]>={
  'gao-huan':paintedBounds['gao-huan'],
  'xiao-yan':paintedBounds['xiao-yan'],
  'yuwen-tai':[[494,236,89,36],[584,254,53,30],[501,268,62,26],[587,282,40,26],[547,286,61,69],[510,350,91,50]],
@@ -18,3 +19,6 @@ export const wholePortraitBounds:Record<string,FeatureBounds[]>={
  'xiao-yi':[[496,247,90,36],[594,269,49,31],[507,278,59,29],[595,296,40,27],[551,306,57,69],[511,374,85,48]],
  'fictional':[[526,238,101,40],[634,266,56,33],[538,271,65,32],[636,294,43,28],[583,310,59,62],[552,384,77,41]],
 };
+
+// Compiled data is selected before any importing rule module can execute.
+({wholePortraitBounds}=selectContent('wholePortraitBounds',{wholePortraitBounds}));

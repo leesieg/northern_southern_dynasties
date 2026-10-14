@@ -1,3 +1,4 @@
+import {selectContent} from '../core/contentBinding';
 import type {PaintedRigId} from './paintedRoster';
 
 /** Offline registration of court-v2 source art against the original blank-face rig.
@@ -7,7 +8,7 @@ import type {PaintedRigId} from './paintedRoster';
  * Identity entries were checked too: absence of drift must not be inferred from size.
  */
 type FaceTransform=readonly [scale:number,dx:number,dy:number];
-export const courtFaceRegistration:Record<PaintedRigId|'c-young-adult-v1',readonly [FaceTransform,FaceTransform]>={
+export let courtFaceRegistration:Record<PaintedRigId|'c-young-adult-v1',readonly [FaceTransform,FaceTransform]>={
  'gao-huan':[[.96,.084,.014],[.98,.034,.008]],
  'xiao-yan':[[.95,.043,.010],[.95,.043,.010]],
  female:[[.94,.087,.012],[.98,.017,.003]],
@@ -28,3 +29,6 @@ export const courtFaceRegistration:Record<PaintedRigId|'c-young-adult-v1',readon
  'chen-baxian':[[1,0,0],[1,0,0]],
  'c-young-adult-v1':[[.96,.093,.007],[.98,.062,.005]],
 };
+
+// Compiled data is selected before any importing rule module can execute.
+({courtFaceRegistration}=selectContent('courtFaceRegistration',{courtFaceRegistration}));

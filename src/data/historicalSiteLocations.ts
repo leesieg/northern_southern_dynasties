@@ -1,9 +1,10 @@
+import {selectContent} from '../core/contentBinding';
 /** 546 CE location audit: research/heritage anchors, never surveyed ancient boundaries.
  * CHGIS coordinate adaptations: Harvard University / Fudan University, CC BY-NC 4.0.
  * Detailed evidence and unresolved sites: docs/历史资料/城址位置与地形核验.md.
  * These metadata correct map anchors only; terrain economy coefficients stay unchanged.
  */
-export const historicalSiteLocations:Record<string,{lon:number;lat:number;source:string;note:string}>= {
+export let historicalSiteLocations:Record<string,{lon:number;lat:number;source:string;note:string}>= {
   "hefei": {
     "lon": 117.27646,
     "lat": 31.86446,
@@ -143,3 +144,6 @@ export const historicalSiteLocations:Record<string,{lon:number;lat:number;source
     "note": "汉长安城遗址范围的近似中心；西魏沿用旧长安，不以隋唐城或现代西安市中心定位。"
   }
 };
+
+// Compiled data is selected before any importing rule module can execute.
+({historicalSiteLocations}=selectContent('historicalSiteLocations',{historicalSiteLocations}));

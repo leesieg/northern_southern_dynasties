@@ -4,7 +4,7 @@ import {validArrangement} from './powerPoliticsSave';
 import {validGovernanceRules} from './governanceRules';
 import {policyDomains} from './politicalActions';
 import {policyDefinition,policyDimensions,type PolicyDimension} from '../data/governancePolicies';
-import {isMonthStart,monthStart} from './calendar';
+import {isMonthAnchor,monthStart} from './calendar';
 import {successionCandidates,type PublicOffice} from './publicSuccession';
 import {dynasticKin,rulerEligibility} from './claims';
 import {getPerson,getCharacter} from './personRegistry';
@@ -23,7 +23,7 @@ const unique=(v:unknown):v is string[]=>Array.isArray(v)&&v.every(x=>typeof x===
 export function validGovernments(w:World):boolean {
  const ids=worldRealms(w);const person=(id:unknown,_r:string)=>text(id)&&!!getPerson(w,id);
  const state:unknown=w.realm?.governments;if(state===undefined)return true;
- if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthStart(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==ids.length||ids.length>9)return false;
+ if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthAnchor(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==ids.length||ids.length>9)return false;
  if(!Array.isArray(state.regimes)||state.regimes.length<3||state.regimes.length>108||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
  if(!state.regimes.every(v=>obj(v)&&ids.includes(v.realm as never)))return false;
  for(const r of ids){const origin=realmOrigin(w,r),g=state.realms[r];if(!obj(g)||!governmentTypes.includes(g.type as never)||!text(g.dynasty)||!text(g.regimeId)||!person(g.ruler,r)||!unique(g.executives)||g.executives.length>2||!g.executives.every(id=>person(id,r))||!int(g.legitimacy,100)||!int(g.support,100)||!int(g.herd,1000)||!site(g.camp)||!int(g.lastCamp,w.day+90)||!obj(g.merit)||!obj(g.contracts)||!obj(g.cooldowns)||!unique(g.laws)||!unique(g.stages))return false;

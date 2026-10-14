@@ -5,8 +5,7 @@ import {CONTENT_VERSION,sites,roads} from './scenario';
 import {gameScripts} from './scripts';
 import {createContentRegistry,type ContentSource} from '../core/contentRegistry';
 
-/** Always copy the established source data. This catalogue does not authorize
- * arbitrary edited packages to enter the still-official simulation rules. */
+/** Read-only projection of the official source data; it is not a runnable package. */
 export function createOfficialContent(){
  return createContentRegistry({
   format:'fynbc-content-catalog',schemaVersion:1,packageId:'official-nsd',contentVersion:CONTENT_VERSION,

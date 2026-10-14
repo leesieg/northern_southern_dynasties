@@ -1,3 +1,4 @@
+import {selectContent} from '../core/contentBinding';
 import {countyOfficials,officeReserves} from './localOfficials';
 /** 546 roster enrichment. Residences, traits and abilities are scenario choices;
  * unknown birthdays are estimates. Later offices/empires are not backdated. */
@@ -55,7 +56,7 @@ const rows:Row[]=[
  ['yuwen-yu','宇文毓','west','yuwen','changan',534,'prince','周書',4],
  ['yuwen-yong','宇文邕','west','yuwen','changan',543,'prince','周書',5],
 ];
-export const expandedPeople:ExpandedPerson[]=rows.map(([id,name,realm,family,home,birth,role,book,volume])=>({id,name,realm,family,home,birth,role,sex:'male',source:{title:`《${book}》卷${volume}`,url:`https://zh.wikisource.org/wiki/${book}/卷${String(volume).padStart(2,'0')}`},note:546-birth<16?'年少族人，尚未出仕。':role==='commander'?'军旅出身，效力于本国。':role==='prince'?'宗室成员，参与本国政务。':'文士出身，熟悉朝廷与地方事务。'}));
+export let expandedPeople:ExpandedPerson[]=rows.map(([id,name,realm,family,home,birth,role,book,volume])=>({id,name,realm,family,home,birth,role,sex:'male',source:{title:`《${book}》卷${volume}`,url:`https://zh.wikisource.org/wiki/${book}/卷${String(volume).padStart(2,'0')}`},note:546-birth<16?'年少族人，尚未出仕。':role==='commander'?'军旅出身，效力于本国。':role==='prince'?'宗室成员，参与本国政务。':'文士出身，熟悉朝廷与地方事务。'}));
 expandedPeople.push({id:'dugu-jialuo',name:'独孤伽罗',realm:'west',family:'dugu',home:'tianshui',birth:544,role:'prince',sex:'female',source:{title:'《隋书》卷三十六',url:'https://zh.wikisource.org/wiki/隋書/卷36'},note:'独孤信之女，546 年尚幼；不前置与杨坚的婚姻。'});
 for(const [id,name,realm,home,family,birth] of [
  ['guest-liang-clerk','沈砚','liang','wucheng','fictional-shen',520],['guest-liang-engineer','沈衡','liang','wucheng','fictional-shen',499],
@@ -63,9 +64,9 @@ for(const [id,name,realm,home,family,birth] of [
  ['guest-west-clerk','陆峤','west','anding','fictional-lu',520],['guest-west-elder','陆恪','west','anding','fictional-lu',494],
 ] as const)expandedPeople.push({id,name,realm,home,family,birth,role:'scholar',sex:'male',fictional:true,note:'架空地方士人；独立家系，不属于同姓历史名门。',source:{title:'剧本架空家系',url:''}});
 expandedPeople.push(...countyOfficials,...officeReserves);
-export const expandedPersonById:Record<string,ExpandedPerson>=Object.fromEntries(expandedPeople.map(p=>[p.id,p]));
+export let expandedPersonById:Record<string,ExpandedPerson>=Object.fromEntries(expandedPeople.map(p=>[p.id,p]));
 // Each edge has its own source; common surnames never imply a blood relationship.
-export const expandedParentPairs:[string,string,string,number][]=[
+export let expandedParentPairs:[string,string,string,number][]=[
  ['xiao-yan','xiao-lun','梁書',29],['xiao-yan','xiao-ji','梁書',55],['xiao-yan','xiao-tong','梁書',8],
  ['xiao-tong','xiao-cha','周書',48],['xiao-tong','xiao-yu','梁書',55],['xiao-gang','xiao-daqi','梁書',44],
  ['gao-huan','gao-yan','北齊書',6],['gao-huan','gao-zhan','北齊書',7],
@@ -81,7 +82,7 @@ export const expandedParentPairs:[string,string,string,number][]=[
  ['dugu-xin','dugu-jialuo','隋書',36],
  ['guest-liang-engineer','guest-liang-clerk','',0],['guest-east-elder','guest-east-clerk','',0],['guest-west-elder','guest-west-clerk','',0],
 ];
-export const expandedAncestors=[
+export let expandedAncestors=[
  {id:'wei-xu',name:'韦旭',family:'wei-jingzhao',book:'周書',volume:31},
  {id:'duan-rong',name:'段荣',family:'duan-wuwei',book:'北齊書',volume:16},
  {id:'yang-jin',name:'杨津',family:'yang-hongnong',book:'北齊書',volume:34},
@@ -99,3 +100,6 @@ const biographies:Record<string,string>={
  'li-bi':'辽东襄平人，西魏将领。','yu-jin':'河南洛阳人，西魏将领。','yu-shi':'于谨之子，西魏将领。','zhao-gui':'天水南安人，西魏将领。','houmochen-chong':'代武川人，西魏将领。','li-hu':'西魏将领，李昞之父。','li-bing':'李虎之子，此时尚未建立唐朝。','su-chuo':'武功人，参与西魏行政与财政整顿。','wei-xiaokuan':'京兆杜陵人，镇守玉壁。','wei-xiong':'京兆杜陵人，韦孝宽之兄。','yang-zhong':'西魏将领，杨坚之父。',
 };
 for(const p of expandedPeople)if(biographies[p.id])p.note=biographies[p.id];
+
+// Compiled data is selected before any importing rule module can execute.
+({expandedPeople,expandedPersonById,expandedParentPairs,expandedAncestors}=selectContent('expandedPeople',{expandedPeople,expandedPersonById,expandedParentPairs,expandedAncestors}));

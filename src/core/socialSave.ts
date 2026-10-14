@@ -1,6 +1,6 @@
 import {parentLinksOf,getCharacter} from './personRegistry';
 import {allegianceRealm} from './officeEligibility';
-import {isMonthStart} from './calendar';
+import {isMonthAnchor} from './calendar';
 import {historicalCharacters} from '../data/characters';
 import { defaultTraits,heirs,houseMembers,kin,newSocial,traitsFor } from './social';
 import type { World } from './types';
@@ -9,7 +9,7 @@ const int=(v:unknown,a:number,b:number)=>typeof v==='number'&&Number.isSafeInteg
 export function validSocial(w:World):boolean {
  const s=w.social;if(s===undefined)return true;
  if(!obj(s))return false;
- if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthStart(s.lastMonthly,w.scriptId)))return false;
+ if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)))return false;
  if(!obj(s)||!w.characterId||s.version!==1||typeof s.founder!=='string'||!getCharacter(w,s.founder))return false;
  if(!int(s.stress,0,100)||!int(s.renown,0,999)||!int(s.seed,0,4294967295))return false;
  const base=newSocial(s.founder);

@@ -1,12 +1,14 @@
-import metadata from './paintedAssetMetadata.json';
+import {selectContent} from '../core/contentBinding';
+import builtinJSON from './paintedAssetMetadata.json';
 import type {PaintedRect} from '../character/paintedLayers';
 
+const metadata=selectContent('paintedAssetMetadata.json',{value:builtinJSON}).value;
 export type PaintedRigId=keyof typeof metadata;
 export type FeatureBounds=[number,number,number,number];
 /** Observed source-pixel rectangles: left brow, right brow, left eye, right eye, nose, mouth.
  * Facial hair directly touching the lips is authored with the mouth; chin beards stay on the base.
  * All portraits are artistic interpretations, not measured historical likenesses. */
-export const paintedBounds:Record<PaintedRigId,FeatureBounds[]>={
+export let paintedBounds:Record<PaintedRigId,FeatureBounds[]>={
  'gao-huan':[[484,210,100,44],[582,238,66,30],[494,244,82,35],[585,259,51,34],[534,272,70,65],[481,330,128,74]],
  'xiao-yan':[[490,216,92,38],[586,239,67,31],[502,251,78,37],[595,267,53,38],[545,281,72,71],[488,347,127,65]],
  female:[[481,231,82,35],[592,260,55,29],[488,266,79,34],[590,285,49,34],[548,297,65,73],[507,369,91,48]],
@@ -26,13 +28,13 @@ export const paintedBounds:Record<PaintedRigId,FeatureBounds[]>={
  'xu-zhaopei':[[351,162,79,35],[428,183,50,28],[360,187,60,35],[428,206,42,32],[390,215,54,55],[368,266,72,43]],
  'chen-baxian':[[386,179,96,38],[475,201,54,30],[399,210,72,34],[476,224,42,31],[433,236,65,55],[399,282,102,57]],
 };
-export const paintedRosterRigs:Record<string,PaintedRigId>={
+export let paintedRosterRigs:Record<string,PaintedRigId>={
  'gao-huan':'gao-huan','xiao-yan':'xiao-yan','dugu-xin':'dugu-xin','yuwen-tai':'yuwen-tai','xiao-gang':'xiao-gang','xiao-yi':'xiao-yi',
  'gao-cheng':'gao-cheng','gao-yang':'gao-yang','yuan-baoju':'yuan-baoju','yuan-qin':'yuan-qin',fictional:'fictional',
  'chen-baxian':'chen-baxian','yuwen-hu':'yuwen-tai','yuan-kuo':'yuan-qin','xiao-fangzhi':'child','yuwen-jue':'child',
  'wang-lingbin':'wang-lingbin','xu-zhaopei':'xu-zhaopei','lou-zhaojun':'lou-zhaojun','guest-liang':'female','guest-east':'female-north','guest-west':'female-north',
 };
-export const paintedFemaleRigs=new Set<PaintedRigId>(['female','female-north','wang-lingbin','xu-zhaopei','lou-zhaojun']);
+export const paintedFemaleRigs=new Set<PaintedRigId>(selectContent('paintedFemaleRigs',{ids:['female','female-north','wang-lingbin','xu-zhaopei','lou-zhaojun'] as PaintedRigId[]}).ids);
 export function paintedRig(id:PaintedRigId){
  const asset=metadata[id],width=asset.paired?asset.width/2:asset.width,height=asset.height;
  const boxes=paintedBounds[id],minX=Math.min(...boxes.map(b=>b[0])),maxX=Math.max(...boxes.map(b=>b[0]+b[2]));
@@ -42,3 +44,6 @@ export function paintedRig(id:PaintedRigId){
  const source=import.meta.env.BASE_URL+asset.source.slice(1);
  return {id,...asset,source,width,height,baseX:asset.paired?width:0,faceSource:asset.paired?source:source.replace('-base.png','-face.png'),thumbnail};
 }
+
+// Compiled data is selected before any importing rule module can execute.
+({paintedBounds,paintedRosterRigs}=selectContent('paintedRoster',{paintedBounds,paintedRosterRigs}));

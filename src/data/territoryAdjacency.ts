@@ -1,4 +1,7 @@
-import territories from './territories.json';
+import {selectContent} from '../core/contentBinding';
+import builtinJSON from './territories.json';
+
+const territories=selectContent('territories.json',{value:builtinJSON}).value;
 
 // Shared edges of the existing schematic county map, not reconstructed historical borders.
 const neighbors=new Map<string,Set<string>>(territories.features.map(f=>[f.properties.id,new Set<string>()]));

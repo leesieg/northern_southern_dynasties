@@ -1,7 +1,7 @@
 import {allPeople,getPerson,getCharacter} from './personRegistry';
 import {allegianceRealm} from './officeEligibility';
 import {worldRealms} from './polityRuntime';
-import {isMonthStart,monthStart} from './calendar';
+import {isMonthAnchor,monthStart} from './calendar';
 import {ageAt} from './lifeState';
 import {historicalMarriages,relationshipActionNames} from '../data/relationships';
 import { bondKey,closeKin,powerBasis } from './relationships';
@@ -15,7 +15,7 @@ export function validRelationships(w:World):boolean{
 const keyPair=(key:string)=>{const ids=key.split('|');return ids.length===2&&person(ids[0])&&person(ids[1])&&ids[0]!==ids[1];};
 
  const s:unknown=w.relationships;if(s===undefined)return true;
- if(!obj(s)||s.version!==1||!w.characterId||!w.social||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthStart(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.bonds)||!obj(s.opinions)||!obj(s.hooks)||!obj(s.reserves)||!obj(s.maritalBasis)||!obj(s.oaths)||!obj(s.regencies)||!obj(s.cooldowns)||!Array.isArray(s.marriages)||s.marriages.length>300)return false;
+ if(!obj(s)||s.version!==1||!w.characterId||!w.social||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.bonds)||!obj(s.opinions)||!obj(s.hooks)||!obj(s.reserves)||!obj(s.maritalBasis)||!obj(s.oaths)||!obj(s.regencies)||!obj(s.cooldowns)||!Array.isArray(s.marriages)||s.marriages.length>300)return false;
  if(s.allegiances!==undefined&&(!obj(s.allegiances)||Object.entries(s.allegiances).some(([id,a])=>!person(id)||!obj(a)||!worldRealms(w).includes(a.realm as never)||!worldRealms(w).includes(a.from as never)||a.realm===a.from&&a.source!=='custody'&&a.source!=='retained'||!int(a.since,0,w.day)||a.source!==undefined&&!['custody','pact','partition','retained'].includes(String(a.source))||!int(a.army,a.source!==undefined?0:1,(w.realm?.nextArmyId??1)-1))))return false;
  const n= allPeople(w).length;if(Object.keys(s.reserves).length!==n||Object.keys(s.maritalBasis).length!==n||! allPeople(w).every(p=>Object.hasOwn(s.reserves as object,p.id)&&int((s.reserves as Record<string,unknown>)[p.id],0,1_000_000)&&Object.hasOwn(s.maritalBasis as object,p.id)&&['unknown','recorded','simulation','widowed','free'].includes(String((s.maritalBasis as Record<string,unknown>)[p.id]))))return false;
  for(const [key,b] of Object.entries(s.bonds))if(!obj(b)||!person(b.a)||!person(b.b)||b.a===b.b||key!==bondKey(b.a,b.b)||!['friend','confidant','rival','nemesis'].includes(String(b.kind))||!int(b.since,s.since,w.day))return false;

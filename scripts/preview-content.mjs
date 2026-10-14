@@ -1,15 +1,16 @@
-import {createServer} from 'vite';
-import {fileURLToPath} from 'node:url';
+import {readFile} from 'node:fs/promises';
+import {compileOfficialPackage,openPackagePreview} from './contentPackageCompiler.mjs';
 
 // Bounded official-content smoke run for authors/AI. No production storage and no timer.
 const args=process.argv.slice(2),characterId=args[0]??'xiao-gang',days=Number(args[1]??0);
-if(args.length>2||!Number.isSafeInteger(days)||days<0||days>7){
- console.error('Usage: npm run content:preview -- [character-id] [days: 0..7]');process.exitCode=1;
+if(args.length>3||!Number.isSafeInteger(days)||days<0||days>7){
+ console.error('Usage: npm run content:preview -- [character-id] [days: 0..7] [package.json]');process.exitCode=1;
 }else{
- const server=await createServer({root:fileURLToPath(new URL('../',import.meta.url)),configFile:false,appType:'custom',logLevel:'error',server:{middlewareMode:true,hmr:false,ws:false,watch:null}});
+ let preview;
  try{
-  const {createPreviewSession}=await server.ssrLoadModule('/src/worker/previewSession.ts');
-  let snapshot,receipt;const preview=createPreviewSession(message=>{
+  const {content,environment}=await compileOfficialPackage();
+  const input=args[2]?JSON.parse(await readFile(args[2],'utf8')):content;
+  let snapshot,receipt;preview=await openPackagePreview(input,environment,message=>{
    if(message.type==='world')snapshot=message;
    if(message.type==='receipt')receipt=message;
   });
@@ -19,8 +20,8 @@ if(args.length>2||!Number.isSafeInteger(days)||days<0||days>7){
   const initialSeed=snapshot.world.life.seed;
   for(let i=0;i<days;i++){result=await request({type:'step'});if(!result.ok)break;}
   const world=snapshot.world,completed=world.day===days;
-  console.log(JSON.stringify({scope:'official-content-preview',storage:'isolated-memory',scriptId:world.scriptId,contentVersion:world.contentVersion,characterId,initialSeed,requestedDays:days,actualDays:world.day,status:completed?'completed':'paused',reason:result.text??null,person:world.people[0],armyCount:world.realm?.armies.length??0,saveSlots:snapshot.slots.map(s=>s.id)},null,2));
+  console.log(JSON.stringify({scope:'content-package-preview',packageId:input.packageId,digest:input.digest,storage:'isolated-memory',scriptId:world.scriptId,contentVersion:world.contentVersion,characterId,initialSeed,requestedDays:days,actualDays:world.day,status:completed?'completed':'paused',reason:result.text??null,person:world.people[0],armyCount:world.realm?.armies.length??0,saveSlots:snapshot.slots.map(s=>s.id)},null,2));
   if(!completed)process.exitCode=2;
  }catch(error){console.error(error instanceof Error?error.message:String(error));process.exitCode=1;}
- finally{await server.close();}
+ finally{await preview?.close();}
 }

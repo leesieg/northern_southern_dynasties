@@ -1,11 +1,12 @@
+import {selectContent} from '../core/contentBinding';
 import {historicalSiteLocations} from './historicalSiteLocations.ts';
 import {reviseRoadNetwork} from './roadNetwork.ts';
 import {expandedSeats} from './expandedGeography.ts';
 import { countySeats } from './administration.ts';
 import type { Polity, Road, Site } from '../core/types';
 
-export const CONTENT_VERSION = '546-map-0.6';
-export const polities: Record<Polity, { name: string; color: string; short: string }> = {
+export let CONTENT_VERSION = '546-map-0.6';
+export let polities: Record<Polity, { name: string; color: string; short: string }> = {
   liang: { name: '梁', color: '#668b7b', short: '江左' },
   east: { name: '东魏', color: '#8e778f', short: '河北' },
   west: { name: '西魏', color: '#b69a68', short: '关陇' },
@@ -13,7 +14,7 @@ export const polities: Record<Polity, { name: string; color: string; short: stri
 };
 
 // Spatial anchors and initial affiliations are a design dataset, not a reviewed 546 gazetteer.
-export const sites: Site[] = [
+export let sites: Site[] = [
   { id: 'jiankang', name: '建康', lon: 118.78, lat: 32.05, polity: 'liang', terrain: '丘陵', capital: true, description: '江水环流，舟楫往来。旅程从这座江南城邑开始。' },
   { id: 'jingkou', name: '京口', lon: 119.45, lat: 32.2, polity: 'liang', terrain: '河谷', description: '江岸渡口连接南北，道路沿水展开。' },
   { id: 'guangling', name: '广陵', lon: 119.42, lat: 32.4, polity: 'liang', terrain: '平原', description: '沿江与淮地之间的交通节点。' },
@@ -85,5 +86,8 @@ function bookedRoadDays(from:string,to:string,factor:number){
 }
 // Legacy shortcuts remain readable for booked journeys, but cannot form new routes or borders.
 // Western approaches pass through Yubi–Puban or Hongnong–Huayin; not surveyed ancient roads.
-export const roads: Road[] = reviseRoadNetwork(links.map(([from, to, factor = 1]) => ({from, to, factor,...bookedRoadDays(from,to,factor),...(from==='xiangyang'&&to==='luoyang'||from==='jinyang'&&to==='changan'||from==='changan'&&to==='luoyang'?{legacyOnly:true}:{})})));
-export const siteById = Object.fromEntries(sites.map(site => [site.id, site])) as Record<string, Site>;
+export let roads: Road[] = reviseRoadNetwork(links.map(([from, to, factor = 1]) => ({from, to, factor,...bookedRoadDays(from,to,factor),...(from==='xiangyang'&&to==='luoyang'||from==='jinyang'&&to==='changan'||from==='changan'&&to==='luoyang'?{legacyOnly:true}:{})})));
+export let siteById = Object.fromEntries(sites.map(site => [site.id, site])) as Record<string, Site>;
+
+// Compiled data is selected before any importing rule module can execute.
+({CONTENT_VERSION,polities,sites,roads,siteById}=selectContent('scenario',{CONTENT_VERSION,polities,sites,roads,siteById}));

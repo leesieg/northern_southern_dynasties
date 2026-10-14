@@ -1,6 +1,7 @@
+import {selectContent} from '../core/contentBinding';
 import {expandedSeats} from './expandedGeography.ts';
 // Facts are sourced separately from geometry. No polygon in this dataset is a surveyed county boundary.
-export const historySources={
+export let historySources={
   weiMid:{title:'《魏书》卷一百六中·地形志',url:'https://zh.wikisource.org/wiki/魏書/卷106中',period:'东魏及北魏旧簿，西魏沿革另核'},
   sui31:{title:'《隋书》卷三十一·地理下',url:'https://zh.wikisource.org/wiki/隋書/卷31',period:'后代沿革追述，不直接采用隋代隶属'},
   zhou31:{title:'《周书》卷三十一·韦孝宽传',url:'https://zh.wikisource.org/wiki/周書/卷31',period:'玉壁守战与置州沿革'},
@@ -15,7 +16,7 @@ export interface Administration {
   sources:(keyof typeof historySources)[]; status:'period-source'|'earlier-source'; note:string;
 }
 const record=(province:string,prefecture:string,county:string,group:string,sources:Administration['sources'],status:Administration['status'],note:string):Administration=>({province,prefecture,county,group,sources,status,note});
-export const administration:Record<string,Administration>={
+export let administration:Record<string,Administration>={
   jiankang:record('扬州','丹阳郡','建康县','danyang',['qi14','liang3'],'earlier-source','梁代仍见丹阳尹；县表以南齐基底校读，546 年完整辖境待复原。'),
   changan:record('雍州','京兆郡','长安县','jingzhao',['weiDown'],'earlier-source','京兆八县据《魏书》；不能把其中较早的郡治记载直接当作西魏都城布置。'),
   ye:record('司州','魏尹','邺县','weiyin',['weiUp'],'period-source','东魏天平迁都后，相州改司州、魏郡改魏尹；不是后来的北齐开局。'),
@@ -26,7 +27,7 @@ export const administration:Record<string,Administration>={
   kuaiji:record('东扬州','会稽郡','山阴县','kuaiji',['qi14','liang3'],'earlier-source','梁普通五年复置东扬州；此时不能使用后出的会稽县代替山阴县。'),
   jiangling:record('荆州','南郡','江陵县','nanjun',['qi15','liang3'],'earlier-source','南郡县表据南齐资料，梁代细部沿革待核。'),
 };
-export const countyGroups={
+export let countyGroups={
   danyang:['建康','秣陵','丹阳','溧阳','永世','湖熟','江宁','句容'],
   jingzhao:['长安','杜','鄠','山北','新丰','霸城','阴槃','蓝田'],
   weiyin:['邺','临漳','繁阳','列人','昌乐','武安','临水','魏','平邑','易阳','元城','斥章','贵乡'],
@@ -34,7 +35,7 @@ export const countyGroups={
   nanjun:['江陵','华容','枝江','临沮','编','当阳'],
 } as const;
 // New county seats use approximate map anchors, not claimed archaeological coordinates.
-export const countySeats:[string,string,number,number,'jiankang'|'changan'|'ye'][]=[
+export let countySeats:[string,string,number,number,'jiankang'|'changan'|'ye'][]=[
   ['moling','秣陵',118.85,31.84,'jiankang'],['danyang','丹阳',118.75,31.56,'jiankang'],
   ['liyang','溧阳',119.48,31.43,'jiankang'],['yongshi','永世',119.45,31.25,'jiankang'],
   ['hushu','湖熟',118.97,31.73,'jiankang'],['jiangning','江宁',118.60,31.86,'jiankang'],['jurong','句容',119.17,31.95,'jiankang'],
@@ -69,3 +70,6 @@ for(const [id,,,,,realm,,province,prefecture,county,group] of expandedSeats) adm
 // 《魏书·地形志》洛州列洛阳郡、北荆州列汝北郡及梁县；州郡身份不随占领自动改变。
 administration.luoyang=record('洛州','洛阳郡','洛阳县','henan',['weiMid'],'period-source','武定年间洛州洛阳郡；县域边界仍为示意。');
 administration.liangxian=record('北荆州','汝北郡','梁县','rubei',['weiMid'],'period-source','北荆州武定二年置，汝北郡武定元年复；546 年县治定位约略。');
+
+// Compiled data is selected before any importing rule module can execute.
+({historySources,administration,countyGroups,countySeats}=selectContent('administration',{historySources,administration,countyGroups,countySeats}));

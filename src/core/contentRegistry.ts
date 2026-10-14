@@ -5,8 +5,8 @@ import type {GameScript} from '../data/scripts';
 import type {Site,Road} from './types';
 import {createMapRegistry} from './mapRegistry';
 
-/** Authoring catalogue v1, not a complete loadable game package. Rules and initial
- * world configuration still live in the official runtime until later migration. */
+/** Read-only authoring catalogue. Runnable packages use contentPackage.ts and
+ * include the complete compiled tables plus exact engine/asset dependencies. */
 export interface ContentSource {
  format:'fynbc-content-catalog';schemaVersion:1;packageId:string;contentVersion:string;
  sites:Site[];roads:Road[];characters:HistoricalCharacter[];people:RelationshipPerson[];
@@ -22,7 +22,7 @@ function index<T extends {id:string}>(values:readonly T[],label:string):Map<stri
  for(const value of values){if(!value.id||result.has(value.id))throw new Error(label+' ID 缺失或重复：'+value.id);result.set(value.id,value);}
  return result;
 }
-export function canonicalContent(source:ContentSource|Immutable<ContentSource>):string{
+export function canonicalContent(source:unknown):string{
  return JSON.stringify(source,(_key,value)=>value&&typeof value==='object'&&!Array.isArray(value)
   ?Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]])):value);
 }

@@ -10,6 +10,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run --testTimeout=300000",
     "content:inspect": "node scripts/inspect-content.mjs",
+    "content:verify": "node scripts/verify-content-package.mjs",
+    "content:package": "node scripts/package-content.mjs",
     "content:preview": "node scripts/preview-content.mjs",
     "data:territories": "node --experimental-strip-types scripts/build-territories.mjs"
   },

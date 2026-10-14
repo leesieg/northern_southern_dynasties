@@ -1,3 +1,5 @@
+import {campaignSetup} from './campaignSetup';
+import {selectContent} from '../core/contentBinding';
 import {additionalStarts} from './additionalStarts';
 import type { Polity } from '../core/types';
 export type CharacterRole='ruler'|'regent'|'prince'|'commander'|'scholar';
@@ -9,7 +11,7 @@ const source=(title:string,path:string)=>({title,url:'https://zh.wikisource.org/
 const liang3=source('《梁书》卷三','梁書/卷03'),liang4=source('《梁书》卷四','梁書/卷04'),liang5=source('《梁书》卷五','梁書/卷05');
 const qi2=source('《北齐书》卷二','北齊書_(四庫全書本)/卷02'),qi3=source('《北齐书》卷三','北齊書/卷3'),qi4=source('《北齐书》卷四','北齊書/卷4');
 const wei12=source('《魏书》卷十二','魏書/卷12'),bei5=source('《北史》卷五','北史/卷005'),zhou2=source('《周书》卷二','周書/卷02');
-export const historicalCharacters:HistoricalCharacter[]=[
+export let historicalCharacters:HistoricalCharacter[]=[
   {id:'dugu-xin',name:'独孤信',family:'dugu',polity:'west',title:'秦州刺史 · 陇右将领',role:'commander',home:'tianshui',biography:'西魏将领，曾任陇右十州大都督、秦州刺史，经营陇右。546 年参与平定凉州宇文仲和之乱。',sources:[source('《周书》卷十六','周書_(四庫全書本)/卷16'),bei5]},
   {id:'xiao-yan',name:'萧衍',family:'xiao',polity:'liang',title:'梁皇帝',role:'ruler',home:'jiankang',biography:'梁的在位皇帝，朝廷位于建康。萧纲为皇太子，萧绎为在外任职的宗室。',sources:[liang3,liang4,liang5]},
   {id:'xiao-gang',name:'萧纲',family:'xiao',polity:'liang',title:'梁皇太子',role:'prince',home:'jiankang',biography:'萧衍第三子，531 年被立为皇太子，546 年仍居储位。',sources:[liang4]},
@@ -22,12 +24,12 @@ export const historicalCharacters:HistoricalCharacter[]=[
   {id:'yuwen-tai',name:'宇文泰',family:'yuwen',polity:'west',title:'西魏执政',role:'regent',home:'changan',biography:'辅佐西魏，主持军政与制度整顿。',sources:[zhou2]},
   {id:'yuan-qin',name:'元钦',family:'yuan',polity:'west',title:'西魏皇太子',role:'prince',home:'changan',biography:'元宝炬长子，535 年被立为皇太子。546 年仍在储位，尚未即位。',sources:[bei5]},
 ];
-export const characterById:Record<string,HistoricalCharacter>=Object.fromEntries([...historicalCharacters,...additionalStarts].map(c=>[c.id,c]));
-export const familyNames:Record<string,string>={shen:'沈',xiao:'萧',yuan:'元',gao:'高',yuwen:'宇文',dugu:'独孤'};
+export let characterById:Record<string,HistoricalCharacter>=Object.fromEntries([...historicalCharacters,...additionalStarts].map(c=>[c.id,c]));
+export let familyNames:Record<string,string>={shen:'沈',xiao:'萧',yuan:'元',gao:'高',yuwen:'宇文',dugu:'独孤'};
 export const familyName=(id:string)=>familyNames[id]??'家族';
-export const roleNames:Record<CharacterRole,string>={ruler:'君主',regent:'执政',prince:'宗室',commander:'将领',scholar:'士人'};
+export let roleNames:Record<CharacterRole,string>={ruler:'君主',regent:'执政',prince:'宗室',commander:'将领',scholar:'士人'};
 // Only sourced relations among the current roster. Absence does not assert no kinship.
-export const characterRelations=[
+export let characterRelations=[
   {from:'yuan-shanjian',to:'gao-huan',kind:'辅政',source:qi2},
   {from:'yuan-baoju',to:'yuwen-tai',kind:'辅政',source:zhou2},
   {from:'yuwen-tai',to:'dugu-xin',kind:'统属',source:source('《周书》卷十六','周書_(四庫全書本)/卷16')},
@@ -39,4 +41,7 @@ export const characterRelations=[
   {from:'yuan-baoju',to:'yuan-qin',kind:'父子',source:bei5},
 ];
 export function relationsFor(id:string){return characterRelations.filter(r=>r.from===id||r.to===id).map(r=>({id:r.from===id?r.to:r.from,label:r.kind==='父子'?(r.from===id?'子':'父'):r.kind==='兄弟'?(r.from===id?'弟':'兄'):r.kind==='辅政'?(r.from===id?'辅政者':'奉事君主'):(r.from===id?'麾下将领':'军政统领'),source:r.source}));}
-export function startRules(c:HistoricalCharacter){return c.role==='ruler'?{coins:520,food:120,market:2,granary:1,hostel:0}:(c.role==='regent'||c.role==='commander')?{coins:420,food:100,market:1,granary:2,hostel:0}:{coins:260,food:90,market:1,granary:0,hostel:1};}
+export function startRules(c:HistoricalCharacter){return {...campaignSetup.roleResources[c.role==='ruler'?'ruler':(c.role==='regent'||c.role==='commander')?'military':'other']};}
+
+// Compiled data is selected before any importing rule module can execute.
+({historicalCharacters,characterById,familyNames,roleNames,characterRelations}=selectContent('characters',{historicalCharacters,characterById,familyNames,roleNames,characterRelations}));

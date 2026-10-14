@@ -1,3 +1,4 @@
+import {allowsLegacyContent} from './contentBinding';
 import {countyOfficials,officeReserves} from '../data/localOfficials';
 import {CONTENT_VERSION,siteById} from '../data/scenario';
 import {expandedSeats} from '../data/expandedGeography';
@@ -14,6 +15,7 @@ const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&
  * preserved; scheduling metadata changes only after legacy date validation. */
 export function upgradeContent(value:unknown){
  if(!object(value)||value.version!==2)return;
+ if(!allowsLegacyContent()){if(value.contentVersion!==CONTENT_VERSION)throw new Error('此内容包没有声明适用的旧版迁移。');return;}
  if(['546-map-0.1','546-map-0.2','546-map-0.3','546-map-0.4','546-map-0.5'].includes(String(value.contentVersion)))upgradeCalendar(value);
  if(value.contentVersion==='546-map-0.5'){value.contentVersion=CONTENT_VERSION;return;}
  if(value.contentVersion==='546-map-0.2'||value.contentVersion==='546-map-0.3'||value.contentVersion==='546-map-0.4'){upgradeOfficials(value);return;}

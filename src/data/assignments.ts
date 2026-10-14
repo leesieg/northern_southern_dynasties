@@ -1,7 +1,8 @@
+import {selectContent} from '../core/contentBinding';
 /** Original simulation tasks and balance, not assertions about particular historical events. */
-export const servicePriorities={economy:'富民经世',stability:'安民整饬',military:'整备军务',diplomacy:'敦睦邦交'} as const;
+export let servicePriorities={economy:'富民经世',stability:'安民整饬',military:'整备军务',diplomacy:'敦睦邦交'} as const;
 export type ServicePriority=keyof typeof servicePriorities;
-export const assignmentTemplates={
+export let assignmentTemplates={
  relief:{name:'赈济安民',category:'stability',skill:'stewardship',coins:35,grain:70,work:160,icon:'grain',description:'开仓赈济，稳住民心。',effect:'秩序依成果质量提升，消耗专拨赈粮'},
  agriculture:{name:'劝课农桑',category:'economy',skill:'stewardship',coins:65,grain:25,work:200,icon:'grain',description:'修整沟渠，劝课农桑。',effect:'繁荣依成果质量提升，水利 +1'},
  commerce:{name:'整顿市务',category:'economy',skill:'stewardship',coins:60,grain:0,work:180,icon:'coins',description:'查验度量，疏通商路。',effect:'繁荣随质量提升（常额 +8），完成时公款 +85'},
@@ -17,14 +18,14 @@ export const assignmentTemplates={
  taxation:{name:'清查征税',category:'economy',skill:'stewardship',coins:30,grain:0,work:180,icon:'coins',description:'由度支或监察官员清查欠赋，按本城人口与税制征收。',effect:'依现行赋役规则、人口与质量追征，收入及秩序负担随方案改变；每城每季限一次'},
 } as const;
 export type AssignmentKind=keyof typeof assignmentTemplates;
-export const assignmentPlans={balanced:{name:'按部就班',cost:100,work:100,description:'按常额拨款与工期办理，基础质量 100%。'},thorough:{name:'从容详办',cost:80,work:125,description:'预算为常额的八成，工作量增加四分之一，基础质量 115%。'},urgent:{name:'增拨赶办',cost:140,work:80,description:'预算为常额的一点四倍，工作量减少五分之一，基础质量 85%。'}} as const;
+export let assignmentPlans={balanced:{name:'按部就班',cost:100,work:100,description:'按常额拨款与工期办理，基础质量 100%。'},thorough:{name:'从容详办',cost:80,work:125,description:'预算为常额的八成，工作量增加四分之一，基础质量 115%。'},urgent:{name:'增拨赶办',cost:140,work:80,description:'预算为常额的一点四倍，工作量减少五分之一，基础质量 85%。'}} as const;
 export type AssignmentPlan=keyof typeof assignmentPlans;
-export const assignmentPhases={petition:'待准请命',proposal:'拟定方案',approval:'待批预算',ready:'待启办',working:'办理中',incident:'阻碍待决',aid:'待复求援',report:'待考绩',closed:'已结案'} as const;
+export let assignmentPhases={petition:'待准请命',proposal:'拟定方案',approval:'待批预算',ready:'待启办',working:'办理中',incident:'阻碍待决',aid:'待复求援',report:'待考绩',closed:'已结案'} as const;
 export type AssignmentPhase=keyof typeof assignmentPhases;
-export const careerNames={economy:['初涉经世','善治之才','循吏之望','经世名臣'],stability:['初涉安民','整饬有方','清正之望','砥柱之臣'],military:['初涉军务','治军有方','将略之望','柱国之才'],diplomacy:['初涉邦交','善通国事','折冲之望','纵横名士']} as const;
+export let careerNames={economy:['初涉经世','善治之才','循吏之望','经世名臣'],stability:['初涉安民','整饬有方','清正之望','砥柱之臣'],military:['初涉军务','治军有方','将略之望','柱国之才'],diplomacy:['初涉邦交','善通国事','折冲之望','纵横名士']} as const;
 
 /** Player-facing choices describe rules, not historical claims. */
-export const assignmentTradeoffs:Record<AssignmentKind,{condition:string;cost:string}>={
+export let assignmentTradeoffs:Record<AssignmentKind,{condition:string;cost:string}>={
  relief:{condition:'本国控制的城市，可用承办人',cost:'占用赈粮；先稳秩序与粮储，不提高长期水利产能'},
  agriculture:{condition:'本国控制的城市，可用管理人才',cost:'见效较慢；占用当地劳力，短期生产受影响'},
  commerce:{condition:'本国控制的城市，可用管理人才',cost:'收益在结案时到账；不能立即填补公库缺口，也不增加粮食产能'},
@@ -39,4 +40,7 @@ export const assignmentTradeoffs:Record<AssignmentKind,{condition:string;cost:st
  recruitment:{condition:'对应中央职掌，本城至少 700 人；已有军队须在此驻留且未满员',cost:'兵员来自当地人口，秩序 −5；增兵后长期军粮与军饷增加'},
  taxation:{condition:'对应中央职掌或当地治理权，每城每季限一次',cost:'核籍需额外工期；追征收入须扣除办理预算，并承担相应秩序负担'},
 };
-export const priorityIcons={economy:'coins',stability:'steadfast',military:'army',diplomacy:'gregarious'} as const;
+export let priorityIcons={economy:'coins',stability:'steadfast',military:'army',diplomacy:'gregarious'} as const;
+
+// Compiled data is selected before any importing rule module can execute.
+({servicePriorities,assignmentTemplates,assignmentPlans,assignmentPhases,careerNames,assignmentTradeoffs,priorityIcons}=selectContent('assignments',{servicePriorities,assignmentTemplates,assignmentPlans,assignmentPhases,careerNames,assignmentTradeoffs,priorityIcons}));

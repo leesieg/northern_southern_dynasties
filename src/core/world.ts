@@ -1,3 +1,4 @@
+import {campaignSetup} from '../data/campaignSetup';
 import {ensureHistorical,advanceHistorical,actHistorical} from './historicalEvents';
 import {actFamilyMarriage} from './familyMarriage';
 import {journeyPosition} from './routeGeometry';
@@ -66,15 +67,10 @@ import {ensureEconomy, actPersonalEconomy, advancePersonalEconomy} from './perso
 export const distanceBetween=officialMap.distanceBetween;
 export const legDays=officialMap.legDays;
 export const planRoute=officialMap.planRoute;
-export function newWorld(): World {
+export function newWorld(scriptId=DEFAULT_SCRIPT): World {
   return {
-    version: 2, life:newLifeState({day:0,scriptId:DEFAULT_SCRIPT}), families:newFamilyState(), lifestyles:{version:2,people:{}}, identities:initialIdentities(), scriptId:DEFAULT_SCRIPT, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,
-    people: [
-      {id:'player',name:'沈行舟',location:'jiankang',home:'jiankang',coins:180,food:90,journey:null,itinerary:[],itineraryIndex:0},
-      {id:'merchant',name:'陆商',location:'changan',home:'changan',coins:0,food:0,journey:null,itinerary:['tianshui','jincheng','wuwei','changan'],itineraryIndex:0},
-      {id:'messenger',name:'北地驿使',location:'ye',home:'ye',coins:0,food:0,journey:null,itinerary:['jinyang','pingcheng','jicheng','ye'],itineraryIndex:0},
-      {id:'traveler',name:'江左行旅',location:'xunyang',home:'xunyang',coins:0,food:0,journey:null,itinerary:['jiangling','changsha','nanchang','xunyang'],itineraryIndex:0},
-    ],
+    version: 2, life:newLifeState({day:0,scriptId}), families:newFamilyState(0,scriptId), lifestyles:{version:2,people:{}}, identities:initialIdentities(), scriptId, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,
+    people:structuredClone(campaignSetup.people),
     chronicle:[{day:0,person:'player',text:'你在建康整备行装。一张舆图，一囊行粮，山河从此展开。'}],
   };
 }
@@ -83,7 +79,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   if(mode==='sandbox'&&!characterId)throw new Error('沙盒需选择历史人物');
   const script=getScript(scriptId);
   if(characterId?!script.characterIds.includes(characterId):!script.allowFictional)throw new Error('请选择所选剧本中的可玩人物。');
-  const w=newWorld();w.scriptId=script.id;
+  const w=newWorld(script.id);
   if(characterId){
     if(!Object.hasOwn(characterById,characterId))throw new Error('请选择名录中的可玩人物。');
     const c=characterById[characterId],rules=startRules(c);w.characterId=c.id;w.social=newSocial(c.id);

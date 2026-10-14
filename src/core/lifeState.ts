@@ -1,3 +1,4 @@
+import {campaignSetup} from '../data/campaignSetup';
 import {monthStart} from './calendar';
 import {familyPersonById} from '../data/families';
 import {birthRecords} from '../data/lifespans';
@@ -52,5 +53,5 @@ export function lifeStage(age:number){return age<16?'幼年':age<30?'青年':age
 export function healthLabel(w:World,id:string){const p=lifeOf(w,id);return isDeceased(w,id)?'已故':!p?'健康不详':p.illness?(p.illness.severity===3?'重症 · ':'')+illnessNames[p.illness.kind]:(p.injuryUntil??0)>w.day?'军中负伤':(p?.health??100)<40?'衰弱':(p?.health??100)<65?'欠安':'康健';}
 export function healthCapacity(age:number){return Math.max(25,100-Math.max(0,age-40));}
 export function newLifeState(w:Pick<World,'day'|'scriptId'|'generatedPeople'>):LifeState {
- return {version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:546103,people:Object.fromEntries([...Object.keys(birthRecords),...Object.keys(w.generatedPeople??{})].map(id=>[id,{health:healthCapacity(ageAt(w,id)!),illness:null,careUntil:0,death:null}])),successions:[]};
+ return {version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:campaignSetup.seed,people:Object.fromEntries([...Object.keys(birthRecords),...Object.keys(w.generatedPeople??{})].map(id=>[id,{health:healthCapacity(ageAt(w,id)!),illness:null,careUntil:0,death:null}])),successions:[]};
 }

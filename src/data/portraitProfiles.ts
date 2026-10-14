@@ -1,7 +1,8 @@
+import {selectContent} from '../core/contentBinding';
 import type { FacialGene,Genome } from '../core/genetics';
 export interface PortraitProfile {maturity:number;beard:'none'|'short'|'long';headwear?:'tall-cap';features:Partial<Record<FacialGene,number>>;basis:'text'|'image'|'interpretation';source?:string;note:string}
 /** Numerical proportions, age treatment and unspecified details are original art decisions, never measurements. */
-export const portraitProfiles:Record<string,PortraitProfile>={
+export let portraitProfiles:Record<string,PortraitProfile>={
  'xiao-yan':{maturity:.78,beard:'long',headwear:'tall-cap',features:{faceLength:65,jaw:26,eyeWidth:25,eyeTilt:60,brow:20,noseLength:67,mouth:28,ears:60},basis:'image',source:'https://digitalarchive.npm.gov.tw/Collection/Detail/15644?dep=P',note:'参照故宫《历代帝王半身像·梁武帝》公开图中的高黑冠、收窄下颌、细长眉眼、细髭与垂须；转化为正面五官参数而非复制画面。传世帝王像不等于同时代写生，其年代未据此目录确定。'},
  'xiao-gang':{maturity:.48,beard:'short',features:{faceLength:56,jaw:35,eyeWidth:64,brow:35,noseLength:48,mouth:51},basis:'interpretation',note:'未核得可靠肖像，采用文士造型；五官数值为美术设定。'},
  'xiao-yi':{maturity:.46,beard:'long',features:{faceLength:72,jaw:25,eyeWidth:40,eyeTilt:62,brow:57,noseLength:66,mouth:32},basis:'interpretation',note:'未核得可靠肖像；未凭无出处的现代绘图确定眼疾侧别。'},
@@ -19,3 +20,6 @@ export function applyPortraitProfile(genome:Genome,id:string):Genome {
  for(const [key,value] of Object.entries(profile.features))result.facial[key as FacialGene]=[Math.max(0,value-7),Math.min(100,value+7)];
  return result;
 }
+
+// Compiled data is selected before any importing rule module can execute.
+({portraitProfiles}=selectContent('portraitProfiles',{portraitProfiles}));

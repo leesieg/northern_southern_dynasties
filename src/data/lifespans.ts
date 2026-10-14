@@ -1,9 +1,10 @@
+import {selectContent} from '../core/contentBinding';
 import {expandedPeople} from './expandedPeople';
 /** Birth years only: no fictitious birthday or predetermined historical death date.
  * Unknown years are explicit game estimates, never historical claims. */
 export interface BirthRecord {year:number;basis:'year'|'estimate'|'fictional';source?:string}
 const liang='https://zh.wikisource.org/wiki/梁書/',qi='https://zh.wikisource.org/wiki/北齊書_(四庫全書本)/',zhou='https://zh.wikisource.org/wiki/周書/';
-export const birthRecords:Record<string,BirthRecord>={
+export let birthRecords:Record<string,BirthRecord>={
  'xiao-yan':{year:464,basis:'year',source:liang+'卷03'},
  'xiao-gang':{year:503,basis:'year',source:liang+'卷04'},
  'xiao-yi':{year:508,basis:'year',source:liang+'卷05'},
@@ -29,3 +30,6 @@ export const birthRecords:Record<string,BirthRecord>={
 };
 
 for(const p of expandedPeople)birthRecords[p.id]={year:p.birth,basis:p.fictional?'fictional':'estimate',source:p.source.url||undefined};
+
+// Compiled data is selected before any importing rule module can execute.
+({birthRecords}=selectContent('lifespans',{birthRecords}));

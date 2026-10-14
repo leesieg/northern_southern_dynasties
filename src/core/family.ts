@@ -1,5 +1,5 @@
 import {familyMembersOf,familyPersonOf} from './personRegistry';
-import {isMonthStart,monthStart} from './calendar';
+import {isMonthAnchor,isMonthStart,monthStart} from './calendar';
 import {clanStanding} from './clans';
 import {isAlive} from './lifeState';
 import {nobilityStanding} from './nobility';
@@ -31,7 +31,7 @@ export function advanceFamilies(w:World){
 export function validFamilies(value:unknown,day:number,scriptId?:string,w?:World):boolean{
  if(!value||typeof value!=='object'||Array.isArray(value))return false;const s=value as FamilyState;const members=[...prestigeMembers,...Object.values(w?.generatedPeople??{}).map(p=>p.person)];
  const integer=(v:unknown,max:number)=>typeof v==='number'&&Number.isSafeInteger(v)&&v>=0&&v<=max;
- if(s.version!==1||!integer(s.since,day)||!integer(s.lastMonthly,day)||!isMonthStart(s.lastMonthly,scriptId)||s.lastMonthly<monthStart(s.since,scriptId)||!s.prestige||typeof s.prestige!=='object'||Array.isArray(s.prestige))return false;
+ if(s.version!==1||!integer(s.since,day)||!integer(s.lastMonthly,day)||!isMonthAnchor(s.lastMonthly,scriptId)||s.lastMonthly<monthStart(s.since,scriptId)||!s.prestige||typeof s.prestige!=='object'||Array.isArray(s.prestige))return false;
  if(Object.keys(s.prestige).length!==members.length||!members.every(p=>Object.hasOwn(s.prestige,p.id)&&integer(s.prestige[p.id],1_000_000)))return false;
  if(!Array.isArray(s.ledger)||s.ledger.length>80)return false;
  let last=s.since;const subtotals:Record<string,number>={};

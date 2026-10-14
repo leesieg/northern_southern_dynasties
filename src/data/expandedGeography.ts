@@ -1,8 +1,9 @@
+import {selectContent} from '../core/contentBinding';
 import type {Site} from '../core/types';
 /** County-seat anchors, not surveyed boundaries. Parent is a travel connection,
  * administrative affiliation is stored independently in the last four fields. */
 export type GazetteerRow=[id:string,name:string,lon:number,lat:number,connection:string,realm:Site['polity'],terrain:Site['terrain'],province:string,prefecture:string,county:string,group:string];
-export const expandedSeats:GazetteerRow[]=[
+export let expandedSeats:GazetteerRow[]=[
  ['wucheng','乌程',120.10,30.87,'wujun','liang','平原','扬州','吴兴郡','乌程县','wuxing'],
  ['yuhang','余杭',119.94,30.27,'wucheng','liang','河谷','扬州','吴郡','余杭县','wujun'],
  ['qiantang','钱唐',120.17,30.25,'yuhang','liang','河谷','扬州','吴郡','钱唐县','wujun'],
@@ -64,3 +65,6 @@ export const expandedSeats:GazetteerRow[]=[
  ['didao','狄道',103.86,35.38,'jincheng','west','河谷','河州','陇西郡','狄道县','longxi'],
  ['fuhan','枹罕',103.21,35.60,'didao','west','河谷','河州','枹罕郡','枹罕县','fuhan'],
 ];
+
+// Compiled data is selected before any importing rule module can execute.
+({expandedSeats}=selectContent('expandedGeography',{expandedSeats}));

@@ -1,3 +1,4 @@
+import {selectContent} from '../core/contentBinding';
 import { applyPortraitProfile } from './portraitProfiles';
 import { historicalCharacters } from './characters';
 import { founderGenome,validGenome,type Genome } from '../core/genetics';
@@ -6,7 +7,7 @@ export type PortraitSex='male'|'female';
 export type PortraitCulture='southern'|'northern';
 export interface CharacterIdentity {sex:PortraitSex;culture:PortraitCulture;cultureId?:CultureId;genome:Genome}
 export interface IdentityState {version:1;people:Record<string,CharacterIdentity>}
-export const cultureNames:Record<PortraitCulture,string>={southern:'江南衣冠',northern:'北地衣冠'};
+export let cultureNames:Record<PortraitCulture,string>={southern:'江南衣冠',northern:'北地衣冠'};
 /** Costume direction only: polity is not ethnicity; seeded genomes are invented art parameters. */
 export function initialIdentities():IdentityState {
  const people:IdentityState['people']={};
@@ -28,3 +29,6 @@ export function validIdentities(value:unknown,w?:import('../core/types').World):
  if(!required.every(id=>Object.hasOwn(s.people,id)))return false;
  return Object.entries(s.people).every(([id,p])=>(Object.hasOwn(initial.people,id)||!!w?.generatedPeople&&Object.hasOwn(w.generatedPeople,id))&&!!p&&!Array.isArray(p)&&['male','female'].includes(p.sex)&&Object.hasOwn(cultureNames,p.culture)&&(p.cultureId===undefined||validCulture(p.cultureId))&&validGenome(p.genome));
 }
+
+// Compiled data is selected before any importing rule module can execute.
+({cultureNames}=selectContent('characterIdentities',{cultureNames}));
