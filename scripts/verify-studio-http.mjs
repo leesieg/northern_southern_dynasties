@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
 import {request as httpRequest} from 'node:http';
+import {createContentRealm} from './contentPackageCompiler.mjs';
 const server=await createServer({server:{host:'127.0.0.1',port:0,strictPort:false,open:false},logLevel:'error'});
 try{
+ const realm=await createContentRealm();try{assert.notEqual(server.config.cacheDir,realm.config.cacheDir,'Browser and content SSR prebundles must use separate cache directories');}finally{await realm.close();}
  await server.listen();const port=server.httpServer.address().port,origin='http://127.0.0.1:'+port;
  const html=await(await fetch(origin+'/studio.html')).text(),token=html.match(/name="studio-token" content="([a-f0-9]+)"/)?.[1];assert.ok(token);
  const request=(headers={},body={method:'schema',input:{}})=>fetch(origin+'/__studio/api',{method:'POST',headers:{'content-type':'application/json',origin,'x-studio-token':token,...headers},body:JSON.stringify(body)});
