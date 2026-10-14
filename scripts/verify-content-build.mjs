@@ -1,4 +1,4 @@
-import {readdir} from 'node:fs/promises';
+import {readFile,readdir} from 'node:fs/promises';
 import {Worker} from 'node:worker_threads';
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
@@ -33,4 +33,17 @@ try{
  await request({type:'export'});assert.equal(JSON.parse(exported).content.packageId,'official-nsd');
  await request({type:'import',text:exported});assert.equal(JSON.stringify(world),before);
  console.log('Built ES Worker: package binds before rule imports; new game and locked save round trip passed.');
+ for(const path of process.argv.slice(3)){
+  const source=await readFile(path,'utf8'),envelope=JSON.parse(source),payload=JSON.parse(envelope.payload);
+  await request({type:'import',text:source});
+  assert.equal(world.day,payload.day);assert.equal(world.scriptId,payload.scriptId);
+  const restored=JSON.stringify(world);await request({type:'export'});
+  await request({type:'import',text:exported});assert.equal(JSON.stringify(world),restored);
+  await assert.rejects(request({type:'import',text:JSON.stringify({...envelope,content:{...envelope.content,engine:'unknown'}})}),/版本不匹配/);
+  assert.equal(JSON.stringify(world),restored,'failed import must preserve current progress');
+  await assert.rejects(request({type:'import',text:JSON.stringify({...envelope,checksum:'invalid'})}),/校验/);
+  assert.equal(JSON.stringify(world),restored);
+  assert.equal(await readFile(path,'utf8'),source,'source fixture must stay unchanged');
+  console.log('Built ES Worker: previous save restored, re-saved, and failed imports isolated:',path);
+ }
 }finally{clearTimeout(timer);await worker.terminate();}
