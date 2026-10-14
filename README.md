@@ -122,6 +122,31 @@
 - **审阅与试玩**：人类表单和 AI CLI 共用提案与差异审阅，应用后形成草稿版本；校验、事件调试与隔离试玩使用实际规则，不写入正式游戏存档。
 - **发行与恢复**：导出 `.release.json`，校验后隔离重载并检查存档往返；支持作者备份、三方迁移冲突处理及三个本地恢复点。发行包需要匹配的项目规则和本地资产，不内嵌全部地图与模型。
 
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/images/content-studio/character.png"><img src="docs/images/content-studio/character.png" alt="创作台人物档案：萧纲肖像、基础资料与右侧变更审阅" width="480"></a><br>
+      <strong>人物档案</strong><br>从名录进入人物资料与剧本状态
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/images/content-studio/scenario.png"><img src="docs/images/content-studio/scenario.png" alt="创作台剧本设置：三国并立的日期、默认人物与开局地点示意" width="480"></a><br>
+      <strong>剧本设置</strong><br>组织开局日期、人物与独立军政配置
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/images/content-studio/event.png"><img src="docs/images/content-studio/event.png" alt="创作台事件库：侯景事件只读说明与新建作者事件入口" width="480"></a><br>
+      <strong>事件库</strong><br>既有历史事件只读；作者事件从独立入口制作
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/images/content-studio/map.png"><img src="docs/images/content-studio/map.png" alt="创作台地图：地点名录、建康坐标、道路入口与共享地理作用范围" width="480"></a><br>
+      <strong>地图工作区</strong><br>分别编辑共享地理与当前剧本局势
+    </td>
+  </tr>
+</table>
+
+*创作台实机截图摄于 2026-10-14，本地代码版本 `e05a97d`、工作区草稿 r2。仅用于功能介绍，界面与交互仍待人工验收；点击图片可查看原图。*
+
 工作区保存在忽略目录 `.studio/`，未提交表单的标签页暂存不能替代备份。创作台界面仍待人工验收；详细流程、AI 调用方法和支持边界见 **[内容创作台作者指南](docs/机制设计/内容创作台作者指南.md)**。
 
 ## 关于这片山河
