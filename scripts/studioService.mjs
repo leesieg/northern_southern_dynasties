@@ -1,10 +1,11 @@
+import {debugStudioEvent} from './studioEventDebug.mjs';
 import {mkdir,readFile,writeFile,open,rename,unlink,link,lstat,realpath} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {compileOfficialPackage,createContentRealm,openPackagePreview,projectRoot} from './contentPackageCompiler.mjs';
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const schemas={status:[],snapshot:[],schema:[],search:['target','query'],read:['target','id','scenarioId'],references:['target','id'],propose:['key','baseRevision','title','operations'],preflight:['proposalId'],apply:['key','proposalId'],reject:['key','proposalId'],grant:['key','proposalId'],undo:['key','baseRevision','revision'],check:['scenarioId'],preview:['scenarioId','characterId','days'],export:['scenarioId'],backup:[]};
+const schemas={status:[],snapshot:[],schema:[],search:['target','query'],read:['target','id','scenarioId'],references:['target','id'],propose:['key','baseRevision','title','operations'],preflight:['proposalId'],apply:['key','proposalId'],reject:['key','proposalId'],grant:['key','proposalId'],undo:['key','baseRevision','revision'],check:['scenarioId'],preview:['scenarioId','characterId','days'],export:['scenarioId'],backup:[],debugEvent:['key','baseRevision','testId','choices'],debugReport:['id']};
 /** One fixed local workspace. HTTP and CLI both use this service, including the
  * cross-process lock and single-file atomic commit. Actor comes from the adapter. */
 export async function createStudioService({root=join(projectRoot,'.studio'),bundle,beforeRename}={}){
@@ -47,7 +48,12 @@ export async function createStudioService({root=join(projectRoot,'.studio'),bund
  }
  async function load(){
   try{const state=JSON.parse(await readFile(await safeFile('state.json'),'utf8'));if(state.format!=='fynbc-studio-v1')fail('FORMAT','不支持的工作区格式。');
-   if(state.revision===0&&state.proposals.length===0&&m.equal(state.document,m.projectDraft(state.base))){const {content,environment}=await getBundle();if(state.base.digest!==content.digest){state.base=content;state.environment=environment;state.document=m.projectDraft(content);state.sequence++;await persist(state);}}
+   if(!state.document.events||!state.document.eventTests){
+    const binding=await realm.ssrLoadModule('/src/core/contentBinding.ts'),known=binding.phaseTwoOfficialSave;
+    if(state.base.packageId!==known.packageId||state.base.digest!==known.digest||state.base.dependencies.engine!==known.engine||state.base.dependencies.assets!==known.assets)fail('MIGRATION','旧工作区基础版本未知，已保留，请先导出并人工迁移。');
+    const {content,environment}=await getBundle();state.document.events??={};state.document.eventTests??={};state.base=content;state.environment=environment;state.revision++;state.sequence++;state.migrations=[...(state.migrations??[]),{from:known.digest,to:content.digest,revision:state.revision,reason:'事件编辑能力升级；人物与剧本草稿保留'}];for(const p of state.proposals)p.granted=false;await persist(state);
+   }
+   if(state.history.length===0&&state.proposals.length===0&&m.equal(state.document,m.projectDraft(state.base))){const {content,environment}=await getBundle();if(state.base.digest!==content.digest){state.base=content;state.environment=environment;state.document=m.projectDraft(content);state.sequence++;await persist(state);}}
    return state;}
   catch(e){if(e.code!=='ENOENT')throw e;const {content,environment}=await getBundle();const state={format:'fynbc-studio-v1',base:content,environment,document:m.projectDraft(content),revision:0,sequence:0,proposals:[],history:[],receipts:{}};await persist(state);return state;}
  }
@@ -71,13 +77,13 @@ export async function createStudioService({root=join(projectRoot,'.studio'),bund
    async function send(value){receipt=null;await host.dispatch({...value,requestId:randomUUID()});if(!receipt?.ok)fail('PREVIEW',receipt?.text??'试玩未返回回执。');}
    await send({type:'init'});await send({type:'new',scriptId:input.scenarioId,characterId:input.characterId??s.document.scenarios[input.scenarioId].defaultCharacter,mode:'sandbox'});
    for(let i=0;i<days;i++)await send({type:'step'});
-   const w=snapshot.world;return {revision:s.revision,digest:content.digest,storage:'isolated-memory',day:w.day,characterId:w.characterId,person:w.people[0],governedCities:w.holdings.governedCities,identity:w.identities?.people[w.characterId],privateReserve:w.relationships?.reserves[w.characterId],chronicle:w.chronicle.slice(-6),actualOffices:Object.fromEntries(Object.entries(w.realm?.cities??{}).filter(([,c])=>c.governor===w.characterId).map(([id])=>[id,w.characterId]))};
+   const handlers=await host.inspect('/src/core/eventHandlers.ts');const w=snapshot.world;return {eventHandlers:handlers.registeredEventDiagnostics(w),revision:s.revision,digest:content.digest,storage:'isolated-memory',day:w.day,characterId:w.characterId,person:w.people[0],governedCities:w.holdings.governedCities,identity:w.identities?.people[w.characterId],privateReserve:w.relationships?.reserves[w.characterId],chronicle:w.chronicle.slice(-6),actualOffices:Object.fromEntries(Object.entries(w.realm?.cities??{}).filter(([,c])=>c.governor===w.characterId).map(([id])=>[id,w.characterId]))};
   }finally{await host?.close();}
  }
  async function request(method,input={},actor='ai'){
   if(!['ai','human'].includes(actor))fail('ACTOR','未知调用方。');
   if(!Object.hasOwn(schemas,method)||!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!schemas[method].includes(k)))fail('REQUEST','未知请求字段、方法或作用域。');
-  const mutating=['propose','apply','reject','grant','undo'].includes(method);
+  const mutating=['propose','apply','reject','grant','undo','debugEvent'].includes(method);
   if(mutating&&(typeof input.key!=='string'||!/^[a-zA-Z0-9:_-]{1,100}$/.test(input.key)))fail('KEY','写入必须带唯一幂等键。');
   return locked(async()=>{
    const s=await load(),fingerprint=hash({method,input,actor}),receiptKey=actor+':'+input.key;
@@ -85,12 +91,12 @@ export async function createStudioService({root=join(projectRoot,'.studio'),bund
    let result;
    switch(method){
     case 'status':return {revision:s.revision,sequence:s.sequence};
-    case 'schema':return {version:1,scope:'local-workspace',methods:schemas,fields:m.fields,targets:['people','families','scenarios','states'],aiPolicy:'propose-first; human review or per-proposal grant required',operations:{target:'required',id:'required',scenarioId:'states only',field:'omit for create/delete',before:'required exact value',after:'required typed value'},atomicity:'one revision/document/history/receipt file'};
-    case 'snapshot':return {revision:s.revision,sequence:s.sequence,document:s.document,proposals:s.proposals,history:s.history,diagnostics:m.diagnose(s.document,s.base),sites:s.base.tables.scenario.sites,baseDigest:s.base.digest,baseDocument:m.projectDraft(s.base),states:Object.fromEntries(Object.values(s.document.scenarios).map(sc=>[sc.id,Object.fromEntries(Object.keys(s.document.people).map(id=>[id,m.effectiveState(s.document,s.base,sc.id,id)]))]))};
-    case 'backup':return {format:'fynbc-studio-backup-v1',revision:s.revision,base:s.base,document:s.document,history:s.history};
-    case 'search':{if(!['people','families','scenarios'].includes(input.target)||typeof input.query!=='string')fail('QUERY','无效搜索。');return Object.values(s.document[input.target]).filter(v=>(v.id+' '+v.name).includes(input.query)).map(({id,name})=>({id,name}));}
-    case 'read':m.validId(input.id);if(input.target==='states'){if(!s.document.people[input.id]||!s.document.scenarios[input.scenarioId])fail('REFERENCE','人物或剧本不存在。');return m.effectiveState(s.document,s.base,input.scenarioId,input.id);}if(!['people','families','scenarios'].includes(input.target))fail('SCOPE','不支持的读取作用域。');return s.document[input.target][input.id]??null;
-    case 'references':m.validId(input.id);if(!['people','families','scenarios'].includes(input.target))fail('SCOPE','不支持的引用作用域。');return m.references(s.document,s.base,input.target,input.id);
+    case 'schema':return {version:1,scope:'local-workspace',methods:schemas,fields:m.fields,eventCapabilities:m.eventCapabilities,examples:{event:m.newEventDefinition('sample-event','示例事件',Object.keys(s.document.scenarios)[0]),eventTest:{id:'sample-event-test',name:'示例事件测试',eventId:'sample-event',scenarioId:Object.keys(s.document.scenarios)[0],characterId:Object.values(s.document.scenarios)[0].defaultCharacter,seed:546103,dayBudget:1,stepBudget:8,choices:[{stage:'decision',option:'relief'}],expectedStatus:'resolved'}},targets:['people','families','scenarios','states','events','eventTests'],aiPolicy:'propose-first; human review or per-proposal grant required',operations:{target:'required',id:'required',scenarioId:'states only',field:'omit for create/delete',before:'required exact value',after:'required typed value'},atomicity:'one revision/document/history/receipt file'};
+    case 'snapshot':return {revision:s.revision,sequence:s.sequence,document:s.document,proposals:s.proposals,history:s.history,diagnostics:m.diagnose(s.document,s.base),sites:s.base.tables.scenario.sites,baseDigest:s.base.digest,migrations:s.migrations??[],debugRuns:(s.debugRuns??[]).map(({content,initialState,...summary})=>summary),baseDocument:m.projectDraft(s.base),states:Object.fromEntries(Object.values(s.document.scenarios).map(sc=>[sc.id,Object.fromEntries(Object.keys(s.document.people).map(id=>[id,m.effectiveState(s.document,s.base,sc.id,id)]))]))};
+    case 'backup':return {format:'fynbc-studio-backup-v1',revision:s.revision,base:s.base,document:s.document,history:s.history,debugRuns:s.debugRuns??[],migrations:s.migrations??[]};
+    case 'search':{if(!['people','families','scenarios','events','eventTests'].includes(input.target)||typeof input.query!=='string')fail('QUERY','无效搜索。');return Object.values(s.document[input.target]).filter(v=>(v.id+' '+v.name).includes(input.query)).map(({id,name})=>({id,name}));}
+    case 'read':m.validId(input.id);if(input.target==='states'){if(!s.document.people[input.id]||!s.document.scenarios[input.scenarioId])fail('REFERENCE','人物或剧本不存在。');return m.effectiveState(s.document,s.base,input.scenarioId,input.id);}if(!['people','families','scenarios','events','eventTests'].includes(input.target))fail('SCOPE','不支持的读取作用域。');return s.document[input.target][input.id]??null;
+    case 'references':m.validId(input.id);if(!['people','families','scenarios','events','eventTests'].includes(input.target))fail('SCOPE','不支持的引用作用域。');return m.references(s.document,s.base,input.target,input.id);
     case 'propose':{
      if(!Number.isSafeInteger(input.baseRevision)||input.baseRevision!==s.revision)fail('CONFLICT','基础版本已变化。',{expected:input.baseRevision,actual:s.revision},409);
      if(typeof input.title!=='string'||!input.title.trim()||input.title.length>200)fail('TITLE','提案须有 1—200 字标题。');
@@ -106,6 +112,15 @@ export async function createStudioService({root=join(projectRoot,'.studio'),bund
      const h=s.history.find(h=>h.revision===input.revision);if(!h)fail('MISSING','没有此已应用版本。');
      const p={id:randomUUID(),baseRevision:s.revision,title:'撤销：'+h.title,actor,operations:h.inverse,status:'pending',granted:false};
      result=commit(s,p,candidate(s,p));s.proposals.push(p);break;
+    }
+    case 'debugReport':{const report=s.debugRuns?.find(r=>r.id===input.id);if(!report)fail('MISSING','调试记录不存在或已超出最近 3 次保留范围。');return report;}
+    case 'debugEvent':{
+     if(input.baseRevision!==s.revision)fail('CONFLICT','调试所依据的版本已变化。',null,409);
+     const test=structuredClone(s.document.eventTests[input.testId]);if(!test)fail('MISSING','请先保存事件测试用例。');if(input.choices!==undefined)test.choices=input.choices;m.assertEventTest(test);
+     if(!s.document.scenarios[test.scenarioId])fail('REFERENCE','测试剧本不存在。',{fieldPath:'eventTests.'+test.id+'.scenarioId'});
+     const copy=structuredClone(s);copy.document.eventTests[test.id]=test;copy.document.scenarios[test.scenarioId].seed=test.seed;
+     const compiled=await compile(copy,test.scenarioId),report=JSON.parse(JSON.stringify(await debugStudioEvent({...compiled,test,revision:s.revision})));
+     s.debugRuns=[...(s.debugRuns??[]).slice(-2),report];const {content,initialState,...summary}=report;result=summary;break;
     }
     case 'check':{const issues=m.diagnose(s.document,s.base,input.scenarioId);if(issues.length)return {revision:s.revision,diagnostics:issues};const compiled=await compile(s,input.scenarioId);await runPreview(s,input,compiled);return {revision:s.revision,digest:compiled.content.digest,diagnostics:[]};}
     case 'export':{const compiled=await compile(s,input.scenarioId);await runPreview(s,input,compiled);return compiled.content;}

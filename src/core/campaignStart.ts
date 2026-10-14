@@ -1,3 +1,4 @@
+import {advanceAuthoredEvents} from './authoredEvents';
 import {newCampaignWorld} from './world';
 import {initializeHistoricalStart} from './historicalStart';
 import {campaignSetup} from '../data/campaignSetup';
@@ -23,5 +24,6 @@ export function createCampaign(characterId?:string,scriptId?:string,mode?:'sandb
  }
  if(world.realm&&Object.values(campaignSetup.personStarts).some(s=>s.office))syncRulerHistory(world);
  initializeHistoricalStart(world);
+ advanceAuthoredEvents(world);
  return world;
 }

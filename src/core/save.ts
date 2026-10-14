@@ -1,3 +1,4 @@
+import {validAuthoredEvents} from './authoredEventValidation';
 import {contentLock,assertSaveContent} from './contentBinding';
 import {validHistorical} from './historicalValidation';
 import {ensureHistorical} from './historicalEvents';
@@ -163,7 +164,7 @@ export function validateWorld(value: unknown): asserts value is World {
   }
   if(!validRelationships(value as unknown as World)||!validLife(value as unknown as World))return fail();
   if(!validLocalAdministration(value as unknown as World)||!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
-  if(!validHistorical(value as unknown as World)||!validPowerPolitics(value as unknown as World)||!validPacts(value as unknown as World))return fail();
+  if(!validAuthoredEvents(value as unknown as World)||!validHistorical(value as unknown as World)||!validPowerPolitics(value as unknown as World)||!validPacts(value as unknown as World))return fail();
   {const w=value as unknown as World;if(!validIntrigue(w)||w.claims!==undefined&&!validClaims(w.claims,w)||w.nobility!==undefined&&!validNobility(w.nobility,w)||w.rulerHistory!==undefined&&!validRulerHistory(w.rulerHistory,w))return fail();}
   if(!validCustody(value as unknown as World))return fail();
   if(!validCoordinated(value as unknown as World)||!validCommerce(value as unknown as World)||!validHousehold(value as unknown as World)||!validMilitaryNominations(value as unknown as World)||!validDefections(value as unknown as World)||!validMilitaryCareer(value as unknown as World)||!validAftermath(value as unknown as World)||!validObligations(value as unknown as World)||!validRequestReceipts(value as unknown as World)||!validEnterprises(value as unknown as World)||!validMilitaryCampaigns(value as unknown as World))return fail();

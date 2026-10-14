@@ -47,7 +47,7 @@
 
 | 内容 | 文档或图像 |
 | --- | --- |
-| 内容创作台（概念图待人工确认，UI 未实施） | [地图／事件／人物／剧本四张预期效果图与提示词](art-direction/content-studio/README.md)、[完整设计](规划/内容创作台设计方案.md)、[实施计划与底座进度](规划/内容创作台实施计划.md) |
+| 内容创作台（人物／剧本／事件 UI 已本地实施，待人工验收） | [地图／事件／人物／剧本四张预期效果图与提示词](art-direction/content-studio/README.md)、[完整设计](规划/内容创作台设计方案.md)、[实施计划与底座进度](规划/内容创作台实施计划.md) |
 | 主菜单与字体（B＋F1 已实施，待审美确认） | [三张菜单效果图与真实字体样张](art-direction/menu-typography/index.html)、[字号规范、开源许可与实机记录](art-direction/menu-typography/README.md) |
 | 行动与后果界面目标 | [目标说明与提示词](art-direction/ck3-action-feedback-target.md)、[预期效果图](art-direction/ck3-action-feedback-target.png) |
 | 侯景之乱与健康提醒（已实施，待人工验收） | [三张效果图与交互说明](art-direction/hou-jing-event/README.md)、[落地方案](规划/侯景之乱与人物生命周期落地方案.md) |

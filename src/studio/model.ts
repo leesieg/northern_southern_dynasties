@@ -1,3 +1,5 @@
+import {assertEventShape,assertEventTest,eventDefinitionIssues,type EventDefinition,type EventTest} from '../core/eventDefinitions';
+export {eventCapabilities,newEventDefinition,assertEventTest} from '../core/eventDefinitions';
 import type {ContentPackage} from '../core/contentPackage';
 import type {ContentTables} from '../core/contentBinding';
 export type Realm='liang'|'east'|'west';
@@ -5,17 +7,19 @@ export interface PersonDefinition {id:string;name:string;family:string;birth:num
 export interface FamilyDefinition {id:string;name:string;surname:string;origin:string}
 export interface PersonState {home:string;polity:Realm;role:'ruler'|'regent'|'prince'|'commander'|'scholar';title:string;coins:number;food:number;npcCoins:number;playable:boolean;office:string}
 export interface Scenario {id:string;name:string;year:number;month:number;day:number;description:string;defaultCharacter:string;seed:number;treasuryCoins:number;treasuryGrain:number;states:Record<string,PersonState>}
-export interface Draft {people:Record<string,PersonDefinition>;families:Record<string,FamilyDefinition>;scenarios:Record<string,Scenario>}
-export type Target='people'|'families'|'scenarios'|'states';
+export interface Draft {events:Record<string,EventDefinition>;eventTests:Record<string,EventTest>;people:Record<string,PersonDefinition>;families:Record<string,FamilyDefinition>;scenarios:Record<string,Scenario>}
+export type Target='events'|'eventTests'|'people'|'families'|'scenarios'|'states';
 export interface Operation {target:Target;id:string;scenarioId?:string;field?:string;before:unknown;after:unknown}
 export interface Diagnostic {code:string;severity:'error'|'warning';entityId:string;fieldPath:string;message:string}
 export class StudioError extends Error {constructor(public code:string,message:string,public details:unknown=null,public status=400){super(message);}}
 export const clone=<T,>(v:T):T=>structuredClone(v);
 export const equal=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 // These types are public capability/schema data, shared by UI, CLI and service.
-type Field={type:'text'|'number'|'boolean'|'reference';min?:number;max?:number;values?:readonly string[];nullable?:boolean};
+type Field={type:'text'|'number'|'boolean'|'reference'|'structured';min?:number;max?:number;values?:readonly string[];nullable?:boolean};
 const text:Field={type:'text',max:200},reference:Field={type:'reference',max:100},money:Field={type:'number',min:0,max:1_000_000};
 export const fields:Record<Target,Record<string,Field>>={
+ events:{name:{type:'text',max:120},description:{type:'text',max:2000},enabled:{type:'boolean'},scenarioIds:{type:'structured'},actor:{type:'structured'},site:reference,requiresAuthority:{type:'boolean'},conditions:{type:'structured'},probability:{type:'number',min:0,max:100},cooldownDays:{type:'number',min:1,max:365},maxRuns:{type:'number',min:1,max:20},startStage:reference,stages:{type:'structured'}},
+ eventTests:{name:{type:'text',max:120},eventId:reference,scenarioId:reference,characterId:reference,seed:{type:'number',min:1,max:0xffffffff},dayBudget:{type:'number',min:0,max:7},stepBudget:{type:'number',min:1,max:32},choices:{type:'structured'},expectedStatus:{type:'text',values:['resolved','cancelled','expired','invalid']}},
  people:{name:text,family:reference,birth:{type:'number',min:1,max:9999},sex:{type:'text',values:['male','female']},culture:{type:'text',values:['han','xianbei','gaoche','jie','unknown']},biography:{type:'text',max:5000},father:{...reference,nullable:true},mother:{...reference,nullable:true}},
  families:{name:text,surname:text,origin:text},
  scenarios:{name:text,year:{type:'number',min:100,max:9999},month:{type:'number',min:1,max:12},day:{type:'number',min:1,max:31},description:{type:'text',max:5000},defaultCharacter:reference,seed:{type:'number',min:1,max:0xffffffff},treasuryCoins:money,treasuryGrain:money},
@@ -25,11 +29,13 @@ export function validId(id:unknown):asserts id is string {if(typeof id!=='string
 function fieldValue(target:Target,field:string,value:unknown){
  const rule=Object.hasOwn(fields[target],field)?fields[target][field]:undefined,path=target+'.'+field;
  if(!rule)throw new StudioError('FIELD','不支持的字段：'+path,{fieldPath:path});
- const valid=value===null&&rule.nullable||rule.type==='boolean'&&typeof value==='boolean'||rule.type==='number'&&typeof value==='number'&&Number.isSafeInteger(value)&&value>=rule.min!&&value<=rule.max!||['text','reference'].includes(rule.type)&&typeof value==='string'&&value.length<=(rule.max??200)&&!value.includes('\0')&&(!rule.values||rule.values.includes(value));
+ const valid=rule.type==='structured'||value===null&&rule.nullable||rule.type==='boolean'&&typeof value==='boolean'||rule.type==='number'&&typeof value==='number'&&Number.isSafeInteger(value)&&value>=rule.min!&&value<=rule.max!||['text','reference'].includes(rule.type)&&typeof value==='string'&&value.length<=(rule.max??200)&&!value.includes('\0')&&(!rule.values||rule.values.includes(value));
  if(!valid)throw new StudioError('TYPE','字段类型或范围错误：'+path,{fieldPath:path});
 }
 function entityValue(target:Target,id:string,value:unknown){
  if(!value||typeof value!=='object'||Array.isArray(value))throw new StudioError('TYPE','实体必须是对象。');
+ if(target==='events'){assertEventShape(value);if(value.id!==id||id==='hou-jing')throw new StudioError('ID','保留或不一致的事件 ID');return;}
+ if(target==='eventTests'){assertEventTest(value);if(value.id!==id)throw new StudioError('ID','测试 ID 不一致');return;}
  const item=value as Record<string,unknown>,allowed=[...Object.keys(fields[target]),...(target==='states'?[]:['id']),...(target==='scenarios'?['states']:[])];
  if(Object.keys(item).some(k=>!allowed.includes(k))||allowed.some(k=>!Object.hasOwn(item,k)))throw new StudioError('FIELD','实体字段不完整或包含未知字段。',{entityId:id,fieldPath:target});
  if(target!=='states'&&item.id!==id)throw new StudioError('ID','实体 ID 与操作 ID 不一致。');
@@ -44,7 +50,7 @@ export function projectDraft(base:ContentPackage):Draft {
  for(const p of Object.values(t.characters.characterById) as any[]){const r=t.relationships.relationshipPersonById[p.id];if(!Number.isSafeInteger(t.lifespans.birthRecords[p.id]?.year))throw new StudioError('BASE','基础人物缺少出生年份记录：'+p.id);people[p.id]={id:p.id,name:p.name,family:p.family,birth:t.lifespans.birthRecords[p.id].year,sex:r?.sex??'male',culture:p.id.startsWith('county-official-')||p.id.startsWith('office-reserve-')?'han':t.cultures.personCultures[p.id]??'unknown',biography:p.biography,father:t.families.parentLinks.find((l:any)=>l.child===p.id&&l.kind==='父亲')?.parent??null,mother:t.families.parentLinks.find((l:any)=>l.child===p.id&&l.kind==='母亲')?.parent??null};}
  for(const f of t.families.families)families[f.id]={id:f.id,name:f.name,surname:f.surname,origin:f.origin};
  for(const s of t.scripts.gameScripts)scenarios[s.id]={id:s.id,name:s.name,year:s.year,month:s.month??1,day:s.day??1,description:s.description,defaultCharacter:s.defaultCharacter,seed:t.campaignSetup.campaignSetup.seed,treasuryCoins:t.campaignSetup.campaignSetup.treasury.coins,treasuryGrain:t.campaignSetup.campaignSetup.treasury.grain,states:{}};
- return {people,families,scenarios};
+ return {people,families,scenarios,events:Object.fromEntries((t.authoredEvents?.authoredEventDefinitions??[]).map((e:EventDefinition)=>[e.id,clone(e)])),eventTests:{}};
 }
 export function effectiveState(draft:Draft,base:ContentPackage,scenarioId:string,id:string):PersonState {
  const override=draft.scenarios[scenarioId]?.states[id];if(override)return clone(override);
@@ -68,7 +74,7 @@ export function applyOperations(draft:Draft,base:ContentPackage,operations:Opera
   const actual=currentValue(next,base,op);if(!equal(actual,op.before))throw new StudioError('CONFLICT','原值已变化，请重新读取并审阅。',{operation:op,actual},409);
   if(op.target==='people'&&actual===null&&!op.field){const t=base.tables as Record<string,any>;if(op.id==='fictional'||op.id.startsWith('born-')||t.relationships.relationshipPersonById[op.id]||t.families.familyPersonById[op.id]||t.campaignSetup.campaignSetup.people.some((p:any)=>p.id===op.id))throw new StudioError('ID','此人物 ID 已由基础人物、先祖或模拟角色保留。');}
   const items=collection(next,op) as Record<string,any>;
-  if(op.field){fieldValue(op.target,op.field,op.after);if(!items[op.id]){if(op.target!=='states')throw new StudioError('REFERENCE','实体不存在。');items[op.id]=effectiveState(next,base,op.scenarioId!,op.id);}items[op.id][op.field]=clone(op.after);}
+  if(op.field){fieldValue(op.target,op.field,op.after);if(!items[op.id]){if(op.target!=='states')throw new StudioError('REFERENCE','实体不存在。');items[op.id]=effectiveState(next,base,op.scenarioId!,op.id);}items[op.id][op.field]=clone(op.after);if(op.target==='events'||op.target==='eventTests')entityValue(op.target,op.id,items[op.id]);}
   else if(op.after===null){if(op.target==='scenarios'&&Object.keys(next.scenarios).length===1)throw new StudioError('REFERENCE','至少保留一个剧本。');if(op.target==='people'&&(base.tables.characters.characterById as Record<string,unknown>)[op.id])throw new StudioError('SCOPE','基础人物请取消可玩资格；当前规则不支持删除官方人物。');delete items[op.id];}
   else {if(actual!==null&&op.target!=='states')throw new StudioError('OPERATION','已有实体须使用字段更新。');entityValue(op.target,op.id,op.after);items[op.id]=clone(op.after);}
  }
@@ -82,7 +88,7 @@ export function applyOperations(draft:Draft,base:ContentPackage,operations:Opera
  * Reversing individual field operations cannot remove a newly created override. */
 export function inverseOperations(before:Draft,after:Draft,base:ContentPackage):Operation[]{
  const inverse:Operation[]=[];
- for(const target of ['scenarios','people','families'] as const){
+ for(const target of ['scenarios','people','families','events','eventTests'] as const){
   for(const id of new Set([...Object.keys(before[target]),...Object.keys(after[target])])){
    const a=before[target][id],b=after[target][id];if(equal(a,b))continue;
    if(!a||!b){inverse.push({target,id,before:b??null,after:a??null});continue;}
@@ -102,6 +108,8 @@ export function references(draft:Draft,base:ContentPackage,target:Target,id:stri
  for(const p of Object.values(draft.people))for(const key of target==='families'?['family']:target==='people'?['father','mother']:[])if((p as unknown as Record<string,unknown>)[key]===id)found.push({entityId:p.id,fieldPath:'people.'+key});
  if(target==='people')for(const s of Object.values(draft.scenarios)){if(s.defaultCharacter===id)found.push({entityId:s.id,fieldPath:'scenarios.defaultCharacter'});if(s.states[id])found.push({entityId:s.id,fieldPath:'states.'+id});}
  if(target==='families')for(const p of base.tables.families.familyPeople as {id:string;family:string}[])if(!draft.people[p.id]&&p.family===id)found.push({entityId:p.id,fieldPath:'familyPeople.family'});
+ for(const e of Object.values(draft.events)){if(target==='people'&&e.actor.personId===id)found.push({entityId:e.id,fieldPath:'events.actor.personId'});if(target==='scenarios'&&e.scenarioIds.includes(id))found.push({entityId:e.id,fieldPath:'events.scenarioIds'});}
+ for(const t of Object.values(draft.eventTests))if(target==='events'&&t.eventId===id||target==='scenarios'&&t.scenarioId===id||target==='people'&&t.characterId===id)found.push({entityId:t.id,fieldPath:'eventTests'});
  return found;
 }
 export function diagnose(draft:Draft,base:ContentPackage,scenarioId?:string):Diagnostic[]{
@@ -124,6 +132,8 @@ export function diagnose(draft:Draft,base:ContentPackage,scenarioId?:string):Dia
    if(!['inherit','none'].includes(state.office)){const site=state.office.replace(/^county:/,'');if(state.office!==`county:${site}`||!t.scenario.siteById[site]||t.scenario.siteById[site].polity!==state.polity||state.home!==site)add(p.id,'states.office','县级任职须属于效忠政权，且开局驻地为该县治。');if(seats.has(state.office))add(p.id,'states.office','同一职位不能配置多人。');seats.add(state.office);}
   }
  }
+ out.push(...eventDefinitionIssues(Object.values(draft.events),{people:new Set(Object.keys(draft.people)),sites:new Set(Object.keys(t.scenario.siteById)),scenarios:new Set(Object.keys(draft.scenarios))}));
+ for(const test of Object.values(draft.eventTests)){assertEventTest(test);const e=draft.events[test.eventId],scenario=draft.scenarios[test.scenarioId];if(!e||!scenario||!e.scenarioIds.includes(test.scenarioId))add(test.id,'eventTests.eventId','事件或适用剧本不存在');if(!draft.people[test.characterId]||scenario&&!effectiveState(draft,base,scenario.id,test.characterId).playable)add(test.id,'eventTests.characterId','测试人物必须可玩');for(const choice of test.choices)if(!e?.stages.find(s=>s.id===choice.stage)?.options.some(o=>o.id===choice.option))add(test.id,'eventTests.choices','测试引用无效阶段或选项');}
  return out;
 }
 /** Compile one selected scenario into its own complete package. Other scenarios
@@ -152,5 +162,6 @@ export function compileDraftTables(draft:Draft,base:ContentPackage,scenarioId:st
  t.characters.characterById=index([...t.characters.historicalCharacters,...t.additionalStarts.additionalStarts]);t.relationships.relationshipPersonById=index(t.relationships.relationshipPeople);t.families.familyById=index(t.families.families);t.families.familyPersonById=index(t.families.familyPeople);
  t.expandedPeople.expandedPersonById=index(t.expandedPeople.expandedPeople);
  t.scripts.DEFAULT_SCRIPT=s.id;t.scripts.gameScripts=[{id:s.id,name:s.name,year:s.year,month:s.month,day:s.day,description:s.description,characterIds:Object.keys(draft.people).filter(id=>effectiveState(draft,base,s.id,id).playable),defaultCharacter:s.defaultCharacter,allowFictional:true}];
+ t.authoredEvents={authoredEventDefinitions:Object.values(draft.events).filter(e=>e.scenarioIds.includes(s.id)).map(e=>({...clone(e),scenarioIds:[s.id]}))};
  t.campaignSetup.campaignSetup.seed=s.seed;t.campaignSetup.campaignSetup.treasury={coins:s.treasuryCoins,grain:s.treasuryGrain};return t;
 }

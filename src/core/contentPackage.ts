@@ -1,3 +1,4 @@
+import {eventDefinitionIssues,type EventDefinition} from './eventDefinitions';
 import {canonicalContent,createContentRegistry,type ContentSource} from './contentRegistry';
 import {bindContent,freezeContent,type ContentLock,type ContentTables} from './contentBinding';
 
@@ -34,6 +35,7 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  const relations=tables.relationships as unknown as typeof import('../data/relationships');
  const families=tables.families as unknown as typeof import('../data/families');
  const scripts=tables.scripts as unknown as typeof import('../data/scripts');
+ const eventIssues=eventDefinitionIssues(tables.authoredEvents.authoredEventDefinitions as EventDefinition[],{people:new Set(Object.keys(chars.characterById)),sites:new Set(Object.keys(scenario.siteById)),scenarios:new Set(scripts.gameScripts.map(s=>s.id))});if(eventIssues.length)throw new Error(eventIssues.map(i=>i.fieldPath+'：'+i.message).join('；'));
  createContentRegistry({format:'fynbc-content-catalog',schemaVersion:1,packageId:'validation',contentVersion:scenario.CONTENT_VERSION,sites:scenario.sites,roads:scenario.roads,characters:Object.values(chars.characterById),people:relations.relationshipPeople,families:families.families,familyPeople:families.familyPeople,parentLinks:families.parentLinks,scripts:scripts.gameScripts as ContentSource['scripts']});
  const match=(a:unknown,b:unknown,label:string)=>{if(canonicalContent(a)!==canonicalContent(b))throw new Error('内容派生索引不一致：'+label);};
  const index=(items:{id:string}[])=>{

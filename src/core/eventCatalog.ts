@@ -1,3 +1,4 @@
+import {eventProjection} from './authoredEvents';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import {reformIds,reformDefinitions,successionIds,successionDefinitions,dynastyNames} from '../data/governments';
@@ -15,7 +16,7 @@ export interface CatalogEntry {
  realm?:RealmId;people:string[];site?:string;war?:number;pending:boolean;
  facts:{label:string;text:string}[];history:{key:string;day:number;text:string}[];
  reference:string;source:{title:string;url:string};deadline?:{day:number;label:string;note:string};
- progress?:{value:number;max:number;pause:string};action?:{kind:'historical'|'succession'|'reform';target:string;label:string};
+ progress?:{value:number;max:number;pause:string};action?:{kind:'authored'|'historical'|'succession'|'reform';target:string;label:string};
 }
 
 /** Read-only projection: catalog discovery never creates an event, advances time or grants authority. */
@@ -49,6 +50,8 @@ export function eventCatalog(w:World):CatalogEntry[]{
   }
  }
  result.push(hou);
+ for(const i of w.authoredEvents?.instances??[]){if(i.actor!==actor)continue;const p=eventProjection(w,i.id);if(!p)continue;result.push({id:i.id,name:p.name,group:'event',status:i.status==='expired'||i.status==='invalid'?'cancelled':i.status,chapter:p.title,summary:i.reason||p.body,people:[i.actor],site:i.site,pending:i.status==='active'&&!p.wait,facts:[{label:'状态',text:i.status},{label:'执行者',text:p.actorName}],history:i.receipts.map(r=>({key:String(r.revision),day:r.day,text:r.stage+' / '+r.option+'：'+r.effects.map(e=>'公库 '+e.coins+' 钱，秩序 +'+e.order).join('；')})),reference:'作者设定事件，使用本局实际人物、权限与公库规则，不作为历史记载。',source:{title:'作者设定',url:''},action:{kind:'authored',target:i.id,label:i.status==='active'?'查看并办理':'查看办理记录'}});}
+
  for(const group of ['succession','reform'] as const){
   for(const id of group==='succession'?successionIds:reformIds){
    const succession=group==='succession'?successionDefinitions[id as keyof typeof successionDefinitions]:undefined;

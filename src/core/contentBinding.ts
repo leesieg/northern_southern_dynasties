@@ -29,14 +29,15 @@ export function captureContentTables():ContentTables {
 }
 export function contentLock(){return binding?.lock;}
 export function allowsLegacyContent(){return !binding||binding.legacy;}
-/** Explicit compatibility bridge for the verified phase-1 official checkpoint
- * b5824cf. Custom package locks and unknown official revisions stay exact. */
-const compatibleOfficialSave={packageId:'official-nsd',digest:'91103302f26eadcebffb7a130caed62f3d033a092a51761c896db24e3be57ed0',engine:'7c1c015f206ad03ed4f6f0423a96c995db30423d938105a08970ded8e17bbf06',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+/** Explicit bridges for verified official checkpoints b5824cf and f903c2c.
+ * Custom package locks and unknown official revisions stay exact. */
+const phaseOneOfficialSave={packageId:'official-nsd',digest:'91103302f26eadcebffb7a130caed62f3d033a092a51761c896db24e3be57ed0',engine:'7c1c015f206ad03ed4f6f0423a96c995db30423d938105a08970ded8e17bbf06',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+export const phaseTwoOfficialSave={packageId:'official-nsd',digest:'b3544f6a6fc91104ffc8f017c1f1188db92ca35c41d6441618edac7d84f32e73',engine:'bafe57dff1b989055c8eaab727b5f333ec9670c9036cbe01628221ab2feb928b',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
 export function assertSaveContent(value:unknown){
  if(value===undefined){if(!allowsLegacyContent())throw new Error('无内容锁的旧档只能由官方内容包恢复。');return;}
  const expected=contentLock();
  if(!expected||!value||typeof value!=='object'||Array.isArray(value))throw new Error('请先加载存档绑定的完整内容包。');
  const actual=value as Record<string,unknown>;
- if(binding?.legacy&&expected.packageId==='official-nsd'&&Object.keys(actual).length===4&&Object.entries(compatibleOfficialSave).every(([key,value])=>actual[key]===value))return;
+ if(binding?.legacy&&expected.packageId==='official-nsd'&&Object.keys(actual).length===4&&[phaseOneOfficialSave,phaseTwoOfficialSave].some(lock=>Object.entries(lock).every(([key,value])=>actual[key]===value)))return;
  if(Object.keys(expected).some(key=>actual[key]!==expected[key as keyof ContentLock])||Object.keys(actual).length!==4)throw new Error('存档内容包、规则或资产版本不匹配，当前进度未改变。');
 }

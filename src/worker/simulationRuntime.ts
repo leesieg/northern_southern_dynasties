@@ -1,3 +1,4 @@
+import {authoredPending} from '../core/authoredEvents';
 import {historicalPending} from '../core/historicalEvents';
 import {createCampaign} from '../core/campaignStart';
 import {commandReceived,recordCommand} from '../core/requestReceipts';
@@ -19,7 +20,7 @@ let lastSaved: number | null = null;
 let busy = false;
 const publish = () => reply({type:'world',world,speed,slots,lastSaved});
 const notice = (text: string, error = false) => reply({type:'notice',text,error});
-const pendingDecisions=(w:World)=>[...allegiancePauses(w),...successionPauses(w),...familyPauses(w),...appointmentPauses(w),...economyPauses(w),...militaryPauses(w),...historicalPending(w)];
+const pendingDecisions=(w:World)=>[...allegiancePauses(w),...successionPauses(w),...familyPauses(w),...appointmentPauses(w),...economyPauses(w),...militaryPauses(w),...historicalPending(w),...authoredPending(w)];
 function paused(events:PauseEvent[]){if(events.length){speed=0;reply({type:'paused',events});}}
 // A committed command must not be reported as failed solely because its directory refresh failed.
 async function refreshSavedSlots(){try{slots=await listSaves();return true;}catch{notice('变更已完成，但行记列表暂时未能刷新；可再次保存以刷新列表。');return false;}}
@@ -43,7 +44,7 @@ function dispatch(request:Request):Promise<void>{
         const next=createCampaign(request.characterId,request.scriptId,request.mode);
         if(slots.length&&!hasCurrentWorld)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
         if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
-        lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;await refreshSavedSlots();reply({type:'screen',page:'play'});
+        lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;await refreshSavedSlots();reply({type:'screen',page:'play'});paused(authoredPending(world));
       }else if(request.type==='resume'){
         speed=0;const loaded=await loadWorld();if(!loaded)throw new Error('还没有存档，请开始新游戏。');world=loaded;hasCurrentWorld=true;slots=await listSaves();lastSaved=latestSaveInfo(slots)?.savedAt??null;speed=0;reply({type:'screen',page:'play'});
       }else if(request.type==='menu'){speed=0;await save();reply({type:'screen',page:'menu'});}

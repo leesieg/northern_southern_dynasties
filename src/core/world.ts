@@ -1,5 +1,7 @@
+import {advanceRegisteredEvents} from './eventHandlers';
+import {actAuthoredEvent} from './authoredEvents';
 import {campaignSetup} from '../data/campaignSetup';
-import {ensureHistorical,advanceHistorical,actHistorical} from './historicalEvents';
+import {ensureHistorical,actHistorical} from './historicalEvents';
 import {actFamilyMarriage} from './familyMarriage';
 import {journeyPosition} from './routeGeometry';
 import {actFamily,advanceHouseholdLife,resting} from './householdLife';
@@ -125,7 +127,7 @@ export function act(world: World, command: GameCommand): void {
   Object.assign(world,next);
   return;
  }
- const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}reconcileFiscal(world,before,publicActionName(command));advanceHistorical(world);
+ const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}reconcileFiscal(world,before,publicActionName(command));advanceRegisteredEvents(world);
 }
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
 function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
@@ -133,6 +135,7 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   ensureLife(world);ensureCustody(world);
   if(!isAlive(world,world.characterId??'fictional'))throw new Error('人物已经去世。');
   if(world.mobility?.captivity&&command.type!=='honor'&&command.type!=='health'&&command.type!=='custody'&&!(command.type==='mobility'&&command.action==='ransom'))throw new Error('被拘押期间须先筹赎返。');
+  if(command.type==='authoredEvent'){actAuthoredEvent(world,command);return;}
   if(command.type==='interact'&&command.action==='befriend'&&world.realm){actIntrigue(world,{type:'intrigue',action:'start',kind:'befriend',target:command.target});return;}
   if(command.type==='relationship'&&['befriend','control'].includes(command.action)&&'target'in command&&world.realm){actIntrigue(world,{type:'intrigue',action:'start',kind:command.action as 'befriend'|'control',target:command.target});return;}
   if(command.type==='peaceOffer'){actPeaceOffer(world,command);return;}
@@ -275,7 +278,7 @@ export function advance(world: World, days = 1): void {
     restoreInfluence(world,previous);advancePersonalInfluence(world);advanceNPCOfficeRecruitment(world);
     if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}
     evaluateCampaign(world);
-    reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');advanceHistorical(world);
+    reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');advanceRegisteredEvents(world);
   }
 }
 export function position(person: Person): { lon: number; lat: number } {

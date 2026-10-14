@@ -1,3 +1,4 @@
+import './authoredEvents';
 /** Explicit compiler inventory; runtime imports remain demand driven. */
 import './additionalStarts';
 import './administration';
