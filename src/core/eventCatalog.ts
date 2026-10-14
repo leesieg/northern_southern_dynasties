@@ -1,7 +1,7 @@
 import type {World} from './types';
 import type {RealmId} from './realm';
 import {reformIds,reformDefinitions,successionIds,successionDefinitions,dynastyNames} from '../data/governments';
-import {governmentOf,governmentReason,governmentYear,governmentTaskPause,governingExecutives,regimeName} from './government';
+import {governmentOf,governmentReason,governmentYear,governmentTaskPause,governingExecutives,governingAuthority,regimeName} from './government';
 import {allegianceRealm} from './officeEligibility';
 import {getPerson} from './personRegistry';
 import {historicalTitle,historicalPact,visibleHistoricalMilestones,historicalPending} from './historicalEvents';
@@ -36,6 +36,7 @@ export function eventCatalog(w:World):CatalogEntry[]{
   else {
    hou.status=e.status==='resolved'?'resolved':e.status==='cancelled'?'cancelled':e.phase==='dormant'?'dormant':'active';
    hou.chapter=historicalTitle(w,e);hou.site=e.site;hou.realm=e.host??e.origin;
+   if(e.status==='active'){const chief=governingAuthority(w,e.host??e.origin);hou.people=[...new Set([e.actors.protagonist,...(chief?[chief]:[]),e.actors.protector,...hou.people])].filter(id=>!!getPerson(w,id));}
    hou.summary=e.result??milestones.at(-1)?.text??hou.summary;
    const pactVisible=p&&!!actor&&(p.person===actor||governingExecutives(w,p.to).includes(actor));
    if(pactVisible){hou.facts.push({label:'归附约定',text:receptionNames[p.terms]},{label:'当前争议',text:p.status==='active'?currentPactBreaches(w,p).join('、')||'暂无未解争议':p.status==='pending'?'等待接纳方答复':'交涉已结束'});}
@@ -55,8 +56,8 @@ export function eventCatalog(w:World):CatalogEntry[]{
    const d=(succession??reform)!,r=d.realm,g=governmentOf(w,r);
    const records=(w.realm?.governments?.history??[]).filter(v=>v.realm===r&&v.target===id);
    const entry:CatalogEntry={id:group+':'+id,name:d.name.replace('，建立北齐','').replace('，建立北周','').replace('，建立陈朝',''),group,status:'dormant',chapter:regimeName(w,r),realm:r,summary:'尚未开启。',people:succession?[...new Set([succession.ruler,...succession.executives])]:[],pending:false,facts:[],history:records.map((v,i)=>({key:String(i),day:v.day,text:v.text})),reference:d.history,source:d.source};
-   if(succession?.nextDynasty)entry.chapter+=' → '+dynastyNames[succession.nextDynasty];
-   if(reform){entry.facts.push({label:'制度效果',text:reform.effect});if(!reform.initial)entry.facts.push({label:'启动成本',text:`${dynastyNames[r]}中央公款 ${reform.cost} 钱、本人影响力 40；朝野支持 −12`},{label:'办理时间',text:`${reform.days} 个有效实施日，不含受阻等待`});}
+   if(succession?.nextDynasty)entry.chapter=dynastyNames[r]+' → '+dynastyNames[succession.nextDynasty];
+   if(reform){entry.facts.push({label:'制度效果',text:reform.effect});if(!reform.initial)entry.facts.push({label:'启动成本',text:`${regimeName(w,r)}中央公款 ${reform.cost} 钱、本人影响力 40；朝野支持 −12`},{label:'办理时间',text:`${reform.days} 个有效实施日，不含受阻等待`});}
    const task=g?.task?.target===id?g.task:undefined,proposal=w.politics?.proposals[r];
    const matching=succession&&proposal?.sourceStage===id?proposal:undefined;
    const proposalVisible=matching&&(matching.stage!=='support'||[matching.sponsor,matching.beneficiary,matching.executive,...Object.keys(matching.approached)].includes(actor??''));
@@ -73,7 +74,7 @@ export function eventCatalog(w:World):CatalogEntry[]{
     const reason=governmentYear(w)<d.year?`${d.year} 年起开放；年份到来不代表自动发生。`:own!==r?'须由所属政权有权人物办理。':governmentReason(w,succession?{type:'government',action:'succession',stage:id as typeof successionIds[number]}:{type:'government',action:'law',law:id as typeof reformIds[number]});
     entry.status=reason?'dormant':'available';entry.summary=reason||'当前人物可以提出此议案；仍需按实际程序办理。';
    }
-   if(succession&&g)entry.facts.push({label:'当前君主',text:getPerson(w,g.ruler)?.name??'未详'},{label:'当前执政',text:g.executives.map(id=>getPerson(w,id)?.name??'未详').join('、')});
+   if(succession&&g)entry.facts.push({label:'当前君主',text:getPerson(w,g.ruler)?.name??'未详'},{label:'当前执政',text:governingExecutives(w,r).map(id=>getPerson(w,id)?.name??'未详').join('、')||'当前无人履职'});
    if(g&&w.mode==='sandbox'&&!w.realm?.annexed?.[r]&&(group==='reform'||own===r&&(!matching||proposalVisible)))entry.action={kind:group,target:id,label:group==='reform'?'查看制度与办理':'查看朝廷与议案'};
    entry.people=[...new Set(entry.people)].filter(id=>!!getPerson(w,id));result.push(entry);
   }

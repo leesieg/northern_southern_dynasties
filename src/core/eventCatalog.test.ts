@@ -31,8 +31,8 @@ describe('read-only historical event catalog',()=>{
  it('shows the real decision, pact and deadline only to entitled readers',()=>{
   const w=start('xiao-yan'),army=w.realm!.armies.find(a=>w.mobility!.armyCommanders?.[a.id!]==='hou-jing')!;
   actPact(w,{type:'pact',action:'request',realm:'liang',army:army.id,terms:'retain'},'hou-jing');advanceHistorical(w);
-  const known=row(w,'hou-jing');expect(known.status).toBe('active');expect(known.pending).toBe(true);expect(known.deadline?.day).toBe(w.allegiancePacts!.items[0].due);expect(known.facts[0].text).toContain('部曲');
-  w.characterId='yuwen-tai';const hidden=row(w,'hou-jing');expect(hidden.status).toBe('unknown');expect(hidden.facts).toEqual([]);expect(hidden.deadline).toBeUndefined();expect(hidden.site).toBeUndefined();expect(hidden.action).toBeUndefined();expect(hidden.pending).toBe(false);
+  const known=row(w,'hou-jing');expect(known.status).toBe('active');expect(known.pending).toBe(true);expect(known.deadline?.day).toBe(w.allegiancePacts!.items[0].due);expect(known.facts[0].text).toContain('部曲');expect(known.people.slice(0,2)).toEqual(['hou-jing','xiao-yan']);
+  w.characterId='yuwen-tai';const hidden=row(w,'hou-jing');expect(hidden.status).toBe('unknown');expect(hidden.facts).toEqual([]);expect(hidden.deadline).toBeUndefined();expect(hidden.site).toBeUndefined();expect(hidden.action).toBeUndefined();expect(hidden.pending).toBe(false);expect(hidden.people).not.toContain('xiao-yan');
  });
  it('old public news cannot expose a later secret chapter or result',()=>{
   const w=start('yuwen-tai'),e=w.historical!.items[0];e.phase='dispute';e.handlingDue=30;e.milestones=[{key:'public',day:0,text:'公开旧闻',public:true,people:[],realms:[]},{key:'secret',day:0,text:'未公开结果',public:false,people:['hou-jing'],realms:['east']}];
@@ -63,5 +63,14 @@ describe('read-only historical event catalog',()=>{
   const w=start('gao-huan');w.day=Math.round((Date.UTC(549,0,1)-Date.UTC(546,0,1))/86400000);if(w.economy)w.economy.lastDay=w.day;w.realm!.personalInfluence!['gao-huan']=100;
   actPower(w,{type:'power',action:'propose',goal:'executive',beneficiary:'yuan-shanjian',executive:'gao-yang',sourceStage:'east-regency'});
   w.characterId='yuwen-tai';const hidden=row(w,'succession:east-regency');expect(hidden.status).toBe('unknown');expect(hidden.history).toEqual([]);expect(hidden.action).toBeUndefined();
+ });
+ it('keeps the historical succession direction while displaying the current treasury owner',()=>{
+  const w=start('gao-huan'),g=governmentOf(w,'east')!;g.dynasty='qi';g.stages=['qi-accession'];
+  expect(row(w,'succession:qi-accession').chapter).toBe('东魏 → 齐');
+  expect(row(w,'reform:east-assessment').facts.find(f=>f.label==='启动成本')?.text).toMatch(/^齐中央公款/);
+ });
+ it('does not leave a blank executive label when nobody is serving',()=>{
+  const w=start('gao-huan');governmentOf(w,'east')!.executives=[];
+  expect(row(w,'succession:east-regency').facts.find(f=>f.label==='当前执政')?.text).toBe('当前无人履职');
  });
 });

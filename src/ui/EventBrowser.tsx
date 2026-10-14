@@ -16,6 +16,10 @@ import {PowerPoliticsPanel} from './PowerPoliticsPanel';
 import './eventBrowser.css';
 
 type Tab='situation'|'history'|'people'|'reference';
+export function EventPersonLink({world,id,onPerson}:{world:World;id:string;onPerson:(id:string)=>void}){
+ const person=getPerson(world,id);if(!person)return null;
+ return <button type="button" className="event-person" aria-label={'查看'+person.name} onClick={()=>onPerson(id)}><CharacterPortrait world={world} characterId={id} compact/><span className="event-person-name">{person.name} <span aria-hidden="true">›</span></span></button>;
+}
 export function EventBrowser({world:w,initialId,onClose,navigation:n,pending,send,error}:{world:World;initialId:string;onClose:()=>void;navigation:HistoricalNavigation;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;error?:string}){
  const entries=useMemo(()=>eventCatalog(w),[w]);
  const [query,setQuery]=useState(''),[status,setStatus]=useState<EventStatus|'all'>('all');
@@ -25,7 +29,7 @@ export function EventBrowser({world:w,initialId,onClose,navigation:n,pending,sen
  const entry=filtered.find(v=>v.id===selected)??filtered[0];
  const target=action?.kind==='historical'?w.historical?.items.find(v=>v.id===action.target):undefined;
  const actionEntry=entries.find(v=>v.action?.kind===action?.kind&&v.action?.target===action?.target);
- const people=(ids:string[])=>ids.map(id=><button type="button" key={id} className="event-person" onClick={()=>n.onPerson(id)}><CharacterPortrait world={w} characterId={id} compact/><span>{getPerson(w,id)?.name} ›</span></button>);
+ const people=(ids:string[])=>ids.map(id=><EventPersonLink key={id} world={w} id={id} onPerson={n.onPerson}/>);
  const timeline=(e:CatalogEntry,recent=false)=><ol className="event-timeline">{(recent?e.history.slice(-3):e.history).map(m=><li key={m.key}><time>{dateLabel(m.day,w.scriptId)}</time><p>{m.text}</p></li>)}</ol>;
  const fullHistory=(e:CatalogEntry)=><>{timeline(e)}<p className="event-note">{e.history.length?'仅列当前身份可知且存档仍保留的经过。':'尚无可展示的经过；未记录更早经过时，不补造日期。'}</p></>;
  return <><ActionDialog title="事件" className="event-browser" heading={<p>历史事件与沿革 <span>已录 {entries.length} 项</span></p>} onClose={onClose} actions={<><small>事件发展以本局局势为准</small>{entry?.war!==undefined&&<button onClick={()=>n.onWar(entry.war!)}>查看战况 ›</button>}{entry?.action&&<button disabled={pending} onClick={()=>setAction(entry.action)}>{entry.action.label} ›</button>}</>}>
