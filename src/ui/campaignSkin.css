@@ -21,22 +21,22 @@
 .focused-shell .clock-utilities{border:0;padding-left:0}
 .focused-shell .clock-utilities button{width:30px;height:30px;border:0;background:var(--bronze-seal) center/100% no-repeat;padding:7px}
 .focused-shell .map-command-dock :is(.zoom-tools,.map-modes){border:0!important;border-radius:0!important;padding:8px 10px!important;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none;gap:0}
-.focused-shell .map-command-dock .map-modes button{border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;width:58px;height:58px;min-width:58px;padding:11px 5px;font-size:9px;gap:0}
+.focused-shell .map-command-dock .map-modes button{border:0;border-radius:50%;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;width:58px;height:58px;min-width:58px;padding:11px 5px;font-size:var(--text-caption);gap:0}
 .focused-shell .map-command-dock .map-modes button[aria-pressed=true]{border:0;background:var(--bronze-seal) center/100% no-repeat;box-shadow:none;color:#ffefbf;filter:brightness(1.35)}
 .focused-shell .map-command-dock .map-modes button[aria-pressed=true] span{border-bottom:1px solid #e6c68a}
 .focused-shell .map-command-dock .zoom-tools :is(.view-control,.art-map-button){border:0!important;background:var(--bronze-seal) center/100% no-repeat!important;box-shadow:none;border-radius:50%!important;width:46px;height:46px}
 .focused-shell .map-command-dock .zoom-tools .view-control svg circle{stroke:none;fill:none}
 .focused-shell .map-command-dock .zoom-tools .art-map-button{gap:0;padding:8px!important;height:50px;width:50px}
 .focused-shell .map-command-dock :is(.map-options-toggle,.court-map-button){border:0;box-shadow:none;background:var(--bronze-seal) center/100% no-repeat;border-radius:50%;width:64px;height:64px;min-width:64px;padding:12px 8px;gap:0;flex-direction:column}
-.focused-shell .court-map-caption{text-align:center;gap:0}.focused-shell .court-map-caption strong{font-size:11px}.focused-shell .court-map-caption small{font-size:8px;white-space:nowrap}.focused-shell .court-map-button>.art-icon{width:23px!important;height:23px!important}.focused-shell .court-map-alert{right:0;top:2px}
-.focused-shell .map-command-dock .map-options-toggle{align-self:center;font-size:10px}
+.focused-shell .court-map-caption{text-align:center;gap:0}.focused-shell .court-map-caption strong{font-size:var(--text-caption)}.focused-shell .court-map-caption small{font-size:var(--text-caption);white-space:nowrap}.focused-shell .court-map-button>.art-icon{width:23px!important;height:23px!important}.focused-shell .court-map-alert{right:0;top:2px}
+.focused-shell .map-command-dock .map-options-toggle{align-self:center;font-size:var(--text-caption)}
 .focused-shell .map-command-dock .art-icon{filter:var(--hud-icon-filter)}
 .focused-shell .atlas-map .atlas-activity-marker{width:38px;height:42px;min-height:0;padding:0;border:0;border-radius:50%;background:var(--bronze-seal) center top/38px 38px no-repeat;box-shadow:none;filter:drop-shadow(0 2px 2px #17231966);overflow:visible}
 .focused-shell .atlas-map .atlas-activity-marker::before{inset:7px;width:24px;height:24px;filter:sepia(.4) saturate(.8) drop-shadow(0 1px 1px #000)}
 .focused-shell .atlas-map .atlas-activity-marker::after{content:'';position:absolute;bottom:0;left:16px;width:6px;height:6px;transform:rotate(45deg);background:#343c2b;border-right:1px solid #c5ac73;border-bottom:1px solid #c5ac73;z-index:-1}
-.atlas-activity-count{position:absolute;right:-4px;top:-3px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 2px;background:#e6d8b4;border:1px solid #82704b;border-radius:50%;color:#323d2b;font:11px/16px var(--serif);box-shadow:0 1px 2px #0005}
+.atlas-activity-count{position:absolute;right:-4px;top:-3px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 2px;background:#e6d8b4;border:1px solid #82704b;border-radius:50%;color:#323d2b;font:var(--text-caption)/16px var(--serif);box-shadow:0 1px 2px #0005}
 .focused-shell .atlas-map .atlas-activity-marker[data-kind=military]::after{background:#743e2b}
-.focused-shell .chronicle-date>strong{white-space:normal;line-height:1.35;font-size:15px}
+.focused-shell .chronicle-date>strong{white-space:normal;line-height:1.35;font-size:var(--text-reading)}
 .army-readiness>.army-readiness-meter{flex:1}.focused-shell .army-unit-order>small{color:#823f30}
 
 /* Silk task pennants: cast-bronze hanging rod, woven field and a readable clock. */
@@ -46,18 +46,18 @@
 .focused-shell .ongoing-flag-content{inset:12px 8px 15px;gap:3px;background:none}
 .ongoing-flag-seal{display:flex;align-items:center;justify-content:center;flex:0 0 37px;width:37px;height:37px;background:var(--bronze-seal) center/contain no-repeat}
 .ongoing-flag-seal .art-icon{filter:var(--hud-icon-filter)}
-.focused-shell .ongoing-flag-name{font-size:11px;color:#f0dfb6;line-height:15px;text-shadow:0 1px 3px #000}
+.focused-shell .ongoing-flag-name{font-size:var(--text-caption);color:#f0dfb6;line-height:15px;text-shadow:0 1px 3px #000}
 .focused-shell .ongoing-meter{height:4px;border:1px solid #b69a6277;background:#0c1913;box-shadow:0 1px #d6bd6933}
 .focused-shell .ongoing-meter i{background:linear-gradient(90deg,#9c8250,#ead49a)}
 .focused-shell .ongoing-meter.waiting i{background:repeating-linear-gradient(135deg,#b9a16c 0 3px,transparent 3px 6px);opacity:.5}
-.focused-shell .ongoing-countdown{font:11px/15px var(--serif);color:#f7e6bf}
+.focused-shell .ongoing-countdown{font:var(--text-caption)/15px var(--serif);color:#f7e6bf}
 .focused-shell .ongoing-flag-count{right:0;top:9px;min-width:18px;height:18px;border-color:#877047;background:#e8d8ae;color:#343626;box-shadow:0 1px 3px #0008}
 /* Shared carved rim, with functional content inside the original modal dimensions. */
 .focused-shell .modal:is(.estate-modal,.audience-modal){border:10px solid transparent;border-image:url('/art/interface/ceremonial-frame.svg') 24 / 12px stretch;border-radius:0;background-color:#1b2a22;box-shadow:0 20px 60px #030d09c9;outline:1px solid #0d1711}
 .focused-shell .modal.estate-modal{padding:6px 10px 10px;background:linear-gradient(100deg,#28382b,#17271f)}
 .focused-shell .modal.estate-modal::before{display:none}
 .focused-shell .modal:is(.estate-modal,.audience-modal)>header{min-height:48px;margin:0;padding:6px 46px 10px;border:0;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none}
-.focused-shell .modal:is(.estate-modal,.audience-modal)>header h2{width:auto;max-width:100%;margin:0;padding:6px 20px;border:0;border-radius:0;background:none;box-shadow:none;color:#ebdab0;font:22px/1.4 var(--serif);letter-spacing:4px;text-shadow:0 2px 3px #000}
+.focused-shell .modal:is(.estate-modal,.audience-modal)>header h2{width:auto;max-width:100%;margin:0;padding:6px 20px;border:0;border-radius:0;background:none;box-shadow:none;color:#ebdab0;font:var(--text-value)/1.4 var(--serif);letter-spacing:4px;text-shadow:0 2px 3px #000}
 .focused-shell .modal:is(.estate-modal,.audience-modal)>header h2::before,.focused-shell .modal:is(.estate-modal,.audience-modal)>header h2::after{display:none}
 .focused-shell .modal:is(.estate-modal,.audience-modal)>header .drawer-actions{right:5px;top:7px}
 .focused-shell .modal:is(.estate-modal,.audience-modal)>header .drawer-actions button{width:34px;height:34px;min-height:34px;padding:8px;border:0;border-radius:50%;background:var(--bronze-seal) center/contain no-repeat;box-shadow:none;color:#e4cfa0}
@@ -80,12 +80,12 @@
 .focused-shell .court-local-column>h4{background:var(--ink-tray) center/100% 100% no-repeat;border:0;padding:10px 12px;color:#e5d8b9}
 .focused-shell .court-local-seat{border-color:#aa925957;background:linear-gradient(110deg,#29392c,#1a2d23);box-shadow:inset 2px 0 #ad955b33}
 .focused-shell .court-icon-button{border-radius:50%;background:var(--bronze-seal) center/100% 100% no-repeat;border:0;box-shadow:none}
-@media(max-width:700px){.focused-shell .modal:is(.estate-modal,.audience-modal)>header h2{font-size:18px;letter-spacing:2px;padding-inline:4px}.focused-shell .modal:is(.estate-modal,.audience-modal){border-width:7px;border-image-width:9px}}
+@media(max-width:700px){.focused-shell .modal:is(.estate-modal,.audience-modal)>header h2{font-size:var(--text-value);letter-spacing:2px;padding-inline:4px}.focused-shell .modal:is(.estate-modal,.audience-modal){border-width:7px;border-image-width:9px}}
 
 /* Estate canvas reaches the inner frame; title and ledger float over its sky. */
 .focused-shell .modal.estate-modal{padding:0;background:#243728;overflow:visible}
 .focused-shell .modal.estate-modal>header{position:absolute;inset:0 0 auto;z-index:12;min-height:48px;padding:5px 44px 10px;pointer-events:none;background:linear-gradient(#101b16bd,#14231948,transparent)}
-.focused-shell .modal.estate-modal>header h2{padding:5px 12px;color:#f6e6bd;text-shadow:0 2px 4px #07130a,0 0 12px #14281a;font-size:23px}
+.focused-shell .modal.estate-modal>header h2{padding:5px 12px;color:#f6e6bd;text-shadow:0 2px 4px #07130a,0 0 12px #14281a;font-size:var(--text-title)}
 .focused-shell .modal.estate-modal>header .drawer-actions{pointer-events:auto;top:7px;right:7px}
 .focused-shell .estate-canvas-workshop{position:relative}
 .focused-shell .estate-canvas-workshop .estate-workshop-heading{position:absolute;inset:49px 12px auto;z-index:10;margin:0;padding:5px 8px;gap:10px;border:0;background:linear-gradient(90deg,#15231ac9,#19291d99,transparent);color:#ede0ba;pointer-events:none}
@@ -99,7 +99,7 @@
 .focused-shell .modal.retinue-modal{width:min(1080px,calc(100vw - 48px));height:min(800px,calc(100dvh - 120px));max-height:calc(100dvh - 96px);padding:0;display:flex;flex-direction:column;overflow:hidden;border:10px solid transparent;border-image:url('/art/interface/ceremonial-frame.svg') 24 / 12px stretch;border-radius:0;background:#1b2a22;box-shadow:0 20px 60px #030d09c9;outline:1px solid #0d1711}
 .focused-shell .modal.retinue-modal::before{display:none}
 .focused-shell .modal.retinue-modal>header{position:relative;flex:none;min-height:48px;margin:0;padding:6px 70px 10px;border:0;background:var(--ink-tray) center/100% 100% no-repeat;box-shadow:none}
-.focused-shell .modal.retinue-modal>header h2{padding:6px 20px;border:0;background:none;box-shadow:none;font:22px/1.4 var(--serif);letter-spacing:4px}
+.focused-shell .modal.retinue-modal>header h2{padding:6px 20px;border:0;background:none;box-shadow:none;font:var(--text-value)/1.4 var(--serif);letter-spacing:4px}
 .focused-shell .modal.retinue-modal>header::before,.focused-shell .modal.retinue-modal>header::after{display:none}
 .focused-shell .modal.retinue-modal>header .drawer-actions{top:7px;right:6px}
 .focused-shell .modal.retinue-modal>header .drawer-actions button{width:34px;height:34px;padding:8px;border:0;border-radius:50%;background:var(--bronze-seal) center/contain no-repeat}
@@ -108,7 +108,7 @@
 .focused-shell .retinue-chamber-master::before{display:none}
 .focused-shell .retinue-master-portrait{grid-column:1;grid-row:1/4;width:92px;height:138px;max-height:none;margin:0;border-color:#b39b65;box-shadow:0 3px 8px #07130a88}
 .focused-shell .retinue-master-rank,.focused-shell .retinue-chamber-master h3,.focused-shell .retinue-chamber-master p{grid-column:2;margin:0}.focused-shell .retinue-chamber-master p{color:#d1d4bb}
-.focused-shell .retinue-master-seal{top:10px;left:0;font-size:12px;width:22px}
+.focused-shell .retinue-master-seal{top:10px;left:0;font-size:var(--text-caption);width:22px}
 .focused-shell .retinue-master-metrics{grid-column:3;grid-row:1/4;margin:0;padding:10px 0;border:0;background:var(--ink-tray) center/100% 100% no-repeat}
 .focused-shell .retinue-chamber-work{min-height:0;flex:1}.focused-shell .retinue-work-heading{border:0;background:var(--ink-tray) center/100% 100% no-repeat;padding:9px 14px}
 .focused-shell .retinue-chamber .retinue-seats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:start;margin:10px 0}
@@ -117,7 +117,7 @@
 .focused-shell .retinue-modal .retinue-seats .position-image{width:74px;aspect-ratio:2/3;max-width:100%;border-color:#b19a68}
 .focused-shell .retinue-modal .retinue-seats .painted-portrait{margin:0;aspect-ratio:2/3}
 .focused-shell .retinue-modal .retinue-seats .position-title{min-height:34px;padding:5px 10px;background:var(--ink-tray) center/100% 100% no-repeat;border:0;box-shadow:none;color:#eeddaf}
-.focused-shell .retinue-modal .retinue-seats .position-status{font-size:11px;color:#d1d3bb}.focused-shell .retinue-modal .retinue-seats .position-name{font:16px var(--serif);color:#fff0c7;text-shadow:0 1px 3px #091b0d}
+.focused-shell .retinue-modal .retinue-seats .position-status{font-size:var(--text-caption);color:#d1d3bb}.focused-shell .retinue-modal .retinue-seats .position-name{font:var(--text-reading) var(--serif);color:#fff0c7;text-shadow:0 1px 3px #091b0d}
 .focused-shell .retinue-modal .retinue-actions{justify-content:center;flex-wrap:wrap}
 .focused-shell .retinue-modal .retinue-roster{border-top:1px solid #baa06477;margin-top:12px;padding-top:7px}
 /* City construction follows the estate: scene, discoverable plots, local quote. */
@@ -130,8 +130,8 @@
 .city-construction-scene .city-plot-register button{min-height:55px;border:1px solid #9c875e;padding:7px 3px;background:#e2d4b3ed;gap:3px;box-shadow:0 2px 4px #14241966}.city-construction-scene .city-plot-register strong{color:#373c2a}.city-construction-scene .city-plot-register span{color:#635b40}
 .city-construction-scene .city-plot-register button[aria-pressed=true]{background:#384833;border-color:#eed19a}.city-construction-scene .city-plot-register button[aria-pressed=true] :is(strong,span){color:#f4e3b9}
 .city-construction-popover{position:absolute;z-index:3;left:10px;right:46px;bottom:96px;max-height:310px;overflow:auto;padding:12px;border:1px solid #b6a070;background:linear-gradient(115deg,#293a2bfa,#15281efa);box-shadow:0 8px 22px #09190baa;color:#ded9be;scrollbar-width:thin}
-.city-construction-popover h3{font:17px var(--serif);color:#efddb0;margin:0 30px 7px 0}.city-construction-popover h3 small{font:11px var(--sans)}.city-construction-popover p{font-size:12px;line-height:1.55;margin:7px 0}.city-construction-popover>small{display:block;font-size:11px;line-height:1.5;margin:6px 0;color:#c6c6ac}.city-construction-popover>button.primary{width:100%;min-height:38px;margin-top:8px}
-.scene-preview-close{position:absolute;top:4px;right:4px;width:30px;height:30px;border:0;background:var(--bronze-seal) center/contain no-repeat;font:20px var(--serif);color:#e7d4a8}
+.city-construction-popover h3{font:var(--text-reading) var(--serif);color:#efddb0;margin:0 30px 7px 0}.city-construction-popover h3 small{font:var(--text-caption) var(--sans)}.city-construction-popover p{font-size:var(--text-caption);line-height:1.55;margin:7px 0}.city-construction-popover>small{display:block;font-size:var(--text-caption);line-height:1.5;margin:6px 0;color:#c6c6ac}.city-construction-popover>button.primary{width:100%;min-height:38px;margin-top:8px}
+.scene-preview-close{position:absolute;top:4px;right:4px;width:30px;height:30px;border:0;background:var(--bronze-seal) center/contain no-repeat;font:var(--text-value) var(--serif);color:#e7d4a8}
 .city-construction-scene .city-view-error{position:absolute;top:85px;left:8px;right:42px;z-index:2}.city-construction-scene .city-model-loading{margin:0;min-height:440px}
 @media(max-width:760px){.focused-shell .retinue-chamber{padding:10px}.focused-shell .retinue-chamber-master{grid-template-columns:80px minmax(0,1fr);gap:4px 12px}.focused-shell .retinue-master-portrait{width:80px;height:120px}.focused-shell .retinue-master-metrics{grid-column:2;grid-row:4;margin-top:5px}.focused-shell .retinue-chamber .retinue-seats{grid-template-columns:repeat(2,minmax(0,1fr))}.focused-shell .retinue-chamber-master p{display:none}}
 @media(max-height:650px){.focused-shell .retinue-chamber-master{min-height:110px}.focused-shell .retinue-master-portrait{width:72px;height:108px}.focused-shell .retinue-chamber-master p{display:none}}

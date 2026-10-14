@@ -1,0 +1,27 @@
+/* Approved F1: locally hosted Source Han Serif, real Regular / SemiBold weights.
+   The brush face is reserved for the game title; symbols retain their own scale. */
+:root{
+  --font-body:'FYN Song','Noto Serif CJK SC','Songti SC',serif;
+  --font-title:var(--font-body);
+  --font-reading:var(--font-body);
+  --font-display:'FYN Ma Title',var(--font-title);
+  --serif:var(--font-body);
+  --sans:var(--font-body);
+  --text-caption:12px;
+  --text-body:14px;
+  --text-reading:16px;
+  --text-value:20px;
+  --text-title:24px;
+  --text-page:32px;
+  font-family:var(--font-body);
+  font-size:var(--text-body);
+  font-synthesis:none;
+}
+body,button,input,select,textarea{font-family:var(--font-body)}
+button,input,select,textarea{font-size:var(--text-body)}
+input,select,textarea{line-height:1.5}
+button{line-height:1.4}
+.art-resource-value,.chronicle-date,.war-score,.ongoing-countdown{font-variant-numeric:tabular-nums lining-nums}
+/* Ink/paper paragraphs need more leading than the compact action labels. */
+.entry-notice,.detail-action-reason,.action-dialog-copy,.paper-dialog .dialog-intro{line-height:1.65}
+.game-entry:is(.is-loading-saves,.is-choosing-script) .entry-content>h1{font-family:var(--font-title);font-size:var(--text-page);letter-spacing:.06em}

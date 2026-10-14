@@ -4,6 +4,6 @@
 .culture-policy-options .single-choice-content>strong{line-height:1.4}
 .culture-policy-tradeoffs{display:grid;gap:10px;margin-top:6px}
 .culture-policy-tradeoffs>span{display:grid;gap:3px}
-.culture-policy-tradeoffs b{color:#e8d09a;font-weight:500}
+.culture-policy-tradeoffs b{color:#e8d09a;font-weight:400}
 .culture-policy-options .single-choice-detail{display:grid;gap:6px}
 @media(max-width:760px){.culture-policy-options .single-choice-list{grid-template-columns:1fr}}

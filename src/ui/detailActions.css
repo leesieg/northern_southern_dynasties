@@ -7,7 +7,7 @@
  .city-policy-item>.hover-hint>button,.city-policy-grid .enterprise-action>button,
  .journey-options>.hover-hint>button,.service-routine-grid button,.service-offers>.hover-hint>button,
  .official-duty-button,.military-hub-actions>.hover-hint>button
-){box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-width:0;min-height:40px;height:auto;padding:6px 8px;border:1px solid var(--action-edge);border-radius:2px;background:var(--action-ground);color:var(--action-paper);box-shadow:none;font:12px/1.5 var(--sans);text-align:left;text-shadow:none;white-space:normal;cursor:pointer}
+){box-sizing:border-box;display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-width:0;min-height:40px;height:auto;padding:6px 8px;border:1px solid var(--action-edge);border-radius:2px;background:var(--action-ground);color:var(--action-paper);box-shadow:none;font:var(--text-caption)/1.5 var(--sans);text-align:left;text-shadow:none;white-space:normal;cursor:pointer}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(
  .detail-action-entry,.diplomacy-action-card,.economy-action-card,.interaction-options button,
  .city-policy-grid button,.journey-options button,.service-routine-grid button,.service-offers button,.official-duty-button
@@ -21,7 +21,7 @@
  .city-policy-grid button,.journey-options button,.service-routine-grid button,.service-offers button,.official-duty-button
 )>span:not(.art-icon){min-width:0;overflow-wrap:anywhere}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(.detail-action-entry,.diplomacy-action-card,.economy-action-card)>span strong{font:inherit;color:inherit}
-:is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) .campaign-action-label>small{display:block;margin-top:2px;font:11px/1.5 var(--sans);color:var(--action-muted)}
+:is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) .campaign-action-label>small{display:block;margin-top:2px;font:var(--text-caption)/1.5 var(--sans);color:var(--action-muted)}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) .detail-action-entry.danger{--action-ground:#443028;--action-edge:#ae7559;--action-paper:#f1c7aa}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(
  .detail-action-entry,.diplomacy-action-card,.economy-action-card,.interaction-options button,
@@ -46,15 +46,15 @@
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) .person-sheet :is(.person-quick-actions,.journey-actions)>.hover-hint:has(>.detail-action-entry){flex:1 1 130px}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) .person-sheet :is(.person-health,.career-systems,.relationship-action) .hover-hint:has(>.detail-action-entry){margin:4px 0}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(.detail-tabs,.city-icon-tabs){gap:4px;margin-bottom:10px;padding:8px 0;border-bottom:1px solid var(--action-edge)}
-:is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(.detail-tabs,.city-icon-tabs)>button{display:flex;flex-direction:row;gap:5px;min-width:0;min-height:44px;padding:6px 5px;border-radius:2px;font:12px/1.4 var(--sans)}
+:is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(.detail-tabs,.city-icon-tabs)>button{display:flex;flex-direction:row;gap:5px;min-width:0;min-height:44px;padding:6px 5px;border-radius:2px;font:var(--text-caption)/1.4 var(--sans)}
 :is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(.detail-tabs,.city-icon-tabs)>button>.art-icon{width:24px!important;height:24px!important;flex-shrink:0}
 @media(max-width:380px){:is(.focused-shell :is(.left-utility-drawer,.place-panel,.person-page-content,.army-dock,.retinue-modal),dialog.action-detail-dialog) :is(.interaction-options,.service-routine-grid,.city-policy-grid,.journey-options){grid-template-columns:1fr}}
 
 /* Portal dialogs retain the same action cards; paper content keeps its own ink. */
-.campaign-action.detail-action-entry{--action-edge:#b69c6340;--action-paper:#e6d6b4;--action-muted:#b8c0a7;--action-ground:#182a23;--action-selected:#34432e;--dialog-ink:var(--action-paper);--dialog-muted:var(--action-muted);box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 8px;border:1px solid var(--action-edge);border-radius:2px;background:var(--action-ground);color:var(--action-paper);font:12px/1.5 var(--sans);text-align:left}
+.campaign-action.detail-action-entry{--action-edge:#b69c6340;--action-paper:#e6d6b4;--action-muted:#b8c0a7;--action-ground:#182a23;--action-selected:#34432e;--dialog-ink:var(--action-paper);--dialog-muted:var(--action-muted);box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 8px;border:1px solid var(--action-edge);border-radius:2px;background:var(--action-ground);color:var(--action-paper);font:var(--text-caption)/1.5 var(--sans);text-align:left}
 .campaign-action.detail-action-entry>.art-icon{flex:none;width:24px;height:24px}.campaign-action.detail-action-entry .campaign-action-label{min-width:0;overflow-wrap:anywhere}
 .campaign-action.detail-action-entry:focus-visible{outline:2px solid #e0c181;outline-offset:3px}.campaign-action.detail-action-entry:disabled{opacity:.6;cursor:not-allowed}
 .campaign-action.detail-action-entry.danger{--action-ground:#443028;--action-edge:#ae7559;--action-paper:#f1c7aa}
 .campaign-action.detail-action-entry:is([aria-pressed=true],[aria-expanded=true]){background:var(--action-selected);border-color:#ccb078;box-shadow:inset 3px 0 #c6a96f}
 .campaign-action.detail-action-entry:hover:not(:disabled){border-color:#c6a96f;background:#26392d}
-.hover-hint:has(>.detail-action-entry){min-width:0}.army-logistics-brief{display:grid;gap:6px;padding-block:8px;border-top:1px solid #b69c6340}.military-order-destination{display:grid;gap:8px}.military-order-destination select{width:100%}.regional-military-context{margin-bottom:12px}.regional-military-context p{font-size:12px}
+.hover-hint:has(>.detail-action-entry){min-width:0}.army-logistics-brief{display:grid;gap:6px;padding-block:8px;border-top:1px solid #b69c6340}.military-order-destination{display:grid;gap:8px}.military-order-destination select{width:100%}.regional-military-context{margin-bottom:12px}.regional-military-context p{font-size:var(--text-caption)}

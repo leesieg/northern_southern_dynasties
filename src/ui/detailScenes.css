@@ -26,7 +26,7 @@ dialog.paper-dialog>header,.pause-dialog:not(.pause-dialog--audience)>div>header
 :is(.person-sheet,.personal-economy,.realm-panel,.military-hub)>:not(.person-page-content,.economy-page,.detail-page-content){flex-shrink:0}
 .person-page-content,.personal-economy>.economy-page,.detail-page-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:12px}
 .person-sheet .person-identity{grid-template-columns:96px minmax(0,1fr);gap:12px;padding:10px}
-.person-identity-info h2{font-size:25px}
+.person-identity-info h2{font-size:var(--text-title)}
 .person-picker-list{max-height:88px;overflow:auto}
 .person-page-content>.person-ability-summary{margin-top:10px}
 .person-page-content>.person-domains{margin-bottom:12px}

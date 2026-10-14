@@ -47,7 +47,7 @@ dialog.paper-dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dial
 .focused-shell .modal.audience-modal>header button[aria-label="返回上页"]::before,.focused-shell .modal.audience-modal>header button[aria-label="返回上页"]::after{content:none}
 .focused-shell .modal.audience-modal>header button[aria-label="返回上页"] svg{transform:rotate(180deg);width:24px;height:24px}
 .focused-shell .operations-window-actions{top:6px;right:6px;gap:10px;align-items:center}
-.focused-shell :is(.operations-window,.operations-journal) .operations-window-actions .operations-back{width:auto;min-width:76px;height:44px;padding:6px 8px;border:0;background:#15241d99;box-shadow:none;color:#dfc28d;font:16px var(--serif);display:flex;align-items:center;gap:8px}
+.focused-shell :is(.operations-window,.operations-journal) .operations-window-actions .operations-back{width:auto;min-width:76px;height:44px;padding:6px 8px;border:0;background:#15241d99;box-shadow:none;color:#dfc28d;font:var(--text-reading) var(--serif);display:flex;align-items:center;gap:8px}
 .operations-back svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8}
 .focused-shell dialog.person-ink-dialog .person-window-chrome button[aria-label="返回上页"]{width:48px;height:48px;padding:12px;border:0;border-radius:0;background:#15241d99;box-shadow:none;color:#dfc28d}
 
@@ -61,7 +61,7 @@ dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.action-co
  min-height:44px;padding:9px 22px;border:5px solid transparent;border-radius:0;
  border-image:url('/art/interface/operations-button-frame.svg') 9 / 9px / 0 stretch;
  background:repeating-linear-gradient(115deg,#e8d4a207 0 1px,transparent 1px 4px),linear-gradient(105deg,#2c4134,#1a2e25);
- color:var(--dialog-ink);box-shadow:none;font:16px/1.3 var(--serif);letter-spacing:1px;text-shadow:0 1px #07130b70;
+ color:var(--dialog-ink);box-shadow:none;font:var(--text-reading)/1.3 var(--serif);letter-spacing:1px;text-shadow:0 1px #07130b70;
  clip-path:polygon(5px 0,calc(100% - 5px) 0,100% 5px,100% calc(100% - 5px),calc(100% - 5px) 100%,5px 100%,0 calc(100% - 5px),0 5px);
 }
 .focused-shell dialog.person-ink-dialog .person-sheet--ink .primary,
@@ -97,11 +97,11 @@ dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.action-co
 }
 dialog.paper-dialog.action-detail-dialog .single-choice-card{border-radius:3px;border-color:#a68e5d66;box-shadow:none}
 dialog.paper-dialog.paper-dialog.action-detail-dialog .single-choice-card:has(input:checked){border-color:#995b3e;box-shadow:inset 0 0 0 1px #995b3e;background:#e5d5b5}
-dialog.paper-dialog.action-detail-dialog .single-choice-state{font:13px var(--serif)}
+dialog.paper-dialog.action-detail-dialog .single-choice-state{font:var(--text-body) var(--serif)}
 dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.action-confirm-dialog,.war-declaration)>header{
  min-height:74px;border:0;padding:12px 18px;background-color:#1b3026;
 }
-dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.war-declaration)>header :is(h2,h3){background:none;border:0;box-shadow:none;color:#efdcaf;letter-spacing:3px;padding:5px 12px;font:25px/1.3 var(--serif)}
+dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.war-declaration)>header :is(h2,h3){background:none;border:0;box-shadow:none;color:#efdcaf;letter-spacing:3px;padding:5px 12px;font:var(--text-title)/1.3 var(--serif)}
 dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.war-declaration) .drawer-ornament{display:none}
 .focused-shell .modal.operations-window .government-dossier footer{border-top:1px solid #ac945a55;padding-top:16px;gap:16px}
 .focused-shell dialog.person-ink-dialog .person-information>.detail-tabs>button[aria-pressed=true],
@@ -113,7 +113,7 @@ dialog.paper-dialog:is(.action-detail-dialog,.person-selection-dialog,.war-decla
  clip-path:none;mask:url('/art/interface/operations-paper-tab.svg') center/100% 100% no-repeat;
 }
 .focused-shell dialog.person-ink-dialog .person-information>.detail-tabs{padding:4px 0;gap:0;background:#1d2d24;border-bottom:1px solid #b3945c88}
-.focused-shell dialog.person-ink-dialog :is(.person-information>.detail-tabs,.person-page-content .detail-tabs)>button{min-height:44px;padding:7px 5px;gap:6px;border:0;border-radius:0;font:17px/1.3 var(--serif);box-shadow:none}
+.focused-shell dialog.person-ink-dialog :is(.person-information>.detail-tabs,.person-page-content .detail-tabs)>button{min-height:44px;padding:7px 5px;gap:6px;border:0;border-radius:0;font:var(--text-reading)/1.3 var(--serif);box-shadow:none}
 .focused-shell dialog.person-ink-dialog .detail-tabs>button .art-icon{filter:none;width:22px!important;height:22px!important}
 .focused-shell dialog.person-ink-dialog .person-dossier-footer .campaign-action{justify-content:center;padding:8px 12px;letter-spacing:0;white-space:normal}
 .focused-shell dialog.person-ink-dialog .person-dossier-footer .campaign-action .art-icon{border:0;border-radius:0;width:24px!important;height:24px!important}

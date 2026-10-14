@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" preserveAspectRatio="none">
+ <defs>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".38" numOctaves="3" seed="17" result="n"/><feColorMatrix in="n" type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".17"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+  <clipPath id="paper"><path d="M9 5 75 4 121 6 177 4 231 5 299 4 354 6 352 11 353 16 350 19 351 26 349 31 352 36 350 41 351 47 348 52 350 57 349 63 351 68 348 72 350 77 347 82 349 86 346 93 282 94 236 92 180 94 126 93 71 95 9 93Z"/></clipPath>
+ </defs>
+ <g clip-path="url(#paper)"><path fill="#e5d4b1" d="M0 0h380v100H0z"/><path fill="#e5d4b1" filter="url(#grain)" d="M0 0h380v100H0z"/></g>
+ <g fill="none" stroke="#b09763" stroke-width=".9"><path d="M3 2v96M2 5h394M2 95h382M8 8v84M2 2h8v8H2zm0 88h8v8H2zM365 0l7 5-7 5-7-5zM360 5l5-3 5 3-5 3z"/><path stroke-opacity=".5" d="M11 9h326M11 91h321"/></g>
+</svg>

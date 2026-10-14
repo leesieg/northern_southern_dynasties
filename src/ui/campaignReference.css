@@ -4,12 +4,12 @@
 .game-entry.is-selecting{color:var(--campaign-ink);background:var(--campaign-paper)}
 .game-entry.is-selecting .entry-backdrop{opacity:.2;filter:grayscale(1);background-image:linear-gradient(90deg,#e8e5da90,#e8e5da),url('/art/menu/realm-dawn.png')}
 .game-entry.is-selecting .entry-content{width:min(1580px,100%)}
-.game-entry.is-selecting .entry-content>h1{color:#34362f;text-shadow:none;font-size:22px}
+.game-entry.is-selecting .entry-content>h1{color:#34362f;text-shadow:none;font-size:var(--text-value)}
 .game-entry.is-selecting .campaign-stage-nav{background:transparent;border-color:#77715b50;margin-bottom:8px;padding:5px 0}
 .game-entry.is-selecting .campaign-stage-nav button{color:#686a5f}
 .game-entry.is-selecting .campaign-stage-nav button[aria-current=step]{color:#292d29}
 .game-entry.is-selecting .campaign-stage-nav small{color:#66685b}
-.game-entry.is-selecting .roster-heading>strong{color:#f3eee0;background:var(--campaign-brush) center/100% 100% no-repeat;padding:12px 32px;font:20px var(--serif)}
+.game-entry.is-selecting .roster-heading>strong{color:#f3eee0;background:var(--campaign-brush) center/100% 100% no-repeat;padding:12px 32px;font:var(--text-value) var(--serif)}
 .game-entry.is-selecting .roster-heading input{color:#30362f;background:#f5f2e8b8;border-color:#9f987b}
 .game-entry.is-selecting :is(.entry-back,.roster-heading button,.roster-filters button,.roster-context button,.roster-kin button){color:#353a30;border-color:#91877266;background:#efede3a6}
 .game-entry.is-selecting :is(.roster-heading button,.roster-filters button)[aria-pressed=true]{color:#fff5da;background:#30382f;border-color:#a58b4e}
@@ -21,15 +21,15 @@
 .game-entry.is-selecting .roster-list>button[aria-pressed=true]{border-color:#9e7e38;background:#b9a46b2a;box-shadow:inset 0 -3px #9b7b3f}
 .game-entry.is-selecting .roster-list>button>.painted-portrait{width:58px;height:58px;aspect-ratio:1;flex:none}
 .game-entry.is-selecting .roster-list>button>span{flex:none}
-.game-entry.is-selecting .roster-list strong{font-size:15px;color:#262e27}
-.game-entry.is-selecting .roster-list small{font-size:10px;color:#5e6458;line-height:1.5}
+.game-entry.is-selecting .roster-list strong{font-size:var(--text-reading);color:#262e27}
+.game-entry.is-selecting .roster-list small{font-size:var(--text-caption);color:#5e6458;line-height:1.5}
 .roster-hero{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-height:0;background:radial-gradient(ellipse at 50% 85%,#575c4130,transparent 60%)}
 .game-entry.is-selecting .roster-hero>.painted-portrait{width:min(100%,calc((100dvh - 310px)*.6667));aspect-ratio:2/3;height:auto;flex:none;margin:auto 0 10px}
 .game-entry.is-selecting .roster-hero>.painted-portrait,.roster-hero .painted-portrait-frame{background:transparent;border:0;box-shadow:none}.roster-hero .portrait-role-frame{opacity:.28}
 .roster-hero>button{display:flex;align-items:center;justify-content:center;gap:8px;flex:none;margin:0 0 12px;width:180px;background:#262c28;color:#e8dfcb;border:1px solid #a79262;min-height:34px}
 .game-entry.is-selecting .roster-profile{padding:16px 10px;background:transparent;border:0;border-left:1px solid #887b5750}
 .game-entry.is-selecting .roster-profile :is(h2,h3,p,.roster-title,.eyebrow,small,span){color:#353b30}
-.game-entry.is-selecting .roster-profile h2{font-size:38px;letter-spacing:.14em}
+.game-entry.is-selecting .roster-profile h2{font-size:var(--text-page);letter-spacing:.14em}
 .game-entry.is-selecting .roster-profile h3{border-bottom:1px solid #92886a;padding-bottom:10px}
 .game-entry.is-selecting .roster-identity{align-items:flex-start;flex-direction:column;gap:6px}
 .game-entry.is-selecting .roster-resources{background:#fff9;border-block:1px solid #a99b7444;padding:8px}
@@ -50,9 +50,9 @@
 dialog.pause-dialog:not(.pause-dialog--audience) header{background:transparent;border-bottom:1px solid #a9925a77;padding:14px 20px;position:relative;flex:none}
 :is(dialog.action-detail-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header :is(h2,h3),
 dialog.action-confirm-dialog>h2,dialog.pause-dialog:not(.pause-dialog--audience) header h2{
- color:#f1ecdd;background:var(--campaign-brush) center/100% 100% no-repeat;text-align:center;margin:0 auto;padding:12px 40px;font:22px var(--serif);letter-spacing:.1em;max-width:85%;box-sizing:border-box;
+ color:#f1ecdd;background:var(--campaign-brush) center/100% 100% no-repeat;text-align:center;margin:0 auto;padding:12px 40px;font:var(--text-value) var(--serif);letter-spacing:.1em;max-width:85%;box-sizing:border-box;
 }
-:is(dialog.action-detail-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header>button{flex:none;width:36px;height:36px;border-radius:50%;background:#282e29;color:#d9bb72;border:1px solid #a48b52;box-shadow:inset 0 0 0 3px #48493b;font-size:24px}
+:is(dialog.action-detail-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration)>header>button{flex:none;width:36px;height:36px;border-radius:50%;background:#282e29;color:#d9bb72;border:1px solid #a48b52;box-shadow:inset 0 0 0 3px #48493b;font-size:var(--text-title)}
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog)>footer{background:#d5d1c3;border-top:1px solid #a48b5277;color:#333b31;flex:none}
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration,dialog.pause-dialog:not(.pause-dialog--audience))::backdrop{background:#25243580;backdrop-filter:blur(2px) saturate(.65)}
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) :is(.action-summary,.person-selection-description,.person-selection-tools,.military-preview-rows article,.military-recruit-site,.single-choice-card){background:#f5f2e7;color:#333b31;border-color:#a99a7755}
@@ -64,7 +64,7 @@ dialog.action-confirm-dialog>h2,dialog.pause-dialog:not(.pause-dialog--audience)
 :is(dialog.action-detail-dialog,dialog.action-confirm-dialog,dialog.person-selection-dialog,dialog.ongoing-group-dialog,dialog.war-declaration) :is(button,input,select):focus-visible{outline:2px solid #a37b26;outline-offset:3px}
 :is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal,dialog.pause-dialog--audience){border-radius:0;border-color:#bba36a;box-shadow:0 0 0 1px #252b25,inset 0 0 0 2px #bba36a,0 18px 60px #0008}
 :is(.modal.estate-modal,.modal.audience-modal,.modal.retinue-modal)>header h2{background:var(--campaign-brush) center/100% 100% no-repeat;color:#f4edda;text-shadow:none}
-@media(max-width:1000px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{grid-template-columns:220px minmax(180px,1fr) 250px;gap:10px}.game-entry.is-selecting .roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}.game-entry.is-selecting .roster-heading>strong{font-size:15px;padding-inline:18px}}
+@media(max-width:1000px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{grid-template-columns:220px minmax(180px,1fr) 250px;gap:10px}.game-entry.is-selecting .roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}.game-entry.is-selecting .roster-heading>strong{font-size:var(--text-reading);padding-inline:18px}}
 @media(max-width:760px){.game-entry.is-selecting .roster-columns,.game-entry.is-selecting .roster-columns--map{display:grid;grid-template-columns:minmax(150px,1fr) minmax(210px,1.3fr);overflow:auto}.game-entry.is-selecting .roster-hero{display:none}.game-entry.is-selecting .roster-columns--map .roster-profile{grid-column:2;grid-row:2}.game-entry.is-selecting .roster-columns--map .roster-map{min-height:240px}.game-entry.is-selecting .roster-explorer{min-height:240px}.game-entry.is-selecting .roster-profile{min-height:240px}.game-entry.is-selecting .roster-heading{flex-wrap:wrap}.game-entry.is-selecting .roster-heading input{flex:1}.regiment-preview{gap:12px}.regiment-preview dl{gap:8px}.regiment-preview>.troop-illustration{width:70px}}
 /* Paper-backed form contents keep a consistent readable ink colour. */
 dialog.action-detail-dialog .action-detail-body>p,dialog.action-detail-dialog .action-detail-body>small,dialog.action-confirm-dialog .action-confirm-detail,dialog.war-declaration .war-declaration-body>p,dialog.pause-dialog:not(.pause-dialog--audience) #pause-body{color:#394033}
@@ -87,7 +87,7 @@ dialog.action-detail-dialog .single-choice-reason,dialog.person-selection-dialog
 .game-entry.is-selecting .roster-hero>.painted-portrait{flex:0 1 auto;width:auto;height:calc(100% - 55px);max-width:100%;max-height:calc(100% - 55px);aspect-ratio:2/3;margin:0 auto 10px}
 .game-entry.is-selecting .roster-identity{position:static;display:flex;min-width:0}.game-entry.is-selecting .roster-identity>div:last-child{width:100%;overflow-wrap:anywhere}
 .game-entry .entry-message-slot{flex:none;max-height:64px;overflow:auto;margin-top:8px;border:1px solid #a9956655;background:#172a22}
-.game-entry .entry-message-slot>.entry-notice{margin:0;padding:8px 12px;border:0;font-size:11px;line-height:1.6}
+.game-entry .entry-message-slot>.entry-notice{margin:0;padding:8px 12px;border:0;font-size:var(--text-caption);line-height:1.6}
 .game-entry .entry-message-slot.is-error{border-color:#ab7157;color:#efc5a5}
 .game-entry.is-selecting .entry-message-slot{background:#dfded2;color:#424b3c}.game-entry.is-selecting .entry-message-slot.is-error{background:#ecdfd5;color:#7c3c2b}
 .game-entry.is-selecting .entry-launch{flex:none;min-height:50px;box-sizing:border-box}.game-entry.is-selecting .entry-launch .entry-note{max-height:50px;overflow:auto;min-width:0}

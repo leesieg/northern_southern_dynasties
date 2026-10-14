@@ -1,33 +1,33 @@
 .war-details-dialog{width:min(980px,calc(100vw - 32px))}.war-details{min-width:0}.war-details h3,.war-details h4{margin:10px 0;font-family:var(--serif)}
-.war-details-parties{display:grid;grid-template-columns:1fr 1fr;gap:14px}.war-details-parties>article{display:flex;align-items:center;gap:12px;padding:12px;background:#20372c;color:#ebdec0;border:1px solid #a38d5b}.war-details-parties>article:nth-child(2){border-color:#98604d}.war-details-parties article>div:not(.war-allies){display:grid;gap:3px}.war-details small{display:block;font-size:11px}.war-allies{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}.war-allies .realm-badge-link{width:30px;height:38px}
-.war-details-objective{display:flex;gap:12px;align-items:center;margin:14px 0}.war-details-objective>div{flex:1}.war-details-objective h3{margin:0;font-size:21px}.war-details-objective p{margin:3px 0!important;font-size:12px}.war-details-objective>.hover-hint strong{white-space:nowrap;font:20px var(--serif)}
-.war-details-content{padding:8px 0}.war-score-labels{display:flex;justify-content:space-between;font-size:11px}.war-score meter,.engagement-dialog progress{width:100%;height:16px;accent-color:#436b50}.war-score p,.war-footnote{font-size:11px;opacity:.85}
-.war-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:10px 0}.war-facts>span{display:grid;gap:4px;font-size:12px}.war-facts b{font:20px var(--serif)}.war-target{border-block:1px solid #a38d5b66;padding:4px 0}
-.war-event-list{display:grid;gap:8px}.war-event-list>button{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;min-width:0}.war-event-list>button>span:nth-child(2){flex:1}.war-event-list>button>b{font-size:12px}.war-event-list>button small{margin-top:3px;font-size:11px}
-.war-occupation-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.war-occupation-list article{display:grid;gap:3px;border:1px solid #a38d5b66;padding:9px 12px;font-size:12px}
-.war-unit-list{display:grid;gap:8px}.war-unit-list article{display:flex;align-items:center;gap:10px;border:1px solid #a38d5b66;padding:8px 10px}.war-unit-list article>span:last-child{margin-left:auto;font-size:12px}.war-unit-list small{display:block;font-size:11px}
+.war-details-parties{display:grid;grid-template-columns:1fr 1fr;gap:14px}.war-details-parties>article{display:flex;align-items:center;gap:12px;padding:12px;background:#20372c;color:#ebdec0;border:1px solid #a38d5b}.war-details-parties>article:nth-child(2){border-color:#98604d}.war-details-parties article>div:not(.war-allies){display:grid;gap:3px}.war-details small{display:block;font-size:var(--text-caption)}.war-allies{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap}.war-allies .realm-badge-link{width:30px;height:38px}
+.war-details-objective{display:flex;gap:12px;align-items:center;margin:14px 0}.war-details-objective>div{flex:1}.war-details-objective h3{margin:0;font-size:var(--text-value)}.war-details-objective p{margin:3px 0!important;font-size:var(--text-caption)}.war-details-objective>.hover-hint strong{white-space:nowrap;font:var(--text-value) var(--serif)}
+.war-details-content{padding:8px 0}.war-score-labels{display:flex;justify-content:space-between;font-size:var(--text-caption)}.war-score meter,.engagement-dialog progress{width:100%;height:16px;accent-color:#436b50}.war-score p,.war-footnote{font-size:var(--text-caption);opacity:.85}
+.war-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:10px 0}.war-facts>span{display:grid;gap:4px;font-size:var(--text-caption)}.war-facts b{font:var(--text-value) var(--serif)}.war-target{border-block:1px solid #a38d5b66;padding:4px 0}
+.war-event-list{display:grid;gap:8px}.war-event-list>button{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;min-width:0}.war-event-list>button>span:nth-child(2){flex:1}.war-event-list>button>b{font-size:var(--text-caption)}.war-event-list>button small{margin-top:3px;font-size:var(--text-caption)}
+.war-occupation-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.war-occupation-list article{display:grid;gap:3px;border:1px solid #a38d5b66;padding:9px 12px;font-size:var(--text-caption)}
+.war-unit-list{display:grid;gap:8px}.war-unit-list article{display:flex;align-items:center;gap:10px;border:1px solid #a38d5b66;padding:8px 10px}.war-unit-list article>span:last-child{margin-left:auto;font-size:var(--text-caption)}.war-unit-list small{display:block;font-size:var(--text-caption)}
 @media(max-width:650px){.war-details-parties,.war-occupation-list{grid-template-columns:1fr}.war-details-objective{flex-wrap:wrap}.war-details-objective>.hover-hint strong{flex-basis:100%}.war-unit-list article{flex-wrap:wrap}}
 dialog.paper-dialog.war-details-dialog .war-details-parties>article,dialog.paper-dialog .war-details-parties>article{--dialog-ink:#ebdec0;--dialog-muted:#c9cbb9}
 /* A field dispatch: opposed banners, painted commanders and a compact siege ledger. */
 dialog.paper-dialog.engagement-dialog{width:min(1080px,calc(100vw - 32px));--dialog-ink:#e7ddbf;--dialog-muted:#bfbea9;background:#14251f;color:#e7ddbf;border-radius:2px}
 dialog.paper-dialog.engagement-dialog>.action-detail-body{background:linear-gradient(115deg,#a38d5b08,transparent 40%),#172a23;color:#e7ddbf;padding:18px 24px}
-.engagement-banner{display:flex;align-items:center;gap:18px;padding:8px 0 20px;border-bottom:1px solid #a38d5b88}.engagement-banner h3{font:30px var(--serif);letter-spacing:.1em;margin:0;color:#ebd49c}.engagement-banner small{letter-spacing:.14em;color:#bbb99f}.engagement-banner p{font-size:12px;margin:2px 0!important}.engagement-result{margin-left:auto;text-align:right;flex-shrink:0}.engagement-result strong{display:block;font:30px var(--serif);color:#ebd49c}
+.engagement-banner{display:flex;align-items:center;gap:18px;padding:8px 0 20px;border-bottom:1px solid #a38d5b88}.engagement-banner h3{font:var(--text-page) var(--serif);letter-spacing:.1em;margin:0;color:#ebd49c}.engagement-banner small{letter-spacing:.14em;color:#bbb99f}.engagement-banner p{font-size:var(--text-caption);margin:2px 0!important}.engagement-result{margin-left:auto;text-align:right;flex-shrink:0}.engagement-result strong{display:block;font:var(--text-page) var(--serif);color:#ebd49c}
 .engagement-stages{list-style:none;margin:14px 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:2px}.engagement-stages li{text-align:center;padding:8px;background:#0e1e19;color:#a9af9c;border-bottom:2px solid #4c5947}.engagement-stages li[aria-current]{color:#f2dcaa;background:#394331;border-color:#c7ad72}
-.engagement-lines{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:18px 0}.engagement-side{min-width:0;border:1px solid #9c885a77;background:#10221b}.engagement-side.defend{border-color:#95695988}.engagement-side>header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #9c885a55;background:#26382a}.engagement-side.defend>header{background:#3e3229}.engagement-side h4{font:20px var(--serif);margin:0;color:#e7d5ad}.engagement-side small{display:block;font-size:11px;color:#bbc0aa}.engagement-loss{margin-left:auto;text-align:right;font-size:11px}.engagement-loss strong{display:block;font:20px var(--serif)}
-.engagement-commanders{display:flex;gap:14px;justify-content:center;overflow-x:auto;padding:16px 14px 12px;border-bottom:1px solid #9c885a33}.engagement-commanders figure{margin:0;flex:0 0 88px;text-align:center}.engagement-portrait{display:block;width:88px;aspect-ratio:2/3;padding:0!important;border:1px solid #b29b66!important;background:#28392b!important;overflow:hidden}.engagement-portrait .painted-portrait{width:100%;height:100%;aspect-ratio:2/3}.engagement-commanders figcaption{margin-top:6px;font:16px var(--serif)}
-.engagement-units{max-height:260px;overflow:auto;scrollbar-width:thin;padding:8px 12px}.engagement-units article{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:6px 9px;padding:10px 0;border-bottom:1px solid #9c885a33}.engagement-units article>b{font:14px var(--serif);text-align:right}.engagement-unit-state{grid-column:2/-1}.engagement-fort{padding:4px 16px 8px;margin-top:14px;border:1px solid #9c885a66;background:#0f201a}.engagement-fort .war-facts{grid-template-columns:repeat(4,1fr)}.engagement-fort progress{height:12px}.engagement-fort p{font-size:12px}
-.engagement-dispatch{display:flex;align-items:flex-start;gap:12px;background:#ddd2b4;color:#29382e;padding:14px 18px;border-block:2px solid #a18b59}.engagement-dispatch h4{margin:0 0 5px;font:18px var(--serif)}.engagement-dispatch p{margin:3px 0!important}.engagement-dispatch small{font-size:11px;color:#52604f}.war-captive-list article{display:flex;align-items:center;gap:12px;border-block-end:1px solid #a38d5b55;padding:8px 0}.war-captive-list article>button{display:flex;align-items:center;gap:10px;flex:1;text-align:left}.war-captive-list .painted-portrait{width:44px;height:44px;flex:0 0 44px}.war-captive-list small{display:block}
-@media(max-width:700px){.engagement-lines{grid-template-columns:1fr}.engagement-banner{gap:10px}.engagement-banner h3{font-size:23px}.engagement-result strong{font-size:23px}.engagement-fort{padding:8px}.engagement-fort .war-facts{grid-template-columns:repeat(2,1fr)}dialog.paper-dialog.engagement-dialog>.action-detail-body{padding:14px}}
+.engagement-lines{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:18px 0}.engagement-side{min-width:0;border:1px solid #9c885a77;background:#10221b}.engagement-side.defend{border-color:#95695988}.engagement-side>header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #9c885a55;background:#26382a}.engagement-side.defend>header{background:#3e3229}.engagement-side h4{font:var(--text-value) var(--serif);margin:0;color:#e7d5ad}.engagement-side small{display:block;font-size:var(--text-caption);color:#bbc0aa}.engagement-loss{margin-left:auto;text-align:right;font-size:var(--text-caption)}.engagement-loss strong{display:block;font:var(--text-value) var(--serif)}
+.engagement-commanders{display:flex;gap:14px;justify-content:center;overflow-x:auto;padding:16px 14px 12px;border-bottom:1px solid #9c885a33}.engagement-commanders figure{margin:0;flex:0 0 88px;text-align:center}.engagement-portrait{display:block;width:88px;aspect-ratio:2/3;padding:0!important;border:1px solid #b29b66!important;background:#28392b!important;overflow:hidden}.engagement-portrait .painted-portrait{width:100%;height:100%;aspect-ratio:2/3}.engagement-commanders figcaption{margin-top:6px;font:var(--text-reading) var(--serif)}
+.engagement-units{max-height:260px;overflow:auto;scrollbar-width:thin;padding:8px 12px}.engagement-units article{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:6px 9px;padding:10px 0;border-bottom:1px solid #9c885a33}.engagement-units article>b{font:var(--text-body) var(--serif);text-align:right}.engagement-unit-state{grid-column:2/-1}.engagement-fort{padding:4px 16px 8px;margin-top:14px;border:1px solid #9c885a66;background:#0f201a}.engagement-fort .war-facts{grid-template-columns:repeat(4,1fr)}.engagement-fort progress{height:12px}.engagement-fort p{font-size:var(--text-caption)}
+.engagement-dispatch{display:flex;align-items:flex-start;gap:12px;background:#ddd2b4;color:#29382e;padding:14px 18px;border-block:2px solid #a18b59}.engagement-dispatch h4{margin:0 0 5px;font:var(--text-value) var(--serif)}.engagement-dispatch p{margin:3px 0!important}.engagement-dispatch small{font-size:var(--text-caption);color:#52604f}.war-captive-list article{display:flex;align-items:center;gap:12px;border-block-end:1px solid #a38d5b55;padding:8px 0}.war-captive-list article>button{display:flex;align-items:center;gap:10px;flex:1;text-align:left}.war-captive-list .painted-portrait{width:44px;height:44px;flex:0 0 44px}.war-captive-list small{display:block}
+@media(max-width:700px){.engagement-lines{grid-template-columns:1fr}.engagement-banner{gap:10px}.engagement-banner h3{font-size:var(--text-title)}.engagement-result strong{font-size:var(--text-title)}.engagement-fort{padding:8px}.engagement-fort .war-facts{grid-template-columns:repeat(2,1fr)}dialog.paper-dialog.engagement-dialog>.action-detail-body{padding:14px}}
 dialog.paper-dialog.engagement-dialog .engagement-dispatch{--dialog-ink:#29382e;--dialog-muted:#52604f}dialog.paper-dialog.engagement-dialog .engagement-banner h3,dialog.paper-dialog.engagement-dialog .engagement-result strong{--dialog-ink:#ebd49c}
 
 .war-details-dialog .war-details-objective{margin:0 0 12px;border-bottom:1px solid #a38d5b66;padding-bottom:12px}
 .war-participant-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:8px 0 16px}.war-participant-columns>section{min-width:0}
 .war-participant-columns article{display:flex;align-items:center;gap:8px;min-height:58px;padding:6px 9px;background:#274332;border:1px solid #8f986066;margin-bottom:5px;color:#eaddbc}
-.war-participant-columns [data-side=defend] article{background:#47302a;border-color:#ac796166}.war-participant-columns article>span{flex:1;min-width:0}.war-participant-columns article strong{font:15px var(--serif)}.war-participant-columns article>b{font:14px var(--serif);white-space:nowrap}
+.war-participant-columns [data-side=defend] article{background:#47302a;border-color:#ac796166}.war-participant-columns article>span{flex:1;min-width:0}.war-participant-columns article strong{font:var(--text-reading) var(--serif)}.war-participant-columns article>b{font:var(--text-body) var(--serif);white-space:nowrap}
 .war-participant-columns .war-leader{border:0;padding:0;background:none;flex:none;width:34px;height:34px}.war-leader .painted-portrait{width:34px;height:34px;aspect-ratio:1}
 @media(max-width:650px){.war-participant-columns{grid-template-columns:1fr}}
 
-.war-details-claimant{display:flex;flex-wrap:wrap;gap:8px 16px;padding:9px;border:1px solid #b69c6340;color:#e6d6b4;font:12px/1.6 var(--sans)}
+.war-details-claimant{display:flex;flex-wrap:wrap;gap:8px 16px;padding:9px;border:1px solid #b69c6340;color:#e6d6b4;font:var(--text-caption)/1.6 var(--sans)}
 .war-details-claimant p{flex-basis:100%;margin:0;color:#b8c0a7}
 .war-details-claimant button{padding:2px 5px;border:0;background:transparent;color:#dbc083}
 
@@ -45,10 +45,10 @@ dialog.paper-dialog.war-details-dialog .dialog-heading-art{opacity:.55;width:50%
 :is(dialog.paper-dialog.paper-dialog,.operations-window) .war-details .war-details-parties>article:nth-child(2){background:#34382c}
 .war-details .war-party-portrait{width:50px;height:68px;flex:none;background:none!important;border:0!important;padding:0!important;overflow:hidden}
 .war-party-portrait .painted-portrait{width:100%;height:100%;aspect-ratio:2/3}
-.war-details-parties>article>div>button{background:none!important;border:0;padding:0;text-align:left;font:13px var(--serif)}
-.war-details .war-details-parties strong{font-size:15px;font-weight:500}
+.war-details-parties>article>div>button{background:none!important;border:0;padding:0;text-align:left;font:var(--text-body) var(--serif)}
+.war-details .war-details-parties strong{font-size:var(--text-reading);font-weight:600}
 .war-details .war-details-parties .war-allies{max-width:100px}
-.war-details>.hover-hint{flex:none;font-size:11px;margin:0 0 8px}
+.war-details>.hover-hint{flex:none;font-size:var(--text-caption);margin:0 0 8px}
 .war-overview-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;padding:16px 0;align-content:start;align-items:start}
 .war-overview-grid>.war-score{grid-column:1;grid-row:1;border:1px solid var(--dossier-edge);padding:12px 16px}
 .war-overview-grid>.war-participant-columns{grid-column:2;grid-row:1;display:block;margin:0;padding:10px 12px;background:#233029;--dialog-ink:#ebdfc2;--dialog-muted:#bcc0ac}
@@ -56,19 +56,19 @@ dialog.paper-dialog.war-details-dialog .dialog-heading-art{opacity:.55;width:50%
 .war-overview-grid>.war-current-occupations{grid-column:2;grid-row:2;border:1px solid var(--dossier-edge);padding:12px 14px}
 .war-overview-grid>.war-current-engagements,.war-overview-grid>.war-captive-list{grid-column:1/-1}
 .war-overview-grid>.war-current-engagements{padding-top:4px;border-top:1px solid var(--dossier-edge)}
-.war-overview-grid h4{font-size:17px;margin:0 0 12px}
+.war-overview-grid h4{font-size:var(--text-reading);margin:0 0 12px}
 .war-score-scale{padding:27px 4px 7px;margin:4px 0}
 .war-score-ruler{height:13px;position:relative;border-block:1px solid #5a5b4c;background:repeating-linear-gradient(90deg,#656653 0 1px,transparent 1px 5%);margin:0 16px}
 .war-score-origin{position:absolute;left:50%;top:-5px;bottom:-5px;border-left:2px solid #3b4335}
-.war-score-marker{position:absolute;left:var(--war-score-position);bottom:14px;transform:translateX(-50%);font:17px/1.2 var(--serif);text-align:center;white-space:nowrap}
+.war-score-marker{position:absolute;left:var(--war-score-position);bottom:14px;transform:translateX(-50%);font:var(--text-reading)/1.2 var(--serif);text-align:center;white-space:nowrap}
 .war-score-marker>i{display:block;width:0;height:0;margin:3px auto -1px;border-inline:5px solid transparent;border-top:7px solid #414938}
-.war-score-scale .war-score-labels{margin:7px 0 0;display:grid;grid-template-columns:1fr 1fr 1fr;font-size:11px}
+.war-score-scale .war-score-labels{margin:7px 0 0;display:grid;grid-template-columns:1fr 1fr 1fr;font-size:var(--text-caption)}
 .war-score-labels>span:nth-child(2){text-align:center}.war-score-labels>span:last-child{text-align:right}
 .war-score .war-facts{display:block;padding:0;border-top:1px solid var(--dossier-edge)}
-.war-score .war-facts>span{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--dossier-edge);font-size:13px}
-.war-score .war-facts b{font:18px var(--serif)}
+.war-score .war-facts>span{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--dossier-edge);font-size:var(--text-body)}
+.war-score .war-facts b{font:var(--text-value) var(--serif)}
 .war-target>.dialog-art{float:right;width:45%;height:100px;margin:0 0 8px 14px;mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent)}
-.war-target p,.war-current-occupations p{font-size:12px;line-height:1.7}
+.war-target p,.war-current-occupations p{font-size:var(--text-caption);line-height:1.7}
 :is(dialog.paper-dialog.paper-dialog,.operations-window) .war-participant-columns article{background:none;border:0;border-bottom:1px solid #a68c5650;padding:10px 0;--dialog-ink:#ebdfc2;--dialog-muted:#bcc0ac}
 .war-participant-columns .war-leader{width:40px;height:40px}.war-participant-columns .war-leader .painted-portrait{width:40px;height:40px}
 .war-details .war-occupation-list{grid-template-columns:1fr}
@@ -77,35 +77,35 @@ dialog.paper-dialog.war-details-dialog .dialog-heading-art{opacity:.55;width:50%
 .war-report-timeline{display:grid;gap:8px;align-content:start}
 :is(dialog.paper-dialog.paper-dialog,.operations-window) .war-report-timeline button{display:flex;align-items:center;gap:10px;padding:12px 10px;background:#e4d9bd60;border:1px solid var(--dossier-edge);--dialog-ink:#30372e;--dialog-muted:#6a6655;text-align:left;box-shadow:none;border-radius:0}
 :is(dialog.paper-dialog.paper-dialog,.operations-window) .war-report-timeline button[aria-pressed=true]{border-color:#9f8146;background:#cbb98940;box-shadow:inset 3px 0 #9f8146}
-.war-report-timeline strong{font-size:15px}.war-report-timeline small{display:block;font-size:11px;margin-top:5px}
+.war-report-timeline strong{font-size:var(--text-reading)}.war-report-timeline small{display:block;font-size:var(--text-caption);margin-top:5px}
 .war-report-paper{border:1px solid var(--dossier-edge);padding:14px 16px;min-width:0}
-.war-report-paper>header{display:flex;justify-content:space-between;align-items:center;gap:12px}.war-report-paper>header h3{margin:0;font-size:21px}
+.war-report-paper>header{display:flex;justify-content:space-between;align-items:center;gap:12px}.war-report-paper>header h3{margin:0;font-size:var(--text-value)}
 .war-report-paper>.dialog-art{height:160px;margin:14px -8px;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 90%,transparent)}
-.war-report-losses{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-block:1px solid var(--dossier-edge);padding:12px 0}.war-report-losses b{display:block;font:21px var(--serif);margin-top:8px}
+.war-report-losses{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-block:1px solid var(--dossier-edge);padding:12px 0}.war-report-losses b{display:block;font:var(--text-value) var(--serif);margin-top:8px}
 .war-report-paper>footer{display:flex;justify-content:flex-end;border-top:1px solid var(--dossier-edge);padding-top:12px;margin-top:20px}
 .war-report-paper>footer button{padding:7px 16px;border:1px solid #9f8146;background:#9a7a3e!important;--dialog-ink:#fff0cf;color:var(--dialog-ink)}
 .war-treaty-sheet{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;padding:16px 0;align-items:start}
 .war-treaty-sheet:not(:has(.war-treaty-preview)){grid-template-columns:1fr}
 .war-treaty-editor{min-width:0}
 .war-treaty-plans{display:grid;gap:6px;margin:0 0 14px;padding:0;border:0}
-.war-treaty-plans legend{font:18px var(--serif);margin-bottom:10px}
+.war-treaty-plans legend{font:var(--text-value) var(--serif);margin-bottom:10px}
 .war-treaty-plans>label{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--dossier-edge);background:#f3eddb28;cursor:pointer}
 .war-treaty-plans>label[data-selected=true]{border-color:#9f8146;background:#cbb98930;box-shadow:inset 0 0 0 1px #bda57055}
-.war-treaty-plans strong{font:16px var(--serif)}.war-treaty-plans small{font-size:11px;margin-top:3px}
-:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-treaty-editor .war-settlement-facts{--dialog-ink:#30372e;--dialog-muted:#6a6655;background:none;border:0;border-block:1px solid var(--dossier-edge);padding:8px 0;font-size:12px}
+.war-treaty-plans strong{font:var(--text-reading) var(--serif)}.war-treaty-plans small{font-size:var(--text-caption);margin-top:3px}
+:is(dialog.paper-dialog.paper-dialog,.operations-window) .war-treaty-editor .war-settlement-facts{--dialog-ink:#30372e;--dialog-muted:#6a6655;background:none;border:0;border-block:1px solid var(--dossier-edge);padding:8px 0;font-size:var(--text-caption)}
 .war-treaty-editor .war-settlement-claims{border:0;border-bottom:1px solid var(--dossier-edge);padding:12px 0;margin:0}
-.war-treaty-editor .war-settlement-claims>p{font-size:11px;line-height:1.7}
+.war-treaty-editor .war-settlement-claims>p{font-size:var(--text-caption);line-height:1.7}
 .war-treaty-editor .war-settlement-claims label{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:6px 0}
 .war-treaty-preview{position:sticky;top:0;border:1px solid var(--dossier-edge);padding:14px 16px;min-width:0;background:#f1e9d560}
 .war-treaty-preview>header{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.war-treaty-preview h3{font:22px var(--serif);margin:0}.war-treaty-preview h4{font:16px var(--serif);margin:12px 0 6px}
+.war-treaty-preview h3{font:var(--text-value) var(--serif);margin:0}.war-treaty-preview h4{font:var(--text-reading) var(--serif);margin:12px 0 6px}
 .war-treaty-preview>.dialog-art{height:100px;margin:12px -8px;opacity:.85;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 90%,transparent)}
-.war-treaty-preview p{font-size:12px;line-height:1.7}
-.war-treaty-totals{display:grid;grid-template-columns:1fr 1fr;border-block:1px solid var(--dossier-edge);padding:10px 0;gap:10px}.war-treaty-totals dt{font-size:12px}.war-treaty-totals dd{margin:4px 0 0;font:23px var(--serif)}
+.war-treaty-preview p{font-size:var(--text-caption);line-height:1.7}
+.war-treaty-totals{display:grid;grid-template-columns:1fr 1fr;border-block:1px solid var(--dossier-edge);padding:10px 0;gap:10px}.war-treaty-totals dt{font-size:var(--text-caption)}.war-treaty-totals dd{margin:4px 0 0;font:var(--text-title) var(--serif)}
 .war-treaty-factors p{display:flex;justify-content:space-between;margin:4px 0!important;gap:12px}
 .war-treaty-preview>footer{border-top:1px solid var(--dossier-edge);padding-top:12px;margin-top:12px}
-.war-treaty-preview>footer>button{display:block;margin-left:auto;min-height:36px;padding:7px 18px;background:#9a7a3e!important;--dialog-ink:#fff0cf;border:1px solid #aa925d;color:var(--dialog-ink);font:15px var(--serif)}
-.war-treaty-preview>footer>small{display:block;font-size:11px;margin-top:6px;text-align:right}
+.war-treaty-preview>footer>button{display:block;margin-left:auto;min-height:36px;padding:7px 18px;background:#9a7a3e!important;--dialog-ink:#fff0cf;border:1px solid #aa925d;color:var(--dialog-ink);font:var(--text-reading) var(--serif)}
+.war-treaty-preview>footer>small{display:block;font-size:var(--text-caption);margin-top:6px;text-align:right}
 @media(max-width:760px){
  .war-overview-grid,.war-treaty-sheet{grid-template-columns:1fr}
  .war-overview-grid>:is(.war-score,.war-participant-columns,.war-target,.war-current-occupations){grid-column:1;grid-row:auto}
@@ -113,5 +113,5 @@ dialog.paper-dialog.war-details-dialog .dialog-heading-art{opacity:.55;width:50%
  .war-report-dossier{grid-template-columns:1fr}.war-report-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}
  .war-details .war-details-parties{gap:8px}.war-details-parties .war-party-portrait{display:none}
  dialog.paper-dialog.paper-dialog.war-details-dialog>.action-detail-body{padding:0 12px}
- .war-details .war-details-parties article{padding:6px}.war-details .war-details-parties strong{font-size:13px}
+ .war-details .war-details-parties article{padding:6px}.war-details .war-details-parties strong{font-size:var(--text-body)}
 }

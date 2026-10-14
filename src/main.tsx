@@ -10,6 +10,8 @@ import './ui/decisionPresentation.css';
 import './ui/immersiveInterface.css';
 import './ui/dialogDesign.css';
 import './ui/identityCityDesign.css';
+import './ui/typography.css';
+import './ui/courtyardMenu.css';
 
 if (import.meta.env.BASE_URL.startsWith('/games/fengyun-nanbeichao/')) {
   let owner: string | undefined;

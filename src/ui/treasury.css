@@ -2,9 +2,9 @@
 .treasury-central-summary{display:flex;gap:18px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #bba77740;border-radius:5px;background:#172c2680}
 .treasury-panel-flat{display:grid;gap:8px;align-content:start}
 .treasury-panel-flat h3,.treasury-panel-flat h4{margin:0}
-.treasury-panel-flat h4{padding-top:8px;border-top:1px solid #bba77740;color:#e4ce9e;font:17px var(--serif)}
+.treasury-panel-flat h4{padding-top:8px;border-top:1px solid #bba77740;color:#e4ce9e;font:var(--text-reading) var(--serif)}
 .treasury-panel-flat h4:first-child{padding-top:0;border-top:0}
-.treasury-help{color:#bea976;font:12px var(--sans)}
+.treasury-help{color:#bea976;font:var(--text-caption) var(--sans)}
 .treasury-panel-flat .treasury-central-summary{margin:0}
 .treasury-panel-flat .treasury-form{margin:0}
 .treasury-panel-flat .treasury-request-city{justify-content:flex-start;gap:10px;margin:0}

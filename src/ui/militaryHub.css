@@ -3,61 +3,61 @@
 /* Match the compact icon-and-title navigation used by the other detail drawers. */
 .focused-shell .military-hub{gap:10px;min-width:0}
 .focused-shell .military-hub-identity{gap:8px;padding:10px 0 2px}
-.focused-shell .military-hub-identity>strong{font:18px var(--serif);color:#e4ce9e}
-.focused-shell .military-hub-identity>span:not(.art-icon){flex:1 1 100%;font-size:11px;color:#acb69e}
+.focused-shell .military-hub-identity>strong{font:var(--text-value) var(--serif);color:#e4ce9e}
+.focused-shell .military-hub-identity>span:not(.art-icon){flex:1 1 100%;font-size:var(--text-caption);color:#acb69e}
 .focused-shell .military-hub>.detail-tabs{position:static;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px 0 8px;margin:0;background:#22322a;border-bottom:1px solid #b69c6340}
-.focused-shell .military-hub>.detail-tabs>button{min-height:44px;flex-direction:row;gap:4px;padding:5px 3px;font:12px var(--serif);white-space:nowrap}
+.focused-shell .military-hub>.detail-tabs>button{min-height:44px;flex-direction:row;gap:4px;padding:5px 3px;font:var(--text-caption) var(--serif);white-space:nowrap}
 .focused-shell .military-hub>.detail-tabs .art-icon{width:20px!important;height:20px!important;flex:0 0 20px}
 .focused-shell .military-hub>.detail-tabs>[aria-pressed=true]{border-color:#ccb078;background:#bca37126;color:#efd9a5;box-shadow:inset 0 -2px #c6a96f}
 .focused-shell .military-hub-actions{gap:6px}
-.focused-shell .military-hub-actions>button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:40px;padding:7px 10px;border:1px solid #b69c6366;border-radius:4px;background:#182a23;color:#dfd3b8;font-size:12px}
+.focused-shell .military-hub-actions>button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:40px;padding:7px 10px;border:1px solid #b69c6366;border-radius:4px;background:#182a23;color:#dfd3b8;font-size:var(--text-caption)}
 .focused-shell .military-hub button:hover:not(:disabled){border-color:#c6a96f;color:#efd9a5}
 .focused-shell .military-hub button:disabled{opacity:.45;cursor:not-allowed}
 .focused-shell .military-record-main{align-items:flex-start;padding:4px 0;border:0;background:none}
 :is(.military-hub,.military-deployment-detail) .military-choice-group{display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:8px;border:1px solid #b69c6340;border-radius:4px}
-:is(.military-hub,.military-deployment-detail) .military-choice-group legend{padding:0 5px;color:#cdb889;font:12px var(--serif)}
-:is(.military-hub,.military-deployment-detail) .military-choice-group .military-choice{display:flex;flex:1 1 95px;align-items:center;gap:7px;min-height:44px;margin:0;padding:7px;border:1px solid #b69c6340;border-radius:4px;background:#182a23;color:#b8c0a7;font-size:12px;cursor:pointer}
+:is(.military-hub,.military-deployment-detail) .military-choice-group legend{padding:0 5px;color:#cdb889;font:var(--text-caption) var(--serif)}
+:is(.military-hub,.military-deployment-detail) .military-choice-group .military-choice{display:flex;flex:1 1 95px;align-items:center;gap:7px;min-height:44px;margin:0;padding:7px;border:1px solid #b69c6340;border-radius:4px;background:#182a23;color:#b8c0a7;font-size:var(--text-caption);cursor:pointer}
 :is(.military-hub,.military-deployment-detail) .military-choice-group .military-choice:has(input:checked){border-color:#ccb078;background:#bca37120;color:#efd9a5;box-shadow:inset 0 -2px #c6a96f}
 :is(.military-hub,.military-deployment-detail) .military-choice-group .military-choice:has(input:focus-visible){outline:2px solid #e0c181;outline-offset:2px}
 :is(.military-hub,.military-deployment-detail) .military-choice-group .military-choice:has(input:disabled){opacity:.45;cursor:not-allowed}
 :is(.military-hub,.military-deployment-detail) .military-choice-group .military-choice input[type=radio]{appearance:auto;flex:0 0 16px;width:16px;min-width:16px;max-width:16px;height:16px;min-height:16px;margin:0;padding:0;border:0;background:none;accent-color:#c6a96f}
-:is(.military-hub,.military-deployment-detail) .military-choice small{display:block;margin-top:3px;color:#acb69e;font-size:10px;line-height:1.4}
-@media(max-width:520px){.focused-shell .military-hub>.detail-tabs>button{flex-direction:column;gap:2px;min-height:48px;font-size:11px}}
+:is(.military-hub,.military-deployment-detail) .military-choice small{display:block;margin-top:3px;color:#acb69e;font-size:var(--text-caption);line-height:1.4}
+@media(max-width:520px){.focused-shell .military-hub>.detail-tabs>button{flex-direction:column;gap:2px;min-height:48px;font-size:var(--text-caption)}}
 
 .military-deployment-detail{display:grid;gap:10px}.military-deployment-list{display:grid;gap:7px}.military-deployment-list .military-record:has(input[type=checkbox]:checked){border-color:#ccb078;background:#bca37120}.military-deployment-list label{display:flex;align-items:center;gap:7px;min-height:38px}.military-deployment-list input[type=checkbox],.military-recruit-sites input[type=checkbox]{width:16px;height:16px;min-height:16px;margin:0;accent-color:#c6a96f}.military-recruit-sites label:has(input[type=checkbox]:checked){border-color:#ccb078;background:#bca37120}
 
-:is(.military-deployment-detail,.military-private-detail) select{max-width:100%;min-height:36px;margin:4px 0;padding:6px 8px;border:1px solid #b69c6366;border-radius:4px;background:#15251f;color:#e3d8bd;font:12px var(--sans)}:is(.military-deployment-detail,.military-private-detail) select:focus-visible{outline:2px solid #e0c181;outline-offset:2px}.military-private-detail label{display:grid;gap:4px;color:#cdb889}
+:is(.military-deployment-detail,.military-private-detail) select{max-width:100%;min-height:36px;margin:4px 0;padding:6px 8px;border:1px solid #b69c6366;border-radius:4px;background:#15251f;color:#e3d8bd;font:var(--text-caption) var(--sans)}:is(.military-deployment-detail,.military-private-detail) select:focus-visible{outline:2px solid #e0c181;outline-offset:2px}.military-private-detail label{display:grid;gap:4px;color:#cdb889}
 
 /* Military detail review: fixed art slots, aligned actions and one dialog grammar. */
 .focused-shell .military-hub-identity{display:grid;grid-template-columns:30px minmax(0,1fr);gap:3px 9px;align-items:center}
 .focused-shell .military-hub-identity>.art-icon{grid-row:1/3}
-.focused-shell .military-hub-identity>.military-identity-summary{grid-column:2;font-size:11px;line-height:1.5}
+.focused-shell .military-hub-identity>.military-identity-summary{grid-column:2;font-size:var(--text-caption);line-height:1.5}
 .focused-shell .military-hub-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .focused-shell .military-hub-actions>.hover-hint{display:flex;flex:1 1 108px;min-width:0}
 .focused-shell .military-hub-actions .campaign-action{width:100%;min-height:44px;padding:7px 8px}
 .focused-shell .military-record{padding:11px;border-radius:2px;border:1px solid #9e86554d;background:linear-gradient(110deg,#20352a,#182c23)}
 .focused-shell .military-record-main{min-height:42px;text-align:left;align-items:flex-start;gap:5px;box-shadow:none}
-.focused-shell .military-record-main strong{font:16px var(--serif);color:#e8d1a0}
+.focused-shell .military-record-main strong{font:var(--text-reading) var(--serif);color:#e8d1a0}
 .focused-shell .military-record>.hover-hint{align-self:flex-start}
 .focused-shell .military-record>div:not(.military-metrics){align-items:center}
 .focused-shell .military-alerts>button{align-items:flex-start;text-align:left;border-left:3px solid #b28a51;gap:5px}
-.focused-shell .military-alerts>button span{font-size:11px;line-height:1.6;color:#cebfa0}
+.focused-shell .military-alerts>button span{font-size:var(--text-caption);line-height:1.6;color:#cebfa0}
 .military-general-portrait{display:block;width:44px;height:44px;flex:0 0 44px;aspect-ratio:1;overflow:hidden}
 .military-general-portrait>.painted-portrait{display:block;width:100%;height:100%;aspect-ratio:1;margin:0}
 .military-generals>button{min-height:62px;padding:7px;border-radius:2px;background:#182d23;border:1px solid #ac91554d}
-.military-generals>button>span:not(.military-general-portrait){min-width:0;color:#e4d0a3;font:14px var(--serif)}
-.military-generals small{margin-top:5px;font:10px var(--sans);color:#b7bda6;line-height:1.4}
-.military-war-heading{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.military-war-heading>strong{flex:1;font:16px var(--serif);color:#e4d0a3}
-.military-empty{padding:12px;border-left:2px solid #9e865566;color:#b9bca5;font-size:12px;line-height:1.6}
+.military-generals>button>span:not(.military-general-portrait){min-width:0;color:#e4d0a3;font:var(--text-body) var(--serif)}
+.military-generals small{margin-top:5px;font:var(--text-caption) var(--sans);color:#b7bda6;line-height:1.4}
+.military-war-heading{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.military-war-heading>strong{flex:1;font:var(--text-reading) var(--serif);color:#e4d0a3}
+.military-empty{padding:12px;border-left:2px solid #9e865566;color:#b9bca5;font-size:var(--text-caption);line-height:1.6}
 .action-detail-dialog.military-recruitment-dialog{width:min(780px,calc(100vw - 32px))}
 .military-recruit-site{display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:6px;padding:10px;border:1px solid #ac91554d;border-radius:2px;background:#182d23}
 .military-recruit-site[data-selected=true]{border-color:#d8b775;background:#334531;box-shadow:inset 3px 0 #cfb16e}
 .military-recruit-sites .military-recruit-select{display:flex;gap:7px;align-items:center;min-height:36px;margin:0;padding:0;border:0;cursor:pointer}
-.military-recruit-sites .military-recruit-count{display:flex;gap:6px;align-items:center;margin:0;padding:0;border:0;font-size:11px}
-.military-recruit-count input{width:60px;min-width:0}.military-recruit-site>small{grid-column:1/-1;color:#b4bea6;font-size:11px}
-.military-plan-parameters{gap:10px;margin-bottom:10px}.military-plan-parameters label{flex:1 1 150px;font-size:12px;color:#c9b78b}
+.military-recruit-sites .military-recruit-count{display:flex;gap:6px;align-items:center;margin:0;padding:0;border:0;font-size:var(--text-caption)}
+.military-recruit-count input{width:60px;min-width:0}.military-recruit-site>small{grid-column:1/-1;color:#b4bea6;font-size:var(--text-caption)}
+.military-plan-parameters{gap:10px;margin-bottom:10px}.military-plan-parameters label{flex:1 1 150px;font-size:var(--text-caption);color:#c9b78b}
 .military-preview-rows article{border:1px solid #a48c5544;border-radius:2px;padding:10px;gap:5px}
-.military-preview-rows span{font-size:12px;color:#c3c4ac}.military-preview-rows strong{font:16px var(--serif);color:#e6cda0}
-.military-deployment-detail .military-record{border-radius:2px}.military-deployment-detail .military-record>label{font-size:12px;line-height:1.5}
+.military-preview-rows span{font-size:var(--text-caption);color:#c3c4ac}.military-preview-rows strong{font:var(--text-reading) var(--serif);color:#e6cda0}
+.military-deployment-detail .military-record{border-radius:2px}.military-deployment-detail .military-record>label{font-size:var(--text-caption);line-height:1.5}
 
-.military-section-heading{margin:14px 0 8px;padding-top:10px;border-top:1px solid #b69c6340;font:16px var(--serif);color:#e5d0a2}
+.military-section-heading{margin:14px 0 8px;padding-top:10px;border-top:1px solid #b69c6340;font:var(--text-reading) var(--serif);color:#e5d0a2}

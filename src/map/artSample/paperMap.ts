@@ -85,7 +85,7 @@ export function createPaperMap(terrain:PaperTerrain,options?:PaperMapOptions){
  // Administrative names reuse existing feature identities. Position in an open part of each group.
  const districts=new Map<string,{name:string;points:{x:number;z:number}[]}>();
  for(const feature of territoryData.features){const id=String(feature.properties?.id),town=towns.find(c=>c.id===id);if(!town)continue;const group=String(feature.properties?.group),entry=districts.get(group)??{name:String(feature.properties?.prefecture),points:[]};entry.points.push(town);districts.set(group,entry);}
- ctx.font=`${3.7*SCALE}px SampleSong, 'Songti SC', serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#4a6850';ctx.globalAlpha=.46;
+ ctx.font=`${3.7*SCALE}px 'FYN Song', SampleSong, 'Songti SC', serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#4a6850';ctx.globalAlpha=.46;
  for(const district of districts.values()){if(district.points.length<2)continue;const x=district.points.reduce((n,p)=>n+p.x,0)/district.points.length,z=district.points.reduce((n,p)=>n+p.z,0)/district.points.length;
   const candidates=[{x:x-7,z:z+5},{x:x+8,z:z+6},{x:x-5,z:z-8},{x:x+9,z:z-9}];candidates.sort((a,b)=>Math.min(...towns.map(c=>Math.hypot(b.x-c.x,b.z-c.z)))-Math.min(...towns.map(c=>Math.hypot(a.x-c.x,a.z-c.z))));const p=candidates[0];ctx.fillText(district.name,px(p.x),px(p.z));}
  // Small roof-and-wall seals replace the white 3D city blocks in atlas mode.

@@ -5,5 +5,5 @@
 :is(.paper-map-icon,.atlas-paper-symbol):is(.icon-army,.icon-objective){color:#a54e39}
 :is(.paper-map-icon,.atlas-paper-symbol):is(.icon-port,.icon-trade){color:#8bbebd}
 :is(.paper-map-icon,.atlas-paper-symbol):is(.icon-mine,.icon-fort){color:#bfbc9e}
-:is(.paper-map-icon,.atlas-paper-symbol) :is(b,.paper-tier){position:absolute;right:-1px;bottom:-2px;color:#f0dfb7;text-shadow:-1px -1px #192b1b,1px 1px #192b1b;font:700 11px Georgia,serif}
+:is(.paper-map-icon,.atlas-paper-symbol) :is(b,.paper-tier){position:absolute;right:-1px;bottom:-2px;color:#f0dfb7;text-shadow:-1px -1px #192b1b,1px 1px #192b1b;font:700 11px var(--serif,serif)}
 :is(.paper-map-icon,.atlas-paper-symbol):focus-visible{outline:2px solid #ffe49a;outline-offset:2px}

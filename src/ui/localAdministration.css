@@ -2,10 +2,10 @@
 /* Shared county, prefecture and province shell. */
 .territory-navigation{padding:8px 0;border-bottom:1px solid #bba47140;margin-bottom:10px;flex-shrink:0}
 .territory-navigation nav{display:flex;align-items:center;gap:5px;overflow-x:auto;scrollbar-width:thin}
-.territory-navigation button{display:inline-flex;align-items:center;gap:4px;flex:none;min-height:32px;padding:4px 8px;font-size:12px;white-space:nowrap}
+.territory-navigation button{display:inline-flex;align-items:center;gap:4px;flex:none;min-height:32px;padding:4px 8px;font-size:var(--text-caption);white-space:nowrap}
 .territory-navigation button[aria-current]{opacity:1;color:#efd9a5;border-color:#bca371;background:#bca37120}
 .territory-navigation .realm-flag{width:30px;min-width:30px}
-.territory-navigation .territory-peers{margin-top:6px}.territory-peers button{min-height:28px;font-size:11px}
+.territory-navigation .territory-peers{margin-top:6px}.territory-peers button{min-height:28px;font-size:var(--text-caption)}
 .local-territory .local-seats-grid{max-height:none;overflow:visible}
 .local-territory .city-summary-identity>.city-office-seat{min-width:0;max-width:none;width:100%}
 .local-territory .local-office-options{margin:8px 0}.local-territory .local-budget-row>span{margin-right:auto}

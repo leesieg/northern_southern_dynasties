@@ -1,0 +1,94 @@
+/* Approved B composition. Text remains live, with no fictional save data. */
+.game-entry.is-home{
+  display:block;min-height:100dvh;height:100dvh;overflow:auto;
+  padding:clamp(64px,13vh,150px) 4.5vw 38px;background:#18211c;isolation:isolate;
+}
+.game-entry.is-home .entry-backdrop{
+  position:fixed;inset:0;z-index:-1;
+  background-image:url('/art/menu/courtyard-background.png');
+  background-size:cover;background-position:center;
+}
+.game-entry.is-home .entry-content{
+  width:min(35vw,590px);min-width:340px;min-height:calc(87dvh - 38px);
+  display:flex;flex-direction:column;align-items:flex-start;
+}
+.game-entry.is-home .entry-content>.eyebrow,.game-entry.is-home .entry-lead{display:none}
+.game-entry.is-home .entry-content>h1{
+  position:relative;margin:0 0 clamp(42px,9vh,110px);padding:0;
+  font:400 clamp(58px,5.1vw,88px)/1.2 var(--font-display);
+  letter-spacing:.015em;color:#c4ab7b;white-space:nowrap;
+  text-shadow:0 2px 6px #0005;
+}
+.game-entry.is-home .entry-content>h1::after{
+  content:'南北';position:absolute;right:-20px;bottom:12%;
+  writing-mode:vertical-rl;font:12px/1 var(--font-body);letter-spacing:0;
+  border:1px solid #885039;color:#9c5940;padding:3px 2px;opacity:.85;
+}
+.game-entry.is-home .entry-actions{width:min(100%,350px);max-width:none;margin:0;gap:12px}
+.game-entry.is-home .entry-actions>button{
+  position:relative;isolation:isolate;width:100%;min-height:62px;padding:15px 26px;
+  border:0;border-bottom:1px solid #ab91624d;background:none;
+  box-shadow:none;border-radius:0;text-align:left;
+  font:400 var(--text-value)/1.5 var(--font-body);letter-spacing:.08em;
+  color:#dfcba2;transition:color .15s ease,background-color .15s ease;
+}
+.game-entry.is-home .entry-actions>button::after{
+  content:'';position:absolute;width:7px;height:7px;left:0;right:auto;
+  top:auto;bottom:-4px;border:1px solid #ab9162;transform:rotate(45deg);opacity:.8;
+}
+.game-entry.is-home .entry-actions>button.primary{
+  min-height:84px;color:#283126;border:0;padding-right:48px;
+  background:url('/art/menu/courtyard-menu-paper.svg') center/100% 100% no-repeat;
+  box-shadow:none;
+}
+.game-entry.is-home .entry-actions>button.primary::after{
+  content:none;
+}
+.game-entry.is-home .entry-actions>button.primary::before{
+  content:none;
+}
+.game-entry.is-home .entry-actions>button small{
+  font:400 var(--text-caption)/1.6 var(--font-body);color:#48503c;
+  letter-spacing:.02em;margin:3px 0 0;padding:0;
+}
+.game-entry.is-home .entry-actions>button:hover:not(:disabled){background-color:#cab4871c;color:#fff0cd}
+.game-entry.is-home .entry-actions>button.primary:hover:not(:disabled){background-color:transparent;color:#1b281e;filter:brightness(1.08)}
+.game-entry.is-home .entry-actions>button:disabled{opacity:.58;cursor:not-allowed}
+.game-entry.is-home .entry-actions>button:focus-visible,.game-entry.is-home .entry-utilities button:focus-visible{outline:2px solid #ead197;outline-offset:5px}
+.game-entry.is-home .entry-message-slot{width:min(100%,420px);margin-top:20px;max-height:110px;background:#13251df2;color:#e8ddc0}
+.game-entry.is-home .entry-message-slot.is-error{color:#f0c4a3;border-color:#a86e4b}
+.game-entry.is-home .entry-message-slot .entry-notice{font-size:var(--text-body);color:inherit}
+.game-entry.is-home .entry-utilities{
+  margin-top:auto;padding-top:32px;gap:20px;min-height:72px;flex-wrap:wrap;
+  font:400 var(--text-body)/1.5 var(--font-body);color:#bfa777;
+}
+.game-entry.is-home .entry-utilities .entry-sound-medallion{
+  display:flex;align-items:center;gap:8px;width:auto;height:auto;min-height:40px;
+  padding:0 20px 0 0;border:0;border-right:1px solid #a58e5c66;
+  border-radius:0;background:none;box-shadow:none;font-size:var(--text-body);color:inherit;
+}
+.game-entry.is-home .entry-sound-medallion svg{width:24px;height:24px}
+.entry-storage-status{display:inline-flex;gap:8px;align-items:center}
+.entry-storage-status svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.4}
+.game-entry.is-home .entry-loading{width:100%;color:#ead7b1}
+@media(min-aspect-ratio:2/1){.game-entry.is-home .entry-backdrop{background-position:center 44%}}
+@media(max-width:900px){
+  .game-entry.is-home{padding:10vh 5vw 28px}
+  .game-entry.is-home .entry-content{width:350px;min-width:0;max-width:90vw;min-height:calc(90dvh - 28px)}
+  .game-entry.is-home .entry-content>h1{font-size:60px;margin-bottom:9vh}
+  .game-entry.is-home .entry-backdrop{background-image:linear-gradient(90deg,#10201988,transparent 75%),url('/art/menu/courtyard-background.png');background-position:60% center}
+}
+@media(max-width:520px){
+  .game-entry.is-home .entry-content>h1{font-size:clamp(40px,11vw,58px)}
+  .game-entry.is-home .entry-content{width:100%}
+  .game-entry.is-home .entry-backdrop{background-image:linear-gradient(90deg,#102019d9,#10201988),url('/art/menu/courtyard-background.png')}
+}
+@media(max-height:620px){
+  .game-entry.is-home{padding-top:28px}
+  .game-entry.is-home .entry-content{min-height:calc(100dvh - 66px)}
+  .game-entry.is-home .entry-content>h1{font-size:52px;margin-bottom:22px}
+  .game-entry.is-home .entry-actions{gap:6px}
+  .game-entry.is-home .entry-actions>button{min-height:48px;padding-block:10px}
+  .game-entry.is-home .entry-utilities{padding-top:22px}
+}
+@media(prefers-reduced-motion:reduce){.game-entry.is-home button{transition:none}}

@@ -1,5 +1,9 @@
 # 地图来源与第三方许可
 
+## 游戏字体
+
+游戏正文、标题与操作使用 Adobe 思源宋体 SC 2.003 Regular / SemiBold；游戏题字使用马善政楷书 2.003。两者均按 SIL OFL 1.1 许可分发，转换、分片与改名说明见 [字体说明](fonts/README.md)，完整许可见 [思源宋体](fonts/source-serif-OFL.txt)与[马善政楷书](fonts/mashanzheng-OFL.txt)。
+
 ## MapStage 设计与配置参考
 
 - 项目：https://github.com/hopechen067/MapStage

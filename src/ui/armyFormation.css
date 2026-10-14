@@ -1,10 +1,10 @@
 /* Commander and two-row unit strip. Shared sizing prevents the map and military panels diverging. */
 .regiment-cards{--unit-width:58px;--unit-height:86px;display:grid;grid-template-rows:repeat(2,var(--unit-height));grid-auto-flow:column;grid-auto-columns:var(--unit-width);align-content:start;align-items:stretch;justify-content:start;gap:2px;overflow-x:auto;overflow-y:hidden;min-width:0;max-width:100%;padding:2px 2px 5px;scrollbar-width:thin;scrollbar-color:#8d7c55 #242a2399;box-sizing:border-box}
 .regiment-cards .regiment-card{display:grid;grid-template-rows:minmax(0,1fr) 18px;position:relative;min-width:0;width:var(--unit-width);height:var(--unit-height);min-height:0;padding:0;border:1px solid #888879;border-radius:0;background:#e8e5da;color:#222b24;box-shadow:inset 0 0 0 1px #f9f6e6;overflow:hidden}
-.regiment-card-name{display:none;font:9px/14px var(--serif);white-space:nowrap;text-align:center;overflow:hidden;color:#333b30;background:#eeeadd}
+.regiment-card-name{display:none;font:var(--text-caption)/14px var(--serif);white-space:nowrap;text-align:center;overflow:hidden;color:#333b30;background:#eeeadd}
 .troop-illustration{display:block;width:100%;height:100%;min-height:0;object-fit:contain;overflow:hidden}
-.regiment-card-count{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:1px 3px;background:#345a3f;color:#fff9e8;font:bold 12px/16px var(--serif);white-space:nowrap}
-.regiment-card-count small{font:8px/16px var(--serif);color:inherit}
+.regiment-card-count{display:flex;align-items:center;justify-content:space-between;gap:2px;padding:1px 3px;background:#345a3f;color:#fff9e8;font:bold var(--text-caption)/16px var(--serif);white-space:nowrap}
+.regiment-card-count small{font:var(--text-caption)/16px var(--serif);color:inherit}
 .regiment-card[data-kind=archer] .regiment-card-count{background:#3d5874}.regiment-card[data-kind=heavyHorse] .regiment-card-count{background:#80443b}.regiment-card[data-kind=siege] .regiment-card-count{background:#6b6044}
 .regiment-cards .regiment-card:hover,.regiment-cards .regiment-card[aria-pressed=true]{border-color:#e4c476;box-shadow:inset 0 0 0 2px #b59a60;filter:brightness(1.07)}
 .regiment-cards .regiment-card:focus-visible{outline:2px solid #f0cb78;outline-offset:-3px}
@@ -17,14 +17,14 @@
 .focused-shell .army-unit-main>.position-seat{grid-area:commander;position:relative;display:flex;flex-direction:column;width:116px;min-width:0;gap:0;align-self:start;background:#171f1a;border:1px solid #938160;box-sizing:border-box}
 .focused-shell .army-unit .position-seat .position-image{display:block;width:114px;height:171px;aspect-ratio:2/3;border:0;padding:0;overflow:hidden}
 .focused-shell .army-unit .position-image .painted-portrait{width:100%;height:100%;aspect-ratio:2/3;margin:0;border:0}
-.focused-shell .army-unit .position-seat .position-name{display:block;padding:5px 2px;font:12px/16px var(--serif);color:#e6d7b4;text-align:center;max-width:100%;box-sizing:border-box}
-.focused-shell .army-unit .position-title{position:static;display:flex;align-items:center;justify-content:center;min-height:26px;width:100%;font-size:10px!important;gap:3px;border:0!important;border-top:1px solid #8b7c5655!important;border-radius:0;background:#26382d!important}
+.focused-shell .army-unit .position-seat .position-name{display:block;padding:5px 2px;font:var(--text-caption)/16px var(--serif);color:#e6d7b4;text-align:center;max-width:100%;box-sizing:border-box}
+.focused-shell .army-unit .position-title{position:static;display:flex;align-items:center;justify-content:center;min-height:26px;width:100%;font-size:var(--text-caption)!important;gap:3px;border:0!important;border-top:1px solid #8b7c5655!important;border-radius:0;background:#26382d!important}
 .focused-shell .army-unit-main>.regiment-cards{grid-area:units;align-self:start;margin:0;--unit-width:58px;--unit-height:86px;flex-wrap:nowrap}
 .focused-shell .army-unit-info header{grid-column:1/-1;min-width:0;gap:10px}
-.focused-shell .army-unit-info header>strong{color:#ecdfbd;font-size:15px}.focused-shell .army-unit-info header>button{color:#d2c5a4;min-height:28px}
+.focused-shell .army-unit-info header>strong{color:#ecdfbd;font-size:var(--text-reading)}.focused-shell .army-unit-info header>button{color:#d2c5a4;min-height:28px}
 .focused-shell .army-unit-info .military-metrics{grid-column:1/-1;margin:0;padding:2px 0;gap:12px;min-width:0;flex-wrap:wrap}
-.focused-shell .army-unit-info .art-resource-value>b{color:#f0e7d0;font-size:12px}
-.focused-shell .army-unit-info>small{grid-column:1;grid-row:auto;color:#b8bfaa;font:10px/15px var(--serif)}
+.focused-shell .army-unit-info .art-resource-value>b{color:#f0e7d0;font-size:var(--text-caption)}
+.focused-shell .army-unit-info>small{grid-column:1;grid-row:auto;color:#b8bfaa;font:var(--text-caption)/15px var(--serif)}
 .focused-shell .army-unit-info .army-readiness{grid-column:2;grid-row:3;color:#caba8f;min-width:0}
 .focused-shell .army-unit .art-icon{filter:saturate(.65)}
 .focused-shell .army-unit-actions{grid-column:2;display:flex;flex-direction:row;justify-content:flex-end;gap:8px;border-top:1px solid #b09a6440;padding-top:5px;margin-top:3px}
@@ -40,7 +40,7 @@
 @media(max-width:480px){.focused-shell .army-dock{width:330px}.regiment-preview{grid-template-columns:80px 1fr;gap:12px}.regiment-preview>.troop-illustration{width:114px;height:171px}}
 /* One commander fills exactly two unit rows; name and appointment stay within that silhouette. */
 .focused-shell .army-unit .position-seat{height:173px;overflow:visible;border:1px solid #777e6c;border-radius:0}
-.focused-shell .army-unit .position-seat .position-name{position:absolute;left:0;right:0;bottom:0;padding:3px 2px;background:#111910e8;font-size:11px;line-height:16px;pointer-events:none}
+.focused-shell .army-unit .position-seat .position-name{position:absolute;left:0;right:0;bottom:0;padding:3px 2px;background:#111910e8;font-size:var(--text-caption);line-height:16px;pointer-events:none}
 .focused-shell .army-unit .position-title{position:absolute;top:3px;right:3px;bottom:auto;min-height:26px;width:26px;height:26px;border:1px solid #bcaa75!important;border-radius:50%;padding:4px!important;font-size:0!important;background:#26382ded!important;color:#f2dfac}
 .focused-shell .army-unit .position-title .art-icon{width:17px!important;height:17px!important}
 .focused-shell .army-unit .position-vacant{width:100%;height:100%;border:0;border-radius:0;background:linear-gradient(#d9d8ce,#a8ada2);color:#28392c;gap:8px}
@@ -53,30 +53,30 @@
 .focused-shell .military-army-record>.military-commander-portrait{height:173px;overflow:hidden}.focused-shell .military-army-record>.regiment-cards{height:178px;padding-top:0}
 /* Compact map formations: the entire card occupies only the portrait and real unit cells. */
 .focused-shell .army-dock:not(:has(.army-dock-heading)){display:flex;flex-direction:column;align-items:flex-end;width:max-content;max-width:min(620px,calc(100vw - 24px));gap:8px;padding:0 2px 4px;background:none;border:0;overflow-y:auto;overflow-x:hidden}
-.focused-shell .army-dock:not(:has(.army-dock-heading))>.army-roster-heading{align-self:stretch;padding:3px 6px;font-size:12px;min-height:0;background:#142018d9;border:0}
+.focused-shell .army-dock:not(:has(.army-dock-heading))>.army-roster-heading{align-self:stretch;padding:3px 6px;font-size:var(--text-caption);min-height:0;background:#142018d9;border:0}
 .army-strip-entry{flex:none;width:max-content;max-width:100%;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .focused-shell .army-unit.army-unit--strip{--commander-width:116px;--formation-height:174px;position:relative;display:block;flex:none;box-sizing:border-box;width:calc(var(--commander-width) + var(--formation-columns)*60px);max-width:min(610px,calc(100vw - 32px));height:var(--formation-height);min-height:0;padding:0;margin:0;border:0;background:none;box-shadow:none;border-radius:0;overflow:visible}
 .focused-shell .army-unit.army-unit--strip[data-selected=true]{background:none;box-shadow:0 0 0 1px #e3c77e}
 .focused-shell .army-unit--strip .army-unit-main{display:flex;align-items:flex-start;gap:2px;width:100%;height:100%;min-width:0}
 .focused-shell .army-unit--strip .army-unit-main>.position-seat{display:block;position:relative;flex:0 0 var(--commander-width);width:var(--commander-width);height:var(--formation-height);margin:0;padding:0;border:0;background:none;overflow:hidden;box-sizing:border-box}
 .focused-shell .army-unit--strip .position-seat .position-image{width:116px;height:174px;aspect-ratio:2/3;box-sizing:border-box;border:1px solid #817b64}
-.focused-shell .army-unit--strip .position-seat .position-name{bottom:30px;left:0;right:0;font-size:11px;line-height:16px;padding:2px;background:#152118e8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.focused-shell .army-unit--strip .position-seat .position-name{bottom:30px;left:0;right:0;font-size:var(--text-caption);line-height:16px;padding:2px;background:#152118e8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .focused-shell .army-unit--strip .position-title{top:2px;right:2px;width:26px;height:26px;min-height:26px}
 .focused-shell .army-unit--strip .army-unit-main>.regiment-cards{flex:0 1 auto;width:max-content;min-width:0;max-width:calc(100% - 118px);height:174px;grid-template-rows:repeat(2,86px);gap:2px;padding:0;margin:0;scrollbar-width:none}
 .focused-shell .army-unit--strip .regiment-cards::-webkit-scrollbar{display:none}
 .focused-shell .army-unit--strip .regiment-card{box-sizing:border-box}
 .focused-shell .army-unit--strip .army-unit-check{position:absolute;left:2px;top:2px;width:26px;min-height:26px;height:26px;margin:0;background:#152118d9;border-radius:50%}
 .army-strip-label{position:absolute;top:2px;left:30px;width:56px;text-align:center}.army-strip-label>.hover-hint{display:block}
-.focused-shell .army-unit--strip .army-strip-label button{display:block;width:100%;min-height:26px;padding:2px;border:0;border-radius:0;background:#152118e8;color:#f0e2b5;font:12px/20px var(--serif)}
+.focused-shell .army-unit--strip .army-strip-label button{display:block;width:100%;min-height:26px;padding:2px;border:0;border-radius:0;background:#152118e8;color:#f0e2b5;font:var(--text-caption)/20px var(--serif)}
 .army-strip-state{position:absolute;left:0;bottom:50px;width:116px;text-align:center}.army-strip-state>.hover-hint{display:block}
-.focused-shell .army-unit--strip .army-strip-state button{width:100%;min-height:24px;padding:2px 4px;border:0;border-radius:0;background:#152118d9;color:#e1dfc6;font:10px/18px var(--serif)}
+.focused-shell .army-unit--strip .army-strip-state button{width:100%;min-height:24px;padding:2px 4px;border:0;border-radius:0;background:#152118d9;color:#e1dfc6;font:var(--text-caption)/18px var(--serif)}
 .focused-shell .army-unit--strip .army-strip-state button.has-warning{color:#ffdcaa;background:#563c27ed}
 .focused-shell .army-unit--strip .army-unit-actions{position:absolute;left:0;bottom:0;display:flex;align-items:center;justify-content:space-evenly;gap:0;width:116px;height:30px;margin:0;padding:0;border:0;background:#152118ed}
 .focused-shell .army-unit--strip .army-unit-actions button{width:28px;height:28px;min-height:28px;padding:5px}
-.army-strip-order{display:flex;align-items:center;flex-wrap:wrap;gap:5px;box-sizing:border-box;width:100%;min-width:176px;max-width:360px;padding:8px;background:#192a21f5;border:1px solid #9a855a;color:#e9dfc3;font-size:11px}
-.army-strip-order>span,.army-strip-order>small{flex-basis:100%;line-height:1.5}.army-strip-order>small{color:#efb89b}.army-strip-order button{min-height:30px;padding:3px 9px;font-size:11px}
+.army-strip-order{display:flex;align-items:center;flex-wrap:wrap;gap:5px;box-sizing:border-box;width:100%;min-width:176px;max-width:360px;padding:8px;background:#192a21f5;border:1px solid #9a855a;color:#e9dfc3;font-size:var(--text-caption)}
+.army-strip-order>span,.army-strip-order>small{flex-basis:100%;line-height:1.5}.army-strip-order>small{color:#efb89b}.army-strip-order button{min-height:30px;padding:3px 9px;font-size:var(--text-caption)}
 .focused-shell .army-dock>.army-batch-bar{align-self:stretch;max-width:100%;box-sizing:border-box}
-.army-inspected-summary{font:11px/1.7 var(--serif);color:#d3cfb7;margin:4px 0}
+.army-inspected-summary{font:var(--text-caption)/1.7 var(--serif);color:#d3cfb7;margin:4px 0}
 /* Opaque lacquer and paper grounds: terrain must never show through army content. */
 .focused-shell .army-unit.army-unit--strip{background:repeating-linear-gradient(4deg,#b7a37608 0 1px,transparent 1px 4px),linear-gradient(110deg,#29372b,#17251e);box-shadow:inset 0 0 0 1px #94805b,0 2px 5px #0d191855}
 .focused-shell .army-unit.army-unit--strip[data-selected=true]{background:repeating-linear-gradient(4deg,#d0b7750a 0 1px,transparent 1px 4px),linear-gradient(110deg,#35432f,#1d3025);box-shadow:inset 0 0 0 1px #d7b76c,0 0 0 1px #9d824b}
@@ -85,11 +85,11 @@
 .focused-shell .army-unit--strip .army-strip-label button,.focused-shell .army-unit--strip .army-strip-state button,.focused-shell .army-unit--strip .army-unit-actions,.focused-shell .army-unit--strip .position-seat .position-name{background:#192d22;color:#f0e2b9}
 .focused-shell .army-unit--strip .army-strip-state button.has-warning{background:#603e29;color:#ffe2b4}
 .focused-shell .army-dock.is-inspecting{display:flex;flex-direction:column;align-items:stretch;align-content:start;gap:0;width:366px;min-height:0;max-width:calc(100vw - 24px);box-sizing:border-box;padding:0;overflow:hidden;border:1px solid #a58b58;border-radius:2px;background:repeating-linear-gradient(3deg,#c6af7a06 0 1px,transparent 1px 5px),#192d24;box-shadow:inset 0 0 0 3px #102019,inset 0 0 0 4px #a48b5333,0 8px 24px #0d171a70;color:#eae1c9}
-.focused-shell .army-dock.is-inspecting>.army-dock-heading{display:flex;align-items:center;flex:none;gap:10px;min-height:46px;padding:6px 12px;box-sizing:border-box;background:var(--campaign-brush) center/100% 100% no-repeat,#15251c;border-bottom:1px solid #ac905655;color:#f1dfb2;font:19px var(--serif)}
+.focused-shell .army-dock.is-inspecting>.army-dock-heading{display:flex;align-items:center;flex:none;gap:10px;min-height:46px;padding:6px 12px;box-sizing:border-box;background:var(--campaign-brush) center/100% 100% no-repeat,#15251c;border-bottom:1px solid #ac905655;color:#f1dfb2;font:var(--text-value) var(--serif)}
 .focused-shell .army-dock.is-inspecting>.army-dock-heading button{min-width:32px;min-height:32px;padding:4px;border:1px solid #9a815655;background:#233a2c;color:#ecd6a4;border-radius:50%}
-.focused-shell .army-dock.is-inspecting>.army-inspected-summary{flex:none;margin:0;padding:9px 13px;color:#d4d4b9;font:11px/1.65 var(--serif);background:#20362a}
+.focused-shell .army-dock.is-inspecting>.army-inspected-summary{flex:none;margin:0;padding:9px 13px;color:#d4d4b9;font:var(--text-caption)/1.65 var(--serif);background:#20362a}
 .focused-shell .army-dock.is-inspecting>.detail-tabs{position:static;flex:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;margin:0;padding:6px 10px;border-block:1px solid #a28a5444;background:#14271e}
-.focused-shell .army-dock.is-inspecting>.detail-tabs button{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;width:auto;min-width:0;min-height:34px;padding:5px 3px;font:12px var(--serif);background:#24392c;color:#d7d3b9;border:1px solid #8a795344;border-radius:1px}
+.focused-shell .army-dock.is-inspecting>.detail-tabs button{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:5px;width:auto;min-width:0;min-height:34px;padding:5px 3px;font:var(--text-caption) var(--serif);background:#24392c;color:#d7d3b9;border:1px solid #8a795344;border-radius:1px}
 .focused-shell .army-dock.is-inspecting>.detail-tabs button[aria-pressed=true]{background:#4d5033;border-color:#ba9f62;color:#fff0c7;box-shadow:inset 0 -2px #c4a464}
 .focused-shell .army-dock.is-inspecting>.detail-tabs .art-icon{width:19px!important;height:19px!important;flex:none}
 .army-inspected-body{display:flex;flex-direction:column;align-items:stretch;gap:10px;flex:0 1 auto;min-height:0;overflow:auto;padding:10px 12px 12px;scrollbar-width:thin;scrollbar-color:#a18a59 #17291f}
