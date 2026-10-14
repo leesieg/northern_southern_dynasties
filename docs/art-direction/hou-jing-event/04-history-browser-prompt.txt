@@ -1,0 +1,39 @@
+Mode: built-in image_gen
+Intent: generate; style reference: 02-dossier-siege.png
+Status: proposed UI; not implemented; illustrative state, not a real screenshot
+
+Use case: ui-mockup. Generate ONE polished high-fidelity desktop game interface expected-design image, landscape 3:2, high resolution. Chinese historical strategy RPG “风云南北朝”. Use the provided reference ONLY for the established art style: warm ivory parchment, dark pine-green ink, antique gold thin borders, subtle brush edges, Southern and Northern dynasties flat Chinese fine-line watercolor illustration, elegant readable Chinese Song type and calligraphic main title. Create a NEW single master-detail historical catalog screen, NOT two windows. No software dashboard, no pill badges, no oversized portrait, no progress bars or future stage roadmaps. All text must be sharp, well spaced, and Chinese. Small outer caption above screen: “预期效果 · 待确认｜示意状态，非实机”.
+
+Composition: dim campaign map background visible along outer edges; narrow existing vertical left navigation rail with tiny monochrome illustrated symbols and short labels “政务”“邦交”“军事”“谋略”“家计”“查找”“纪事”“史事”. Highlight bottom “史事” with antique gold outline. Main large parchment window occupies remaining 90% of width and 90% of height. Header shallow, not a giant illustration: title “史事” upper left, subtitle “历史事件与沿革”, small right text “已录 14 项”, single close X top-right. Hairline under header. Window interior divided left 35% and right 65%, footer fixed.
+
+Left column:
+Top compact search field with magnifier and placeholder “搜索事件、人物、政权”; beneath one compact status select “全部状态 ▾” and tiny label “按当前状态排序”.
+Then readable sectional label “事件卷宗 · 1”.
+Selected dark pine-green row with cream text and fine gold left line:
+title “侯景之乱”, small old-gold stamp “进行中” at right; secondary line “寿春疑云 · 归附争议”.
+Next sectional label “权力沿革 · 6”.
+Six compact rows separated by fine paper rules, each two lines:
+“高洋执掌军政” / “东魏 · 未开启”
+“高洋受禅” / “东魏 → 齐 · 未开启”
+“宇文护总揽朝政” / “西魏 · 未开启”
+“宇文觉受禅” / “西魏 → 周 · 未开启”
+“扶立萧方智，陈氏执政” / “梁 · 未开启”
+“陈霸先受禅” / “梁 → 陈 · 未开启”.
+At column bottom next sectional label “制度沿革 · 7” and one visible row “计帐与户籍” / “西魏 · 开局已行”, remaining items beyond local scrollbar. Do NOT invent or repeat catalog entries. Small independent scrollbar at left-list right edge.
+
+Right detail area:
+Shallow watercolor riverside fortress/banner, only 15% of area height; text-over-white-paper left “侯景之乱” with small top label “事件卷宗” and small green-edged stamp “进行中”; subtitle “当前篇章：寿春疑云”. No red fire, no actual rebellion yet.
+Under banner a SINGLE horizontal line of four icon + text tabs equal size “局势” selected gold edged, “经过”, “人物”, “史实”.
+Main selected-tab content compact:
+two square line-and-wash portraits + name links “侯景” and “萧衍” at top, with small place link to right “寿春 ›”. Portraits small not large sidebars.
+Then section heading “当前局势”, text “归附约定仍然有效，军饷争议尚待处理。”
+Then two side-by-side outlined paper info areas “归附约定 / 保留部曲” and “当前争议 / 欠饷待处理”.
+Then dark pine-green inset with high-contrast cream text: “处理窗口尚余 18 日” and smaller “届期重新评估，不代表必然起兵”.
+Then heading “最近经过” and THREE short timeline rows with small bronze circle seal connected by hairline:
+“来书　侯景请求接纳”
+“立约　双方确认保留部曲”
+“交涉　军饷争议尚未解除”
+Under this, small text link “查看完整经过 ›”.
+Bottom content muted line “仅显示当前身份可知的消息”.
+Footer fixed inside window across both columns: left small text “事件发展以本局局势为准”; right two illustrated outline action buttons “查看人物” and “前往交涉”, no redundant close button.
+Keep generous text readability but dense practical game UI. Illustration subdued, utilitarian concise controls, no invented numerical combat data, no developer IDs, no percentages of rebellion, no future outcome chapter list. Every label stays within its column. Single cohesive master-detail screen.
