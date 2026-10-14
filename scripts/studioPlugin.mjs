@@ -13,8 +13,8 @@ export function studioPlugin(){
      const host=req.headers.host??'',address=req.socket.remoteAddress;
      if(!['127.0.0.1','::1','::ffff:127.0.0.1'].includes(address)||! /^(127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/.test(host))throw Object.assign(new Error('创作台仅允许本机访问。'),{status:403});
      if(req.method!=='POST'||req.headers.origin!==`http://${host}`||req.headers['x-studio-token']!==token||!req.headers['content-type']?.startsWith('application/json'))throw Object.assign(new Error('无效的本机界面请求。'),{status:403});
-     let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024*1024)throw Object.assign(new Error('请求超过 1 MiB。'),{status:413});}
-     const data=JSON.parse(body);if(Object.keys(data).some(k=>!['method','input'].includes(k)))throw new Error('未知请求字段。');
+     const chunks=[];let bytes=0;for await(const chunk of req){chunks.push(Buffer.from(chunk));bytes+=chunk.length;if(bytes>16*1024*1024)throw Object.assign(new Error('请求超过 16 MiB。'),{status:413});}
+     const body=Buffer.concat(chunks).toString('utf8'),data=JSON.parse(body);if(!['importPreview','proposeImport'].includes(data.method)&&Buffer.byteLength(body)>1024*1024)throw Object.assign(new Error('普通请求超过 1 MiB'),{status:413});if(Object.keys(data).some(k=>!['method','input'].includes(k)))throw new Error('未知请求字段。');
      service??=createStudioService();const result=await(await service).request(data.method,data.input,'human');res.end(JSON.stringify({ok:true,result}));
     }catch(e){res.statusCode=e.status??400;res.end(JSON.stringify({ok:false,error:{code:e.code??'ERROR',message:e.message,details:e.details??null}}));}
    });

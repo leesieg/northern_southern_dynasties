@@ -1,3 +1,4 @@
+import {validateStrategyReferences} from './strategyDefinition';
 import {eventDefinitionIssues,type EventDefinition} from './eventDefinitions';
 import {canonicalContent,createContentRegistry,type ContentSource} from './contentRegistry';
 import {bindContent,freezeContent,type ContentLock,type ContentTables} from './contentBinding';
@@ -57,6 +58,7 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  }
  match(hierarchy.territoryRoots,Object.values(hierarchy.territoryNodes).filter(node=>!node.parent),'区划根节点');
  const setup=(tables.campaignSetup as unknown as typeof import('../data/campaignSetup')).campaignSetup;
+ validateStrategyReferences(setup.strategy,scenario.siteById,chars.characterById,hierarchy.territoryNodes,scripts.gameScripts[0].year);
  const integer=(n:number,min:number,max:number)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
  if(!setup.personStarts||typeof setup.personStarts!=='object'||Array.isArray(setup.personStarts))throw new Error('人物开局覆盖无效。');
  for(const [id,start] of Object.entries(setup.personStarts)){

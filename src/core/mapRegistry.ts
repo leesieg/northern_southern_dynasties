@@ -17,7 +17,9 @@ export function createMapRegistry(inputSites:readonly Site[],inputRoads:readonly
   return Math.hypot((p.lon-q.lon)*Math.cos(lat),p.lat-q.lat)*111;
  }
  const roadLinks=new Map<string,Map<string,number>>(),routeLinks=new Map<string,Map<string,number>>();
+ const edges=new Set<string>();
  for(const edge of roads){
+  const key=[edge.from,edge.to].sort().join('|');if(edges.has(key))throw new Error('道路端点重复，旧路段与新路段不能具有歧义行程：'+key);edges.add(key);
   if(!byId.has(edge.from)||!byId.has(edge.to)||edge.from===edge.to)throw new Error('道路端点无效：'+edge.from+' → '+edge.to);
   if(!Number.isFinite(edge.factor)||edge.factor<=0||edge.days!==undefined&&(!Number.isSafeInteger(edge.days)||edge.days<1||edge.days>10000))throw new Error('道路行程参数无效：'+edge.from+' → '+edge.to);
   const days=edge.days??Math.max(1,Math.ceil(distanceBetween(edge.from,edge.to)*edge.factor/40));

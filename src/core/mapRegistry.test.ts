@@ -18,6 +18,9 @@ describe('instance map registries',()=>{
   expect(map.planRoute('a','c',id=>id!=='b')).toBeNull();expect(map.planRoute('c','a')?.days).toBe(5);
   expect(map.planRoute('ghost','a')).toBeNull();expect(map.planRoute('a','a')).toBeNull();
  });
+ it('rejects overlapping active and legacy legs before a journey can receive ambiguous durations',()=>{
+  expect(()=>createMapRegistry(sites,[{from:'a',to:'b',factor:1,days:2,legacyOnly:true},{from:'b',to:'a',factor:1,days:6}])).toThrow('端点重复');
+ });
  it('rejects invalid map data before building a cache',()=>{
   expect(()=>createMapRegistry([...sites,sites[0]],[])).toThrow('重复');
   expect(()=>createMapRegistry([{...sites[0],lon:NaN}],[])).toThrow('坐标');

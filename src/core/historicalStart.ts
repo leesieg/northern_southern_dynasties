@@ -1,3 +1,4 @@
+import {initialCommanderReason} from './strategicStart';
 import type {World} from './types';
 import {campaignSetup} from '../data/campaignSetup';
 import {consumeManpower,recruitmentSources,recruitmentRegiments} from './manpower';
@@ -12,8 +13,11 @@ export function initializeHistoricalStart(w:World){
  if(w.mode!=='sandbox')return;
  if(w.day!==0||w.realm!.armies.length)throw new Error('历史开局军政配置只能初始化一次');
  const next=structuredClone(w),r=next.realm!;ensureArmyOrganization(next);ensureHistorical(next);
- const entries=campaignSetup.armies,setup=campaignSetup;
+ const entries=campaignSetup.strategy?.armies??campaignSetup.armies;
+ const assigned=new Set<string>();
  for(const entry of entries){
+  const setup={...campaignSetup,...entry};
+  if(campaignSetup.strategy&&entry.commander){const reason=initialCommanderReason(next,entry.commander,entry.site,entry.realm);if(reason||assigned.has(entry.commander))throw new Error('开局统帅无效：'+entry.commander+' '+(reason||'重复绑定'));assigned.add(entry.commander);}
   const realm=entry.realm as 'east'|'liang'|'west',city=r.cities[entry.site],source=recruitmentSources(next,entry.site,setup.troops),cost=troopKinds.shield.cost*(setup.troops/200)*2,grain=setup.grain;
   if(source.reason||!city||city.controller!==realm||city.grain<grain||r.treasuries[realm].coins<cost)throw new Error('历史开局配置无效：'+entry.site+' '+(source.reason||'钱粮或实际控制不足'));
   const id=r.nextArmyId!++,units=recruitmentRegiments(source.parts,id,entry.site,'shield','standing');
@@ -21,9 +25,9 @@ export function initializeHistoricalStart(w:World){
   consumeManpower(next,entry.site,source.parts);city.grain-=grain;r.treasuries[realm].coins-=cost;
   r.armies.push({id,realm,location:entry.site,troops:setup.troops,morale:setup.morale,supply:grain,journey:null,siege:0,payer:'central:'+realm,arrears:0,foodRemainder:0,regiments:units});
   if(entry.commander){next.mobility!.armyCommanders??={};next.mobility!.armyCommanders[id]=entry.commander;}
-  fiscalRecord(next,realm,'central:'+realm,'expense',cost,'546 年开局常备军装备；兵额与军粮从来源县域扣除');
+  fiscalRecord(next,realm,'central:'+realm,'expense',cost,campaignSetup.strategy?'作者剧本开局常备军装备；兵额与军粮从来源县域扣除':'546 年开局常备军装备；兵额与军粮从来源县域扣除');
  }
- for(const entry of setup.influence)awardInfluence(next,entry.person,entry.value-personInfluence(next,entry.person));
- for(const entry of setup.opinions)changeRelationOpinion(next,entry.from,entry.to,entry.value-relationOpinion(next,entry.from,entry.to));
+ for(const entry of campaignSetup.influence)awardInfluence(next,entry.person,entry.value-personInfluence(next,entry.person));
+ for(const entry of campaignSetup.opinions)changeRelationOpinion(next,entry.from,entry.to,entry.value-relationOpinion(next,entry.from,entry.to));
  Object.assign(w,next);
 }
