@@ -1,3 +1,4 @@
+import {advanceNPCCare} from './npcLife';
 import {inheritEstates} from './estates';
 import {accountWallet} from './obligations';
 import {personResidence} from './residence';
@@ -16,7 +17,7 @@ import {syncCourt} from './court';
 import {syncRelationships,changeRelationOpinion} from './relationships';
 import {syncDiplomacy} from './diplomacy';
 import {handoverOffice,syncGovernance} from './realm';
-import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,illnessCourse,monthlyIllnessRisk,illnessKind,type LifeCommand} from './lifeState';
+import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,illnessCourse,monthlyIllnessRisk,illnessKind,mortalityRisk,recoveryChance,type LifeCommand} from './lifeState';
 import type {World} from './types';
 
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
@@ -119,23 +120,25 @@ export function advanceLife(w:World){
  const automatic=s.autoCare;
  if(automatic){if(automatic.payer!==(w.characterId??'fictional')||!isAlive(w,automatic.payer))delete s.autoCare;
  else if(automatic.remaining>=30&&!careReason(w,automatic.payer)){actLife(w,{type:'health',action:'care',target:automatic.payer});automatic.remaining-=30;if(!automatic.remaining)delete s.autoCare;}}
+ advanceNPCCare(w);
  for(const id of Object.keys(s.people)){
   const p=s.people[id];if(p.death)continue;
   const age=ageAt(w,id)!,self=id===(w.characterId??'fictional'),stress=self?w.social?.stress??0:0,care=p.careUntil>=w.day&&p.careUntil>0;
   const genome=w.identities?.people[id]?.genome,vigorous=genome?expressGenome(genome).congenital.includes('vitality'):false;
+  const mortality=mortalityRisk(age,p.health,p.illness?.severity??0,care,vigorous),draw=roll(w);
+  if(p.health===0||draw<mortality.total){die(w,id,p.health===0||draw>=mortality.aging?'illness':'age');if(w.campaign&&w.campaign.status!=='active')break;continue;}
   if(p.injuryUntil!==undefined&&(p.injuryUntil<=w.day||care&&(p.injuryUntil-=15)<=w.day))delete p.injuryUntil;
   const max=healthCapacity(age),risk=monthlyIllnessRisk(age,stress,vigorous);
   if(p.illness){
-   const ill=p.illness,course=illnessCourse[ill.kind],elapsed=w.day-ill.since,healing=Math.min(.98,course.recovery+(care?.25:0)+(vigorous?.08:0)+Math.floor(elapsed/60)*.08-(ill.severity-1)*.08);
-   if(elapsed>=course.duration||roll(w)<healing){p.illness=null;p.health=Math.min(max,p.health+(care?18:10));log(w,personName(w,id)+'病势消退，逐渐康复。');}
+   const ill=p.illness,course=illnessCourse[ill.kind],elapsed=w.day-ill.since,healing=recoveryChance(ill.kind,ill.severity,elapsed,care,vigorous);
+   if(roll(w)<healing){p.illness=null;p.health=Math.min(max,p.health+(care?18:10));log(w,personName(w,id)+'病势消退，逐渐康复。');}
    else {if(roll(w)<course.worsening*(care?.3:1)&&ill.severity<3)ill.severity=(ill.severity+1) as 2|3;p.health=Math.max(0,p.health-Math.ceil(ill.severity*course.damage*(care?.5:1)));}
   }else{
    p.health=Math.min(max,p.health+(care?12:4));
    if(roll(w)<risk){p.illness={kind:illnessKind(age,roll(w)),since:w.day,severity:1};p.health=Math.max(0,p.health-8);log(w,personName(w,id)+'患上'+illnessNames[p.illness.kind]+'。');}
   }
   // Simulation hazard, not a prediction or an enforced historical death date.
-  const mortality=Math.max(0,age-55)**2/250000+(p.illness?.severity===3?.012:0)+(p.health<25?(25-p.health)*.003:0);
-  if(p.health===0||roll(w)<mortality*(care?.6:1)*(vigorous?.8:1))die(w,id,p.illness?'illness':'age');
+  if(p.health===0)die(w,id,'illness');
   if(w.campaign&&w.campaign.status!=='active')break;
  }
 }

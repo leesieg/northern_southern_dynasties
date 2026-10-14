@@ -1,3 +1,4 @@
+import {ensureHistorical,advanceHistorical,actHistorical} from './historicalEvents';
 import {actFamilyMarriage} from './familyMarriage';
 import {journeyPosition} from './routeGeometry';
 import {actFamily,advanceHouseholdLife,resting} from './householdLife';
@@ -134,7 +135,7 @@ export function newCampaignWorld(characterId?:string,scriptId=DEFAULT_SCRIPT,mod
   ensureLife(w);
   ensureMobility(w);ensureCustody(w);ensureRetinue(w);ensurePersonalInfluence(w);ensureFiscal(w);ensurePopulation(w);ensureLocalAdministration(w,true);
   if(w.realm){ensureClaims(w);ensureNobility(w);ensureRulerHistory(w);ensureIntrigue(w);}
-  initializeEstates(w,true);migrateManpower(w);
+  initializeEstates(w,true);migrateManpower(w);ensureHistorical(w);
   return w;
 }
 function record(world: World, person: Person, text: string) {
@@ -164,7 +165,7 @@ export function act(world: World, command: GameCommand): void {
   Object.assign(world,next);
   return;
  }
- const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}reconcileFiscal(world,before,publicActionName(command));
+ const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}reconcileFiscal(world,before,publicActionName(command));advanceHistorical(world);
 }
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
 function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
@@ -197,7 +198,8 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   if(command.type==='militaryCareer'){actMilitaryCareer(world,command);return;}
   if(command.type==='militaryAction'){actMilitaryAction(world,command);return;}
   if(command.type==='polity'){actPolity(world,command);return;}
-  if(command.type==='pact'){actPact(world,command);return;}
+  if(command.type==='historicalEvent')return actHistorical(world,command);
+ if(command.type==='pact'){actPact(world,command);return;}
   if(command.type==='power'){actPower(world,command);return;}
   if(command.type==='intrigue'){actIntrigue(world,command);return;}
   if(command.type==='claim'){actClaim(world,command);return;}
@@ -313,7 +315,7 @@ export function advance(world: World, days = 1): void {
     restoreInfluence(world,previous);advancePersonalInfluence(world);advanceNPCOfficeRecruitment(world);
     if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}
     evaluateCampaign(world);
-    reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');
+    reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');advanceHistorical(world);
   }
 }
 export function position(person: Person): { lon: number; lat: number } {

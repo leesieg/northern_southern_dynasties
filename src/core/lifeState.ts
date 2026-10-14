@@ -7,14 +7,29 @@ import type {RealmId} from './realm';
 export type Illness='fever'|'wasting'|'cold'|'flux';
 export const illnessNames:Record<Illness,string>={fever:'热病',wasting:'虚损',cold:'风寒',flux:'腹疾'};
 /** Monthly game hazards; not historical epidemiological estimates. */
-export const illnessCourse:Record<Illness,{recovery:number;worsening:number;damage:number;duration:number}>={
- cold:{recovery:.78,worsening:.04,damage:2,duration:90},
- fever:{recovery:.58,worsening:.10,damage:4,duration:150},
- flux:{recovery:.65,worsening:.08,damage:3,duration:120},
- wasting:{recovery:.38,worsening:.10,damage:3,duration:240},
+export const illnessCourse:Record<Illness,{recovery:number;worsening:number;damage:number}>={
+ cold:{recovery:.78,worsening:.04,damage:2},
+ fever:{recovery:.58,worsening:.10,damage:4},
+ flux:{recovery:.65,worsening:.08,damage:3},
+ wasting:{recovery:.38,worsening:.10,damage:3},
 };
 export function monthlyIllnessRisk(age:number,stress=0,vigorous=false){return Math.max(.002,Math.min(.05,.007+Math.max(0,age-55)*.00035+Math.max(0,Math.min(100,stress))*.00012-(vigorous?.003:0)));}
 export function illnessKind(age:number,draw:number):Illness {return age>=60?(draw<.35?'wasting':draw<.65?'cold':draw<.85?'flux':'fever'):(draw<.55?'cold':draw<.8?'flux':'fever');}
+/** Gameplay balance, not historical mortality estimates or a scheduled lifespan. */
+export const annualAgeRisk=[[16,.003],[40,.01],[50,.03],[60,.08],[70,.18],[80,.35],[90,.55]] as const;
+export function monthlyAgeRisk(age:number){
+ if(!Number.isFinite(age)||age<0)throw new Error('人物年龄资料缺失');
+ const annual=annualAgeRisk.filter(([from])=>age>=from).at(-1)?.[1]??0;
+ return 1-(1-annual)**(1/12);
+}
+export function mortalityRisk(age:number,health:number,severity:number,care=false,vigorous=false){
+ const aging=monthlyAgeRisk(age)*(vigorous?.9:1);
+ const illness=Math.min(1,Math.max(severity===3?.04:0,Math.max(0,25-health)*.003)*(care?.6:1)*(vigorous?.8:1));
+ return {aging,illness,total:1-(1-aging)*(1-illness)};
+}
+export function recoveryChance(kind:Illness,severity:1|2|3,elapsed:number,care=false,vigorous=false){
+ return Math.min(.95,illnessCourse[kind].recovery*([1,.65,.35][severity-1])+(care?.25:0)+(vigorous?.08:0)+(severity===1?Math.min(.16,Math.floor(Math.max(0,elapsed)/60)*.08):0));
+}
 export interface PersonLife {
  health:number;illness:{kind:Illness;since:number;severity:1|2|3}|null;
  injuryUntil?:number;careUntil:number;death:{day:number;cause:'illness'|'age'|'battle'|'execution'|'murder'}|null;

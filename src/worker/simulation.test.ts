@@ -279,3 +279,18 @@ it('acknowledges a committed command even when the save directory refresh fails'
  const completed=await request({type:'command',command:{type:'relationship',action:'gift',target:'xiao-gang'},requestId:'committed-directory-failure'});
  expect(replies.at(-1)).toMatchObject({type:'receipt',requestId:'committed-directory-failure',ok:true});expect(completed.world.people[0].coins).toBeLessThan(before.world.people[0].coins);expect(replies.some(r=>r.type==='notice'&&r.text.includes('变更已完成'))).toBe(true);replies=[];await request({type:'save',requestId:'save-directory-failure'});expect(replies.at(-1)).toMatchObject({type:'receipt',ok:true});expect(replies.some(r=>r.type==='notice'&&r.text.includes('变更已完成'))).toBe(true);fault.mockRestore();expect((await request({type:'resume'})).world).toEqual(completed.world);
 });
+
+describe('historical event worker boundaries',()=>{
+ it('historical pending survives import and resume, blocks time, and failed saving rolls back decisions',async()=>{
+  await request({type:'init'});const {newCampaignWorld}=await import('../core/world'),{initializeHistoricalStart}=await import('../core/historicalStart'),{actPact}=await import('../core/allegiancePacts'),{advanceHistorical}=await import('../core/historicalEvents'),{serializeWorld}=await import('../core/save');
+  const w=newCampaignWorld('xiao-yan',undefined,'sandbox');initializeHistoricalStart(w);const army=w.realm!.armies.find(a=>w.mobility!.armyCommanders?.[a.id!]==='hou-jing')!;actPact(w,{type:'pact',action:'request',realm:'liang',army:army.id,terms:'retain'},'hou-jing');advanceHistorical(w);
+  const imported=await request({type:'import',text:serializeWorld(w)});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='historical'))).toBe(true);expect((await request({type:'step'})).world.day).toBe(0);expect((await request({type:'speed',speed:7})).speed).toBe(0);
+  await request({type:'menu'});replies=[];await request({type:'resume'});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='historical'))).toBe(true);
+  const command={type:'pact',action:'answer',id:w.allegiancePacts!.items[0].id,accept:false} as const;
+  const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});const failed=await request({type:'command',command});fault.mockRestore();expect(failed.world).toEqual(imported.world);
+  const completed=await request({type:'command',command});expect(completed.world.historical!.items[0].status).toBe('resolved');expect((await request({type:'command',command})).world).toEqual(completed.world);replies=[];await request({type:'menu'});await request({type:'resume'});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='historical'))).toBe(false);
+ });
+ it('historical NPC requests stop accelerated time at the new player decision',async()=>{
+  await request({type:'init'});const {newCampaignWorld}=await import('../core/world'),{initializeHistoricalStart}=await import('../core/historicalStart'),{serializeWorld}=await import('../core/save');const w=newCampaignWorld('xiao-yan',undefined,'sandbox');initializeHistoricalStart(w);w.day=1;w.life!.people['gao-huan'].illness={kind:'fever',severity:3,since:1};await request({type:'import',text:serializeWorld(w)});expect((await request({type:'speed',speed:7})).speed).toBe(7);replies=[];const update=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const result=await update;expect(result.speed).toBe(0);expect(result.world.day).toBeLessThan(8);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='historical'))).toBe(true);expect(result.world.characterId).toBe('xiao-yan');
+ });
+});

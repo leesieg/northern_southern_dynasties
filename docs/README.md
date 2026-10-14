@@ -8,7 +8,7 @@
 
 | 目录 | 收录内容 | 主要入口 |
 | --- | --- | --- |
-| `规划/` | 产品目标、整体范围与路线 | [落地方案](规划/落地方案.md) · [侯景之乱与人物生命周期（提案待确认）](规划/侯景之乱与人物生命周期落地方案.md) · [前端交互审查（待人工验收）](规划/前端交互审查.md) |
+| `规划/` | 产品目标、整体范围与路线 | [落地方案](规划/落地方案.md) · [侯景之乱与人物生命周期（已实施，待人工验收）](规划/侯景之乱与人物生命周期落地方案.md) · [前端交互审查（待人工验收）](规划/前端交互审查.md) |
 | `外部输入/` | 需保留来源与基线的外部设计输入 | [完整迭代方案](外部输入/northern_southern_dynasties_iteration_plan_v1.md) |
 | `机制设计/` | 人物、官制、经济、战争与政权的专题规则及分期变更 | [专题目录](#机制设计) |
 | `数值审计/` | 数值口径、影响关系和自动生成的字段清单 | [机制影响审计](数值审计/数值资源与机制影响审计.md) |
@@ -49,7 +49,7 @@
 | --- | --- |
 | 主菜单与字体（B＋F1 已实施，待审美确认） | [三张菜单效果图与真实字体样张](art-direction/menu-typography/index.html)、[字号规范、开源许可与实机记录](art-direction/menu-typography/README.md) |
 | 行动与后果界面目标 | [目标说明与提示词](art-direction/ck3-action-feedback-target.md)、[预期效果图](art-direction/ck3-action-feedback-target.png) |
-| 侯景之乱与健康提醒（提案待确认） | [三张效果图与交互说明](art-direction/hou-jing-event/README.md)、[落地方案](规划/侯景之乱与人物生命周期落地方案.md) |
+| 侯景之乱与健康提醒（已实施，待人工验收） | [三张效果图与交互说明](art-direction/hou-jing-event/README.md)、[落地方案](规划/侯景之乱与人物生命周期落地方案.md) |
 | 左侧操作栏沉浸感（已实施，待审美确认） | [目标图册](art-direction/left-operations-tabs/index.html)、[逐页实机对照](art-direction/left-operations-tabs/comparison.html)、[实施与验证](实施记录/左侧操作栏效果图落地.md) |
 | 顶部资源、时间与待办（已实施，待审美确认） | [预期效果、实机与验证](art-direction/top-hud/README.md) |
 | 旌旗、家族与城市事务（本地已实施，待审美确认） | [目标与实机对照](art-direction/identity-city-redesign/verification/index.html)、[8张效果图及控件样板](art-direction/identity-city-redesign/index.html)、[评审与历史取意](art-direction/identity-city-redesign/README.md) |

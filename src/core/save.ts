@@ -1,3 +1,5 @@
+import {validHistorical} from './historicalValidation';
+import {ensureHistorical} from './historicalEvents';
 import {assertSaveSize} from './saveCapacity';
 import {validEstates,migrateEstates} from './estates';
 import {migrateManpower} from './manpower';
@@ -160,7 +162,7 @@ export function validateWorld(value: unknown): asserts value is World {
   }
   if(!validRelationships(value as unknown as World)||!validLife(value as unknown as World))return fail();
   if(!validLocalAdministration(value as unknown as World)||!validFiscal(value as unknown as World)||!validRealm(value as unknown as World)||!validDiplomacy(value as unknown as World))return fail();
-  if(!validPowerPolitics(value as unknown as World)||!validPacts(value as unknown as World))return fail();
+  if(!validHistorical(value as unknown as World)||!validPowerPolitics(value as unknown as World)||!validPacts(value as unknown as World))return fail();
   {const w=value as unknown as World;if(!validIntrigue(w)||w.claims!==undefined&&!validClaims(w.claims,w)||w.nobility!==undefined&&!validNobility(w.nobility,w)||w.rulerHistory!==undefined&&!validRulerHistory(w.rulerHistory,w))return fail();}
   if(!validCustody(value as unknown as World))return fail();
   if(!validCoordinated(value as unknown as World)||!validCommerce(value as unknown as World)||!validHousehold(value as unknown as World)||!validMilitaryNominations(value as unknown as World)||!validDefections(value as unknown as World)||!validMilitaryCareer(value as unknown as World)||!validAftermath(value as unknown as World)||!validObligations(value as unknown as World)||!validRequestReceipts(value as unknown as World)||!validEnterprises(value as unknown as World)||!validMilitaryCampaigns(value as unknown as World))return fail();
@@ -202,7 +204,7 @@ export function parseWorld(source: string): World {
   world.families??=newFamilyState(world.day,world.scriptId);
   if(world.realm)for(const c of Object.values(world.realm.cities)){const old=c as typeof c & {households?:number};if(c.population===undefined&&old.households!==undefined){c.population=old.households*5;delete old.households;}}
   ensureFortifications(world);ensurePopulation(world);migrateCaptureLosses(world);
-  ensureLife(world);ensureDuties(world);
+  ensureLife(world);ensureDuties(world);ensureHistorical(world);
   if(world.realm&&!world.realm.governments)world.realm.governments=newGovernments(world);
   ensureRelationships(world);syncRelationships(world);
   ensureCourts(world);

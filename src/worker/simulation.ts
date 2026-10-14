@@ -1,10 +1,12 @@
+import {historicalPending} from '../core/historicalEvents';
+import {initializeHistoricalStart} from '../core/historicalStart';
 import {commandReceived,recordCommand} from '../core/requestReceipts';
 import {appointmentPauses} from '../core/appointmentCycle';
 import {pauseSnapshot,pauseEvents,allegiancePauses,successionPauses,familyPauses,economyPauses,militaryPauses,type PauseEvent} from '../core/pauseEvents';
 import { act, advance, newWorld, newCampaignWorld } from '../core/world';
 import { deleteSave, latestSaveInfo, loadWorld, listSaves, prepareStorage, saveWorld } from '../core/storage';
 import { parseWorld, serializeWorld } from '../core/save';
-import type { Reply, Request, SaveInfo } from '../core/types';
+import type { World, Reply, Request, SaveInfo } from '../core/types';
 
 let world = newWorld();
 let speed = 0;
@@ -16,6 +18,7 @@ let busy = false;
 const reply = (message: Reply) => self.postMessage(message);
 const publish = () => reply({type:'world',world,speed,slots,lastSaved});
 const notice = (text: string, error = false) => reply({type:'notice',text,error});
+const pendingDecisions=(w:World)=>[...allegiancePauses(w),...successionPauses(w),...familyPauses(w),...appointmentPauses(w),...economyPauses(w),...militaryPauses(w),...historicalPending(w)];
 function paused(events:PauseEvent[]){if(events.length){speed=0;reply({type:'paused',events});}}
 // A committed command must not be reported as failed solely because its directory refresh failed.
 async function refreshSavedSlots(){try{slots=await listSaves();return true;}catch{notice('变更已完成，但行记列表暂时未能刷新；可再次保存以刷新列表。');return false;}}
@@ -37,7 +40,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
       } else if (!initialized) {ok=false;failure='世界尚未就绪，请先重试读取存档。';notice(failure,true);return;}
       else if(request.type==='new'){
         speed=0;
-        const next=newCampaignWorld(request.characterId,request.scriptId,request.mode);
+        const next=newCampaignWorld(request.characterId,request.scriptId,request.mode);initializeHistoricalStart(next);
         if(slots.length&&!hasCurrentWorld)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
         if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
         lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;await refreshSavedSlots();reply({type:'screen',page:'play'});
@@ -46,7 +49,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
       }else if(request.type==='menu'){speed=0;await save();reply({type:'screen',page:'menu'});}
       else if(request.type==='background'){if(speed)paused([{id:`${world.day}:background`,kind:'background',title:'暂歇片刻',body:'你离开了游戏页面，时间已暂停。回来后可继续安排事务。'}]);}
       else if (request.type === 'speed') speed = [0,1,3,7].includes(request.speed) ? request.speed : 0;
-      else if (request.type === 'step') { if([...allegiancePauses(world),...successionPauses(world),...familyPauses(world),...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)].length)throw new Error('请先处理待决文书。');const next=structuredClone(world);advance(next);const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;speed=0;await refreshSavedSlots(); }
+      else if (request.type === 'step') { if(pendingDecisions(world).length)throw new Error('请先处理待决文书。');const next=structuredClone(world);advance(next);const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;speed=0;await refreshSavedSlots(); }
       else if (request.type === 'command') {
         if(commandReceived(world,request.key,request.command))return;
         const next=structuredClone(world);act(next,request.command);recordCommand(next,request.key,request.command);
@@ -67,7 +70,7 @@ self.onmessage = (event: MessageEvent<Request>) => {
         lastSaved=await saveWorld(imported);world = imported;hasCurrentWorld=true;speed = 0;if(await refreshSavedSlots())notice('导入成功，原进度保留在切换前备份中。');reply({type:'screen',page:'play'});
       }
     } catch (error) { ok=false;let message=error instanceof Error ? error.message : '操作失败。';if(['new','load','import'].includes(request.type)){try{slots=await listSaves();}catch{message+=' 存档列表未能刷新，请重试。';}}failure=message;notice(message,true); }
-    finally { if(['init','load','import','resume'].includes(request.type))paused([...allegiancePauses(world),...successionPauses(world),...familyPauses(world),...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='speed'&&request.speed>0)paused([...allegiancePauses(world),...successionPauses(world),...familyPauses(world),...appointmentPauses(world),...economyPauses(world),...militaryPauses(world)]);if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish();if(request.requestId)reply({type:'receipt',requestId:request.requestId,ok,text:failure||undefined}); }
+    finally { if(['init','load','import','resume'].includes(request.type))paused(pendingDecisions(world));if(request.type==='speed'&&request.speed>0)paused(pendingDecisions(world));if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(pendingDecisions(world).length||world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish();if(request.requestId)reply({type:'receipt',requestId:request.requestId,ok,text:failure||undefined}); }
   });
 };
 setInterval(() => {
@@ -76,8 +79,8 @@ setInterval(() => {
   queue = queue.then(async () => {
     try {
       const before = world.day,next=structuredClone(world);
-      let events:PauseEvent[]=[];
-      for (let n=0;n<speed;n++) {
+      let events:PauseEvent[]=pendingDecisions(next);
+      for (let n=0;n<speed&&!events.length;n++) {
         const snapshot=pauseSnapshot(next);
         advance(next);
         events=pauseEvents(snapshot,next);

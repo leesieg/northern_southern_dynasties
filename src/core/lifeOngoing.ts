@@ -1,3 +1,4 @@
+import {seniorSuccessionAttention} from './healthAttention';
 import type {World} from './types';
 import type {OngoingItem,OngoingKind,OngoingTarget} from './ongoing';
 import {getPerson,parentLinksOf} from './personRegistry';
@@ -13,6 +14,7 @@ export function lifeOngoingItems(w:World):OngoingItem[]{
  const items:OngoingItem[]=[],children=[...new Set(parentLinksOf(w).filter(p=>p.parent===actor).map(p=>p.child))].filter(id=>getPerson(w,id)&&isAlive(w,id)),name=(id:string)=>getPerson(w,id)?.name??w.people[0].name;
  const target=(person:string,action?:'marriage'|'education',tab:'family'|'overview'='family'):OngoingTarget=>({page:'person',person,tab,...(action?{action}:{})});
  const waiting=(id:string,kind:OngoingKind,title:string,status:string,person:string,action?:'marriage'|'education',started=0)=>items.push({id,kind,title,started,progress:null,days:null,clock:'waiting',status,target:target(person,action,kind==='care'?'overview':'family')});
+ const senior=seniorSuccessionAttention(w);if(senior)waiting('senior:'+actor,'care','高龄 · 继任未定',senior+'尚可安排；家业与公职分别交接。',actor);
  if((ageAt(w,actor)??0)>=18)for(const id of marriageSubjects(w))if(!activeMarriage(w,id))waiting('marriage:'+id,'marriage','成年未婚 · '+name(id),'可为'+(id===actor?'本人':'直系子女')+'安排议婚；须双方接受、实际同城并支付私财婚资。',id,'marriage');
  const moments=w.householdLife?.moments.filter(e=>e.actor===actor&&e.status==='pending')??[];
  const students=(ageAt(w,actor)??0)>=16?children:familyGuardian(w,actor)?[actor]:[];

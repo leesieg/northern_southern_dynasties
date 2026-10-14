@@ -23,6 +23,12 @@ export function advanceNPCLife(w:World){
   if(familyCommandReason(w,choice,e.actor))choice={...choice,choice:'decline'};
   if(!familyCommandReason(w,choice,e.actor))actFamily(w,choice,e.actor);
  }
+ advanceNPCCare(w);
+}
+/** Medical choices run before the monthly mortality snapshot as well as household care. */
+export function advanceNPCCare(w:World){
+ if(w.mode!=='sandbox'||w.campaign?.status!=='active'||!w.householdLife||!w.social)return;
+ const people=allPeople(w),retired=new Set(w.social.lineage.slice(0,-1).map(p=>p.id)),eligible=(id:string)=>id!==w.characterId&&!retired.has(id)&&isAlive(w,id)&&(ageAt(w,id)??0)>=16&&!detained(w,id);
  for(const person of people){
   const id=person.id;if(!eligible(id))continue;
   const targets=[id,...parentLinksOf(w).filter(p=>p.parent===id&&p.child!==w.characterId&&!parentLinksOf(w).some(q=>q.child===p.child&&q.parent===w.characterId)).map(p=>p.child)];

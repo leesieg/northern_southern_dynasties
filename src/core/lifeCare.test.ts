@@ -20,6 +20,7 @@ describe('bounded automatic care and death cleanup',()=>{
   actLife(w,{type:'health',action:'auto-care',target:id});expect(w.people[0].coins).toBe(coins);
   expect(()=>actLife(w,{type:'health',action:'auto-care',target:id})).toThrow('已有');
   for(let n=1;n<=3;n++){
+   w.life!.people={[id]:p,...w.life!.people};w.life!.seed=1000;
    w.day=nextMonthStart(w.day+90,w.scriptId);p.health=50;p.illness={kind:'cold',since:w.day,severity:1};
    advanceLife(w);expect(w.people[0].coins).toBe(coins-30*n);expect(p.careUntil).toBe(w.day+90);
    const snapshot=structuredClone(w.life);advanceLife(w);expect(w.life).toEqual(snapshot);

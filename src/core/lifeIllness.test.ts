@@ -18,12 +18,12 @@ describe('temporary illness course',()=>{
   expect([.1,.6,.9].map(n=>illnessKind(30,n))).toEqual(['cold','flux','fever']);
   expect(illnessKind(70,.1)).toBe('wasting');
  });
- it.each(Object.keys(illnessCourse) as Illness[])('clears %s at its course limit and keeps the saved world valid',kind=>{
+ it.each(Object.keys(illnessCourse) as Illness[])('allows %s to persist beyond its old duration, with monthly idempotence',kind=>{
   const w=newCampaignWorld('gao-huan',undefined,'sandbox'),p=w.life!.people['gao-huan'];
-  p.illness={kind,since:0,severity:1};p.health=75;
+  p.illness={kind,since:0,severity:3};p.health=75;w.life!.people={'gao-huan':p,...w.life!.people};w.life!.seed=1000;
   expect(parseWorld(serializeWorld(w)).life!.people['gao-huan'].illness?.kind).toBe(kind);
-  w.day=nextMonthStart(illnessCourse[kind].duration-1,w.scriptId);advanceLife(w);
-  expect(p.illness).toBeNull();expect(p.health).toBeGreaterThan(75);expect(validLife(w)).toBe(true);
+  w.day=nextMonthStart(400,w.scriptId);advanceLife(w);
+  expect(p.illness?.kind).toBe(kind);expect(p.health).toBeLessThan(75);expect(validLife(w)).toBe(true);
   const snapshot=structuredClone(w.life);advanceLife(w);expect(w.life).toEqual(snapshot);
  });
  it('rejects unknown diseases while retaining older fever saves',()=>{
