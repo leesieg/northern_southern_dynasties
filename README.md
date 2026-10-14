@@ -16,6 +16,8 @@
   &nbsp; · &nbsp;
   <a href="#初入乱世">上手指南</a>
   &nbsp; · &nbsp;
+  <a href="#内容创作台">内容创作台</a>
+  &nbsp; · &nbsp;
   <a href="docs/更新日志/README.md">更新日志</a>
 </p>
 
@@ -36,7 +38,7 @@
       <strong>山河与城邑</strong><br>沿地图规划行程，在真实驻地开展行动
     </td>
     <td width="50%" align="center">
-      <a href="docs/images/character.png"><img src="docs/images/character.png" alt="萧衍人物详情：身份、能力、特质、家族及关联入口" width="480"></a><br>
+      <a href="docs/images/menu-typography/person-fonts.png"><img src="docs/images/menu-typography/person-fonts.png" alt="萧衍人物详情：身份、能力、特质、家族及关联入口" width="480"></a><br>
       <strong>人物与身份</strong><br>从一张人物档案进入官职、家族与关系
     </td>
   </tr>
@@ -50,9 +52,19 @@
       <strong>庄园与家业</strong><br>安排营建、庄粮与经营，照料家族事务
     </td>
   </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/images/identity-city-redesign/city-build.png"><img src="docs/images/identity-city-redesign/city-build.png" alt="建康营建界面：县令、地方钱粮人口与建筑入口" width="480"></a><br>
+      <strong>地方与营建</strong><br>查看辖区资源，进入建筑与地方事务
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/images/menu-typography/main-menu.png"><img src="docs/images/menu-typography/main-menu.png" alt="游戏主菜单：新建游戏、读取存档与设置入口" width="480"></a><br>
+      <strong>进入乱世</strong><br>从主菜单开始或继续人物的人生
+    </td>
+  </tr>
 </table>
 
-*以上为本地迭代版本的实机截图，人物与生活重心摄于 2026-10-10，庄园摄于 2026-10-09；线上版本可能随发布进度有所差异。点击图片可查看原图。*
+*以上选用已保存的本地实机截图，本次更新人物、营建与主菜单画面；生活重心与庄园保留此前截图。截图展示各自拍摄时的版本，不代表本轮 UI 已验收；点击图片可查看原图。*
 
 ## 游戏玩法
 
@@ -101,6 +113,17 @@
 
 线上存档归属登录账号，可导出备份；本地开发存档与线上存档不会自动合并。游戏持续迭代，完整体验以实际界面和当前规则为准。
 
+## 内容创作台
+
+创作台用于在本地制作人物、剧本、事件与战略地图内容。启动 `npm run dev` 后打开 **[本地创作台](http://127.0.0.1:5173/studio.html)**；需要项目的本地工作区服务，静态线上页面不提供编辑与写入服务。
+
+- **人物与剧本**：编辑人物档案、亲缘与家族，复制剧本，分别配置可玩人物、驻地、身份、开局钱粮及军政状态。
+- **事件与地图**：制作带条件、选择和收尾的短事件链，设置测试用例；调整地点、道路、地区控制及军政配置。生成边界属于预览，不代表历史县界。
+- **审阅与试玩**：人类表单和 AI CLI 共用提案与差异审阅，应用后形成草稿版本；校验、事件调试与隔离试玩使用实际规则，不写入正式游戏存档。
+- **发行与恢复**：导出 `.release.json`，校验后隔离重载并检查存档往返；支持作者备份、三方迁移冲突处理及三个本地恢复点。发行包需要匹配的项目规则和本地资产，不内嵌全部地图与模型。
+
+工作区保存在忽略目录 `.studio/`，未提交表单的标签页暂存不能替代备份。创作台界面仍待人工验收；详细流程、AI 调用方法和支持边界见 **[内容创作台作者指南](docs/机制设计/内容创作台作者指南.md)**。
+
 ## 关于这片山河
 
 游戏采用线描淡彩人物、墨色界面、宣纸与旧金元素，以及随视野展开的三维战役地图。地形使用真实地理数据，人物与区划保留资料来源；示意县域、夸张比例建筑、模拟事件与玩法数值不代表完整历史复原。
@@ -118,7 +141,7 @@ npm ci
 npm run dev
 ```
 
-开发入口：`http://127.0.0.1:5173/`；独立地图样板：`http://127.0.0.1:5173/map-sample.html`。
+开发入口：`http://127.0.0.1:5173/`；内容创作台：`http://127.0.0.1:5173/studio.html`；独立地图样板：`http://127.0.0.1:5173/map-sample.html`。
 
 ```bash
 npm run build
