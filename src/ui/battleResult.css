@@ -8,4 +8,10 @@
 .battle-result-armies{max-height:180px;overflow:auto;padding:8px 14px}.battle-result-armies>div{display:flex;justify-content:space-between;gap:8px;font-size:var(--text-caption);padding:8px 0;border-bottom:1px solid #b2986533}
 .battle-result-score{text-align:center}.battle-result-score strong{font:var(--text-value) var(--serif);color:#efd49a}.battle-result-score small{display:block;margin-top:6px;font-size:var(--text-caption)}
 .battle-result-dialog footer{position:sticky;bottom:-24px;background:#182c24;padding:12px;border-top:1px solid #b29865;text-align:center}
+/* The result is reused on both paper notices and dark combat reports. */
+.battle-result-side{--dialog-ink:#f0ead9;--dialog-muted:#c9cbb9;color:var(--dialog-ink)}
+dialog.paper-dialog.paper-dialog .battle-result-side>header>b{color:#f3d697}
+dialog.paper-dialog.paper-dialog .battle-result-loss strong{color:#f1c3a7}
+.battle-result-score{--dialog-ink:#30372e;--dialog-muted:#525c49;background:#e8dfc7;color:var(--dialog-ink);padding:12px 16px;border-block:1px solid #b2986555}
+dialog.paper-dialog.paper-dialog .battle-result-score strong{color:#654b20}
 @media(max-width:600px){.battle-result-sides{grid-template-columns:1fr}.battle-result-ribbon{flex-wrap:wrap}}
