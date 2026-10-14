@@ -14,10 +14,10 @@ import {siteById} from '../data/scenario';
 import type {RealmId} from '../core/realm';
 import type {World} from '../core/types';
 import './government.css';
-export function GovernmentPanel({world:w,realm,compact=false,pending,send}:{world:World;realm?:RealmId;compact?:boolean;pending:boolean;send:(c:GovernmentCommand)=>Promise<boolean>}){
+export function GovernmentPanel({world:w,realm,compact=false,pending,send,initialLaw}:{world:World;realm?:RealmId;compact?:boolean;initialLaw?:ReformId;pending:boolean;send:(c:GovernmentCommand)=>Promise<boolean>}){
  const [candidate,setCandidate]=useState<GovernmentType|null>(null),[lawDraft,setLawDraft]=useState<ReformId|null>(null);
  const [confirmation,setConfirmation]=useState<string|null>(null),[selected,setSelected]=useState(w.people[0].home),[detailsOpen,setDetailsOpen]=useState(false);
- const r=realm??currentRealm(w),own=r===currentRealm(w),g=governmentOf(w,r);useEffect(()=>{setCandidate(null);setLawDraft(null);setConfirmation(null);},[r]);if(!g)return <p>读取存档后可使用政体制度。</p>;
+ const r=realm??currentRealm(w),own=r===currentRealm(w),g=governmentOf(w,r);useEffect(()=>{setCandidate(null);setLawDraft(initialLaw??null);setConfirmation(null);},[r,initialLaw]);if(!g)return <p>读取存档后可使用政体制度。</p>;
  const definition=governmentDefinitions[g.type],bonus=governmentBonus(w,r),cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r&&c.controller===r),site=cities.some(([id])=>id===selected)?selected:cities[0]?.[0]??'',task=g.task,laws=reformIds.filter(id=>reformDefinitions[id].realm===r),records=w.realm!.governments!.history.filter(e=>e.realm===r).slice(-4).reverse();
  const action=(c:GovernmentCommand,label:string,consequence?:string)=>{const reason=own?governmentReason(w,c):'他国制度仅供查阅',key=JSON.stringify(c);return <div className="government-action"><CommandButton label={label} icon="influence" hint={consequence||label} pending={pending} reason={reason} onClick={()=>{setConfirmation(key);}}/>{confirmation===key&&<ConfirmAction title={label} detail={consequence??label} confirmLabel="确认执行" danger pending={pending||!!reason} onCancel={()=>setConfirmation(null)} onConfirm={()=>{if(pending||governmentReason(w,c))return;void afterCommand(send(c),()=>{setConfirmation(null);});}}/>}</div>;};
  if(compact){

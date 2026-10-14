@@ -1,7 +1,7 @@
 import {PactOfferDecision} from './PactRequestPanel';
 import {OperationsArt} from './OperationsHeader';
 import {afterCommand} from './actionFeedback';
-import {successionIds,successionDefinitions,dynastyNames} from '../data/governments';
+import {successionIds,successionDefinitions,dynastyNames,type SuccessionId} from '../data/governments';
 import {governmentYear} from '../core/government';
 import {dynastyNameOptions} from '../core/dynastyNaming';
 import {useEffect,useState} from 'react';
@@ -22,13 +22,13 @@ import {ArtIcon} from './ArtIcon';
 import {HoverHint} from './HoverHint';
 import {ConfirmAction} from './ConfirmAction';
 import './powerPolitics.css';
-export function PowerPoliticsPanel({world:w,realm,pending,send,onPerson}:{world:World;realm?:RealmId;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void}){
+export function PowerPoliticsPanel({world:w,realm,pending,send,onPerson,initialStage}:{world:World;realm?:RealmId;initialStage?:SuccessionId;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void}){
  const r=realm??playerRealm(w),own=r===playerRealm(w),g=governmentOf(w,r)!,id=w.characterId!,p=w.politics?.proposals[r],war=civilWar(w,r),control=validRegency(w,r),chief=governingAuthority(w,r);
  const [open,setOpen]=useState<'proposal'|'pledge'|'review'|'seat'|'partition'|'rescue'|null>(null),[goal,setGoal]=useState<PowerGoal>('executive'),[beneficiary,setBeneficiary]=useState(id),[executive,setExecutive]=useState(id),[name,setName]=useState(''),[historical,setHistorical]=useState<string>(''),[person,setPerson]=useState(''),[promise,setPromise]=useState<'office'|'command'>('office'),[seat,setSeat]=useState(''),[army,setArmy]=useState<number|undefined>(),[response,setResponse]=useState<'troops'|'supply'|'wait'>('troops'),[confirm,setConfirm]=useState<GameCommand|null>(null);
- useEffect(()=>{setOpen(null);setConfirm(null);setName('');setHistorical('');setPerson('');setBeneficiary(id);setExecutive(id);},[r,id,p?.started]);
+ useEffect(()=>{setOpen(null);setConfirm(null);setName('');setHistorical('');setPerson('');setBeneficiary(id);setExecutive(id);if(initialStage&&own&&!p){const d=successionDefinitions[initialStage];if(d.realm===r&&!g.stages.includes(initialStage)&&g.dynasty===r){setGoal(d.nextDynasty?'dynasty':d.ruler!==g.ruler?'ruler':'executive');setBeneficiary(d.ruler);setExecutive(d.executives[0]);setName(d.nextDynasty?dynastyNames[d.nextDynasty]:'');setHistorical(initialStage);setOpen('proposal');}}},[r,id,p?.started,initialStage]);
  const draft={goal,sponsor:id,beneficiary:goal==='executive'?g.ruler:beneficiary,executive,name},summary=p?powerSummary(w,r,p):open==='proposal'?powerSummary(w,r,draft):null;
  const preset=successionIds.find(stage=>stage===historical),definition=preset&&successionDefinitions[preset],sourceStage=definition&&goal===(definition.nextDynasty?'dynasty':definition.ruler!==g.ruler?'ruler':'executive')&&(goal==='executive'?g.ruler:beneficiary)===definition.ruler&&executive===definition.executives[0]&&(goal!=='dynasty'||name===dynastyNames[definition.nextDynasty!])?preset:undefined;
- const command:PowerCommand={type:'power',action:'propose',goal,beneficiary:goal==='executive'?g.ruler:beneficiary,executive,name,...(sourceStage?{sourceStage}:{})};
+ const command:PowerCommand={type:'power',action:'propose',goal,beneficiary:goal==='executive'?g.ruler:beneficiary,executive,name:goal==='dynasty'?name:undefined,...(sourceStage?{sourceStage}:{})};
  const proposalReason=open==='proposal'?powerReason(w,command):'';
  const submit=(c:GameCommand)=>{if(pending)return;void afterCommand(send(c),()=>{setOpen(null);setConfirm(null);});};
  const reason=(c:GameCommand)=>c.type==='power'?powerReason(w,c):c.type==='polity'?polityReason(w,c):c.type==='pact'?pactReason(w,c):c.type==='civilWar'&&c.action==='respond'?civilResponseReason(w,c):'';

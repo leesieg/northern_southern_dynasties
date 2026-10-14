@@ -50,7 +50,7 @@
 | 主菜单与字体（B＋F1 已实施，待审美确认） | [三张菜单效果图与真实字体样张](art-direction/menu-typography/index.html)、[字号规范、开源许可与实机记录](art-direction/menu-typography/README.md) |
 | 行动与后果界面目标 | [目标说明与提示词](art-direction/ck3-action-feedback-target.md)、[预期效果图](art-direction/ck3-action-feedback-target.png) |
 | 侯景之乱与健康提醒（已实施，待人工验收） | [三张效果图与交互说明](art-direction/hou-jing-event/README.md)、[落地方案](规划/侯景之乱与人物生命周期落地方案.md) |
-| 史事总览（新增提案，待确认，未实施） | [入口、目录、状态与详情设计](art-direction/hou-jing-event/README.md#04-史事总览新增提案待确认未实施)、[预期效果图](art-direction/hou-jing-event/04-history-browser.png) |
+| 事件总览（已本地实施，待人工验收） | [入口、目录、状态与详情设计](art-direction/hou-jing-event/README.md#04-事件总览已本地实施待人工验收)、[预期效果图](art-direction/hou-jing-event/04-history-browser.png) |
 | 左侧操作栏沉浸感（已实施，待审美确认） | [目标图册](art-direction/left-operations-tabs/index.html)、[逐页实机对照](art-direction/left-operations-tabs/comparison.html)、[实施与验证](实施记录/左侧操作栏效果图落地.md) |
 | 顶部资源、时间与待办（已实施，待审美确认） | [预期效果、实机与验证](art-direction/top-hud/README.md) |
 | 旌旗、家族与城市事务（本地已实施，待审美确认） | [目标与实机对照](art-direction/identity-city-redesign/verification/index.html)、[8张效果图及控件样板](art-direction/identity-city-redesign/index.html)、[评审与历史取意](art-direction/identity-city-redesign/README.md) |
