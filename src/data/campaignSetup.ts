@@ -4,6 +4,8 @@ import type {Person} from '../core/types';
  * The three-realms-v1 rules profile retains its stable realm/person/site IDs. */
 export let campaignSetup={
  seed:546103,
+ // Authored initial stocks. Empty in official play; never reapplied on load.
+ personStarts:{} as Record<string,{coins?:number;food?:number;npcCoins?:number;sex:'male'|'female';office?:string}>,
  treasury:{coins:600,grain:1000},
  people:[
       {id:'player',name:'沈行舟',location:'jiankang',home:'jiankang',coins:180,food:90,journey:null,itinerary:[],itineraryIndex:0},

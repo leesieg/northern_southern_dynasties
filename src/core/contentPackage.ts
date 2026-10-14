@@ -56,6 +56,12 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  match(hierarchy.territoryRoots,Object.values(hierarchy.territoryNodes).filter(node=>!node.parent),'区划根节点');
  const setup=(tables.campaignSetup as unknown as typeof import('../data/campaignSetup')).campaignSetup;
  const integer=(n:number,min:number,max:number)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+ if(!setup.personStarts||typeof setup.personStarts!=='object'||Array.isArray(setup.personStarts))throw new Error('人物开局覆盖无效。');
+ for(const [id,start] of Object.entries(setup.personStarts)){
+  if(!chars.characterById[id]||!start||Object.keys(start).some(k=>!['coins','food','npcCoins','sex','office'].includes(k))||!['male','female'].includes(start.sex))throw new Error('人物开局覆盖无效：'+id);
+  for(const key of ['coins','food','npcCoins'] as const)if(start[key]!==undefined&&!integer(start[key]!,0,1e6))throw new Error('人物开局资源无效：'+id);
+  if(start.office!==undefined&&start.office!=='none'&&!(start.office.startsWith('county:')&&scenario.siteById[start.office.slice(7)]))throw new Error('人物开局职位无效：'+id);
+ }
  if(!integer(setup.seed,1,0xffffffff)||!integer(setup.treasury.coins,0,1e6)||!integer(setup.treasury.grain,0,1e6)||!integer(setup.troops,200,100000)||setup.troops%200||!integer(setup.grain,0,1e6))throw new Error('开局资源或种子无效。');
  for(const n of [setup.experience,setup.institution,setup.commanderLoyalty,setup.morale])if(!integer(n,0,100))throw new Error('开局军队状态无效。');
  for(const resources of Object.values(setup.roleResources))for(const [key,n] of Object.entries(resources))if(!integer(n,0,['coins','food'].includes(key)?1e6:3))throw new Error('人物开局资源无效。');

@@ -12,3 +12,6 @@ dist/
 /.tmp/
 /.workbuddy/
 /.workbuddy-ai/
+
+# Local authoring workspace (drafts, history and receipts)
+/.studio/

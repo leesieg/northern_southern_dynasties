@@ -9,6 +9,7 @@
     "postbuild": "node scripts/verify-map-release.mjs dist",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run --testTimeout=300000",
+    "studio": "node scripts/studio.mjs",
     "content:inspect": "node scripts/inspect-content.mjs",
     "content:verify": "node scripts/verify-content-package.mjs",
     "content:package": "node scripts/package-content.mjs",
