@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import type {StrategyDefinition,CityStart,ArmyStart,InitialRealm} from '../core/strategyDefinition';
 import type {TerritoryNode} from '../data/territorialHierarchy';
-export const realmNames={liang:'梁',east:'东魏',west:'西魏',frontier:'周边地区'};
+export const realmNames:Record<string,string>={liang:'梁',east:'东魏',west:'西魏',frontier:'周边地区'};
 type Props={value:StrategyDefinition|null;onChange:(v:StrategyDefinition)=>void;onInitialize:()=>void;busy:boolean;sites:Record<string,string>;people:Record<string,string>;nodes:Record<string,TerritoryNode>;year:number;selectedSite?:string};
 const numeric=(label:string,value:number,onChange:(n:number)=>void,min=0,max=1e6)=><label className="field"><span>{label}</span><input type="number" min={min} max={max} value={value} onChange={e=>onChange(Number(e.target.value))}/></label>;
 const select=(label:string,value:string,options:Record<string,string>,onChange:(v:string)=>void)=><label className="field"><span>{label}</span><select value={value} onChange={e=>onChange(e.target.value)}>{Object.entries(options).map(([id,name])=><option value={id} key={id}>{name}</option>)}</select></label>;

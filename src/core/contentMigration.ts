@@ -39,7 +39,7 @@ export function upgradeContent(value:unknown){
   if(p.id==='fictional'||relationshipPeople.find(r=>r.id===p.id)?.status==='roster')continue;
   if(!Object.hasOwn(value.families.prestige,p.id))value.families.prestige[p.id]=0;
  }
- if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const court=w.realm.governments.realms[r].court;if(court?.members&&object(court.members)){const fresh=newCourt(w,r);for(const p of expandedPeople.filter(p=>p.realm===r))if(!Object.hasOwn(court.members,p.id))court.members[p.id]=fresh.members[p.id];}}
+ if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const court=w.realm.governments.realms[r]?.court;if(court?.members&&object(court.members)){const fresh=newCourt(w,r);for(const p of expandedPeople.filter(p=>p.realm===r))if(!Object.hasOwn(court.members,p.id))court.members[p.id]=fresh.members[p.id];}}
  upgradeOfficials(value);
  value.contentVersion=CONTENT_VERSION;
  if(Array.isArray(value.chronicle)){value.chronicle.push({day,person:'player',text:'州郡与人物名录已增补。既有地点人口、钱粮及进行中事项保留；新增县域人口为剧本估计，未追溯结算收入。'});if(value.chronicle.length>100)value.chronicle.shift();}
@@ -82,6 +82,6 @@ function upgradeOfficials(value:Record<string,unknown>){
  if(w.families?.prestige&&!Object.hasOwn(w.families.prestige,p.id))w.families.prestige[p.id]=0;
  if(w.realm?.personalInfluence&&!Object.hasOwn(w.realm.personalInfluence,p.id))w.realm.personalInfluence[p.id]=0;
  }
- if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const g=w.realm.governments.realms[r],court=g.court;for(const p of officeReserves.filter(p=>p.realm===r))g.merit[p.id]??=p.initialMerit;if(court?.members){const fresh=newCourt(w,r);for(const p of [...countyOfficials,...officeReserves].filter(p=>p.realm===r))court.members[p.id]??=fresh.members[p.id];}}
+ if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const g=w.realm.governments.realms[r];if(!g)continue;const court=g.court;for(const p of officeReserves.filter(p=>p.realm===r))g.merit[p.id]??=p.initialMerit;if(court?.members){const fresh=newCourt(w,r);for(const p of [...countyOfficials,...officeReserves].filter(p=>p.realm===r))court.members[p.id]??=fresh.members[p.id];}}
  value.contentVersion=CONTENT_VERSION;
 }

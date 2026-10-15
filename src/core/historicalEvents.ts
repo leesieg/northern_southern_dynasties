@@ -1,3 +1,4 @@
+import {campaignSetup} from '../data/campaignSetup';
 import type {World} from './types';
 import type {HistoricalCommand,HistoricalEventInstance as Event,HistoricalPhase,HistoricalDecision} from './historicalEventState';
 import {allegianceRealm} from './officeEligibility';
@@ -18,7 +19,7 @@ import {siteById} from '../data/scenario';
 import type {PauseEvent} from './pauseEvents';
 export function ensureHistorical(w:World){
  if(w.mode!=='sandbox'||!w.realm||!getPerson(w,'hou-jing'))return;
- return w.historical??={version:1,since:w.day,items:[{id:'hou-jing:1',definitionId:'hou-jing',definitionVersion:1,phase:'dormant',status:'active',phaseSince:w.day,actors:{protagonist:'hou-jing',protector:'gao-huan'},origin:allegianceRealm(w,'hou-jing')??'east',site:personResidence(w,'hou-jing').site,revision:0,milestones:[],appliedEffects:[]}]};
+ return w.historical??={version:1,since:w.day,items:campaignSetup.politics&&!campaignSetup.politics.nativeEvents.includes('hou-jing')?[]:[{id:'hou-jing:1',definitionId:'hou-jing',definitionVersion:1,phase:'dormant',status:'active',phaseSince:w.day,actors:{protagonist:'hou-jing',protector:'gao-huan'},origin:allegianceRealm(w,'hou-jing')??'east',site:personResidence(w,'hou-jing').site,revision:0,milestones:[],appliedEffects:[]}]};
 }
 export function historicalPact(w:World,e:Event){return w.allegiancePacts?.items.find(p=>p.id===e.pactId);}
 export function historicalArmy(w:World,id:string){return w.realm?.armies.find(a=>a.troops>=100&&(a.owner===id||armyCommander(w,a)===id));}

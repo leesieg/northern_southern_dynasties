@@ -1,3 +1,4 @@
+import {validatePoliticalReferences} from './politicalDefinition';
 import {validateStrategyReferences} from './strategyDefinition';
 import {eventDefinitionIssues,type EventDefinition} from './eventDefinitions';
 import {canonicalContent,createContentRegistry,type ContentSource} from './contentRegistry';
@@ -58,7 +59,10 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  }
  match(hierarchy.territoryRoots,Object.values(hierarchy.territoryNodes).filter(node=>!node.parent),'区划根节点');
  const setup=(tables.campaignSetup as unknown as typeof import('../data/campaignSetup')).campaignSetup;
- validateStrategyReferences(setup.strategy,scenario.siteById,chars.characterById,hierarchy.territoryNodes,scripts.gameScripts[0].year);
+ validatePoliticalReferences(setup.politics??null,scenario.siteById,chars.characterById,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year);
+ for(const r of setup.politics?.realms??[]){const style=scenario.polities[r.id];if(!style||style.name!==r.name||style.short!==r.short||style.color!==r.color)throw new Error('政权显示定义与政治初态不一致：'+r.id);}
+ for(const r of setup.politics?.realms??[])if((setup.strategy?.cities[r.capital]?.controller??scenario.siteById[r.capital]?.polity)!==r.id)throw new Error('开局首都须由本国实际控制：'+r.id);
+ validateStrategyReferences(setup.strategy,scenario.siteById,chars.characterById,hierarchy.territoryNodes,scripts.gameScripts[0].year,setup.politics?.realms.map(r=>r.id));
  const integer=(n:number,min:number,max:number)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
  if(!setup.personStarts||typeof setup.personStarts!=='object'||Array.isArray(setup.personStarts))throw new Error('人物开局覆盖无效。');
  for(const [id,start] of Object.entries(setup.personStarts)){
@@ -69,7 +73,7 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  if(!integer(setup.seed,1,0xffffffff)||!integer(setup.treasury.coins,0,1e6)||!integer(setup.treasury.grain,0,1e6)||!integer(setup.troops,200,100000)||setup.troops%200||!integer(setup.grain,0,1e6))throw new Error('开局资源或种子无效。');
  for(const n of [setup.experience,setup.institution,setup.commanderLoyalty,setup.morale])if(!integer(n,0,100))throw new Error('开局军队状态无效。');
  for(const resources of Object.values(setup.roleResources))for(const [key,n] of Object.entries(resources))if(!integer(n,0,['coins','food'].includes(key)?1e6:3))throw new Error('人物开局资源无效。');
- for(const army of setup.armies)if(!['liang','east','west'].includes(army.realm)||!scenario.siteById[army.site]||army.commander&&!chars.characterById[army.commander])throw new Error('开局军队引用无效。');
+ for(const army of setup.armies)if(!(setup.politics?.realms.map(r=>r.id)??['liang','east','west']).includes(army.realm)||!scenario.siteById[army.site]||army.commander&&!chars.characterById[army.commander])throw new Error('开局军队引用无效。');
  for(const entry of setup.influence)if(!chars.characterById[entry.person]||!integer(entry.value,0,100))throw new Error('开局影响力无效。');
  for(const entry of setup.opinions)if(!chars.characterById[entry.from]||!chars.characterById[entry.to]||!integer(entry.value,-100,100))throw new Error('开局关系无效。');
 }

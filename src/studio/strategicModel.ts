@@ -36,7 +36,7 @@ export function geographicIssues(d:StrategicDraft,base:ContentPackage){
 }
 export function compileStrategy(t:Record<string,any>,strategy:StrategyDefinition|null){
  t.campaignSetup.campaignSetup.strategy=structuredClone(strategy);
- validateStrategyReferences(strategy,t.scenario.siteById,t.characters.characterById,t.territorialHierarchy.territoryNodes,t.scripts.gameScripts[0].year);
+ validateStrategyReferences(strategy,t.scenario.siteById,t.characters.characterById,t.territorialHierarchy.territoryNodes,t.scripts.gameScripts[0].year,t.campaignSetup.campaignSetup.politics?.realms.map((r:any)=>r.id));
  if(!strategy)return;
  for(const [id,a] of Object.entries(strategy.administration))Object.assign(t.territorialHierarchy.territoryNodes[id],{parent:a.parent,from:a.from,until:a.until,basis:'scenario',source:a.source});
  for(const site of t.scenario.sites){const chain:any[]=[];let n=t.territorialHierarchy.territoryNodes['city:'+site.id];while(n){chain.push(n);n=t.territorialHierarchy.territoryNodes[n.parent];}const county=chain.find(n=>n.level==='county'),prefecture=chain.find(n=>n.level==='prefecture'),province=chain.find(n=>n.level==='province');if(county&&prefecture&&province&&chain.some(n=>strategy.administration[n.id]))t.administration.administration[site.id]={...t.administration.administration[site.id],county:county.name,prefecture:prefecture.name,province:province.name,group:prefecture.id.slice('prefecture:'.length),status:'scenario',note:'作者剧本行政配置；参见所选节点来源与有效期'};}

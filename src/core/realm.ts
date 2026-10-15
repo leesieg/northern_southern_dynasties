@@ -8,7 +8,7 @@ import {settleCaptureLoss,type CaptureCause} from './warOccupation';
 import {initialFortificationLevel,isCapitalSite,ensureFortifications,fortificationQuote,startFortification,advanceFortificationAI} from './fortifications';
 import {getCharacter} from './personRegistry';
 import {awardDeed} from './deeds';
-import {worldRealms} from './polityRuntime';
+import {worldRealms,initialPoliticalRealm} from './polityRuntime';
 import {detained} from './custodyState';
 import {captureCityPeople,resolveCommanderFate} from './custody';
 import {personInfluence,awardInfluence} from './personalInfluence';
@@ -93,12 +93,12 @@ export type EventKind=keyof typeof eventDefinitions;
 const clamp=(v:number,min=0,max=1_000_000)=>Math.max(min,Math.min(max,v));
 export const playerRealm=(w:World):RealmId=>allegianceRealm(w,w.characterId!)?? getCharacter(w,w.characterId!)!.polity as RealmId;
 export const executive=governmentExecutive;
-export const authority=(id:RealmId)=>id==='liang'?'xiao-yan':id==='east'?'gao-huan':'yuwen-tai';
-export const capital=(id:RealmId,w?:World)=>w?.realm?.identities?.[id]?.capital??(id==='liang'?'jiankang':id==='east'?'ye':'changan');
+export const authority=(id:RealmId)=>initialPoliticalRealm(id)?.executives[0]??(id==='liang'?'xiao-yan':id==='east'?'gao-huan':'yuwen-tai');
+export const capital=(id:RealmId,w?:World)=>w?.realm?.identities?.[id]?.capital??initialPoliticalRealm(id)?.capital??(id==='liang'?'jiankang':id==='east'?'ye':'changan');
 export function newRealm(w:World):RealmState {
  const cities=Object.fromEntries(sites.map(s=>[s.id,{cultureId:defaultCountyCulture(s.polity==='frontier'),owner:s.polity,controller:s.polity,governor:s.id===w.people[0].home?w.characterId!:null,population:regionalEconomy(s.id).initialPopulation,grain:Math.ceil(regionalEconomy(s.id).initialPopulation/150)*2,irrigation:0,order:70,prosperity:50,tax:'normal' as Tax,fortification:{level:initialFortificationLevel(w,s.id),due:null}}]));
  for(const [id,start] of Object.entries(campaignSetup.strategy?.cities??{})){const c=cities[id];if(!c)throw new Error('开局城市不存在：'+id);Object.assign(c,{owner:start.owner,controller:start.controller,population:start.population,grain:start.grain,order:start.order,prosperity:start.prosperity,irrigation:start.irrigation,fortification:{level:start.fortification,due:null}});if(c.owner!==c.controller)Object.assign(c,{occupiedSince:0});}
- const state:RealmState={version:1,foodVersion:2,cities,treasuries:Object.fromEntries(worldRealms(w).map(id=>[id,{...((campaignSetup.strategy?.treasuries as Record<string,{coins:number;grain:number}>|undefined)?.[id]??campaignSetup.treasury),lastIncome:0,lastExpense:0,lastFood:0}])) as Record<RealmId,Treasury>,influence:50,mandate:executive(w)|| getCharacter(w,w.characterId!)!.role==='commander',offices:[],armies:[],war:null,truces:{},event:null,lastEvent:0,ledger:[]};
+ const state:RealmState={version:1,foodVersion:2,cities,...(campaignSetup.politics?{identities:Object.fromEntries(campaignSetup.politics.realms.map(r=>[r.id,{origin:r.template,capital:r.capital,created:0,predecessor:null}]))}:{}),treasuries:Object.fromEntries(worldRealms(w).map(id=>[id,{...((campaignSetup.strategy?.treasuries as Record<string,{coins:number;grain:number}>|undefined)?.[id]??campaignSetup.treasury),lastIncome:0,lastExpense:0,lastFood:0}])) as Record<RealmId,Treasury>,influence:50,mandate:executive(w)|| getCharacter(w,w.characterId!)!.role==='commander',offices:[],armies:[],war:null,truces:{},event:null,lastEvent:0,ledger:[]};
  if(campaignSetup.strategy?.wars.length){state.wars=campaignSetup.strategy.wars.map((war,i)=>({id:i+1,attacker:war.attacker,defender:war.defender,target:war.target,started:0,score:0,goal:'territory'}));state.war=state.wars[0];state.nextWarId=state.wars.length+1;for(const c of Object.values(state.cities))if(c.owner!==c.controller)c.occupiedByWar=state.wars.find(w=>[w.attacker,w.defender].includes(c.owner as RealmId)&&[w.attacker,w.defender].includes(c.controller as RealmId))?.id;}
  return state;
 }

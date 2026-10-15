@@ -15,8 +15,8 @@ import './studio.css';
 type Proposal={id:string;title:string;actor:string;status:string;baseRevision:number;operations:Operation[];granted:boolean;migration?:{to:string}};
 type Site={id:string;name:string;lon:number;lat:number;polity:string};
 type Snapshot={territoryNodes:Record<string,TerritoryNode>;boundaries:GeoJSON.FeatureCollection;debugRuns:DebugRun[];revision:number;sequence:number;document:Draft;baseDocument:Draft;states:Record<string,Record<string,PersonState>>;proposals:Proposal[];history:{revision:number;title:string;inverse:Operation[]|null;baseDigest?:string}[];diagnostics:Diagnostic[];sites:Site[];baseDigest:string};
-const labels:Record<string,string>={name:'姓名／名称',family:'家族',birth:'出生年份',sex:'性别',culture:'文化',biography:'人物小传',father:'父亲',mother:'母亲',home:'开局驻地',polity:'效忠政权',role:'履历类别',title:'身份称谓',coins:'玩家开局私钱',food:'玩家开局行粮',npcCoins:'NPC 私人储备',playable:'允许选择开局',office:'地方任职',year:'年份',month:'月份',day:'日期',description:'剧本简介',defaultCharacter:'默认人物',seed:'随机种子',treasuryCoins:'各国公库初始钱',treasuryGrain:'各国公库初始粮',surname:'姓氏',origin:'籍贯'};
-const realms={liang:'梁',east:'东魏',west:'西魏'},roles={ruler:'君主',regent:'执政者',prince:'宗室',commander:'将领',scholar:'士人'},cultures={han:'汉文化',xianbei:'鲜卑文化',gaoche:'敕勒文化',jie:'羯文化',unknown:'文化未详'};
+const labels:Record<string,string>={politics:'政权与政治开局',name:'姓名／名称',family:'家族',birth:'出生年份',sex:'性别',culture:'文化',biography:'人物小传',father:'父亲',mother:'母亲',home:'开局驻地',polity:'效忠政权',role:'履历类别',title:'身份称谓',coins:'玩家开局私钱',food:'玩家开局行粮',npcCoins:'NPC 私人储备',playable:'允许选择开局',office:'地方任职',year:'年份',month:'月份',day:'日期',description:'剧本简介',defaultCharacter:'默认人物',seed:'随机种子',treasuryCoins:'各国公库初始钱',treasuryGrain:'各国公库初始粮',surname:'姓氏',origin:'籍贯'};
+const realms:Record<string,string>={liang:'梁',east:'东魏',west:'西魏'},roles={ruler:'君主',regent:'执政者',prince:'宗室',commander:'将领',scholar:'士人'},cultures={han:'汉文化',xianbei:'鲜卑文化',gaoche:'敕勒文化',jie:'羯文化',unknown:'文化未详'};
 const key=()=>crypto.randomUUID();
 async function api<T>(method:string,input:unknown={}):Promise<T>{
  const token=document.querySelector<HTMLMetaElement>('meta[name="studio-token"]')?.content;

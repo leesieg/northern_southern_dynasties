@@ -1,10 +1,12 @@
 import {selectContent} from '../core/contentBinding';
+import type {PoliticalDefinition} from '../core/politicalDefinition';
 import type {StrategyDefinition} from '../core/strategyDefinition';
 import type {Person} from '../core/types';
 /** Initial stocks and scenario assumptions, not historical demographic claims.
  * The three-realms-v1 rules profile retains its stable realm/person/site IDs. */
 export let campaignSetup={
  seed:546103,
+ politics:null as PoliticalDefinition|null,
  strategy:null as StrategyDefinition|null,
  // Authored initial stocks. Empty in official play; never reapplied on load.
  personStarts:{} as Record<string,{coins?:number;food?:number;npcCoins?:number;sex:'male'|'female';office?:string}>,

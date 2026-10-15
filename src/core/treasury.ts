@@ -21,7 +21,7 @@ export interface GrantRequest {id:number;realm:RealmId;site:string;territory?:st
 export interface FiscalState {version:1;balances:Record<string,number>;entries:FiscalEntry[];requests:GrantRequest[];nextId:number;nextRequest:number;net:Record<RealmId,number>}
 export type FiscalCommand={type:'fiscal';action:'relief';site:string}|{type:'fiscal';action:'request';site:string;territory?:string;amount:number;purpose:GrantRequest['purpose']}|{type:'fiscal';action:'approve'|'reject'|'cancel';id:number}|{type:'fiscal';action:'allocate';site:string;territory?:string;amount:number};
 export const grantPurposes={construction:'营建储备',relief:'地方赈济',military:'军需储备'};
-export function ensureFiscal(w:World){if(!w.realm)return;return w.realm.fiscal??=( {version:1,balances:{},entries:[],requests:[],nextId:1,nextRequest:1,net:{liang:0,east:0,west:0}} );}
+export function ensureFiscal(w:World){if(!w.realm)return;return w.realm.fiscal??=( {version:1,balances:{},entries:[],requests:[],nextId:1,nextRequest:1,net:Object.fromEntries(worldRealms(w).map(r=>[r,0])) as Record<RealmId,number>} );}
 export const centralAccount=(r:RealmId)=>'central:'+r;
 export function fiscalPath(w:World,site:string,r=w.realm!.cities[site].controller as RealmId){return ancestorsOf('city:'+site).filter(n=>n.level!=='realm'&&n.level!=='county').reverse().map(n=>r+'|'+n.id).concat(centralAccount(r));}
 export function accountName(key:string){if(key==='person:unknown')return '未知私人账户';if(key.startsWith('person:'))return '私人财产';if(key==='tax')return '地方税收';if(key.startsWith('custody:'))return '司法担保押金';if(key==='expense')return '公共支出';if(key==='external')return '其他收支';if(key.startsWith('central:'))return '中央国库';if(key.startsWith('task:'))return '差事专款';return territoryNodes[key.split('|')[1]]?.name+'公库';}

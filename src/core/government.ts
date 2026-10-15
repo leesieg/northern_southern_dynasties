@@ -1,5 +1,5 @@
 import {getCharacter,allPeople} from './personRegistry';
-import {worldRealms,polityStyle} from './polityRuntime';
+import {worldRealms,polityStyle,initialPoliticalRealm,realmOrigin} from './polityRuntime';
 import {capital as realmCapital} from './realm';
 import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
 import {supportClaim,claimantProvenance} from './claims';
@@ -48,8 +48,8 @@ const initialRulers:Record<RealmId,string>={liang:'xiao-yan',east:'yuan-shanjian
 const initialExecutives:Record<RealmId,string[]>={liang:['xiao-yan'],east:['gao-huan','gao-cheng'],west:['yuwen-tai']};
 export const currentRealm=(w:World)=>allegianceRealm(w,w.characterId!)?? getCharacter(w,w.characterId!)!.polity as RealmId;
 export function newGovernments(w:World):GovernmentState{
- const day=w.day;const make=(r:RealmId):Government=>({type:'meritocratic',dynasty:r,regimeId:r+'-0',ruler:initialRulers[r],executives:[...initialExecutives[r]],legitimacy:65,support:65,merit:Object.fromEntries([...historicalCharacters.filter(c=>c.polity===r).map(c=>[c.id,20]),...officeReserves.filter(p=>p.realm===r).map(p=>[p.id,p.initialMerit])]),herd:0,camp:capital[r],lastCamp:0,contracts:{},laws:reformIds.filter(id=>reformDefinitions[id].realm===r&&reformDefinitions[id].initial),stages:[],task:null,cooldowns:{}});const realms={liang:make('liang'),east:make('east'),west:make('west')};
- return {version:1,since:day,lastMonthly:monthStart(day,w.scriptId),realms,regimes:worldRealms(w).map(r=>({id:r+'-0',realm:r,dynasty:r,ruler:initialRulers[r],from:day,until:null,predecessor:null,source:null,cities:Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r)})),history:[]};
+ const day=w.day;const make=(r:RealmId):Government=>({type:'meritocratic',dynasty:r,regimeId:r+'-0',ruler:initialPoliticalRealm(r)?.ruler??initialRulers[r],executives:[...(initialPoliticalRealm(r)?.executives??initialExecutives[r])],legitimacy:65,support:65,merit:Object.fromEntries([...historicalCharacters.filter(c=>c.polity===r).map(c=>[c.id,20]),...officeReserves.filter(p=>p.realm===r).map(p=>[p.id,p.initialMerit])]),herd:0,camp:initialPoliticalRealm(r)?.capital??capital[r],lastCamp:0,contracts:{},laws:reformIds.filter(id=>reformDefinitions[id].realm===realmOrigin(w,r)&&reformDefinitions[id].initial&&(!initialPoliticalRealm(r)||reformDefinitions[id].year<=governmentYear(w,0))),stages:[],task:null,cooldowns:{}});const realms=Object.fromEntries(worldRealms(w).map(r=>[r,make(r)])) as Record<RealmId,Government>;
+ return {version:1,since:day,lastMonthly:monthStart(day,w.scriptId),realms,regimes:worldRealms(w).map(r=>({id:r+'-0',realm:r,dynasty:r,ruler:realms[r].ruler,...(initialPoliticalRealm(r)?{name:initialPoliticalRealm(r)!.name}:{}),from:day,until:null,predecessor:null,source:null,cities:Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r)})),history:[]};
 }
 export function governmentOf(w:World,r=currentRealm(w)){return w.realm?.governments?.realms[r];}
 export function regimeName(w:World|undefined,r:Polity){return r==='frontier'?polities.frontier.name:(w?.realm?.governments?.regimes.find(v=>v.id===w.realm?.governments?.realms[r]?.regimeId)?.name??dynastyNames[w?.realm?.governments?.realms[r]?.dynasty??r]??polityStyle(w,r).name);}
