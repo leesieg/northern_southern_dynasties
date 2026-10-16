@@ -16,8 +16,9 @@ export const illnessCourse:Record<Illness,{recovery:number;worsening:number;dama
 };
 export function monthlyIllnessRisk(age:number,stress=0,vigorous=false){return Math.max(.002,Math.min(.05,.007+Math.max(0,age-55)*.00035+Math.max(0,Math.min(100,stress))*.00012-(vigorous?.003:0)));}
 export function illnessKind(age:number,draw:number):Illness {return age>=60?(draw<.35?'wasting':draw<.65?'cold':draw<.85?'flux':'fever'):(draw<.55?'cold':draw<.8?'flux':'fever');}
-/** Gameplay balance, not historical mortality estimates or a scheduled lifespan. */
-export const annualAgeRisk=[[16,.003],[40,.01],[50,.03],[60,.08],[70,.18],[80,.35],[90,.55]] as const;
+/** Gameplay balance, not historical mortality estimates or a scheduled lifespan.
+ * Pure senescence starts at sixty; younger deaths require illness, injury or another actual cause. */
+export const annualAgeRisk=[[60,.08],[70,.18],[80,.35],[90,.55]] as const;
 export function monthlyAgeRisk(age:number){
  if(!Number.isFinite(age)||age<0)throw new Error('人物年龄资料缺失');
  const annual=annualAgeRisk.filter(([from])=>age>=from).at(-1)?.[1]??0;

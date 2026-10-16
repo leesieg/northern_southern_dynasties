@@ -22,10 +22,16 @@ async function remote(path = '', options?: RequestInit): Promise<{saves?:SaveInf
   if (!accountId) throw new Error('请先登录主页账号，再进入游戏。');
   let response: Response;
   try { response = await fetch(API+path,{...options,credentials:'same-origin',cache:'no-store',headers:{'X-Fynbc-Account':accountId,...options?.headers}}); }
-  catch { throw new Error('无法连接存档服务，请检查网络后重试。'); }
+  catch { throw new Error('无法连接存档服务，请检查网络后重试；当前进度可导出备份。'); }
   if (response.status===401||response.status===409) throw new Error('账号会话已变更，请刷新页面后重新进入游戏。');
-  if (!response.ok) throw new Error(response.status===413?'存档超过服务器大小限制，请导出备份。':'存档服务暂不可用，请稍后重试。');
-  return response.status===204?{}:response.json();
+  if (!response.ok) {
+    const writing=options?.method==='POST',size=writing&&typeof options.body==='string'?`（本次请求 ${(new TextEncoder().encode(options.body).length/1_000_000).toFixed(2)} MB）`:'';
+    const reason=response.status===413?'存档请求超过服务器接收上限'+size:response.status===429?'存档请求过于频繁，请稍后重试':response.status===403?'当前账号无权访问此存档，请重新登录':response.status===507?'服务器存储空间不足':response.status>=500?'存档服务处理失败，请稍后重试':'存档请求被服务器拒绝';
+    throw new Error(`${reason}（HTTP ${response.status}）。${writing?'本次保存未获确认，请导出备份后重试。':'请重试；若正在游戏，可先导出备份。'}`);
+  }
+  if(response.status===204)return {};
+  try { return await response.json(); }
+  catch { throw new Error('存档服务返回了无法识别的响应，操作结果未确认；请导出备份并重新登录后核查。'); }
 }
 function database(): Promise<IDBDatabase> {
   return new Promise((resolve,reject) => {
@@ -52,7 +58,11 @@ export async function listSaves(): Promise<SaveInfo[]> {
 export async function saveWorld(world: World, auto = false, backup?:'previous-run'): Promise<number> {
   const data = serializeWorld(world);
   assertSaveSize(data,'保存');
-  if (REMOTE) return (await remote('',{method:'POST',headers:{'Content-Type':'application/json','X-Li-Client':'1'},body:JSON.stringify({slot:backup??(auto?'auto':'manual'),data})})).savedAt!;
+  if (REMOTE) {
+    const result=await remote('',{method:'POST',headers:{'Content-Type':'application/json','X-Li-Client':'1'},body:JSON.stringify({slot:backup??(auto?'auto':'manual'),data})});
+    if(!result||!Number.isSafeInteger(result.savedAt)||result.savedAt!<=0)throw new Error('服务器未返回有效保存凭据，本次保存未获确认；请导出备份后核查。');
+    return result.savedAt!;
+  }
   const db = await database();
   return new Promise((resolve,reject) => {
     const tx = db.transaction('saves','readwrite');

@@ -47,7 +47,7 @@ describe('historical Hou Jing factual chain',()=>{
  it('routes serious-illness discussions to the real chief and cancels them after recovery',()=>{const w=start('gao-huan');expect(governingAuthority(w,'east')).toBe('gao-huan');w.life!.people['gao-huan'].illness={kind:'fever',severity:3,since:0};advanceHistorical(w);expect(historicalPending(w)[0]?.title).toBe('病榻议事');w.life!.people['gao-huan'].illness=null;advanceHistorical(w);expect(historicalPending(w)).toEqual([]);});
 });
 describe('separate aging and illness hazards',()=>{
- it.each([[16,.003],[39,.003],[40,.01],[49,.01],[50,.03],[60,.08],[70,.18],[80,.35],[90,.55],[120,.55]])('converts age %s annual risk exactly', (age,risk)=>expect(1-(1-monthlyAgeRisk(age))**12).toBeCloseTo(risk,12));
+ it.each([[16,0],[39,0],[40,0],[49,0],[50,0],[59,0],[60,.08],[70,.18],[80,.35],[90,.55],[120,.55]])('converts age %s annual risk exactly', (age,risk)=>expect(1-(1-monthlyAgeRisk(age))**12).toBeCloseTo(risk,12));
  it('care changes illness only, combines independent risks and never guarantees a cure',()=>{const untreated=mortalityRisk(80,15,3),treated=mortalityRisk(80,15,3,true);expect(treated.aging).toBe(untreated.aging);expect(treated.illness).toBeCloseTo(untreated.illness*.6);expect(treated.total).toBeCloseTo(1-(1-treated.aging)*(1-treated.illness));expect(recoveryChance('cold',1,10000,true,true)).toBe(.95);expect(recoveryChance('wasting',3,10000)).toBeCloseTo(.38*.35);expect(recoveryChance('wasting',3,10000)).toBe(recoveryChance('wasting',3,0));});
 });
 

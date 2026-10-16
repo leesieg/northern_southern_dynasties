@@ -9,8 +9,10 @@ import {syncRulerHistory} from './rulerHistory';
 
 /** The official new-game path, shared by normal play and isolated previews.
  * Loading a save never calls this; historical armies must not be initialized twice. */
-export function createCampaign(characterId?:string,scriptId?:string,mode?:'sandbox'|'tutorial'){
+export function createCampaign(characterId?:string,scriptId?:string,mode?:'sandbox'|'tutorial',lifeSeed=campaignSetup.seed){
+ if(!Number.isInteger(lifeSeed)||lifeSeed<0||lifeSeed>0xffffffff)throw new Error('无效生命随机种子');
  const world=newCampaignWorld(characterId,scriptId,mode);
+ world.life!.seed=lifeSeed;
  for(const [id,start] of Object.entries(campaignSetup.personStarts)){
   const identity=world.identities?.people[id];if(identity)identity.sex=start.sex;
   if(id===world.characterId){if(start.coins!==undefined)world.people[0].coins=start.coins;if(start.food!==undefined)world.people[0].food=start.food;}

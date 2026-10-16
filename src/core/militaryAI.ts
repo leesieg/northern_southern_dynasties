@@ -10,7 +10,7 @@ import {civilianFood} from './population';
 import type {World} from './types';
 import {activeWars,warRealmSide} from './wars';
 import {capital,playerRealm,armyDailyFood,canMarchThrough,type Army,type RealmId} from './realm';
-import {armyControls,warArmySide,armiesHostile,civilWar} from './civilWars';
+import {armyControls,warArmySide,armiesHostile,civilWar,warCitySide} from './civilWars';
 import {armyCampaign} from './militaryCampaigns';
 import {ensureArmyOrganization,readyTroops} from './armyOrganization';
 import {governmentMusterReason,spendGovernmentMuster} from './government';
@@ -45,6 +45,14 @@ function armyDecisionContext(w:World,r:RealmId){return {
  wars:activeWars(w).filter(v=>!!warRealmSide(v,r)),own:w.realm!.armies.filter(a=>a.realm===r),reserve:defensiveReserve(w,r),
  playerExecutive:r===playerRealm(w)&&governingExecutives(w,r).includes(w.characterId!),
 };}
+/** Counterattacks use this war's actual enemy territory, never neutral land or a new war goal. */
+function counterattackTargets(w:World,a:Army,war:ReturnType<typeof activeWars>[number]){
+ if(war.civil||warArmySide(w,war,a)!=='defend')return [];
+ const available=w.realm!.armies.filter(b=>b.realm===a.realm&&b.automation!=='direct'&&!b.withdrawalUntil&&!armyCampaign(w,b)&&!w.mobility?.pendingCommanders?.[b.id!]&&b.morale>=25&&(b.arrears??0)<=100&&b.supply>=armyDailyFood(w,b)*2);
+ const strength=available.reduce((n,b)=>n+readyTroops(b,w.day),0),enemy=w.realm!.armies.filter(b=>warArmySide(w,war,b)==='attack').reduce((n,b)=>n+readyTroops(b,w.day),0);
+ if(strength<100||strength<enemy*1.1)return [];
+ return Object.keys(w.realm!.cities).filter(id=>warCitySide(w,war,id)==='attack'&&warRealmSide(war,w.realm!.cities[id].owner as RealmId)==='attack');
+}
 export interface ArmyDecision {
  intent:string;current:string;reason:string;next:string;target?:string;
  route?:NonNullable<ReturnType<typeof planRoute>>;retreat?:boolean;
@@ -63,8 +71,9 @@ export function delegatedArmyDecision(w:World,a:Army,context=armyDecisionContext
  const armyWars=wars.filter(v=>!!warArmySide(w,v,a)),armyEnemy=s.armies.filter(b=>b!==a&&armiesHostile(w,a,b));
  const retreat=a.supply<armyDailyFood(w,a)*2||a.morale<25||(a.arrears??0)>100;
  const threats=Object.keys(s.cities).filter(id=>s.cities[id].owner===r&&!armyControls(w,a,id)||s.sieges?.some(v=>v.site===id&&armyWars.some(war=>war.id===v.war&&warArmySide(w,war,a)!==v.side)));
- const targets=retreat?Object.keys(s.cities).filter(id=>armyControls(w,a,id)&&s.cities[id].grain>civilianFood(w,id)*2+30):[...threats,...armyWars.slice().sort((x,y)=>Number(s.cities[y.target].owner===r)-Number(s.cities[x.target].owner===r)).flatMap(v=>v.civil?[warArmySide(w,v,a)==='attack'?v.target:v.civil.base]:v.territory||v.goal==='annexation'?warObjectiveSites(v,w).filter(id=>!armyControls(w,a,id)):[v.target])];
- const intent=retreat?'整顿补给与士气':threats.length?'恢复失地与解围':'推进战争目标';
+ const counters=armyWars.flatMap(v=>counterattackTargets(w,a,v));
+ const targets=retreat?Object.keys(s.cities).filter(id=>armyControls(w,a,id)&&s.cities[id].grain>civilianFood(w,id)*2+30):threats.length?threats:armyWars.flatMap(v=>v.civil?[warArmySide(w,v,a)==='attack'?v.target:v.civil.base]:warArmySide(w,v,a)==='defend'?(counters.length?counterattackTargets(w,a,v):[v.target]):v.territory||v.goal==='annexation'?warObjectiveSites(v,w).filter(id=>!armyControls(w,a,id)):[v.target]);
+ const intent=retreat?'整顿补给与士气':threats.length?'恢复失地与解围':counters.length?'乘势反攻敌境':'推进战争目标';
  const retreatReason=a.supply<armyDailyFood(w,a)*2?'携粮不足两日':a.morale<25?'士气低于 25':'欠饷超过 100 钱';
  if(!playerExecutive&&!retreat&&!threats.length&&own.length>=2&&a===reserve&&s.cities[a.location].controller===r&&wars.some(v=>v.attacker===r))return report('留守预备','驻防本土','进攻期间保留一支本土预备军','本土遇袭或预备军条件改变后重议');
  if(!retreat&&armyAtEnemyCity(w,a))return report(intent,'攻取沿途据点','尚未控制当前敌方城池','占领后重新规划后续战争目标',a.location);

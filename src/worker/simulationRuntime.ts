@@ -41,7 +41,7 @@ function dispatch(request:Request):Promise<void>{
       } else if (!initialized) {ok=false;failure='世界尚未就绪，请先重试读取存档。';notice(failure,true);return;}
       else if(request.type==='new'){
         speed=0;
-        const next=createCampaign(request.characterId,request.scriptId,request.mode);
+        const next=createCampaign(request.characterId,request.scriptId,request.mode,crypto.getRandomValues(new Uint32Array(1))[0]);
         if(slots.length&&!hasCurrentWorld)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
         if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
         lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;await refreshSavedSlots();reply({type:'screen',page:'play'});paused(authoredPending(world));
