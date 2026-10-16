@@ -1,3 +1,5 @@
+import {campaignSetup} from '../data/campaignSetup';
+import {abilityNames,type Trait} from './personSetupDefinition';
 import {inheritEstates} from './estates';
 import {getCharacter,getPerson} from './personRegistry';
 import {allegianceRealm} from './officeEligibility';
@@ -17,18 +19,7 @@ import type { World } from './types';
 
 import {allCharacters,parentLinksOf} from './personRegistry';
 import {educationBonus, stableEconomicTraits} from './personalEconomyRules';
-export const traitDefinitions={
-  greedy:{name:'贪婪',effect:'更重视积财；NPC 可能侵吞经管公款，捐输压力 +5；'},
-  honest:{name:'正直',effect:' NPC 不主动侵吞；本人选择侵吞时压力 +18；'},
-  ambitious:{name:'野心',effect:'更重视储备和长期学习；有余钱时安排研习；'},
-  diligent:{name:'勤勉',effect:'新工程工期 -20%；每次动工压力 +6'},
-  frugal:{name:'节俭',effect:'新工程造价 -10%；赠礼压力 +8'},
-  generous:{name:'慷慨',effect:'赠礼额外 +10 好感、压力 -5；请援压力 +8'},
-  gregarious:{name:'善交',effect:'他人对你好感 +8；外交能力 +4'},
-  wary:{name:'多疑',effect:'对他人好感 -6；自身交好需 18 日'},
-  steadfast:{name:'坚毅',effect:'每 30 日额外减少 8 压力'},
-};
-export type Trait=keyof typeof traitDefinitions;
+export {traitDefinitions,type Trait} from './personSetupDefinition';
 export const legacyDefinitions={stewardship:{name:'治产',effect:'每级新工程造价 -5%'},kinship:{name:'敦亲',effect:'每级正向交往好感 +5'},learning:{name:'家学',effect:'每级每月减少 3 压力'}};
 export type Legacy=keyof typeof legacyDefinitions;
 export type Interaction='gift'|'befriend'|'aid'|'advisor'|'pressure'|'favor';
@@ -40,7 +31,7 @@ export interface Social {
 }
 export type SocialCommand={type:'interact';target:string;action:Interaction}|{type:'rest'}|{type:'legacy';branch:Legacy}|{type:'heir';target:string}|{type:'handover'}|{type:'cancel-scheme'};
 const clamp=(n:number,min:number,max:number)=>Math.max(min,Math.min(max,n));
-export function defaultTraits(id:string):Trait[]{if(expandedPersonById[id])return expandedPersonById[id]?(expandedPersonById[id].role==='commander'?['diligent','steadfast']:expandedPersonById[id].role==='scholar'?['frugal','diligent']:['gregarious','generous']):[];if(!characterById[id])return [];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
+export function defaultTraits(id:string):Trait[]{const configured=campaignSetup.personSetup?.[id]?.traits;if(configured)return [...configured];if(expandedPersonById[id])return expandedPersonById[id]?(expandedPersonById[id].role==='commander'?['diligent','steadfast']:expandedPersonById[id].role==='scholar'?['frugal','diligent']:['gregarious','generous']):[];if(!characterById[id])return [];const role=characterById[id].role;return role==='ruler'?['frugal','steadfast']:role==='prince'?['gregarious','generous']:role==='commander'?['diligent','steadfast']:['diligent','wary'];}
 export const pair=(a:string,b:string)=>a+'|'+b;
 export function houseMembers(id:string,w?:World){
   const c=getCharacter(w,id);if(!c)return [];return (w?allCharacters(w):Object.values(characterById)).filter(p=>p.family===c.family&&p.polity===c.polity);
@@ -56,13 +47,13 @@ export function newSocial(id:string):Social{
   return {version:1,founder:id,traits:{...Object.fromEntries(historicalCharacters.map(c=>[c.id,defaultTraits(c.id)])),[id]:defaultTraits(id)},opinions,hooks,cooldowns:{},stress:0,renown:40,legacies:{stewardship:0,kinship:0,learning:0},heir:null,advisor:null,lineage:[{id,day:0}],seed:546,scheme:null};
 }
 export function traitsFor(w:World,id=w.characterId):Trait[]{const base=id?(w.social?.traits[id]??defaultTraits(id)):[];return id&&w.economy?[...new Set<Trait>([...base,...stableEconomicTraits(id, getPerson(w,id)?.status==='fictional')])]:base;}
-export const abilityNames={diplomacy:'外交',martial:'军事',stewardship:'管理',intrigue:'谋略'} as const;
+export {abilityNames} from './personSetupDefinition';
 export type Ability=keyof typeof abilityNames;
 export function abilityBreakdown(w:World,id=w.characterId,scope?:'public'|'private'|'common'){
  const c=id? getCharacter(w,id)!:null,t=traitsFor(w,id),p=w.lifestyles?.people[id??'fictional'],focus=p?.focus?lifestyleFocuses[p.focus].branch:null;
  return Object.fromEntries((Object.keys(abilityNames) as Ability[]).map(skill=>{
  const branch=skill,genome=id?w.identities?.people[id]?.genome:undefined;
- const parts=[{label:'师承培养',value:skill==='intrigue'?0:w.householdPlans?.growth[id??'']?.[skill]??0},{label:'基础能力',value:8},{label:'私人研习',value:skill==='stewardship'?educationBonus(w.economy,id??''):0},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'军事历练',value:skill==='martial'?Math.min(4,Math.floor((w.militaryCareer?.xp[id??'']??0)/60)):0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch&&(!scope||lifestyleFocuses[p!.focus!].scope===scope)?2:0},{label:'已学技能',value:branch?Math.min(5,p?.perks.filter(id=>lifestylePerks[id].branch===branch&&(!scope||lifestylePerks[id].scope==='common'||lifestylePerks[id].scope===scope)).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/(3*LIFESTYLE_XP_PER_POINT))):0},{label:'军中负伤',value:(lifeOf(w,id)?.injuryUntil??0)>w.day?-(skill==='martial'?2:1):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
+ const parts=[{label:'师承培养',value:skill==='intrigue'?0:w.householdPlans?.growth[id??'']?.[skill]??0},{label:'基础能力',value:campaignSetup.personSetup?.[id??'']?.abilities?.[skill]??8},{label:'私人研习',value:skill==='stewardship'?educationBonus(w.economy,id??''):0},{label:'先天敏锐',value:skill==='intrigue'&&genome&&expressGenome(genome).congenital.includes('acuity')?2:0},{label:'军事历练',value:skill==='martial'?Math.min(4,Math.floor((w.militaryCareer?.xp[id??'']??0)/60)):0},{label:'人物经历',value:skill==='martial'&&(c?.role??expandedPersonById[id??'']?.role)==='commander'?6:skill==='diplomacy'&&c?.role==='prince'?2:0},{label:'性格特质',value:skill==='diplomacy'&&t.includes('gregarious')?4:skill==='stewardship'&&t.includes('frugal')?4:skill==='intrigue'&&t.includes('wary')?3:0},{label:'家族声望',value:skill==='diplomacy'?familyStanding(w,id).diplomacy:0},{label:'生活重心',value:branch&&focus===branch&&(!scope||lifestyleFocuses[p!.focus!].scope===scope)?2:0},{label:'已学技能',value:branch?Math.min(5,p?.perks.filter(id=>lifestylePerks[id].branch===branch&&(!scope||lifestylePerks[id].scope==='common'||lifestylePerks[id].scope===scope)).length??0):0},{label:'长期研习',value:branch?Math.min(1,Math.floor((p?.xp[branch]??0)/(3*LIFESTYLE_XP_PER_POINT))):0},{label:'军中负伤',value:(lifeOf(w,id)?.injuryUntil??0)>w.day?-(skill==='martial'?2:1):0},{label:'健康',value:-(lifeOf(w,id)?.illness?.severity??0)*(skill==='martial'?2:1)},{label:'压力',value:id===w.characterId&&(w.social?.stress??0)>=80?-2:0}];
  return [skill,{value:Math.max(0,Math.min(40,parts.reduce((n,p)=>n+p.value,0))),parts:parts.filter(p=>p.value!==0)}];
  })) as Record<Ability,{value:number;parts:{label:string;value:number}[]}>;
 }

@@ -1,3 +1,5 @@
+import {worldRealms} from './polityRuntime';
+import {siteById} from '../data/scenario';
 import {authoredEventDefinitions} from '../data/authoredEvents';
 import {getPerson} from './personRegistry';
 import type {World} from './types';
@@ -16,7 +18,7 @@ export function validAuthoredEvents(w:World){
    let expected=d.startStage,day=i.created,entered=i.created,terminal=false;
    for(const [index,r] of i.receipts.entries()){const st=d.stages.find(x=>x.id===expected),op=st?.options.find(x=>x.id===r.option);
     if(!object(r,['revision','stage','option','day','effects'])||r.revision!==index||r.stage!==expected||!op||!integer(r.day,day,w.day)||!Array.isArray(r.effects)||r.effects.length!==op.actions.length)return false;
-    for(const [j,e] of r.effects.entries()){const a=op.actions[j];if(!object(e,['action','coins','order','requests'])||e.action!==a.kind||!Array.isArray(e.requests)||e.requests.some(n=>!integer(n,1,Number.MAX_SAFE_INTEGER)))return false;if(a.kind==='fiscalRelief'?(e.coins!==-20||!integer(e.order,1,8)||e.requests.length!==0):(e.coins!==0||e.order!==0||e.requests.length!==1))return false;}
+    for(const [j,e] of r.effects.entries()){const a=op.actions[j];if(a.kind==='relocateCourt'){if(!object(e,['action','coins','order','requests','court'])||e.action!==a.kind||e.coins!==0||e.order!==0||!Array.isArray(e.requests)||e.requests.length||!object(e.court,['realm','from','to','coins'])||!worldRealms(w).includes(e.court!.realm as never)||!siteById[e.court!.from]||e.court!.to!==i.site||e.court!.from===e.court!.to||e.court!.coins!==-100)return false;continue;}if(!object(e,['action','coins','order','requests'])||e.action!==a.kind||!Array.isArray(e.requests)||e.requests.some(n=>!integer(n,1,Number.MAX_SAFE_INTEGER)))return false;if(a.kind==='fiscalRelief'?(e.coins!==-20||!integer(e.order,1,8)||e.requests.length!==0):(e.coins!==0||e.order!==0||e.requests.length!==1))return false;}
     if(op.next){expected=op.next;entered=r.day;}else {terminal=true;if(index!==i.receipts.length-1||i.status!==(op.cancel?'cancelled':'resolved'))return false;}day=r.day;
    }
    if(i.stage!==expected||i.entered!==entered||!terminal&&['resolved','cancelled'].includes(i.status)||(s.lastChecks[d.id]??-1)<i.created)return false;

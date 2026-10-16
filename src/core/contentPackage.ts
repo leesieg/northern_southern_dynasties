@@ -1,3 +1,5 @@
+import {assertPersonSetups} from './personSetupDefinition';
+import {assertInitialSuccession} from './initialSuccessionDefinition';
 import {validateScenarioLife,presenceAtStart} from './scenarioLifeDefinition';
 import {validatePoliticalReferences} from './politicalDefinition';
 import {validateStrategyReferences} from './strategyDefinition';
@@ -60,6 +62,10 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  }
  match(hierarchy.territoryRoots,Object.values(hierarchy.territoryNodes).filter(node=>!node.parent),'区划根节点');
  const setup=(tables.campaignSetup as unknown as typeof import('../data/campaignSetup')).campaignSetup;
+ assertPersonSetups(setup.personSetup??{});assertInitialSuccession(setup.succession??{});
+ for(const id of Object.keys(setup.personSetup??{}))if(!chars.characterById[id])throw new Error('能力配置人物不存在：'+id);
+ for(const [r,h] of Object.entries(setup.succession??{})){if(!(setup.politics?.realms.map(v=>v.id)??['liang','east','west']).includes(r as never))throw new Error('继承配置政权未启用：'+r);for(const id of [h.ruler,h.executive].filter(Boolean) as string[])if(!chars.characterById[id]||chars.characterById[id].polity!==r||presenceAtStart(setup.life??null,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year,id)!=='active')throw new Error('继承人须为本国在世人物：'+id);}
+
  if(setup.life&&scripts.gameScripts.length!==1)throw new Error('生命初态包须绑定单个剧本。');
  validateScenarioLife(setup.life??null,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year,[...scripts.gameScripts.flatMap(s=>s.characterIds),...(setup.politics?.realms.flatMap(r=>[r.ruler,...r.executives])??['xiao-yan','yuan-shanjian','yuan-baoju','gao-huan','gao-cheng','yuwen-tai']),...(setup.strategy?.armies??setup.armies).flatMap(a=>a.commander?[a.commander]:[]),...Object.entries(setup.personStarts).filter(([,p])=>p.office&&p.office!=='none').map(([id])=>id)]);
  validatePoliticalReferences(setup.politics??null,scenario.siteById,Object.fromEntries(Object.entries(chars.characterById).filter(([id])=>presenceAtStart(setup.life??null,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year,id)==='active')),tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year);

@@ -2,13 +2,14 @@
 export const eventCapabilities={
  version:1,
  selectors:{player:'当前玩家',person:'指定人物',governor:'目标县治现任主官'},
- conditions:{alive:{name:'执行者在世',value:null},authority:{name:'具有目标地办理权',value:null},present:{name:'执行者位于目标地',value:null},dayAtLeast:{name:'世界日不早于',value:{min:0,max:3650}},orderBelow:{name:'地方秩序低于',value:{min:1,max:101}},localCoinsAtLeast:{name:'地方公库至少',value:{min:0,max:1000000}},noPendingGrant:{name:'当地没有待批拨款',value:null}},
- actions:{fiscalRelief:{name:'平粜赈济',description:'调用既有公款规则，地方公库支出 20 钱，秩序至多增加 8；费用与资格由实际规则复核。',amount:null},requestGrant:{name:'申请地方拨款',description:'以真实县级主官身份向当前上级申请赈济预算；不自动批准、不预支到账。',amount:{min:20,max:400}}},
+ conditions:{yearAtLeast:{name:'公历年不早于',value:{min:100,max:9999}},alive:{name:'执行者在世',value:null},authority:{name:'具有目标地办理权',value:null},present:{name:'执行者位于目标地',value:null},dayAtLeast:{name:'世界日不早于',value:{min:0,max:3650}},orderBelow:{name:'地方秩序低于',value:{min:1,max:101}},localCoinsAtLeast:{name:'地方公库至少',value:{min:0,max:1000000}},noPendingGrant:{name:'当地没有待批拨款',value:null}},
+ actions:{relocateCourt:{name:'迁驻朝廷',description:'须实际执政者已抵达并控制目标县域。中央公库支出 100 钱，使团、公务和补给按新驻地办理。',amount:null},fiscalRelief:{name:'平粜赈济',description:'调用既有公款规则，地方公库支出 20 钱，秩序至多增加 8；费用与资格由实际规则复核。',amount:null},requestGrant:{name:'申请地方拨款',description:'以真实县级主官身份向当前上级申请赈济预算；不自动批准、不预支到账。',amount:{min:20,max:400}}},
  native:[{id:'hou-jing',name:'侯景事件',handler:'historical-v1',editable:false,description:'沿用现有阶段、交涉、战争与收尾，作者不能用通用动作绕过专用规则。'}],
  limits:{definitions:50,stages:12,options:6,actions:6,conditions:12,runs:20},
 } as const;
 export type Condition={kind:keyof typeof eventCapabilities.conditions;value?:number};
-export type EventAction={kind:'fiscalRelief'}|{kind:'requestGrant';amount:number};
+export type EventAction={kind:'relocateCourt'}|{kind:'fiscalRelief'}|{kind:'requestGrant';amount:number};
+export function newEventAction(kind:EventAction['kind']):EventAction{if(!Object.hasOwn(eventCapabilities.actions,kind))throw new Error('未注册行动');return kind==='requestGrant'?{kind,amount:40}:{kind};}
 export interface EventOption {id:string;title:string;description:string;conditions:Condition[];actions:EventAction[];next:string|null;cancel:boolean;npcWeight:number}
 export interface EventStage {id:string;title:string;body:string;delayDays:number;timeoutDays:number;options:EventOption[]}
 export interface EventDefinition {id:string;name:string;description:string;enabled:boolean;scenarioIds:string[];actor:{kind:'player'|'person'|'governor';personId:string|null};site:string;requiresAuthority:boolean;conditions:Condition[];probability:number;cooldownDays:number;maxRuns:number;startStage:string;stages:EventStage[]}

@@ -1,3 +1,5 @@
+import type {PersonSetups} from '../core/personSetupDefinition';
+import type {InitialSuccession} from '../core/initialSuccessionDefinition';
 import type {ScenarioLife} from '../core/scenarioLifeDefinition';
 import {selectContent} from '../core/contentBinding';
 import type {PoliticalDefinition} from '../core/politicalDefinition';
@@ -7,6 +9,8 @@ import type {Person} from '../core/types';
  * The three-realms-v1 rules profile retains its stable realm/person/site IDs. */
 export let campaignSetup={
  seed:546103,
+ personSetup:{} as PersonSetups,
+ succession:{} as InitialSuccession,
  life:null as ScenarioLife|null,
  politics:null as PoliticalDefinition|null,
  strategy:null as StrategyDefinition|null,

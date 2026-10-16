@@ -1,0 +1,4 @@
+import type {ReactNode} from 'react';
+export function AuthorField({name,children,wide=false}:{name:string;children:ReactNode;wide?:boolean}){return <label className={'field'+(wide?' wide':'')}><span>{name}</span>{children}</label>;}
+export function AuthorSelect({name,value,options,onChange}:{name:string;value:string;options:Record<string,string>;onChange:(value:string)=>void}){return <AuthorField name={name}><select value={value} onChange={e=>onChange(e.target.value)}>{Object.entries(options).map(([id,label])=><option value={id} key={id}>{label}</option>)}</select></AuthorField>;}
+export function AuthorNumber({name,value,onChange,min=0,max=1e6}:{name:string;value:number;onChange:(value:number)=>void;min?:number;max?:number}){return <AuthorField name={name}><input type="number" value={value} min={min} max={max} onChange={e=>onChange(Number(e.target.value))}/></AuthorField>;}

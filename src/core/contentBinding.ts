@@ -39,6 +39,7 @@ export const phaseThreeOfficialSave={packageId:'official-nsd',digest:'ffed10191b
 const phaseFourDevelopmentSave={packageId:'official-nsd',digest:'fbfdeede4f409e2baed0949b4c769232910551d55c9fae88a24ad3f2afd3af08',engine:'c0a9dd56700ff051970be7713d0fffa9438521e283e5054a50ab50c5279fb136',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
 // Captured before this compatibility fix (a97ea00 through 2580b25).
 const phaseFourOfficialSave={packageId:'official-nsd',digest:'3ad2f52800b83d0b596ce18b6ac3665dd383a94f9b15f959b2e75489da7d5f7a',engine:'92f2e7b25584fcab5ff32f0e447b0d694974a7d465d2f7b631d65e407a98e9d4',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+const phaseBOfficialSave={"packageId":"official-nsd","digest":"40583dadb95a7567466f3fcfe8b2d4d067916c5ee2c959c0c49dfe138d76e490","engine":"3a59592b7844fcb6c6a91c69fda77b4907b0cb005d2c2535db362113b20c9ff0","assets":"164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d"};
 const phaseAOfficialSave={"packageId":"official-nsd","digest":"37c03a9679643e0ed7db5aff435c7882a62ff2c2537b4b6f930a3bf8d1db4395","engine":"071a1232f3d1392ae06b9e1e49d3e516fca19d13057463e61fc37b61eef16aef","assets":"164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d"};
 const preEraOfficialSave={packageId:'official-nsd',digest:'af808ae5d3ddcea4d5d26368bd3b6b44c52cf11d1c0f84dec88b7b6c8fc0decc',engine:'a4a625d2fea6c4bf08a24e00a8409de8cf40139a2c3378dfc6dcb20092d628d7',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
 export function assertSaveContent(value:unknown){
@@ -46,6 +47,6 @@ export function assertSaveContent(value:unknown){
  const expected=contentLock();
  if(!expected||!value||typeof value!=='object'||Array.isArray(value))throw new Error('请先加载存档绑定的完整内容包。');
  const actual=value as Record<string,unknown>;
- if(binding?.legacy&&expected.packageId==='official-nsd'&&Object.keys(actual).length===4&&[phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave].some(lock=>Object.entries(lock).every(([key,value])=>actual[key]===value)))return;
+ if(binding?.legacy&&expected.packageId==='official-nsd'&&Object.keys(actual).length===4&&[phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave].some(lock=>Object.entries(lock).every(([key,value])=>actual[key]===value)))return;
  if(Object.keys(expected).some(key=>actual[key]!==expected[key as keyof ContentLock])||Object.keys(actual).length!==4)throw new Error('存档内容包、规则或资产版本不匹配，当前进度未改变。');
 }

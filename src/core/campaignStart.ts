@@ -1,3 +1,4 @@
+import {initializeSuccession} from './initialSuccession';
 import {initialPresence} from './scenarioLife';
 import {initializeStrategicStart} from './strategicStart';
 import {advanceAuthoredEvents} from './authoredEvents';
@@ -29,6 +30,7 @@ export function createCampaign(characterId?:string,scriptId?:string,mode?:'sandb
  if(world.realm&&Object.values(campaignSetup.personStarts).some(s=>s.office))syncRulerHistory(world);
  initializeStrategicStart(world);
  initializeHistoricalStart(world);
+ initializeSuccession(world);
  advanceAuthoredEvents(world);
  return world;
 }
