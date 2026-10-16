@@ -13,14 +13,14 @@ import {Resource,ArtIcon} from './ArtIcon';
 import {CharacterPortrait} from './CharacterPortrait';
 import {getScript} from '../data/scripts';
 import {relationsFor,roleNames,startRules,familyName} from '../data/characters';
-import {siteById} from '../data/scenario';
+import {siteById,polities} from '../data/scenario';
 import {territories} from '../map/territories';
 import './characters.css';
 const project=([lon,lat]:Position)=>[(lon-100)*25,(42-lat)*30];
 function line(points:Position[],closed=false){return points.map((p,i)=>(i?'L':'M')+project(p).join(',')).join(' ')+(closed?'Z':'');}
 function path(g:Geometry):string{switch(g.type){case 'Polygon':return g.coordinates.map(p=>line(p,true)).join(' ');case 'MultiPolygon':return g.coordinates.flatMap(p=>p.map(r=>line(r,true))).join(' ');case 'LineString':return line(g.coordinates);case 'MultiLineString':return g.coordinates.map(p=>line(p)).join(' ');case 'GeometryCollection':return g.geometries.map(path).join(' ');default:return '';}}
 const regions=territories.features.map(f=>({id:String(f.properties?.id),polity:f.properties?.polity as Polity,shape:path(f.geometry)}));
-const realmColors:Record<Polity,string>={liang:'#71986c',east:'#cb9a57',west:'#b56d59',frontier:'#b8b9ad'};
+const realmColors=Object.fromEntries(Object.entries(polities).map(([id,p])=>[id,p.color])) as Record<Polity,string>;
 export function CharacterPicker({selected,onSelect,allowFictional=true,scriptId,sandbox=false,world,pending=false}:{selected:string;onSelect:(id:string)=>void;allowFictional?:boolean;scriptId?:string;sandbox?:boolean;world?:World;pending?:boolean;onPerson?:(id:string)=>void}){
  const listRef=useRef<HTMLDivElement>(null);
  const script=getScript(scriptId),roster=script.characterIds.map(id=>getCharacter(world,id)!).filter(Boolean);
@@ -37,7 +37,7 @@ export function CharacterPicker({selected,onSelect,allowFictional=true,scriptId,
  const principal=(role:string)=>role==='ruler'||role==='regent';
  return <fieldset className="character-picker campaign-cast" disabled={pending} aria-label="新战役人物选择">
   <aside className="cast-sidebar" aria-label="可选人物">
-   <nav className="cast-realms" aria-label="政权筛选">{[['all','全部'],['liang','梁'],['east','东魏'],['west','西魏']].map(([id,label])=><button type="button" key={id} aria-pressed={realm===id} onClick={()=>{setRealm(id);setCity('');}}>{label}</button>)}</nav>
+   <nav className="cast-realms" aria-label="政权筛选">{[['all','全部'],...Object.entries(polities).filter(([id])=>id!=='frontier').map(([id,p])=>[id,p.name])].map(([id,label])=><button type="button" key={id} aria-pressed={realm===id} onClick={()=>{setRealm(id);setCity('');}}>{label}</button>)}</nav>
    {activeCity&&<div className="cast-city-filter"><span>{siteById[activeCity].name} · {listed.length} 人</span><button type="button" onClick={()=>setCity('')}>全部地点</button></div>}
    <div className="cast-scroll" ref={listRef}>{[{name:'君主与执政',test:(role:string)=>principal(role)},{name:'宗室与群臣',test:(role:string)=>!principal(role)}].map(group=>{const people=listed.filter(p=>group.test(p.role));return people.length>0&&<section className="cast-group" key={group.name}><h3>{script.name} · {group.name}</h3><div className="cast-grid">{people.map(p=><button type="button" key={p.id} className="cast-person" aria-pressed={selected===p.id} aria-label={p.name+' · '+politicalTitle(world,p.id)+' · '+siteById[p.home].name} onClick={()=>choose(p.id)}><span className="cast-ribbon">{roleNames[p.role]}</span><CharacterPortrait characterId={p.id} world={world} compact/><strong>{p.name}</strong><small>{siteById[p.home].name} · {regimeName(world,p.polity)}</small></button>)}</div></section>;})}
     {!listed.length&&<p className="cast-empty">没有匹配人物。<button type="button" onClick={reset}>清除筛选</button></p>}

@@ -67,7 +67,7 @@ export type GameCommand = import('./authoredEvents').AuthoredEventCommand | impo
   | { type: 'commission' }
   | import('./localAdministration').LocalCommand | import('./treasury').FiscalCommand | RetinueCommand | MobilityCommand | ServiceCommand | DutyCommand | LifeCommand | DiplomacyCommand | RelationshipCommand | CourtCommand | GovernmentCommand | BuildCommand | SocialCommand | RealmCommand | LifestyleCommand;
 export type Request = (
-  | { type: 'init' }
+  | { type: 'init'; skipLoad?:boolean }
   | { type:'new';mode?:'sandbox'|'tutorial';scriptId?:string;characterId?:string }
   | { type:'resume'|'menu' }
   | { type: 'speed'; speed: number }
@@ -75,12 +75,16 @@ export type Request = (
   | { type: 'background' }
   | { type: 'command'; command: GameCommand; key?: import('./requestReceipts').CommandKey }
   | { type: 'save' }
+  | { type:'checkpoint' }
+  | { type:'catalog';digest:string }
+  | { type:'cancel-launch' }
   | { type: 'load'; slot: string }
   | { type: 'delete-save'; slot: string }
   | { type: 'export' }
   | { type: 'import'; text: string }) & {requestId?:string};
-export interface SaveInfo { mode?:'sandbox'; scriptId?:string; characterName?:string; id: string; savedAt: number; day: number }
+export interface SaveInfo { content?:import('./contentBinding').ContentLock;scriptName?:string;date?:string; mode?:'sandbox'; scriptId?:string; characterName?:string; id: string; savedAt: number; day: number }
 export type Reply =
+  | {type:'checkpoint';text:string|null}
   | {type:'receipt';requestId:string;ok:boolean;text?:string}
   | {type:'paused';events:PauseEvent[]}
   | { type:'screen';page:'menu'|'play' }

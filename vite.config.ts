@@ -15,6 +15,7 @@ export default defineConfig({
   // Content compilation creates config-free SSR servers in this same project.
   // Keep browser dependency prebundles separate from their production caches.
   cacheDir: '.cache/vite-client',
+  optimizeDeps:{exclude:['virtual:official-content-package']},
   plugins: [react(),mapResourcesPlugin(),contentPackagePlugin(),studioPlugin()],
   worker:{format:'es',plugins:()=>[contentPackagePlugin()]},
   server: { port: 5173, strictPort: true, proxy:tileProxy, fs:{deny:['**/.studio/**','**/.env*','**/*.{crt,pem}','**/.git/**']}, watch:{ignored:['**/.cache/**','**/.studio/**']} },

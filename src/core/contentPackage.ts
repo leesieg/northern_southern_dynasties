@@ -8,7 +8,7 @@ import {canonicalContent,createContentRegistry,type ContentSource} from './conte
 import {bindContent,freezeContent,type ContentLock,type ContentTables} from './contentBinding';
 
 export interface ContentEnvironment {
- engine:string;assets:string;officialDigest:string;
+ engine:string;assets:string;officialDigest:string;officialSaves?:ContentLock[];assetFiles?:{path:string;bytes:number;sha256:string}[];
  tables:Record<string,string[]>;
 }
 /** Compiled declarative data only. Algorithms are a pinned, trusted engine dependency. */
@@ -106,6 +106,6 @@ export async function loadContentPackage(input:unknown,environment:ContentEnviro
 export async function installContentPackage(input:unknown,environment:ContentEnvironment):Promise<ContentLock>{
  const p=await loadContentPackage(input,environment);
  const lock={packageId:p.packageId,digest:p.digest,engine:p.dependencies.engine,assets:p.dependencies.assets};
- bindContent(lock,p.tables,p.digest===environment.officialDigest);
+ bindContent(lock,p.tables,p.packageId==='official-nsd'&&p.digest===environment.officialDigest,environment.officialSaves);
  return freezeContent(lock);
 }

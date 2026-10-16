@@ -2,7 +2,7 @@
  * Worker/module graph before binding another package; never switch a running world. */
 export interface ContentLock {packageId:string;digest:string;engine:string;assets:string}
 export type ContentTables=Record<string,Record<string,unknown>>;
-let binding:{lock:ContentLock;tables:ContentTables;legacy:boolean}|undefined;
+let binding:{lock:ContentLock;tables:ContentTables;legacy:boolean;officialSaves:ContentLock[]}|undefined;
 const builtins:ContentTables={};
 
 export function freezeContent<T>(value:T):T {
@@ -12,9 +12,9 @@ export function freezeContent<T>(value:T):T {
  }
  return value;
 }
-export function bindContent(lock:ContentLock,tables:ContentTables,legacy=false){
+export function bindContent(lock:ContentLock,tables:ContentTables,legacy=false,officialSaves:ContentLock[]=[]){
  if(binding||Object.keys(builtins).length)throw new Error('内容只能在规则加载前绑定一次；请创建新的模拟实例。');
- binding=freezeContent({lock:structuredClone(lock),tables:structuredClone(tables),legacy});
+ binding=freezeContent({lock:structuredClone(lock),tables:structuredClone(tables),legacy,officialSaves:structuredClone(officialSaves)});
 }
 export function selectContent<T extends Record<string,unknown>>(id:string,defaults:T):T {
  builtins[id]=defaults;
@@ -42,11 +42,16 @@ const phaseFourOfficialSave={packageId:'official-nsd',digest:'3ad2f52800b83d0b59
 const phaseBOfficialSave={"packageId":"official-nsd","digest":"40583dadb95a7567466f3fcfe8b2d4d067916c5ee2c959c0c49dfe138d76e490","engine":"3a59592b7844fcb6c6a91c69fda77b4907b0cb005d2c2535db362113b20c9ff0","assets":"164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d"};
 const phaseAOfficialSave={"packageId":"official-nsd","digest":"37c03a9679643e0ed7db5aff435c7882a62ff2c2537b4b6f930a3bf8d1db4395","engine":"071a1232f3d1392ae06b9e1e49d3e516fca19d13057463e61fc37b61eef16aef","assets":"164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d"};
 const preEraOfficialSave={packageId:'official-nsd',digest:'af808ae5d3ddcea4d5d26368bd3b6b44c52cf11d1c0f84dec88b7b6c8fc0decc',engine:'a4a625d2fea6c4bf08a24e00a8409de8cf40139a2c3378dfc6dcb20092d628d7',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+// Captured from the completed stage C source before stage D changes.
+const phaseCOfficialSave={packageId:'official-nsd',digest:'5cd6adc35d88ba7990f3f4b342708bdec2e2614ee6843e51ba209e1952a177da',engine:'1531be96b5f86a8045da2eb2c2dc8d41441cc7089d7c9de44dff1b52a520b0cf',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+export function sameContentLock(a:unknown,b:ContentLock):boolean {return !!a&&typeof a==='object'&&!Array.isArray(a)&&Object.keys(a).length===4&&Object.entries(b).every(([key,value])=>(a as Record<string,unknown>)[key]===value);}
+export function officialSaveCompatible(value:unknown,expected:ContentLock,additional:ContentLock[]=[]):boolean {
+ return expected.packageId==='official-nsd'&&(sameContentLock(value,expected)||[...[phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave],phaseCOfficialSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)].some(lock=>sameContentLock(value,lock)));
+}
 export function assertSaveContent(value:unknown){
  if(value===undefined){if(!allowsLegacyContent())throw new Error('无内容锁的旧档只能由官方内容包恢复。');return;}
  const expected=contentLock();
  if(!expected||!value||typeof value!=='object'||Array.isArray(value))throw new Error('请先加载存档绑定的完整内容包。');
- const actual=value as Record<string,unknown>;
- if(binding?.legacy&&expected.packageId==='official-nsd'&&Object.keys(actual).length===4&&[phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave].some(lock=>Object.entries(lock).every(([key,value])=>actual[key]===value)))return;
- if(Object.keys(expected).some(key=>actual[key]!==expected[key as keyof ContentLock])||Object.keys(actual).length!==4)throw new Error('存档内容包、规则或资产版本不匹配，当前进度未改变。');
+ if(binding?.legacy&&officialSaveCompatible(value,expected,binding.officialSaves))return;
+ if(!sameContentLock(value,expected))throw new Error('存档内容包、规则或资产版本不匹配，当前进度未改变。');
 }

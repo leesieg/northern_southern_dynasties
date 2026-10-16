@@ -2,6 +2,7 @@ import {beforeEach,describe,expect,it,vi} from 'vitest';
 const assets='164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d';
 // Independent fixtures: checkpoint exports and the user's read-only save diagnostic.
 const checkpoints=[
+ {packageId:'official-nsd',digest:'5cd6adc35d88ba7990f3f4b342708bdec2e2614ee6843e51ba209e1952a177da',engine:'1531be96b5f86a8045da2eb2c2dc8d41441cc7089d7c9de44dff1b52a520b0cf',assets},
  {"packageId":"official-nsd","digest":"40583dadb95a7567466f3fcfe8b2d4d067916c5ee2c959c0c49dfe138d76e490","engine":"3a59592b7844fcb6c6a91c69fda77b4907b0cb005d2c2535db362113b20c9ff0",assets},
  {packageId:'official-nsd',digest:'37c03a9679643e0ed7db5aff435c7882a62ff2c2537b4b6f930a3bf8d1db4395',engine:'071a1232f3d1392ae06b9e1e49d3e516fca19d13057463e61fc37b61eef16aef',assets},
  {packageId:'official-nsd',digest:'af808ae5d3ddcea4d5d26368bd3b6b44c52cf11d1c0f84dec88b7b6c8fc0decc',engine:'a4a625d2fea6c4bf08a24e00a8409de8cf40139a2c3378dfc6dcb20092d628d7',assets},
@@ -25,6 +26,7 @@ describe('official save compatibility',()=>{
   for(const previous of checkpoints)expect(()=>b.assertSaveContent(previous)).toThrow();
   expect(()=>b.assertSaveContent(undefined)).toThrow();expect(()=>b.assertSaveContent(lock)).not.toThrow();
  });
+ it('accepts an exact trusted development checkpoint only with its registered host bridge',async()=>{const b=await import('./contentBinding'),checkpoint={...current,digest:'d'.repeat(64),engine:'e'.repeat(64)};expect(b.officialSaveCompatible(checkpoint,current)).toBe(false);b.bindContent(current,{},true,[checkpoint]);expect(()=>b.assertSaveContent(checkpoint)).not.toThrow();expect(()=>b.assertSaveContent({...checkpoint,assets:'unknown'})).toThrow();expect(()=>b.assertSaveContent({...checkpoint,packageId:'custom'})).toThrow();});
  it('restores a representative world under the reported lock without bypassing payload validation',async()=>{
   const {createCampaign}=await import('./campaignStart');
   const {serializeWorld}=await import('./save');
@@ -32,7 +34,7 @@ describe('official save compatibility',()=>{
   const tables=(await import('../data/contentTables')).captureContentTables();
   vi.resetModules();const b=await import('./contentBinding');b.bindContent(current,tables,true);
   const save=await import('./save');
-  const original=JSON.stringify(source);source.content=checkpoints[6];const encoded=JSON.stringify(source);
+  const original=JSON.stringify(source);source.content=checkpoints[7];const encoded=JSON.stringify(source);
   const restored=save.parseWorld(encoded);expect(restored).toEqual(JSON.parse(source.payload));
   expect(save.parseWorld(save.serializeWorld(restored))).toEqual(restored);
   expect(JSON.parse(save.serializeWorld(restored)).content).toEqual(current);

@@ -14,7 +14,7 @@ const {deleteSave,loadWorld,listSaves,prepareStorage,saveWorld}=storage;
 let world = newWorld();
 let speed = 0;
 let initialized = false;
-let hasCurrentWorld=false;
+let hasCurrentWorld=false,preparedLaunch=false;
 let slots: SaveInfo[] = [];
 let lastSaved: number | null = null;
 let busy = false;
@@ -36,15 +36,16 @@ function dispatch(request:Request):Promise<void>{
     let ok=true,failure='';
     try {
       if (request.type === 'init') {
-        try { await prepareStorage();slots = await listSaves();initialized=true;const loaded=await loadWorld();world=loaded??newWorld();lastSaved=loaded?latestSaveInfo(slots)?.savedAt??null:null;hasCurrentWorld=!!loaded; }
+        try { await prepareStorage();slots = await listSaves();initialized=true;preparedLaunch=!!request.skipLoad;const loaded=request.skipLoad?null:await loadWorld();world=loaded??newWorld();lastSaved=loaded?latestSaveInfo(slots)?.savedAt??null:null;hasCurrentWorld=!!loaded; }
         catch (error) { ok=false;failure=(error instanceof Error ? error.message : '读取存档失败。')+(initialized?' 请在行记中选择其他存档或导入备份。':'');notice(failure,true); }
       } else if (!initialized) {ok=false;failure='世界尚未就绪，请先重试读取存档。';notice(failure,true);return;}
       else if(request.type==='new'){
         speed=0;
         const next=createCampaign(request.characterId,request.scriptId,request.mode,crypto.getRandomValues(new Uint32Array(1))[0]);
-        if(slots.length&&!hasCurrentWorld)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
+        if(slots.length&&!hasCurrentWorld&&!preparedLaunch)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
         if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
         lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;await refreshSavedSlots();reply({type:'screen',page:'play'});paused(authoredPending(world));
+      }else if(request.type==='checkpoint'){speed=0;if(hasCurrentWorld)await saveWorld(world,false,'previous-run');reply({type:'checkpoint',text:hasCurrentWorld?serializeWorld(world):null});
       }else if(request.type==='resume'){
         speed=0;const loaded=await loadWorld();if(!loaded)throw new Error('还没有存档，请开始新游戏。');world=loaded;hasCurrentWorld=true;slots=await listSaves();lastSaved=latestSaveInfo(slots)?.savedAt??null;speed=0;reply({type:'screen',page:'play'});
       }else if(request.type==='menu'){speed=0;await save();reply({type:'screen',page:'menu'});}
@@ -57,6 +58,7 @@ function dispatch(request:Request):Promise<void>{
         const savedAt=await saveWorld(next,true);world=next;lastSaved=savedAt;await refreshSavedSlots();
         if(request.command.type==='travel'||request.command.type==='mobility'&&request.command.action==='plan'&&world.people[0].journey)speed=1;
       }
+      else if(request.type==='catalog'||request.type==='cancel-launch')throw new Error('请通过剧本藏库切换内容。');
       else if (request.type === 'save') { if(await save())notice('当前行程已保存。'); }
       else if(request.type==='delete-save'){speed=0;await deleteSave(request.slot);slots=slots.filter(s=>s.id!==request.slot);const refreshed=await refreshSavedSlots();if(!slots.some(s=>s.savedAt===lastSaved))lastSaved=null;if(refreshed)notice('存档已删除；当前游玩进度未改变，后续保存将生成新存档。');}
       else if (request.type === 'load') {

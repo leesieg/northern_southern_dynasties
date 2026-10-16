@@ -1,0 +1,3 @@
+import type {ContentPackage} from '../core/contentPackage';
+import type {LaunchRequest} from '../persistence/contentLibrary';
+export function probePackage(content:ContentPackage,request?:LaunchRequest):Promise<void>{return new Promise((resolve,reject)=>{const worker=new Worker(new URL('../worker/packageProbe.ts',import.meta.url),{type:'module'}),timer=setTimeout(()=>finish(new Error('内容校验超时，原进度未改变。')),30000);function finish(error?:Error){clearTimeout(timer);worker.terminate();error?reject(error):resolve();}worker.onerror=()=>finish(new Error('内容校验实例启动失败，原进度未改变。'));worker.onmessage=e=>finish(e.data.ok?undefined:new Error(e.data.error));worker.postMessage({content,request});});}
