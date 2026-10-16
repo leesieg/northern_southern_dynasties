@@ -2,6 +2,7 @@ import {beforeEach,describe,expect,it,vi} from 'vitest';
 const assets='164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d';
 // Independent fixtures: checkpoint exports and the user's read-only save diagnostic.
 const checkpoints=[
+ {packageId:'official-nsd',digest:'37c03a9679643e0ed7db5aff435c7882a62ff2c2537b4b6f930a3bf8d1db4395',engine:'071a1232f3d1392ae06b9e1e49d3e516fca19d13057463e61fc37b61eef16aef',assets},
  {packageId:'official-nsd',digest:'af808ae5d3ddcea4d5d26368bd3b6b44c52cf11d1c0f84dec88b7b6c8fc0decc',engine:'a4a625d2fea6c4bf08a24e00a8409de8cf40139a2c3378dfc6dcb20092d628d7',assets},
  {packageId:'official-nsd',digest:'91103302f26eadcebffb7a130caed62f3d033a092a51761c896db24e3be57ed0',engine:'7c1c015f206ad03ed4f6f0423a96c995db30423d938105a08970ded8e17bbf06',assets},
  {packageId:'official-nsd',digest:'b3544f6a6fc91104ffc8f017c1f1188db92ca35c41d6441618edac7d84f32e73',engine:'bafe57dff1b989055c8eaab727b5f333ec9670c9036cbe01628221ab2feb928b',assets},
@@ -30,7 +31,7 @@ describe('official save compatibility',()=>{
   const tables=(await import('../data/contentTables')).captureContentTables();
   vi.resetModules();const b=await import('./contentBinding');b.bindContent(current,tables,true);
   const save=await import('./save');
-  const original=JSON.stringify(source);source.content=checkpoints[4];const encoded=JSON.stringify(source);
+  const original=JSON.stringify(source);source.content=checkpoints[5];const encoded=JSON.stringify(source);
   const restored=save.parseWorld(encoded);expect(restored).toEqual(JSON.parse(source.payload));
   expect(save.parseWorld(save.serializeWorld(restored))).toEqual(restored);
   expect(JSON.parse(save.serializeWorld(restored)).content).toEqual(current);

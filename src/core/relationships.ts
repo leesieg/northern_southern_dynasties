@@ -37,7 +37,8 @@ export const bondKey=(a:string,b:string)=>[a,b].sort().join('|');
 export const relationName=(id:string,w?:World)=>getPerson(w,id)?.name??'未录人物';
 export const powerBasis=(w:World,r:RealmId)=>{const g=governmentOf(w,r);return g?g.regimeId+'|'+g.ruler+'|'+g.executives.join('|'):'';};
 export function newRelationships(w:World):RelationshipState{
- const state:RelationshipState={version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:546,bonds:{},marriages:historicalMarriages.map((m,i)=>({id:'marriage:historical:'+i,a:m.a,b:m.b,from:w.day,until:null,origin:'historical'})),maritalBasis:Object.fromEntries( allPeople(w).map(p=>[p.id,p.id==='xiao-yan'?'widowed':historicalMarriages.some(m=>m.a===p.id||m.b===p.id)?'recorded':'free'])),opinions:{},hooks:{},reserves:Object.fromEntries( allPeople(w).map(p=>[p.id,120])),oaths:{},regencies:{},cooldowns:{},scheme:null,history:[]};
+ const state:RelationshipState={version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:546,bonds:{},marriages:historicalMarriages.map((m,i)=>({id:'marriage:historical:'+i,a:m.a,b:m.b,from:w.day,until:isAlive(w,m.a)&&isAlive(w,m.b)?null:w.day,origin:'historical'})),maritalBasis:Object.fromEntries( allPeople(w).map(p=>[p.id,p.id==='xiao-yan'?'widowed':historicalMarriages.some(m=>m.a===p.id||m.b===p.id)?'recorded':'free'])),opinions:{},hooks:{},reserves:Object.fromEntries( allPeople(w).map(p=>[p.id,120])),oaths:{},regencies:{},cooldowns:{},scheme:null,history:[]};
+ for(const m of state.marriages)if(m.until!==null){if(isAlive(w,m.a))state.maritalBasis[m.a]='widowed';if(isAlive(w,m.b))state.maritalBasis[m.b]='widowed';}
  for(const r of worldRealms(w)){const g=governmentOf(w,r);if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)state.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}
  return state;
 }

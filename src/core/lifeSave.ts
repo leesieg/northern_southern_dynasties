@@ -1,3 +1,4 @@
+import {initialPresence} from './scenarioLife';
 import {worldRealms} from './polityRuntime';
 import {isMonthAnchor,monthStart} from './calendar';
 import {birthRecords} from '../data/lifespans';
@@ -12,6 +13,7 @@ export function validLife(w:World){
  if(!obj(s)||s.version!==1||!int(s.since,0,w.day)||!int(s.lastMonthly,monthStart(s.since,w.scriptId),w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)||!int(s.seed,0,0xffffffff)||!obj(s.people)||Object.keys(s.people).length!==ids.length)return false;
  for(const id of ids){
   const p=s.people[id];if(!obj(p)||!int(p.health,0,100)||!int(p.careUntil,0,w.day+90)||(p.injuryUntil!==undefined&&!int(p.injuryUntil,0,w.day+60)))return false;
+  if(initialPresence(id)!=='active'&&(p.health!==0||p.illness!==null||p.death!==null||p.careUntil!==0||p.injuryUntil!==undefined))return false;
   if(p.illness!==null&&(!obj(p.illness)||!['fever','wasting','cold','flux'].includes(String(p.illness.kind))||!int(p.illness.since,s.since,w.day)||!int(p.illness.severity,1,3)))return false;
   if(p.death!==null&&(!obj(p.death)||!int(p.death.day,s.since,w.day)||!['illness','age','battle','execution','murder'].includes(String(p.death.cause))||p.health!==0||p.injuryUntil!==undefined||p.careUntil!==0||p.illness!==null&&Number(p.illness.since)>p.death.day))return false;
  }

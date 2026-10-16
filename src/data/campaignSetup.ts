@@ -1,3 +1,4 @@
+import type {ScenarioLife} from '../core/scenarioLifeDefinition';
 import {selectContent} from '../core/contentBinding';
 import type {PoliticalDefinition} from '../core/politicalDefinition';
 import type {StrategyDefinition} from '../core/strategyDefinition';
@@ -6,6 +7,7 @@ import type {Person} from '../core/types';
  * The three-realms-v1 rules profile retains its stable realm/person/site IDs. */
 export let campaignSetup={
  seed:546103,
+ life:null as ScenarioLife|null,
  politics:null as PoliticalDefinition|null,
  strategy:null as StrategyDefinition|null,
  // Authored initial stocks. Empty in official play; never reapplied on load.

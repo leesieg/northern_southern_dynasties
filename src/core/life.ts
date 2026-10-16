@@ -1,3 +1,4 @@
+import {initialPresence} from './scenarioLife';
 import {advanceNPCCare} from './npcLife';
 import {inheritEstates} from './estates';
 import {accountWallet} from './obligations';
@@ -26,7 +27,7 @@ const personName=(w:World,id:string)=>getPerson(w,id)?.name??staticPersonName(id
 export function ensureLife(w:World){return w.life??=newLifeState(w);}
 function roll(w:World){const s=ensureLife(w);s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
 export function careReason(w:World,id:string,actor=w.characterId??'fictional'){
- const p=lifeOf(w,id);if(!p||p.death)return '无法照料已故或未录人物';
+ const p=lifeOf(w,id);if(!p||!isAlive(w,id))return '无法照料未参与本局或已故人物';
  if(w.campaign&&w.campaign.status!=='active')return '本局已结束';
  if(!isAlive(w,actor))return '须由在世人物延医';
  if(actor===(w.characterId??'fictional')?w.people[0].journey:personResidence(w,actor).traveling)return '抵达后才能延医';
@@ -122,7 +123,7 @@ export function advanceLife(w:World){
  else if(automatic.remaining>=30&&!careReason(w,automatic.payer)){actLife(w,{type:'health',action:'care',target:automatic.payer});automatic.remaining-=30;if(!automatic.remaining)delete s.autoCare;}}
  advanceNPCCare(w);
  for(const id of Object.keys(s.people)){
-  const p=s.people[id];if(p.death)continue;
+  const p=s.people[id];if(p.death||initialPresence(id)!=='active')continue;
   const age=ageAt(w,id)!,self=id===(w.characterId??'fictional'),stress=self?w.social?.stress??0:0,care=p.careUntil>=w.day&&p.careUntil>0;
   const genome=w.identities?.people[id]?.genome,vigorous=genome?expressGenome(genome).congenital.includes('vitality'):false;
   const mortality=mortalityRisk(age,p.health,p.illness?.severity??0,care,vigorous),draw=roll(w);

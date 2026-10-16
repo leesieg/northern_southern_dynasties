@@ -1,3 +1,4 @@
+import {validateScenarioLife,presenceAtStart} from './scenarioLifeDefinition';
 import {validatePoliticalReferences} from './politicalDefinition';
 import {validateStrategyReferences} from './strategyDefinition';
 import {eventDefinitionIssues,type EventDefinition} from './eventDefinitions';
@@ -59,11 +60,14 @@ function validateTables(tables:ContentTables,expected:ContentEnvironment['tables
  }
  match(hierarchy.territoryRoots,Object.values(hierarchy.territoryNodes).filter(node=>!node.parent),'区划根节点');
  const setup=(tables.campaignSetup as unknown as typeof import('../data/campaignSetup')).campaignSetup;
- validatePoliticalReferences(setup.politics??null,scenario.siteById,chars.characterById,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year);
+ if(setup.life&&scripts.gameScripts.length!==1)throw new Error('生命初态包须绑定单个剧本。');
+ validateScenarioLife(setup.life??null,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year,[...scripts.gameScripts.flatMap(s=>s.characterIds),...(setup.politics?.realms.flatMap(r=>[r.ruler,...r.executives])??['xiao-yan','yuan-shanjian','yuan-baoju','gao-huan','gao-cheng','yuwen-tai']),...(setup.strategy?.armies??setup.armies).flatMap(a=>a.commander?[a.commander]:[]),...Object.entries(setup.personStarts).filter(([,p])=>p.office&&p.office!=='none').map(([id])=>id)]);
+ validatePoliticalReferences(setup.politics??null,scenario.siteById,Object.fromEntries(Object.entries(chars.characterById).filter(([id])=>presenceAtStart(setup.life??null,tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year,id)==='active')),tables.lifespans.birthRecords as Record<string,{year:number}>,scripts.gameScripts[0].year);
  for(const r of setup.politics?.realms??[]){const style=scenario.polities[r.id];if(!style||style.name!==r.name||style.short!==r.short||style.color!==r.color)throw new Error('政权显示定义与政治初态不一致：'+r.id);}
  for(const r of setup.politics?.realms??[])if((setup.strategy?.cities[r.capital]?.controller??scenario.siteById[r.capital]?.polity)!==r.id)throw new Error('开局首都须由本国实际控制：'+r.id);
  validateStrategyReferences(setup.strategy,scenario.siteById,chars.characterById,hierarchy.territoryNodes,scripts.gameScripts[0].year,setup.politics?.realms.map(r=>r.id));
  const integer=(n:number,min:number,max:number)=>Number.isSafeInteger(n)&&n>=min&&n<=max;
+ const populations=tables.populationEstimates.populationEstimates as Record<string,{people:number;low:number;high:number;basis:string;source:string;note:string}>;for(const site of scenario.sites){const p=populations[site.id];if(!p||!integer(p.people,100,1e6)||!integer(p.low,0,p.people)||!integer(p.high,p.people,2e6)||!['allocated-register','regional-estimate','authored'].includes(p.basis)||typeof p.source!=='string'||typeof p.note!=='string')throw new Error('地点缺少有效人口初态及来源：'+site.id);}
  if(!setup.personStarts||typeof setup.personStarts!=='object'||Array.isArray(setup.personStarts))throw new Error('人物开局覆盖无效。');
  for(const [id,start] of Object.entries(setup.personStarts)){
   if(!chars.characterById[id]||!start||Object.keys(start).some(k=>!['coins','food','npcCoins','sex','office'].includes(k))||!['male','female'].includes(start.sex))throw new Error('人物开局覆盖无效：'+id);

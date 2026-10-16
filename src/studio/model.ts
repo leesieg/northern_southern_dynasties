@@ -1,3 +1,6 @@
+import {assertScenarioMap,scenarioMapIssues,compileScenarioMap,mapTemplate,type ScenarioMap} from './scenarioMap';
+export {mapTemplate} from './scenarioMap';
+import {assertScenarioLife,validateScenarioLife,presenceAtStart,type ScenarioLife} from '../core/scenarioLifeDefinition';
 import {assertPolitics,validatePoliticalReferences,type PoliticalDefinition} from '../core/politicalDefinition';
 import {assertStrategy,validateStrategyReferences,type StrategyDefinition} from '../core/strategyDefinition';
 import {projectGeography,assertBoundaries,geographicIssues,geographicTables,compileStrategy,type StrategicDraft} from './strategicModel';
@@ -11,7 +14,7 @@ export type Realm=import('../core/realm').RealmId;
 export interface PersonDefinition {id:string;name:string;family:string;birth:number;sex:'male'|'female';culture:string;biography:string;father:string|null;mother:string|null}
 export interface FamilyDefinition {id:string;name:string;surname:string;origin:string}
 export interface PersonState {home:string;polity:Realm;role:'ruler'|'regent'|'prince'|'commander'|'scholar';title:string;coins:number;food:number;npcCoins:number;playable:boolean;office:string}
-export interface Scenario {politics?:PoliticalDefinition|null;id:string;name:string;year:number;month:number;day:number;description:string;defaultCharacter:string;seed:number;treasuryCoins:number;treasuryGrain:number;states:Record<string,PersonState>;strategy:StrategyDefinition|null}
+export interface Scenario {map?:ScenarioMap|null;life?:ScenarioLife|null;politics?:PoliticalDefinition|null;id:string;name:string;year:number;month:number;day:number;description:string;defaultCharacter:string;seed:number;treasuryCoins:number;treasuryGrain:number;states:Record<string,PersonState>;strategy:StrategyDefinition|null}
 export interface Draft extends StrategicDraft {events:Record<string,EventDefinition>;eventTests:Record<string,EventTest>;people:Record<string,PersonDefinition>;families:Record<string,FamilyDefinition>;scenarios:Record<string,Scenario>}
 export type Target='sites'|'roads'|'geography'|'events'|'eventTests'|'people'|'families'|'scenarios'|'states';
 export interface Operation {target:Target;id:string;scenarioId?:string;field?:string;before:unknown;after:unknown}
@@ -30,7 +33,7 @@ export const fields:Record<Target,Record<string,Field>>={
  eventTests:{name:{type:'text',max:120},eventId:reference,scenarioId:reference,characterId:reference,seed:{type:'number',min:1,max:0xffffffff},dayBudget:{type:'number',min:0,max:7},stepBudget:{type:'number',min:1,max:32},choices:{type:'structured'},expectedStatus:{type:'text',values:['resolved','cancelled','expired','invalid']}},
  people:{name:text,family:reference,birth:{type:'number',min:1,max:9999},sex:{type:'text',values:['male','female']},culture:{type:'text',values:['han','xianbei','gaoche','jie','unknown']},biography:{type:'text',max:5000},father:{...reference,nullable:true},mother:{...reference,nullable:true}},
  families:{name:text,surname:text,origin:text},
- scenarios:{politics:{type:'structured'},strategy:{type:'structured'},name:text,year:{type:'number',min:100,max:9999},month:{type:'number',min:1,max:12},day:{type:'number',min:1,max:31},description:{type:'text',max:5000},defaultCharacter:reference,seed:{type:'number',min:1,max:0xffffffff},treasuryCoins:money,treasuryGrain:money},
+ scenarios:{map:{type:'structured'},life:{type:'structured'},politics:{type:'structured'},strategy:{type:'structured'},name:text,year:{type:'number',min:100,max:9999},month:{type:'number',min:1,max:12},day:{type:'number',min:1,max:31},description:{type:'text',max:5000},defaultCharacter:reference,seed:{type:'number',min:1,max:0xffffffff},treasuryCoins:money,treasuryGrain:money},
  states:{home:reference,polity:reference,role:{type:'text',values:['ruler','regent','prince','commander','scholar']},title:text,coins:money,food:money,npcCoins:money,playable:{type:'boolean'},office:reference},
 };
 export function validId(id:unknown):asserts id is string {if(typeof id!=='string'||!/^[a-z][a-z0-9:_-]{0,99}$/.test(id)||['constructor','prototype','__proto__'].includes(id))throw new StudioError('ID','实体 ID 无效。',{fieldPath:'id'});}
@@ -41,7 +44,7 @@ function fieldValue(target:Target,field:string,value:unknown){
  const rule=Object.hasOwn(fields[target],field)?fields[target][field]:undefined,path=target+'.'+field;
  if(!rule)throw new StudioError('FIELD','不支持的字段：'+path,{fieldPath:path});
  const valid=rule.type==='structured'||value===null&&rule.nullable||rule.type==='boolean'&&typeof value==='boolean'||rule.type==='number'&&typeof value==='number'&&(rule.decimal?Number.isFinite(value):Number.isSafeInteger(value))&&value>=rule.min!&&value<=rule.max!||['text','reference'].includes(rule.type)&&typeof value==='string'&&value.length<=(rule.max??200)&&!value.includes('\0')&&(!rule.values||rule.values.includes(value));
- if(target==='scenarios'&&field==='politics')assertPolitics(value??null);if(target==='scenarios'&&field==='strategy')assertStrategy(value,value?Object.keys((value as StrategyDefinition).treasuries):undefined);if(target==='geography')assertBoundaries(value);
+ if(target==='scenarios'&&field==='map')assertScenarioMap(value??null);if(target==='scenarios'&&field==='life')assertScenarioLife(value??null);if(target==='scenarios'&&field==='politics')assertPolitics(value??null);if(target==='scenarios'&&field==='strategy')assertStrategy(value,value?Object.keys((value as StrategyDefinition).treasuries):undefined);if(target==='geography')assertBoundaries(value);
  if(!valid)throw new StudioError('TYPE','字段类型或范围错误：'+path,{fieldPath:path});
 }
 function entityValue(target:Target,id:string,value:unknown,base?:ContentPackage){
@@ -49,7 +52,7 @@ function entityValue(target:Target,id:string,value:unknown,base?:ContentPackage)
  if(target==='events'){assertEventShape(value);if(value.id!==id||id==='hou-jing')throw new StudioError('ID','保留或不一致的事件 ID');return;}
  if(target==='eventTests'){assertEventTest(value);if(value.id!==id)throw new StudioError('ID','测试 ID 不一致');return;}
  const item=value as Record<string,unknown>,allowed=[...Object.keys(fields[target]),...(target==='states'?[]:['id']),...(target==='scenarios'?['states']:[])];
- if(Object.keys(item).some(k=>!allowed.includes(k))||allowed.some(k=>!(target==='scenarios'&&k==='politics')&&!Object.hasOwn(item,k)))throw new StudioError('FIELD','实体字段不完整或包含未知字段。',{entityId:id,fieldPath:target});
+ if(Object.keys(item).some(k=>!allowed.includes(k))||allowed.some(k=>!(target==='scenarios'&&['politics','life','map'].includes(k))&&!Object.hasOwn(item,k)))throw new StudioError('FIELD','实体字段不完整或包含未知字段。',{entityId:id,fieldPath:target});
  if(target!=='states'&&item.id!==id)throw new StudioError('ID','实体 ID 与操作 ID 不一致。');
  for(const key of Object.keys(fields[target]))fieldValue(target,key,item[key]);
  if(target==='scenarios'){
@@ -61,7 +64,7 @@ export function projectDraft(base:ContentPackage):Draft {
  const t=base.tables as Record<string,any>,people:Draft['people']={},families:Draft['families']={},scenarios:Draft['scenarios']={};
  for(const p of Object.values(t.characters.characterById) as any[]){const r=t.relationships.relationshipPersonById[p.id];if(!Number.isSafeInteger(t.lifespans.birthRecords[p.id]?.year))throw new StudioError('BASE','基础人物缺少出生年份记录：'+p.id);people[p.id]={id:p.id,name:p.name,family:p.family,birth:t.lifespans.birthRecords[p.id].year,sex:r?.sex??'male',culture:p.id.startsWith('county-official-')||p.id.startsWith('office-reserve-')?'han':t.cultures.personCultures[p.id]??'unknown',biography:p.biography,father:t.families.parentLinks.find((l:any)=>l.child===p.id&&l.kind==='父亲')?.parent??null,mother:t.families.parentLinks.find((l:any)=>l.child===p.id&&l.kind==='母亲')?.parent??null};}
  for(const f of t.families.families)families[f.id]={id:f.id,name:f.name,surname:f.surname,origin:f.origin};
- for(const s of t.scripts.gameScripts)scenarios[s.id]={id:s.id,name:s.name,year:s.year,month:s.month??1,day:s.day??1,description:s.description,defaultCharacter:s.defaultCharacter,seed:t.campaignSetup.campaignSetup.seed,treasuryCoins:t.campaignSetup.campaignSetup.treasury.coins,treasuryGrain:t.campaignSetup.campaignSetup.treasury.grain,states:{},politics:clone(t.campaignSetup.campaignSetup.politics??null),strategy:clone(t.campaignSetup.campaignSetup.strategy??null)};
+ for(const s of t.scripts.gameScripts)scenarios[s.id]={id:s.id,name:s.name,year:s.year,month:s.month??1,day:s.day??1,description:s.description,defaultCharacter:s.defaultCharacter,seed:t.campaignSetup.campaignSetup.seed,treasuryCoins:t.campaignSetup.campaignSetup.treasury.coins,treasuryGrain:t.campaignSetup.campaignSetup.treasury.grain,states:{},map:null,life:clone(t.campaignSetup.campaignSetup.life??null),politics:clone(t.campaignSetup.campaignSetup.politics??null),strategy:clone(t.campaignSetup.campaignSetup.strategy??null)};
  return {...projectGeography(base),people,families,scenarios,events:Object.fromEntries((t.authoredEvents?.authoredEventDefinitions??[]).map((e:EventDefinition)=>[e.id,clone(e)])),eventTests:{}};
 }
 /** Validate the complete author document, including fields a diff would ignore. */
@@ -130,6 +133,7 @@ export function references(draft:Draft,base:ContentPackage,target:Target,id:stri
  for(const p of Object.values(draft.people))for(const key of target==='families'?['family']:target==='people'?['father','mother']:[])if((p as unknown as Record<string,unknown>)[key]===id)found.push({entityId:p.id,fieldPath:'people.'+key});
  if(target==='people')for(const s of Object.values(draft.scenarios)){if(s.defaultCharacter===id)found.push({entityId:s.id,fieldPath:'scenarios.defaultCharacter'});if(s.states[id])found.push({entityId:s.id,fieldPath:'states.'+id});}
  if(target==='people')for(const s of Object.values(draft.scenarios))for(const army of s.strategy?.armies??[])if(army.commander===id)found.push({entityId:s.id,fieldPath:'scenarios.strategy.armies.'+army.id+'.commander'});
+ if(target==='people')for(const s of Object.values(draft.scenarios))if(s.life&&Object.hasOwn(s.life,id))found.push({entityId:s.id,fieldPath:'scenarios.life.'+id});
  if(target==='people')for(const s of Object.values(draft.scenarios))for(const r of s.politics?.realms??[]){if(r.ruler===id)found.push({entityId:s.id,fieldPath:'scenarios.politics.realms.'+r.id+'.ruler'});if(r.executives.includes(id))found.push({entityId:s.id,fieldPath:'scenarios.politics.realms.'+r.id+'.executives'});}
  if(target==='families')for(const p of base.tables.families.familyPeople as {id:string;family:string}[])if(!draft.people[p.id]&&p.family===id)found.push({entityId:p.id,fieldPath:'familyPeople.family'});
  for(const e of Object.values(draft.events)){if(target==='people'&&e.actor.personId===id)found.push({entityId:e.id,fieldPath:'events.actor.personId'});if(target==='scenarios'&&e.scenarioIds.includes(id))found.push({entityId:e.id,fieldPath:'events.scenarioIds'});}
@@ -147,17 +151,20 @@ export function diagnose(draft:Draft,base:ContentPackage,scenarioId?:string):Dia
  for(const p of Object.values(draft.people))parentMap.set(p.id,[p.father,p.mother].filter(Boolean) as string[]);
  const done=new Set<string>(),active=new Set<string>();function walk(id:string){if(active.has(id)){add(id,'people.father','亲缘存在循环。');return;}if(done.has(id))return;active.add(id);for(const parent of parentMap.get(id)??[])walk(parent);active.delete(id);done.add(id);}for(const id of Object.keys(draft.people))walk(id);
  for(const s of Object.values(draft.scenarios).filter(s=>!scenarioId||s.id===scenarioId)){
-  try{validateStrategyReferences(s.strategy,t.scenario.siteById,draft.people,t.territorialHierarchy.territoryNodes,s.year,s.politics?.realms.map(r=>r.id));if(s.politics){const sites=Object.fromEntries(Object.entries(t.scenario.siteById).map(([id,v])=>[id,{polity:s.strategy?.cities[id]?.owner??(v as {polity:string}).polity}]));validatePoliticalReferences(s.politics,sites,Object.fromEntries(Object.keys(draft.people).map(id=>[id,effectiveState(draft,base,s.id,id)])),Object.fromEntries(Object.values(draft.people).map(p=>[p.id,{year:p.birth}])),s.year);}}catch(e){add(s.id,'scenarios.strategy',String(e));}
+  let t=base.tables as Record<string,any>;if(s.map){try{out.push(...scenarioMapIssues(s.map,base,s.year));t=compileScenarioMap(s.map,base).tables;}catch(e){add(s.id,'scenarios.map',String(e));continue;}}
+  if(s.map)for(const id of Object.keys(s.map.sites))if(!base.tables.scenario.siteById||!(id in (base.tables.scenario.siteById as object))){if(!s.strategy?.cities[id])add(id,'scenarios.strategy','新增地点须明确人口、钱粮与控制等开局参数');}
+  try{validateStrategyReferences(s.strategy,t.scenario.siteById,draft.people,t.territorialHierarchy.territoryNodes,s.year,s.politics?.realms.map(r=>r.id));if(s.politics){const sites=Object.fromEntries(Object.entries(t.scenario.siteById).map(([id,v])=>[id,{polity:s.strategy?.cities[id]?.owner??(v as {polity:string}).polity}]));validatePoliticalReferences(s.politics,sites,Object.fromEntries(Object.keys(draft.people).filter(id=>presenceAtStart(s.life??null,{...t.lifespans.birthRecords,...Object.fromEntries(Object.values(draft.people).map(p=>[p.id,{year:p.birth}]))},s.year,id)==='active').map(id=>[id,effectiveState(draft,base,s.id,id)])),Object.fromEntries(Object.values(draft.people).map(p=>[p.id,{year:p.birth}])),s.year);}}catch(e){add(s.id,'scenarios.strategy',String(e));}
   for(const id of Object.keys(s.states))if(!draft.people[id])add(s.id,'scenarios.states.'+id,'剧本状态引用了不存在的人物。');
   const date=new Date(Date.UTC(s.year,s.month-1,s.day));if(date.getUTCMonth()!==s.month-1||date.getUTCDate()!==s.day)add(s.id,'scenarios.day','不是有效的公历日期。');
   if(!draft.people[s.defaultCharacter]||!effectiveState(draft,base,s.id,s.defaultCharacter).playable)add(s.id,'scenarios.defaultCharacter','默认人物必须存在且允许开局。');
+  try{validateScenarioLife(s.life??null,{...t.lifespans.birthRecords,...Object.fromEntries(Object.values(draft.people).map(p=>[p.id,{year:p.birth}]))},s.year,[s.defaultCharacter,...(s.politics?.realms.flatMap(r=>[r.ruler,...r.executives])??['xiao-yan','yuan-shanjian','yuan-baoju','gao-huan','gao-cheng','yuwen-tai']),...(s.strategy?.armies??t.campaignSetup.campaignSetup.armies).flatMap((a:any)=>a.commander?[a.commander]:[]),...Object.keys(draft.people).filter(id=>{const p=effectiveState(draft,base,s.id,id);return p.playable||!['none','inherit'].includes(p.office);})]);}catch(e){add(s.id,'scenarios.life',String(e));}
   const seats=new Set<string>();
-  for(const p of Object.values(draft.people)){const state=effectiveState(draft,base,s.id,p.id);if(!(s.politics?.realms.map(r=>r.id)??['liang','east','west']).includes(state.polity))add(p.id,'states.polity','效忠政权未在本剧本启用。');if(!t.scenario.siteById[state.home])add(p.id,'states.home','所在地不存在。');
+  for(const p of Object.values(draft.people)){const state=effectiveState(draft,base,s.id,p.id);if(presenceAtStart(s.life??null,{[p.id]:{year:p.birth}},s.year,p.id)==='active'&&!(s.politics?.realms.map(r=>r.id)??['liang','east','west']).includes(state.polity))add(p.id,'states.polity','效忠政权未在本剧本启用。');if(!t.scenario.siteById[state.home])add(p.id,'states.home','所在地不存在。');
    if(!s.politics&&['ruler','regent'].includes(state.role)&&state.role!==t.characters.characterById[p.id]?.role)add(p.id,'states.role','君主与执政者沿用基础政治结构；当前阶段不能仅凭履历类别增设此职位。');
    if(!['inherit','none'].includes(state.office)){const site=state.office.replace(/^county:/,'');if(state.office!==`county:${site}`||!t.scenario.siteById[site]||(s.strategy?.cities[site]?.controller??t.scenario.siteById[site].polity)!==state.polity||state.home!==site)add(p.id,'states.office','县级任职须属于效忠政权，且开局驻地为该县治。');if(seats.has(state.office))add(p.id,'states.office','同一职位不能配置多人。');seats.add(state.office);}
   }
  }
- out.push(...eventDefinitionIssues(Object.values(draft.events),{people:new Set(Object.keys(draft.people)),sites:new Set(Object.keys(t.scenario.siteById)),scenarios:new Set(Object.keys(draft.scenarios))}));
+ for(const event of Object.values(draft.events)){const assigned=event.scenarioIds.map(id=>draft.scenarios[id]).filter(Boolean).filter(s=>!scenarioId||s.id===scenarioId);if(scenarioId&&!event.scenarioIds.includes(scenarioId))continue;const sites=assigned.length?assigned.map(s=>new Set(Object.keys(s.map?.sites??draft.sites))).reduce((a,b)=>new Set([...a].filter(id=>b.has(id)))):new Set(Object.keys(draft.sites));out.push(...eventDefinitionIssues([event],{people:new Set(Object.keys(draft.people)),sites,scenarios:new Set(Object.keys(draft.scenarios))}));}
  for(const test of Object.values(draft.eventTests)){assertEventTest(test);const e=draft.events[test.eventId],scenario=draft.scenarios[test.scenarioId];if(!e||!scenario||!e.scenarioIds.includes(test.scenarioId))add(test.id,'eventTests.eventId','事件或适用剧本不存在');if(!draft.people[test.characterId]||scenario&&!effectiveState(draft,base,scenario.id,test.characterId).playable)add(test.id,'eventTests.characterId','测试人物必须可玩');for(const choice of test.choices)if(!e?.stages.find(s=>s.id===choice.stage)?.options.some(o=>o.id===choice.option))add(test.id,'eventTests.choices','测试引用无效阶段或选项');}
  return out;
 }
@@ -165,14 +172,17 @@ export function diagnose(draft:Draft,base:ContentPackage,scenarioId?:string):Dia
  * remain authoring data and can never overwrite this instance's definitions. */
 export function compileDraftTables(draft:Draft,base:ContentPackage,scenarioId:string):ContentTables {
  const issues=diagnose(draft,base,scenarioId);if(issues.length)throw new StudioError('DIAGNOSTICS','请先修复草稿问题。',issues);
- const original=projectDraft(base),t=clone(base.tables) as Record<string,any>,s=draft.scenarios[scenarioId];if(!s)throw new StudioError('REFERENCE','剧本不存在。');
- Object.assign(t.scenario,geographicTables(draft,base));
- if(draft.geography.map.boundaries.mode==='generated')t['territories.json'].value=clone(draft.geography.map.boundaries.value);
+ const original=projectDraft(base),s=draft.scenarios[scenarioId];if(!s)throw new StudioError('REFERENCE','剧本不存在。');
+ const selected=s.map??draft,t=clone(s.map?compileScenarioMap(s.map,base).tables:base.tables) as Record<string,any>;
+ Object.assign(t.scenario,geographicTables(selected,s.map?compileScenarioMap(s.map,base):base));
+ if(selected.geography.map.boundaries.mode==='generated')t['territories.json'].value=clone(selected.geography.map.boundaries.value);
  // Corridors touching moved endpoints are explicitly rebuilt as straight segments.
- for(const [id,site] of Object.entries(draft.sites))if(site.lon!==original.sites[id].lon||site.lat!==original.sites[id].lat)for(const edge of Object.keys(t.roadCorridors.roadCorridors))if(edge.split(':').includes(id))delete t.roadCorridors.roadCorridors[edge];
+ for(const [id,site] of Object.entries(selected.sites))if(site.lon!==original.sites[id]?.lon||site.lat!==original.sites[id]?.lat)for(const edge of Object.keys(t.roadCorridors.roadCorridors))if(edge.split(':').includes(id))delete t.roadCorridors.roadCorridors[edge];
  const index=(rows:any[])=>Object.fromEntries(rows.map(p=>[p.id,p]));
  for(const f of Object.values(draft.families)){if(equal(f,original.families[f.id]))continue;const old=t.families.families.find((x:any)=>x.id===f.id);if(old)Object.assign(old,f);else t.families.families.push({...f,originKind:'设定',color:'#9b8876',note:'作者设定家系。',sources:[]});}
  t.families.families=t.families.families.filter((f:any)=>draft.families[f.id]);
+ if(s.map)for(const site of t.scenario.sites){if(s.strategy?.cities[site.id])site.polity=s.strategy.cities[site.id].owner;if(!Object.hasOwn(base.tables.scenario.siteById as object,site.id)){const c=s.strategy!.cities[site.id];t.populationEstimates.populationEstimates[site.id]={people:c.population,low:c.population,high:c.population,basis:'authored',source:'',note:c.source};}}
+ t.campaignSetup.campaignSetup.life=clone(s.life??null);
  t.campaignSetup.campaignSetup.politics=clone(s.politics??null);
  if(s.politics){t.scenario.polities={frontier:t.scenario.polities.frontier,...Object.fromEntries(s.politics.realms.map(r=>[r.id,{name:r.name,short:r.short,color:r.color}]))};for(const site of t.scenario.sites){site.polity=s.strategy?.cities[site.id]?.owner??site.polity;site.capital=s.politics.realms.some(r=>r.capital===site.id);}t.scenario.siteById=index(t.scenario.sites);}
  t.campaignSetup.campaignSetup.personStarts={};
@@ -193,14 +203,15 @@ export function compileDraftTables(draft:Draft,base:ContentPackage,scenarioId:st
  }
  t.characters.characterById=index([...t.characters.historicalCharacters,...t.additionalStarts.additionalStarts]);t.relationships.relationshipPersonById=index(t.relationships.relationshipPeople);t.families.familyById=index(t.families.families);t.families.familyPersonById=index(t.families.familyPeople);
  t.expandedPeople.expandedPersonById=index(t.expandedPeople.expandedPeople);
+ if(s.life)t.relationships.historicalMarriages=t.relationships.historicalMarriages.filter((marriage:any)=>[marriage.a,marriage.b].every(id=>['active','dead'].includes(presenceAtStart(s.life!,t.lifespans.birthRecords,s.year,id))));
  t.scripts.DEFAULT_SCRIPT=s.id;t.scripts.gameScripts=[{id:s.id,name:s.name,year:s.year,month:s.month,day:s.day,description:s.description,characterIds:Object.keys(draft.people).filter(id=>effectiveState(draft,base,s.id,id).playable),defaultCharacter:s.defaultCharacter,allowFictional:true}];
  t.authoredEvents={authoredEventDefinitions:Object.values(draft.events).filter(e=>e.scenarioIds.includes(s.id)).map(e=>({...clone(e),scenarioIds:[s.id]}))};
  t.campaignSetup.campaignSetup.seed=s.seed;t.campaignSetup.campaignSetup.treasury={coins:s.treasuryCoins,grain:s.treasuryGrain};compileStrategy(t,s.strategy);if(s.politics){const ids=s.politics.realms.map(r=>r.id);t.campaignSetup.campaignSetup.armies=t.campaignSetup.campaignSetup.armies.filter((a:any)=>ids.includes(a.realm));}return t;
 }
 /** Copy scenario membership without silently dropping enabled events or replay tests. */
-export function copyScenarioOperations(draft:Draft,sourceId:string,id:string,name:string):Operation[]{
+export function copyScenarioOperations(draft:Draft,sourceId:string,id:string,name:string,base:ContentPackage):Operation[]{
  validId(id);const source=draft.scenarios[sourceId];if(!source||draft.scenarios[id])throw new StudioError('REFERENCE','来源剧本不存在或新 ID 已占用');
- const operations:Operation[]=[{target:'scenarios',id,before:null,after:{...clone(source),id,name}}];
+ const operations:Operation[]=[{target:'scenarios',id,before:null,after:{...clone(source),id,name,life:clone(source.life??{}),map:clone(source.map??mapTemplate(draft,base))}}];
  for(const e of Object.values(draft.events))if(e.scenarioIds.includes(sourceId))operations.push({target:'events',id:e.id,field:'scenarioIds',before:e.scenarioIds,after:[...e.scenarioIds,id]});
  let n=0;for(const t of Object.values(draft.eventTests))if(t.scenarioId===sourceId){let tid;do{tid=id.slice(0,60)+'-test-'+(++n);}while(draft.eventTests[tid]);operations.push({target:'eventTests',id:tid,before:null,after:{...clone(t),id:tid,scenarioId:id}});}
  return operations;

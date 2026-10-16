@@ -1,3 +1,4 @@
+import {initialPresence} from './scenarioLife';
 import {estateById} from './estates';
 import {validWarTerritory} from './warTerritories';
 import {getCharacter} from './personRegistry';
@@ -45,7 +46,7 @@ export function validRealm(w:World):boolean {
  if(Object.keys(s.treasuries).length!==worldRealms(w).length)return false;
  for(const id of worldRealms(w)){const t=s.treasuries[id];if(!obj(t)||!int(t.coins)||!int(t.grain)||!int(t.lastIncome)||!int(t.lastExpense)||!int(t.lastFood,-1_000_000,1_000_000))return false;}
  if(s.supplyPolicies!==undefined&&(!obj(s.supplyPolicies)||Object.entries(s.supplyPolicies).some(([r,p])=>!realm(r)||!['civilian','normal','emergency'].includes(p!))))return false;
- if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!historicalCharacters.every(p=>Object.hasOwn(s.personalInfluence!,p.id))||Object.entries(s.personalInfluence).some(([id,n])=>! getPerson(w,id)!||!int(n,0,999))))return false;
+ if(s.personalInfluence!==undefined&&(!obj(s.personalInfluence)||!historicalCharacters.filter(p=>initialPresence(p.id)==='active').every(p=>Object.hasOwn(s.personalInfluence!,p.id))||Object.entries(s.personalInfluence).some(([id,n])=>! getPerson(w,id)!||!int(n,0,999))))return false;
  if(s.lastInfluenceIncome!==undefined&&(!int(s.lastInfluenceIncome,0,w.day)||!isMonthAnchor(s.lastInfluenceIncome,w.scriptId)))return false;
  if(s.lastMilitaryDay!==undefined&&!int(s.lastMilitaryDay,0,w.day))return false;
  if(s.lastMonthly!==undefined&&(!int(s.lastMonthly,0,w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)))return false;
