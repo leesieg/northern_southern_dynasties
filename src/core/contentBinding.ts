@@ -44,10 +44,19 @@ const phaseAOfficialSave={"packageId":"official-nsd","digest":"37c03a9679643e0ed
 const preEraOfficialSave={packageId:'official-nsd',digest:'af808ae5d3ddcea4d5d26368bd3b6b44c52cf11d1c0f84dec88b7b6c8fc0decc',engine:'a4a625d2fea6c4bf08a24e00a8409de8cf40139a2c3378dfc6dcb20092d628d7',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
 // Captured from the completed stage C source before stage D changes.
 const phaseCOfficialSave={packageId:'official-nsd',digest:'5cd6adc35d88ba7990f3f4b342708bdec2e2614ee6843e51ba209e1952a177da',engine:'1531be96b5f86a8045da2eb2c2dc8d41441cc7089d7c9de44dff1b52a520b0cf',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+// Reported official auto saves at days 3944/3951/3957. Reconstructed digest
+// matches the captured stage C tables exactly; only the rule fingerprint differs.
+const reportedOfficialDevelopmentSave={packageId:'official-nsd',digest:'a57eb8168d647065963d0ab9198554e65cb0ac16147c76df66e4e173cf5d8e7f',engine:'99bc51e78e4404a7f20fcbe97943e09e3d161b55cddeb10302ab25a6e1945654',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
 export function sameContentLock(a:unknown,b:ContentLock):boolean {return !!a&&typeof a==='object'&&!Array.isArray(a)&&Object.keys(a).length===4&&Object.entries(b).every(([key,value])=>(a as Record<string,unknown>)[key]===value);}
-export function officialSaveCompatible(value:unknown,expected:ContentLock,additional:ContentLock[]=[]):boolean {
- return expected.packageId==='official-nsd'&&(sameContentLock(value,expected)||[...[phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave],phaseCOfficialSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)].some(lock=>sameContentLock(value,lock)));
+// Captured from the completed stage D source before this recovery patch.
+const phaseDOfficialSave={packageId:'official-nsd',digest:'3288e381ba307a19420c2c9c02fac64a55ee5c6b61dee0a6c1f41191837d5fdd',engine:'ddd5ba828d83987db10031079a93d10f27cb9b01e39991f962ba9d406fe594eb',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+function officialSaveCheckpoints(expected:ContentLock,additional:ContentLock[]){
+ return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
 }
+export function officialSaveCompatible(value:unknown,expected:ContentLock,additional:ContentLock[]=[]):boolean {return officialSaveCheckpoints(expected,additional).some(lock=>sameContentLock(value,lock));}
+/** Saved launch records contain a digest, not a save header. Only known exact
+ * official checkpoints may resolve through this path; custom versions stay exact. */
+export function officialSaveDigestCompatible(digest:string,expected:ContentLock,additional:ContentLock[]=[]):boolean {return officialSaveCheckpoints(expected,additional).some(lock=>lock.digest===digest);}
 export function assertSaveContent(value:unknown){
  if(value===undefined){if(!allowsLegacyContent())throw new Error('无内容锁的旧档只能由官方内容包恢复。');return;}
  const expected=contentLock();
