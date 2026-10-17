@@ -7,7 +7,8 @@ import {getPerson} from './personRegistry';
 import {personResidence} from './residence';
 import {governingAuthority,governingExecutives,governmentOf} from './government';
 import {publicSuccessor} from './publicSuccession';
-import {armyCommander} from './mobility';
+import {armyCommander,dispatchNPC} from './mobility';
+import {historicalMusterQuote,historicalMusterDestination,actHistoricalMuster} from './historicalMuster';
 import {relationOpinion,changeRelationOpinion} from './relationships';
 import {personInfluence,awardInfluence} from './personalInfluence';
 import {bilateralWar} from './wars';
@@ -20,6 +21,8 @@ import {worldRealms} from './polityRuntime';
 import {ensurePowerPolitics,actPower,powerReason} from './powerPolitics';
 import {siteById} from '../data/scenario';
 import type {PauseEvent} from './pauseEvents';
+import {planRoute} from './world';
+import {canMarchThrough} from './realm';
 export function ensureHistorical(w:World){
  if(w.mode!=='sandbox'||!w.realm||!getPerson(w,'hou-jing'))return;
  return w.historical??={version:1,since:w.day,items:campaignSetup.politics&&!campaignSetup.politics.nativeEvents.includes('hou-jing')?[]:[{id:'hou-jing:1',definitionId:'hou-jing',definitionVersion:1,phase:'dormant',status:'active',phaseSince:w.day,actors:{protagonist:'hou-jing',protector:'gao-huan'},origin:allegianceRealm(w,'hou-jing')??'east',site:personResidence(w,'hou-jing').site,revision:0,milestones:[],appliedEffects:[]}]};
@@ -52,16 +55,23 @@ export function northConflict(w:World,e:Event){
  return '';
 }
 function decide(w:World,e:Event,kind:HistoricalDecision['kind'],actor:string){e.revision++;e.decision={id:e.id+':'+e.revision,revision:e.revision,actor,kind,created:w.day};}
-function securityContext(w:World,p:AllegiancePact){
+export function settlementReview(e:Event,p:AllegiancePact){return e.security?.source==='review:'+p.id;}
+function settlementContext(w:World,p:AllegiancePact){
  const a=w.realm?.armies.find(a=>a.id===p.army);
- return p.status==='active'&&p.terms!=='personal'&&p.integrationCompletedAt===undefined&&!!a&&a.troops>=100&&a.realm===p.to&&(a.owner===p.person||armyCommander(w,a)===p.person)&&!w.realm?.annexed?.[p.from]&&!w.realm?.annexed?.[p.to]&&!bilateralWar(w,p.from,p.to);
+ return p.status==='active'&&p.terms!=='personal'&&p.integrationCompletedAt===undefined&&!!a&&a.troops>=100&&a.realm===p.to&&(a.owner===p.person||armyCommander(w,a)===p.person)&&!w.realm?.annexed?.[p.from]&&!w.realm?.annexed?.[p.to];
 }
+function securityContext(w:World,p:AllegiancePact,e?:Event){return settlementContext(w,p)&&(!!e&&settlementReview(e,p)||!bilateralWar(w,p.from,p.to));}
 function syncSecurity(w:World,e:Event,p:AllegiancePact){
  const until=w.realm!.truces[diplomaticKey(p.from,p.to)]??0;
  const signals=[...(until>w.day?[{key:'truce:'+until,day:until-360}]:[]),...(diplomaticPair(w,p.from,p.to)?.treaties.filter(t=>['pact','alliance'].includes(t.kind)&&t.until>w.day).map(t=>({key:'treaty:'+t.kind+':'+t.since+':'+t.until,day:t.since}))??[])];
  // Establish the upgrade baseline without inventing old negotiations, even within the same day.
  if(e.securitySince===undefined){e.securitySince=w.day;e.securitySignals=[...new Set(signals.map(s=>s.key))].slice(-16);return;}
- if(!securityContext(w,p)||e.security&&!['protected','dismissed'].includes(e.security.status)&&e.security.requester!==governingAuthority(w,p.from)){
+ const a=w.realm!.armies.find(a=>a.id===p.army),review='review:'+p.id;
+ if(p.terms==='retain'&&settlementContext(w,p)&&a&&!a.journey&&w.realm!.cities[a.location].controller===p.to&&w.day>=Math.max(p.created,e.securitySince)+90&&!e.appliedEffects.includes(review)&&(!e.security||['protected','dismissed'].includes(e.security.status))){
+  e.appliedEffects.push(review);e.appliedEffects=e.appliedEffects.slice(-128);e.security={source:review,raised:w.day,requester:governingAuthority(w,p.from),status:'demanded'};
+  remember(w,e,review,'接纳方复议长期私军安置：须确认继续保护、协商改编，或明确撤回安全担保。');return;
+ }
+ if(!securityContext(w,p,e)||e.security&&!settlementReview(e,p)&&!['protected','dismissed'].includes(e.security.status)&&e.security.requester!==governingAuthority(w,p.from)){
   if(e.security&&!['protected','dismissed'].includes(e.security.status)){e.security.status='dismissed';delete e.decision;remember(w,e,'security-ended:'+e.security.source,'追索者、军政基础或两国局势已变化，当前安全交涉结束。');}return;
  }
  const since=Math.max(e.securitySince,p.created+1),seen=e.securitySignals??=[];
@@ -71,14 +81,15 @@ function syncSecurity(w:World,e:Event,p:AllegiancePact){
  e.security={source,raised:w.day,requester:governingAuthority(w,p.from),status:'concern'};
  remember(w,e,'security-signal:'+source,'两国新近和好，降将担忧自身安置；原国尚未提出交还要求，和好本身不构成违约。');
 }
-export function historicalDisputes(w:World,e:Event,p:AllegiancePact){return [...currentPactBreaches(w,p),...(e.security?.status==='withdrawn'&&securityContext(w,p)&&e.security.requester===governingAuthority(w,p.from)?['接纳方拒绝安全担保']:[])];}
+export function historicalDisputes(w:World,e:Event,p:AllegiancePact){return [...currentPactBreaches(w,p),...(e.security?.status==='withdrawn'&&securityContext(w,p,e)&&(settlementReview(e,p)||e.security.requester===governingAuthority(w,p.from))?['接纳方拒绝安全担保']:[])];}
 export function historicalSecurityCommand(e:Event,optionId:'protect'|'withdrawDemand'):HistoricalCommand{return {type:'historicalEvent',instanceId:e.id,decisionId:e.id+':security',revision:e.revision,optionId};}
 function protect(w:World,e:Event,p:AllegiancePact,actor:string){awardInfluence(w,actor,-10);e.security!.status='protected';changeRelationOpinion(w,p.person,actor,20);remember(w,e,'security-protected:'+e.security!.source,'接纳方重申人身保护，拒绝以降将交换和好；个人影响力支出 10。');}
 export function historicalRiseCommand(w:World,e:Event){const r=allegianceRealm(w,e.actors.protagonist)??e.host??e.origin;return {type:'civilWar',action:'rise',name:'讨奸',arrangement:{goal:'executive',sponsor:e.actors.protagonist,beneficiary:governmentOf(w,r)!.ruler,executive:e.actors.protagonist,name:''}} as const;}
 export function historicalReason(w:World,c:HistoricalCommand,actor=w.characterId!){
  const e=w.historical?.items.find(e=>e.id===c.instanceId),d=e?.decision;
+ if(c.optionId==='withdrawDemand'&&e&&historicalPact(w,e)&&settlementReview(e,historicalPact(w,e)!))return '安置复议由接纳方裁定';
  if(c.optionId==='protect'||c.optionId==='withdrawDemand'){
-  const p=e&&historicalPact(w,e);if(!e||!p||e.status!=='active'||!e.security||!['demanded','negotiating','withdrawn'].includes(e.security.status)||!securityContext(w,p)||e.security.requester!==governingAuthority(w,p.from)||c.decisionId!==e.id+':security'||c.revision!==e.revision)return '安全交涉已经处理或更新';
+  const p=e&&historicalPact(w,e);if(!e||!p||e.status!=='active'||!e.security||!['demanded','negotiating','withdrawn'].includes(e.security.status)||!securityContext(w,p,e)||!settlementReview(e,p)&&e.security.requester!==governingAuthority(w,p.from)||c.decisionId!==e.id+':security'||c.revision!==e.revision)return '安全交涉已经处理或更新';
   if(!isAlive(w,actor)||detained(w,actor)||w.campaign?.status!=='active')return '当前身份无权办理此事';
   return c.optionId==='protect'?governingAuthority(w,p.to)!==actor?'须接纳国实际执政者裁定':personInfluence(w,actor)<10?'重申保护需个人影响力 10': '':governingAuthority(w,p.from)!==actor?'须原国实际执政者撤回追索':'';
  }
@@ -86,7 +97,7 @@ export function historicalReason(w:World,c:HistoricalCommand,actor=w.characterId
  if(d.actor!==actor||!isAlive(w,actor)||detained(w,actor)||w.campaign?.status!=='active')return '当前身份无权办理此事';
  if(d.kind==='council'&&governingAuthority(w,e.origin)!==actor)return '实际执政者已经变化';
  if(d.kind==='security-demand'||d.kind==='security-answer'){
-  const p=historicalPact(w,e);if(!p||!e.security||!securityContext(w,p)||e.security.requester!==governingAuthority(w,p.from))return '当前安全交涉已经失效';
+  const p=historicalPact(w,e);if(!p||!e.security||!securityContext(w,p,e)||!settlementReview(e,p)&&e.security.requester!==governingAuthority(w,p.from))return '当前安全交涉已经失效';
   if(d.kind==='security-demand')return e.security.status!=='concern'||governingAuthority(w,p.from)!==actor?'原国决策身份已经变化':['demand','wait'].includes(c.optionId)?'':'请选择追索或放弃追索';
   if(e.security.status!=='demanded'||governingAuthority(w,p.to)!==actor)return '接纳方决策身份已经变化';
   if(c.optionId==='guarantee')return personInfluence(w,actor)<10?'安全担保需个人影响力 10':'';
@@ -94,6 +105,7 @@ export function historicalReason(w:World,c:HistoricalCommand,actor=w.characterId
   return ['withhold','wait'].includes(c.optionId)?'':'请选择安全处置方案';
  }
  if(c.optionId==='wait')return '';
+ if(c.optionId==='muster'&&d.kind==='north')return !northConflict(w,e)?'交接争议已解除':historicalMusterQuote(w,e).reason;
  if(c.optionId==='assure'&&d.kind==='council')return powerReason(w,{type:'power',action:'assure',person:e.actors.protagonist,accept:true},actor);
  if(c.optionId==='seek'&&d.kind==='north'){
   if(!c.realm)return '请选择接纳政权';
@@ -113,12 +125,13 @@ export function actHistorical(w:World,c:HistoricalCommand,actor=w.characterId!){
   if(c.optionId==='protect')protect(next,e,p!,actor);else {e.security!.status='dismissed';remember(next,e,'security-withdrawn:'+e.security!.source,'原国撤回交还要求，当前追索争议解除。');}
   e.revision++;delete e.decision;delete e.handlingDue;Object.assign(w,next);return;
  }
+ if(c.optionId==='muster'){actHistoricalMuster(next,e);decide(next,next.historical!.items.find(v=>v.id===e.id)!,'north',actor);Object.assign(w,next);return;}
  if(c.optionId==='seek')actPact(next,{type:'pact',action:'request',realm:c.realm!,army:historicalArmy(next,actor)?.id,terms:c.terms??'retain'},actor);
  else if(c.optionId==='rise')actCivilWar(next,historicalRiseCommand(next,e),actor);
  else if(c.optionId==='assure')actPower(next,{type:'power',action:'assure',person:e.actors.protagonist,accept:true},actor);
  else if(c.optionId==='demand')e.security!.status='demanded';
  else if(c.optionId==='guarantee')protect(next,e,p!,actor);
- else if(c.optionId==='reform'){actPact(next,{type:'pact',action:'propose',id:p!.id,terms:'reform'},actor);next.historical!.items.find(v=>v.id===e.id)!.security!.status='negotiating';}
+ else if(c.optionId==='reform'){actPact(next,{type:'pact',action:'propose',id:p!.id,terms:'reform'},actor);const current=next.historical!.items.find(v=>v.id===e.id)!;current.security!.status='negotiating';if(settlementReview(current,p!))current.appliedEffects.push('review-proposal:'+p!.id);}
  else if(c.optionId==='withhold'){e.security!.status='withdrawn';changeRelationOpinion(next,p!.person,actor,-50);const oath=next.relationships?.oaths[p!.person];if(oath)oath.loyalty=Math.max(1,oath.loyalty-20);}
  else if(d.kind==='security-demand'&&c.optionId==='wait')e.security!.status='dismissed';
  // Domain operations can atomically replace the world; reacquire the current instance.
@@ -134,31 +147,53 @@ function npcDecision(w:World,e:Event){
  const base={type:'historicalEvent',instanceId:e.id,decisionId:d.id,revision:d.revision} as const;
  let command:HistoricalCommand={...base,optionId:'wait'};
  if(d.kind==='north'){
-  const hosts=worldRealms(w).filter(r=>r!==e.origin&&!w.realm!.annexed?.[r]).sort((a,b)=>Number(b==='liang')-Number(a==='liang')||relationOpinion(w,d.actor,governingAuthority(w,b))-relationOpinion(w,d.actor,governingAuthority(w,a)));
+  if(!historicalArmy(w,d.actor)&&!e.appliedEffects.includes('old-followers')){
+   const q={...base,optionId:'muster'} as const;
+   if(!historicalReason(w,q,d.actor)){actHistorical(w,q,d.actor);return;}
+   const to=historicalMusterDestination(w,e);if(to&&to!==personResidence(w,d.actor).site){dispatchNPC(w,d.actor,to);return;}
+  }
+  if((historicalArmy(w,d.actor)?.trainingUntil??0)>w.day)return;
+  const rejected=new Set(w.allegiancePacts?.items.filter(p=>p.person===d.actor&&p.status==='rejected'&&w.day-p.created<360).map(p=>p.to));
+  const hosts=worldRealms(w).filter(r=>r!==e.origin&&!w.realm!.annexed?.[r]&&!rejected.has(r)).sort((a,b)=>Number(b==='liang')-Number(a==='liang')||relationOpinion(w,d.actor,governingAuthority(w,b))-relationOpinion(w,d.actor,governingAuthority(w,a)));
   choose:for(const terms of ['retain','personal'] as const)for(const realm of hosts){const q={...base,optionId:'seek',realm,terms} as const;if(!historicalReason(w,q,d.actor)){command=q;break choose;}}
   // Travel, duties or influence can temporarily block every legal request. Retry the same decision.
   if(command.optionId==='wait')return;
  }else if(d.kind==='security-demand'){if(relationOpinion(w,e.actors.protagonist,d.actor)<=-30)command={...base,optionId:'demand'};}
  else if(d.kind==='security-answer'){
   const p=historicalPact(w,e)!,pair=diplomaticPair(w,p.from,p.to),troops=(r:typeof p.from)=>w.realm!.armies.filter(a=>a.realm===r).reduce((n,a)=>n+a.troops,0);
-  const concede=relationOpinion(w,d.actor,p.person)<0&&((pair?.opinion??-100)>=0||troops(p.from)>troops(p.to)*1.25);
-  command={...base,optionId:concede||personInfluence(w,d.actor)<10?'withhold':'guarantee'};
- }else if(d.kind==='crisis'&&relationOpinion(w,d.actor,governingAuthority(w,e.host!))<-40){const q={...base,optionId:'rise'} as const;if(!historicalReason(w,q,d.actor))command=q;}
+  const review=settlementReview(e,p),trust=relationOpinion(w,p.person,d.actor),reform={...base,optionId:'reform'} as const;
+  const concede=review?trust<0:trust<0&&((pair?.opinion??-100)>=0||troops(p.from)>troops(p.to)*1.25);
+  command=review&&concede&&!e.appliedEffects.includes('review-proposal:'+p.id)&&!historicalReason(w,reform,d.actor)?reform:{...base,optionId:concede||personInfluence(w,d.actor)<10?'withhold':'guarantee'};
+ }else if(d.kind==='crisis'){
+  const p=historicalPact(w,e),danger=!!p&&historicalDisputes(w,e,p).some(v=>v.includes('安全')||v.includes('兵权'));
+  if(danger||relationOpinion(w,d.actor,governingAuthority(w,e.host!))<-40){const q={...base,optionId:'rise'} as const;if(!historicalReason(w,q,d.actor))command=q;}
+ }
  if(!historicalReason(w,command,d.actor))actHistorical(w,command,d.actor);
+}
+/** An accepted private force must actually march into host territory before local settlement. */
+function marchToHost(w:World,e:Event,p:AllegiancePact){
+ if(p.person===w.characterId||p.terms==='personal'||p.status!=='active')return;
+ const a=w.realm!.armies.find(v=>v.id===p.army);if(!a||a.journey||a.troops<100||(a.trainingUntil??0)>w.day||armyCommander(w,a)!==p.person||w.realm!.cities[a.location].controller===p.to)return;
+ const paths=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===p.to&&w.realm!.cities[id].controller===p.to).map(id=>planRoute(a.location,id,node=>canMarchThrough(w,p.to,node,id,a))).filter(v=>v!==null).sort((a,b)=>a.days-b.days);
+ const route=paths[0];if(!route)return;
+ a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};a.siege=0;
+ remember(w,e,'host-march:'+p.id,'归附部曲沿实际道路前往'+siteById[route.route.at(-1)!].name+'安置，沿途照常耗粮并受通行与城防限制。');
 }
 /** Called only at stable command/day boundaries; creates at most one decision per instance. */
 export function advanceHistorical(w:World){
  const state=ensureHistorical(w);if(!state||w.campaign?.status!=='active')return;
  for(const e of state.items){
   const id=e.actors.protagonist,live=activeWars(w).find(v=>v.civil?.claimant===id),p=w.allegiancePacts?.items.filter(p=>p.person===id&&['pending','active'].includes(p.status)).at(-1);
+  const previous=historicalPact(w,e),retry=!p&&!live&&e.warId===undefined&&previous?.status==='rejected'&&w.day-previous.created>=180&&allegianceRealm(w,id)===e.origin&&!!northConflict(w,e);
   if(p?.status==='active'&&e.status!=='cancelled'&&e.warId===undefined&&!live&&isAlive(w,id)&&!detained(w,id))syncSecurity(w,e,p);
   if(p&&e.pactId===p.id)recordPact(w,e,p);
   if(e.status!=='active'){
    if(e.status==='cancelled'||!isAlive(w,id)||detained(w,id))continue;
-   if(!live&&!(p?.status==='pending'&&p.id!==e.pactId)&&!(e.warId===undefined&&p?.status==='active'&&(historicalDisputes(w,e,p).length||e.security&&['concern','demanded','negotiating'].includes(e.security.status))))continue;
+   if(!retry&&!live&&!(p?.status==='pending'&&p.id!==e.pactId)&&!(e.warId===undefined&&p?.status==='active'&&(historicalDisputes(w,e,p).length||e.security&&['concern','demanded','negotiating'].includes(e.security.status))))continue;
    e.status='active';delete e.result;delete e.resolvedAt;delete e.warId;delete e.stableSince;delete e.handlingDue;
    remember(w,e,'renewed:'+w.day,'新的现实冲突出现，重新审议当前处境。',!!live);
   }
+  if(retry){delete e.pactId;delete e.host;delete e.lastConflict;phase(w,e,'dormant','先前来书未获接纳；冷却期已过，仍存交接争议，可改投其他朝廷。');}
   if(live){delete e.handlingDue;delete e.stableSince;e.warId=live.id;e.host=live.attacker;e.site=live.target;
    const occupied=warCitySide(w,live,live.target)==='attack';
    const siege=w.realm!.sieges?.find(s=>s.war===live.id&&s.site===live.target&&s.side==='attack');
@@ -170,12 +205,13 @@ export function advanceHistorical(w:World){
   if(!isAlive(w,id)){finish(w,e,'侯景已故，未发生的事件不再继续。',true);continue;}
   if(detained(w,id)){finish(w,e,'侯景已被控制，当前危机结束。',true);continue;}
   if(p){
+   marchToHost(w,e,p);
    e.pactId=p.id;e.host=p.to;e.site=personResidence(w,id).site;recordPact(w,e,p);
    if(w.realm!.annexed?.[p.to]){finish(w,e,'接纳政权已终止。',true);continue;}
    if(p.status==='pending'){phase(w,e,'reception','来书已送达，等待双方确认接纳条款。');continue;}
    if(e.security?.status==='negotiating'&&!p.offer)e.security.status=p.terms==='reform'?'protected':'demanded';
    if(e.security&&['concern','demanded','negotiating'].includes(e.security.status)){
-    phase(w,e,'dispute',e.security.status==='concern'?'两国和好引起安置担忧，原国正在议定是否提出交还要求。':e.security.status==='negotiating'?'双方正在商议改编条款，原有安置继续有效。':'原国提出交还要求，接纳方须议定安全担保。');
+    phase(w,e,'dispute',e.security.status==='concern'?'两国和好引起安置担忧，原国正在议定是否提出交还要求。':e.security.status==='negotiating'?'双方正在商议改编条款，原有安置继续有效。':settlementReview(e,p)?'接纳方复议长期私军安置，须议定安全担保或协商改编。':'原国提出交还要求，接纳方须议定安全担保。');
     if(e.security.status==='negotiating')continue;
     const kind=e.security.status==='concern'?'security-demand':'security-answer',actor=governingAuthority(w,kind==='security-demand'?p.from:p.to);
     if(e.decision?.handled&&e.decision.kind===kind&&e.decision.actor===actor&&(e.handlingDue??0)>w.day)continue;

@@ -5,7 +5,8 @@ import {warArmySide} from '../core/civilWars';
 import {useEffect,useState} from 'react';
 import type {World,GameCommand} from '../core/types';
 import type {HistoricalEventInstance} from '../core/historicalEventState';
-import {historicalPact,historicalArmy,historicalTitle,historicalReason,visibleHistoricalMilestones,historicalDisputes,historicalSecurityCommand} from '../core/historicalEvents';
+import {historicalPact,historicalArmy,historicalTitle,historicalReason,visibleHistoricalMilestones,historicalDisputes,historicalSecurityCommand,settlementReview} from '../core/historicalEvents';
+import {historicalMusterQuote} from '../core/historicalMuster';
 import {pactQuote,pactReason,receptionNames,type ReceptionTerms,type PactCommand} from '../core/allegiancePacts';
 import {governingExecutives,governingAuthority} from '../core/government';
 import {getPerson} from '../core/personRegistry';
@@ -44,7 +45,7 @@ export function HistoricalContent({world:w,event:e,pending,send,navigation:n,err
  const displayPerson=mine&&(council||d.kind.startsWith('security-'))?d.actor:e.actors.protagonist;
  const safetyChoices=!mine&&!rawPact?.offer&&rawPact&&e.security&&['demanded','negotiating','withdrawn'].includes(e.security.status)?[
  ...(governingAuthority(w,rawPact.to)===w.characterId?[{id:'protect',title:'重申人身保护',description:'个人影响力 −10；拒绝交还降将，解除本次安全争议。',art:'rites' as const,command:historicalSecurityCommand(e,'protect')}]:[]),
- ...(governingAuthority(w,rawPact.from)===w.characterId?[{id:'withdrawDemand',title:'撤回交还要求',description:'撤回本次追索，尊重现有安置；军队、土地和钱粮保持实际归属。',art:'care' as const,command:historicalSecurityCommand(e,'withdrawDemand')}]:[]),
+ ...(!settlementReview(e,rawPact)&&governingAuthority(w,rawPact.from)===w.characterId?[{id:'withdrawDemand',title:'撤回交还要求',description:'撤回本次追索，尊重现有安置；军队、土地和钱粮保持实际归属。',art:'care' as const,command:historicalSecurityCommand(e,'withdrawDemand')}]:[]),
  ]:[];
  const hasChoices=mine||safetyChoices.length>0;
  const [choice,setChoice]=useState<string|null>(null);
@@ -61,6 +62,7 @@ export function HistoricalContent({world:w,event:e,pending,send,navigation:n,err
  {id:'withhold',title:'拒绝安全担保',description:'降将对本人好感 −50、誓约忠诚 −20；形成安全争议，可能引发起兵，人物不会自动交还。',art:'dispatch' as const,command:{...decisionBase,optionId:'withhold' as const}},
  {id:'wait',title:'继续交涉',description:'维持现状，三十日后再议；追索要求仍然有效。',art:'care' as const,command:{...decisionBase,optionId:'wait' as const}},
  ]:d.kind==='north'?[
+ ...(!a&&!e.appliedEffects.includes('old-followers')?[{id:'muster',title:'收拢河南旧部',description:(()=>{const q=historicalMusterQuote(w,e);return `从驻县实有人口募兵 ${q.amount} 人（至多 800）；兵装及军粮共 ${q.coins} 钱，支持者实际私财资助 ${q.contributions} 钱，余款由本人承担并留 150 钱周转。训练 30 日后方可携军归附。`;})(),art:'military' as const,command:{...decisionBase,optionId:'muster' as const}}]:[]),
  {id:'seek',title:'请求保留部曲归附',description:'个人影响力 −20；向所选朝廷送出提案，收到接纳前不转移军队。',art:'dispatch' as const,command:{...decisionBase,optionId:'seek' as const,realm:host,terms:'retain' as const}},
  {id:'personal',title:'以个人身份归附',description:'个人影响力 −20；不携带部曲，待对方接纳后改变效忠。',art:'migration' as const,command:{...decisionBase,optionId:'seek' as const,realm:host,terms:'personal' as const}},
  {id:'wait',title:'维持当前安排',description:'不支付费用，不改变统属；继续应对真实军政变化。',art:'rites' as const,command:{...decisionBase,optionId:'wait' as const}},

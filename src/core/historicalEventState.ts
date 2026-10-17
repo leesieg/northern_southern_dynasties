@@ -12,6 +12,6 @@ export interface HistoricalEventInstance {
  revision:number;milestones:HistoricalMilestone[];appliedEffects:string[];result?:string;resolvedAt?:number;
 }
 export interface HistoricalState {version:1;since:number;items:HistoricalEventInstance[]}
-export type HistoricalCommand={type:'historicalEvent';instanceId:string;decisionId:string;revision:number;optionId:'wait'|'seek'|'assure'|'rise'|'demand'|'guarantee'|'reform'|'withhold'|'protect'|'withdrawDemand';realm?:RealmId;terms?:import('./allegiancePacts').ReceptionTerms};
+export type HistoricalCommand={type:'historicalEvent';instanceId:string;decisionId:string;revision:number;optionId:'wait'|'muster'|'seek'|'assure'|'rise'|'demand'|'guarantee'|'reform'|'withhold'|'protect'|'withdrawDemand';realm?:RealmId;terms?:import('./allegiancePacts').ReceptionTerms};
 /** One decision owner. Ordinary player commands remain available. */
 export function historicalOwnsDecision(w:World,person:string){return w.mode==='sandbox'&&person==='hou-jing'&&!!w.historical?.items.some(e=>e.actors.protagonist===person&&e.status!=='cancelled');}
