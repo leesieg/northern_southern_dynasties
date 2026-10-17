@@ -1,6 +1,6 @@
 import type {World} from './types';
 import {allPeople,parentLinksOf} from './personRegistry';
-import {ageAt,isAlive,lifeOf,healthCapacity} from './lifeState';
+import {ageAt,isAlive,lifeOf,healthCapacity,activeHealthProfile} from './lifeState';
 import {detained} from './custodyState';
 import {accountWallet} from './obligations';
 import {traitsFor} from './social';
@@ -32,11 +32,12 @@ export function advanceNPCCare(w:World){
  for(const person of people){
   const id=person.id;if(!eligible(id))continue;
   const targets=[id,...parentLinksOf(w).filter(p=>p.parent===id&&p.child!==w.characterId&&!parentLinksOf(w).some(q=>q.child===p.child&&q.parent===w.characterId)).map(p=>p.child)];
-  for(const target of targets){const life=lifeOf(w,target);if(!life||!isAlive(w,target)||life.careUntil>w.day||resting(w,target)||!life.illness&&(life.injuryUntil??0)<=w.day&&life.health>=Math.min(40,healthCapacity(ageAt(w,target)??0)))continue;
+  for(const target of targets){const life=lifeOf(w,target);if(!life||!isAlive(w,target)||life.careUntil>w.day||resting(w,target)||!life.illness&&(life.injuryUntil??0)<=w.day&&life.health>=Math.min(40,healthCapacity(ageAt(w,target)??0))&&!activeHealthProfile(w,target)?.complication)continue;
    const rest:FamilyCommand={type:'familyLife',action:'rest'};
-   if(target===id&&traitsFor(w,id).includes('frugal')&&!familyCommandReason(w,rest,id))actFamily(w,rest,id);
+   const needsRest=!!life.illness||(life.injuryUntil??0)>w.day||life.health<40;
+   if(target===id&&needsRest&&traitsFor(w,id).includes('frugal')&&!familyCommandReason(w,rest,id))actFamily(w,rest,id);
    else if(!careReason(w,target,id))actLife(w,{type:'health',action:'care',target},id);
-   else if(target===id&&!familyCommandReason(w,rest,id))actFamily(w,rest,id);
+   else if(target===id&&needsRest&&!familyCommandReason(w,rest,id))actFamily(w,rest,id);
   }
  }
 }

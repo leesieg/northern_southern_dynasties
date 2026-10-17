@@ -1,0 +1,9 @@
+.character-trait-badge{--glyph-rim:#8f7953;--glyph-gold:#cfad70;--glyph-line:#d5b77e;--glyph-ivory:#ecdfbd;--glyph-field:#263d33;--glyph-accent:#607e57;flex-shrink:0}
+.character-trait-badge[data-tone=illness]{--glyph-field:#4b2925;--glyph-accent:#a96649;--glyph-line:#e0b47e}
+.character-trait-badge[data-tone=modifier]{--glyph-field:#233d3b;--glyph-accent:#658d75}
+.character-trait-badge[data-tone=mastery]{--glyph-field:#2c3545;--glyph-accent:#758891}
+.character-trait-badge[data-paused]{--glyph-field:#30352f;--glyph-accent:#737c6b}
+.trait-badge.trait-icon-only.character-trait-badge{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:50%;aspect-ratio:1}
+.character-trait-badge .character-trait-glyph{display:block;width:100%;height:100%;max-width:100%;max-height:100%;overflow:visible;pointer-events:none;filter:drop-shadow(0 1px 1px #0006)}
+.character-trait-badge:hover .character-trait-glyph,.hover-hint:focus-visible>.character-trait-badge .character-trait-glyph{filter:drop-shadow(0 1px 2px #0008) brightness(1.12)}
+.hover-hint:focus-visible>.character-trait-badge{outline:2px solid #d8ba7a;outline-offset:3px}

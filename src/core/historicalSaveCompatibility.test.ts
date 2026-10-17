@@ -8,3 +8,10 @@ it('accepts only the exact official pre-health checkpoint, never an altered lock
  expect(officialSaveCompatible({...prior,engine:'unknown'},current)).toBe(false);
  expect(officialSaveCompatible({...prior,assets:'unknown'},current)).toBe(false);
 });
+
+it('preserves the exact previous health release while rejecting mismatched dependencies',()=>{
+ const prior={"packageId":"official-nsd","digest":"ab81d2e7d0cb16964e4440797d3ad0612758bccc2e68d6ec8cb3a88a4b626872","engine":"fac2284db40b285ae440f35747f2de5ea42d3276007a7ee5652e3ccf7060a702","assets":"74361bfbf572ba0c4928f662a47e563a9a16cdc96cb19c24c4c7702735e26a58"},current={...prior,digest:'current',engine:'current'};
+ expect(officialSaveCompatible(prior,current)).toBe(true);
+ expect(officialSaveCompatible({...prior,engine:'unknown'},current)).toBe(false);
+ expect(officialSaveCompatible({...prior,assets:'unknown'},current)).toBe(false);
+});

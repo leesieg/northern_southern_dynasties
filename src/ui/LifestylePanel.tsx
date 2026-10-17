@@ -2,6 +2,7 @@ import {afterCommand} from './actionFeedback';
 import {ActionDialog} from './ActionDialog';
 import {LifestyleTree} from './LifestyleTree';
 import {HoverHint} from './HoverHint';
+import {CharacterTraitIcon} from './CharacterTraitIcon';
 import {useState} from 'react';
 import {ArtIcon} from './ArtIcon';
 import {LifestyleGlyph} from './LifestyleGlyph';
@@ -10,7 +11,7 @@ import {lifestyleProgress,lifestyleLearning,lifestylePoints,lifestyleReason,life
 import type {World} from '../core/types';
 import './lifestyle.css';
 export function LifestyleMasteryBadges({world,id}:{world:World;id?:string}){
- const masteries=lifestyleMasteries(world,id);return masteries.length?<div className="lifestyle-masteries" aria-label="后天生活专长">{masteries.map(p=><HoverHint key={p.name} label={p.name} content={<><strong>{p.name}</strong><p>{p.effect}</p></>}><span className="trait-badge trait-icon-only"><ArtIcon name={lifestyleBranches[p.branch].icon} size={30}/></span></HoverHint>)}</div>:null;
+ const masteries=lifestyleMasteries(world,id);return masteries.length?<div className="lifestyle-masteries" aria-label="后天生活专长">{masteries.map(p=><HoverHint key={p.name} label={p.name} content={<><strong>{p.name}</strong><p>{p.effect}</p></>}><CharacterTraitIcon name={`mastery-${p.branch}`} label={p.name}/></HoverHint>)}</div>:null;
 }
 export function LifestylePanel({world:w,pending,send}:{world:World;pending:boolean;send:(c:LifestyleCommand)=>Promise<boolean>}){
  const progress=lifestyleProgress(w)??freshLifestyle(w.day),current=progress.focus?lifestyleFocuses[progress.focus]:null,[expanded,setExpanded]=useState(false);

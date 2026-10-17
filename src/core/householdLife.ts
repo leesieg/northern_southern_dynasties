@@ -4,7 +4,7 @@ import {allegianceRealm} from './officeEligibility';
 import type {World} from './types';
 import {allPeople,getPerson,relativesOf,parentLinksOf,familyMembersOf} from './personRegistry';
 import {familyById} from '../data/families';
-import {ageAt,isAlive,lifeOf,healthCapacity} from './lifeState';
+import {ageAt,isAlive,lifeOf,healthCapacity,activeHealthProfile} from './lifeState';
 import {isMonthStart,monthStart} from './calendar';
 import {personResidence,together} from './residence';
 import {activeMarriage,spouseOf,changeRelationOpinion} from './relationships';
@@ -55,7 +55,7 @@ export function familyCommandReason(w:World,c:FamilyCommand,actor=w.characterId)
   if(![getPerson(w,actor)?.family,getPerson(w,spouse)?.family].includes(c.family))return '子女家支须选双亲之一';
   return c.trying?familyPlanningReason(w):'';
  }
- if(c.action==='rest')return !lifeOf(w,actor)?.illness&&(lifeOf(w,actor)?.injuryUntil??0)<=w.day?'当前没有疾病或军中伤情':resting(w,actor)?'正在休养':personResidence(w,actor).traveling?'须抵达后休养':serviceBusy(w,actor)?'请先交接当前公务、军职或培养安排，再休养':'';
+ if(c.action==='rest')return resting(w,actor)?'正在休养':!lifeOf(w,actor)?.illness&&(lifeOf(w,actor)?.injuryUntil??0)<=w.day&&!activeHealthProfile(w,actor)?.complication?'当前没有疾病、积劳隐患或军中伤情':personResidence(w,actor).traveling?'须抵达后休养':serviceBusy(w,actor)?'请先交接当前公务、军职或培养安排，再休养':'';
  if(c.action==='resume')return resting(w,actor)?'':'当前未在休养';
  if(c.action!=='resolve'||!['encourage','discipline','decline'].includes(c.choice))return '无效家事选择';
  const event=w.householdLife?.moments.find(e=>e.id===c.id);

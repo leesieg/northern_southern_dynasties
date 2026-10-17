@@ -10,23 +10,23 @@ import type {LifeCommand} from '../core/lifeState';
 import {getScript} from '../data/scripts';
 import {HoverHint} from './HoverHint';
 import {ArtIcon} from './ArtIcon';
-import {isDeceased,ageLabel,ageOf,healthLabel,lifeOf,lifeStage,illnessNames} from '../core/lifeState';
+import {CharacterTraitIcon} from './CharacterTraitIcon';
+import {isDeceased,ageLabel,ageOf,healthLabel,lifeOf,lifeStage,illnessNames,activeHealthProfile,ageRiskMultiplier} from '../core/lifeState';
 import {autoCareReason,careReason} from '../core/life';
 import {birthRecords} from '../data/lifespans';
 import {healthProfileFor} from '../data/healthProfiles';
 import {dateLabel} from '../core/world';
 import type {World,GameCommand} from '../core/types';
-/** Nonhereditary scenario habits share the dedicated trait area. */
+/** Habits and temporary conditions share the character medallion vocabulary. */
 export function HealthHabitTrait({world,id}:{world:World;id:string}){
  const profile=healthProfileFor(id);if(!profile)return null;
- return <span className="person-named-trait"><HoverHint label={profile.name+' · 生活习惯'} content={<><strong>{profile.name}</strong><p>{profile.description}</p>{id==='gao-huan'&&resting(world,id)&&<p>正在休养，积劳修正暂停。</p>}</>}><span className="trait-badge trait-icon-only" role="img" aria-label={profile.name}>{id==='xiao-yan'?<svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 31C8 30 5 23 5 17c7 0 12 3 15 10 3-7 8-10 15-10 0 6-3 13-15 14Zm0-4C11 20 14 10 20 5c6 5 9 15 0 22ZM9 35h22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>:<ArtIcon name="stress" size={32}/>}</span></HoverHint><small>{profile.name}</small></span>;
+ const paused=profile.pauseOnRest&&!activeHealthProfile(world,id),age=ageOf(world,id)??0,relief=Math.round((1-ageRiskMultiplier(age,profile.aging,profile.agingFadeFrom,profile.agingFadeYears))*100);
+ return <span className="person-named-trait"><HoverHint label={profile.name+' · '+profile.kind} content={<><strong>{profile.name}</strong><p>{profile.description}</p>{profile.aging<1&&<p>当前年龄：衰老月风险降低 {relief}%。</p>}{paused&&<p>正在休养，积劳修正暂停。</p>}</>}><CharacterTraitIcon name={profile.icon} label={profile.name} paused={paused}/></HoverHint><small>{profile.name}</small></span>;
 }
-/** Temporary acquired condition; never written into congenital/personality traits. */
 export function TemporaryIllnessTrait({world,id}:{world:World;id:string}){
- const life=lifeOf(world,id),illness=life?.illness;if(!illness||isDeceased(world,id))return null;
- const title=illnessNames[illness.kind],severity=['轻症','病势加重','重症'][illness.severity-1];
- const paths={cold:'M7 10h13q6 0 6-4t-6-2 M5 16h22q7 0 7 5t-7 4 M9 23h9',fever:'M20 3q3 9-3 12q8-1 8-7q12 17 1 25q-14 5-18-7q-2-7 7-14q-2 8 2 8q6-4 3-17Z',flux:'M14 4v8q-8 2-8 10q0 12 12 12q13 0 13-12q0-7-10-7V4 M12 23q5-6 13 0 M13 28h10',wasting:'M19 34V11 M19 22Q3 23 5 10Q17 9 19 22 M19 15Q31 15 31 4Q20 3 19 15'};
- return <HoverHint label={title+' · 临时特质'} content={<><strong>{title} · {severity}</strong><p>患病 {world.day-illness.since} 日 · 康复后移除</p><p>军事 −{illness.severity*2}，外交／管理／谋略各 −{illness.severity}{illness.severity===3?'；暂不能远行。':'。'}每月评估恢复，延医可提高康复机会。</p>{life.careUntil>world.day&&<p>医者照料余 {life.careUntil-world.day} 日</p>}</>}><span className="trait-badge trait-icon-only" role="img" aria-label={title+'（临时）'}><svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><path d={paths[illness.kind]} fill="none" stroke="#d6b98b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></HoverHint>;
+ const life=lifeOf(world,id),illness=life?.illness,injured=(life?.injuryUntil??0)>world.day;if(!life||isDeceased(world,id)||!illness&&!injured)return null;
+ const title=illness?illnessNames[illness.kind]:'',severity=illness?['轻症','病势加重','重症'][illness.severity-1]:'';
+ return <>{illness&&<span className="person-named-trait"><HoverHint label={title+' · '+severity} content={<><strong>{title} · {severity}</strong><p>患病 {world.day-illness.since} 日 · 康复后移除</p><p>军事 −{illness.severity*2}，外交／管理／谋略各 −{illness.severity}{illness.severity===3?'；暂不能远行。':'。'}每月评估恢复，延医可提高康复机会。</p>{life.careUntil>world.day&&<p>医者照料余 {life.careUntil-world.day} 日</p>}</>}><CharacterTraitIcon name={illness.kind} label={title+' · '+severity} severity={illness.severity}/></HoverHint><small>{title}</small></span>}{injured&&<span className="person-named-trait"><HoverHint label="军中负伤" content={<><strong>军中负伤</strong><p>伤期余 {life.injuryUntil!-world.day} 日。军事 −2，其他能力 −1；延医或休养可加快恢复，伤愈后移除。</p></>}><CharacterTraitIcon name="injury" label="军中负伤"/></HoverHint><small>负伤</small></span>}</>;
 }
 export function LifeSummary({world,id}:{world:World;id:string}){
  const life=lifeOf(world,id),age=ageOf(world,id);

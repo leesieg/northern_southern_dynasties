@@ -1,5 +1,6 @@
 import {initialPresence} from './scenarioLife';
 import {campaignSetup} from '../data/campaignSetup';
+import {healthProfileFor} from '../data/healthProfiles';
 import {monthStart} from './calendar';
 import {familyPersonById} from '../data/families';
 import {birthRecords} from '../data/lifespans';
@@ -25,9 +26,11 @@ export function monthlyAgeRisk(age:number){
  const annual=annualAgeRisk.filter(([from])=>age>=from).at(-1)?.[1]??0;
  return 1-(1-annual)**(1/12);
 }
-export function mortalityRisk(age:number,health:number,severity:number,care=false,vigorous=false,agingMultiplier=1){
+export function ageRiskMultiplier(age:number,base=1,fadeFrom=0,fadeYears=0){return base+(1-base)*(fadeYears>0?Math.max(0,Math.min(1,(age-fadeFrom)/fadeYears)):0);}
+export function activeHealthProfile(w:World,id:string){const p=healthProfileFor(lifeId(id));return p?.pauseOnRest&&(w.householdLife?.rest[lifeId(id)]??0)>w.day?undefined:p;}
+export function mortalityRisk(age:number,health:number,severity:number,care=false,vigorous=false,agingMultiplier=1,complicationRisk=0){
  const aging=monthlyAgeRisk(age)*(vigorous?.9:1)*agingMultiplier;
- const illness=Math.min(1,Math.max(severity===3?.04:0,Math.max(0,25-health)*.003)*(care?.6:1)*(vigorous?.8:1));
+ const illness=Math.min(1,Math.max(complicationRisk,severity===3?.04:0,Math.max(0,25-health)*.003)*(care?.6:1)*(vigorous?.8:1));
  return {aging,illness,total:1-(1-aging)*(1-illness)};
 }
 export function recoveryChance(kind:Illness,severity:1|2|3,elapsed:number,care=false,vigorous=false,baseMultiplier=1){
@@ -52,7 +55,7 @@ export function ageAt(w:Pick<World,'day'|'scriptId'|'generatedPeople'>|undefined
 export function ageOf(w:World|undefined,id:string){const declared=campaignSetup.life?.[lifeId(id)];if(declared?.presence==='dead')return declared.deathYear===null?null:declared.deathYear-birthRecords[lifeId(id)].year;return ageAt(w,id,lifeOf(w,id)?.death?.day??w?.day??0);}
 export function ageLabel(w:World|undefined,id:string){const presence=initialPresence(lifeId(id));if(presence==='unborn')return '未出生';if(presence==='excluded')return '不参与本局';const n=ageOf(w,id);return n===null?'年龄不详':(birthRecords[lifeId(id)]?.basis==='estimate'?'约 ':'')+n+' 岁';}
 export function lifeStage(age:number){return age<16?'幼年':age<30?'青年':age<50?'壮年':age<65?'中年':'老年';}
-export function healthLabel(w:World,id:string){const presence=initialPresence(lifeId(id));if(presence==='unborn')return '未出生';if(presence==='excluded')return '不参与本局';const p=lifeOf(w,id);return isDeceased(w,id)?'已故':!p?'健康不详':p.illness?(p.illness.severity===3?'重症 · ':'')+illnessNames[p.illness.kind]:(p.injuryUntil??0)>w.day?'军中负伤':(p?.health??100)<40?'衰弱':(p?.health??100)<65?'欠安':'康健';}
+export function healthLabel(w:World,id:string){const presence=initialPresence(lifeId(id));if(presence==='unborn')return '未出生';if(presence==='excluded')return '不参与本局';const p=lifeOf(w,id);return isDeceased(w,id)?'已故':!p?'健康不详':p.illness?(p.illness.severity===3?'重症 · ':'')+illnessNames[p.illness.kind]:(p.injuryUntil??0)>w.day?'军中负伤':(p?.health??100)<40?'衰弱':(p?.health??100)<65?'欠安':activeHealthProfile(w,id)?.complication?'积劳欠安':'康健';}
 export function healthCapacity(age:number){return Math.max(25,100-Math.max(0,age-40));}
 export function newLifeState(w:Pick<World,'day'|'scriptId'|'generatedPeople'>):LifeState {
  return {version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:campaignSetup.seed,people:Object.fromEntries([...Object.keys(birthRecords),...Object.keys(w.generatedPeople??{})].map(id=>[id,{health:initialPresence(id)!=='active'?0:campaignSetup.life?.[id]?.health??healthCapacity(ageAt(w,id)!),illness:null,careUntil:0,death:null}])),successions:[]};

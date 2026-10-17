@@ -1,6 +1,4 @@
 import {initialPresence} from './scenarioLife';
-import {healthProfileFor} from '../data/healthProfiles';
-import {resting} from './householdLife';
 import {advanceNPCCare} from './npcLife';
 import {inheritEstates} from './estates';
 import {accountWallet} from './obligations';
@@ -20,7 +18,7 @@ import {syncCourt} from './court';
 import {syncRelationships,changeRelationOpinion} from './relationships';
 import {syncDiplomacy} from './diplomacy';
 import {handoverOffice,syncGovernance} from './realm';
-import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,illnessCourse,monthlyIllnessRisk,illnessKind,mortalityRisk,recoveryChance,type LifeCommand} from './lifeState';
+import {ageAt,healthCapacity,isAlive,lifeOf,newLifeState,illnessNames,illnessCourse,monthlyIllnessRisk,illnessKind,mortalityRisk,recoveryChance,activeHealthProfile,ageRiskMultiplier,type LifeCommand} from './lifeState';
 import type {World} from './types';
 
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
@@ -37,7 +35,7 @@ export function careReason(w:World,id:string,actor=w.characterId??'fictional'){
  const family=getPerson(w,actor)?.family;
  if(id!==actor&&!marriage&&(!family||getPerson(w,id)?.family!==family))return '仅可为自己、配偶或同族延医';
  if(p.careUntil>w.day)return `医者正在照料，余 ${p.careUntil-w.day} 日`;
- if(!p.illness&&(p.injuryUntil??0)<=w.day&&p.health>=healthCapacity(ageAt(w,id)!))return '当前无需延医';
+ if(!p.illness&&(p.injuryUntil??0)<=w.day&&p.health>=healthCapacity(ageAt(w,id)!)&&!activeHealthProfile(w,id)?.complication)return '当前无需延医';
  return (accountWallet(w,'person:'+actor)?.read()??0)<30?'延医需 30 钱':'';
 }
 export function autoCareReason(w:World,id:string){
@@ -128,8 +126,8 @@ export function advanceLife(w:World){
   const p=s.people[id];if(p.death||initialPresence(id)!=='active')continue;
   const age=ageAt(w,id)!,self=id===(w.characterId??'fictional'),stress=self?w.social?.stress??0:0,care=p.careUntil>=w.day&&p.careUntil>0;
   const genome=w.identities?.people[id]?.genome,vigorous=genome?expressGenome(genome).congenital.includes('vitality'):false;
-  const profile=id==='gao-huan'&&resting(w,id)?undefined:healthProfileFor(id);
-  const mortality=mortalityRisk(age,p.health,p.illness?.severity??0,care,vigorous,profile?.aging),draw=roll(w);
+  const profile=activeHealthProfile(w,id),aging=ageRiskMultiplier(age,profile?.aging,profile?.agingFadeFrom,profile?.agingFadeYears);
+  const mortality=mortalityRisk(age,p.health,p.illness?.severity??0,care,vigorous,aging,profile?.complication),draw=roll(w);
   if(p.health===0||draw<mortality.total){die(w,id,p.health===0||draw>=mortality.aging?'illness':'age');if(w.campaign&&w.campaign.status!=='active')break;continue;}
   if(p.injuryUntil!==undefined&&(p.injuryUntil<=w.day||care&&(p.injuryUntil-=15)<=w.day))delete p.injuryUntil;
   const max=healthCapacity(age),risk=monthlyIllnessRisk(age,stress,vigorous,profile?.illness);
