@@ -41,7 +41,7 @@ describe('权谋迭代的实际指令、存档与暂停交接',()=>{
   w.lifestyles!.version=2;delete (w.lifestyles!.people['xiao-yan'].xp as Partial<Record<string,number>>).intrigue;
   const restored=parseWorld(serializeWorld(w));
   expect(restored.people[0].coins).toBe(coins);expect(restored.realm!.treasuries).toEqual(stores);
-  expect(restored.lifestyles!.version).toBe(3);expect(restored.lifestyles!.people['xiao-yan'].xp.intrigue).toBe(0);
+  expect(restored.lifestyles!.version).toBe(4);expect(restored.lifestyles!.people['xiao-yan'].xp.intrigue).toBe(0);
   expect(restored.claims!.records).toEqual([]);expect(restored.nobility!.titles).toEqual([]);
   expect(restored.rulerHistory!.tenures.every(t=>t.from===restored.day)).toBe(true);
  });

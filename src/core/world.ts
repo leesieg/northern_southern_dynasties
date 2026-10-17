@@ -12,7 +12,7 @@ import {actPact,advancePacts} from './allegiancePacts';
 import {actIntrigue,advanceIntrigue,ensureIntrigue} from './intrigue';
 import {actClaim,ensureClaims} from './claims';
 import {actNobility,ensureNobility} from './nobility';
-import {actHonor,ensureRulerHistory,syncRulerHistory} from './rulerHistory';
+import {actHonor,ensureRulerHistory,syncRulerHistory,advanceRulerHonors} from './rulerHistory';
 import {cancelInvalidClaimantWars} from './realm';
 import {actPower,advancePowerPolitics} from './powerPolitics';
 import {actPeaceOffer} from './realmStrategy';
@@ -128,7 +128,7 @@ export function act(world: World, command: GameCommand): void {
   Object.assign(world,next);
   return;
  }
- const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}reconcileFiscal(world,before,publicActionName(command));advanceRegisteredEvents(world);
+ const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);advanceRulerHonors(world);}reconcileFiscal(world,before,publicActionName(command));advanceRegisteredEvents(world);
 }
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
 function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
@@ -277,7 +277,7 @@ export function advance(world: World, days = 1): void {
     advanceMilitaryCampaigns(world);
     ensureArmyOrganization(world);
     restoreInfluence(world,previous);advancePersonalInfluence(world);advanceNPCOfficeRecruitment(world);
-    if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);}
+    if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);advanceRulerHonors(world);}
     evaluateCampaign(world);
     reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');advanceRegisteredEvents(world);
   }

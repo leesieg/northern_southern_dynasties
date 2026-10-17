@@ -23,3 +23,10 @@ it('imports the exact official checkpoint before unarmed handover support withou
  expect(officialSaveCompatible({...prior,engine:'unknown'},current)).toBe(false);
  expect(officialSaveCompatible({...prior,assets:'unknown'},current)).toBe(false);
 });
+
+it('imports the exact official pre-honor-visibility lock without relaxing dependencies',()=>{
+ const prior={packageId:'official-nsd',digest:'593eac87e4eeeb4edfd18f1900131005ebaa6f456a1be2b7072507fee61b293d',engine:'0d5be3208e4178dcd1634e7b14f07dc6cf27fc7356c0a6646ccb299b3dcab6bd',assets:'ba42b668580d827e6c1005046908a87041f495dea1cbab9f41fb07b32db17439'},current={...prior,digest:'current',engine:'current'};
+ expect(officialSaveCompatible(prior,current)).toBe(true);
+ expect(officialSaveCompatible({...prior,engine:'unknown'},current)).toBe(false);
+ expect(officialSaveCompatible({...prior,assets:'unknown'},current)).toBe(false);
+});

@@ -1,6 +1,7 @@
 import {PersonalContinuity} from './PersonalContinuity';
 import {afterCommand} from './actionFeedback';
 import {NobilityPanel} from './PoliticalIdentity';
+import {PersonHonors} from './PersonHonors';
 import type {PersonLifeEntry} from '../core/ongoing';
 import {ActionDialog} from './ActionDialog';
 import {getCharacter,getPerson,familyPersonOf} from '../core/personRegistry';
@@ -74,7 +75,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,familyView,onFam
  </aside>
  <div className="person-information">
  <header className="person-dossier-heading">
-  <div className="person-heading-copy"><p className="person-status-line">{self?'你':retired?'退居':extra?.status==='fictional'?'架空人物':'人物档案'}</p><h2>{name}</h2><p className="person-rank-line">{[model.honour,model.title,model.rites?'加殊礼':null].filter(Boolean).join(' · ')}</p></div>
+  <div className="person-heading-copy"><p className="person-status-line">{self?'你':retired?'退居':extra?.status==='fictional'?'架空人物':'人物档案'}</p><h2>{name}</h2><p className="person-rank-line">{[model.honour,model.title,model.rites?'加殊礼':null].filter(Boolean).join(' · ')}</p><PersonHonors world={w} person={lifeId}/></div>
   <div className="person-heraldry">{realm&&<RealmBadge realm={realm} world={w} onOpen={onDiplomacy} seal/>}{family&&<HoverHint label={family.name+'家族'} content={<><strong>{family.name}</strong>{clan?.elite&&<><p>本国世族 · 族望第 {clan.rank} 位 · 家族威望 {clan.prestige}</p><p>联姻荫望 +{clan.marriage}；求官接受度 +{clan.petition}，城邑请任功绩门槛 −{clan.merit}。</p></>}</>}><button type="button" className={'person-clan'+(clan?.elite?' is-elite':'')} aria-label={'查看'+family.name+'家族详情'} onClick={()=>{onFamilyView({selection:id,mode:'tree'});onTab('family');}}><FamilyCrest family={family.id}/></button></HoverHint>}</div>
   <div className="person-demographics"><LifeSummary world={w} id={lifeId}/><HoverHint label="文化身份" content={(id==='gao-huan'?cultureSources.gao.note:id.startsWith('hulu-')?cultureSources.hulu.note:id==='hou-jing'?cultureSources.hou.note:'文化身份为剧本概括。')+' 文化独立于家族与效忠，换官、换国、换衣不改变身份。'}><small>{cultureNames[personCulture(w,id)]}</small></HoverHint>{model.site&&!deceased&&<button type="button" onClick={()=>onCity(model.site!)}>{model.traveling?'在途':'驻留'}{siteById[model.site]?.name}</button>}</div>
  </header>

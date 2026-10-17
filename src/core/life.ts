@@ -103,7 +103,7 @@ export function die(w:World,id:string,cause:'illness'|'age'|'battle'|'execution'
     else if(!g.executives.length&&executiveHeir)g.executives=[executiveHeir];
     g.task=null;g.legitimacy=Math.max(0,g.legitimacy-10);g.support=Math.max(0,g.support-5);
     delete g.resignedExecutives;
-    syncRulerHistory(w,designated?'designation':'succession');if(wasRuler)announceSuccession(w,r,id);
+    syncRulerHistory(w,designated?'designation':'succession');announceSuccession(w,r,id);
     s.successions.push({realm:r,regimeId:g.regimeId,stage:g.stages.at(-1)??null,day:w.day,deceased:id,ruler:g.ruler,executives:[...g.executives]});
     log(w,`${personName(w,id)}身后，${isAlive(w,g.ruler)?personName(w,g.ruler)+'居君位':'君位虚悬'}${g.executives.length?'，'+g.executives.map(id=>personName(w,id)).join('、')+'主持朝政':'，朝廷无人主持'}。`);
    }
