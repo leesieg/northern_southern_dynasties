@@ -32,6 +32,7 @@
 | 庄园与兵源 | [庄园赋役与兵源](机制设计/庄园赋役与兵源.md) | 私产、庄户、公私产出与征募来源 |
 | 军事与战争 | [军事系统整合](机制设计/军事系统整合.md) | 军权、征募、后勤、围城、战争与议和 |
 | 政权与制度 | [政体改革与政权更替](机制设计/政体改革与政权更替.md) | 政体、执政、继承、改革与改朝换代 |
+| 历史事件 | [侯景之乱触发链诊断与修复](机制设计/侯景之乱触发链诊断.md) | 无兵交接交涉、NPC 个人归附与真实起兵门槛（2026-10-17 已修复，局部回归） |
 
 “方案”“设计”等既有文件名保留，不据名称判断是否落地；具体实施和验证以正文的日期、范围与后续更正为准。尚未实施的建议在对应专题中明确标注，不能混写为当前机制。
 
@@ -58,6 +59,7 @@
 | 弹窗与详情页重设计（已实施，待审美确认） | [10张效果图／37个状态](art-direction/dialog-redesign/index.html)、[评审与入口映射](art-direction/dialog-redesign/README.md)、[实机对照](art-direction/dialog-redesign/comparison.html)、[实施记录](实施记录/弹窗与详情页效果图对齐.md) |
 | 人物外观与遗传 | [人物形象与遗传设计](art-direction/人物形象与遗传设计.md)、[五位历史人物肖像（预期图已确认，接入待人工验收）](art-direction/portrait-studies/historical-five-546-v1/README.md)、[高澄／萧纲／高洋／元善见（预期图待确认）](art-direction/portrait-studies/historical-four-546-v1/README.md) |
 | 人物分层素材 | [生成提示词](art-direction/人物分层素材提示词.md) |
+| 人物特质徽章（待人工验收） | [20 枚统一图标样板](art-direction/trait-icons/index.html)，性格、疾病、健康修正、伤势与后天专长，含 64px／32px 比较 |
 | 生活重心插画 | [插画提示词](art-direction/lifestyle-art-prompts.md) |
 | 地形纹理 | [地图图集提示词](art-direction/terrain-atlas-prompt.txt) |
 | 建康独立美术样板（待确认） | [本地入口](http://127.0.0.1:5173/map-art-sample.html)，近／中／远景与舆图，未接入正式游戏 |

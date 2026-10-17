@@ -36,12 +36,13 @@ function recordPact(w:World,e:Event,p:AllegiancePact){const key=['pact',p.id,p.s
 function phase(w:World,e:Event,value:HistoricalPhase,text:string,published=false){if(e.phase===value)return;e.phase=value;e.phaseSince=w.day;e.revision++;delete e.decision;remember(w,e,'phase:'+e.revision,text,published);}
 function finish(w:World,e:Event,text:string,cancelled=false){phase(w,e,'aftermath',text,!!e.warId);e.status=cancelled?'cancelled':'resolved';e.result=text;e.resolvedAt=w.day;delete e.decision;}
 export function northConflict(w:World,e:Event){
- const person=e.actors.protagonist,r=allegianceRealm(w,person),army=historicalArmy(w,person);if(!r||r!==e.origin||!army)return '';
+ // Political insecurity survives a lost command; armed actions validate their own real troops.
+ const person=e.actors.protagonist,r=allegianceRealm(w,person),army=historicalArmy(w,person);if(!r||r!==e.origin)return '';
  const chief=governingAuthority(w,r),protector=e.actors.protector,successor=publicSuccessor(w,r,'executive',protector);
  const broken=w.politics?.commitments?.find(q=>q.person===person&&q.broken&&q.until>=w.day);
  const warrant=w.custody?.warrants.find(q=>q.person===person&&q.status==='pending');
  const refused=w.politics?.assurances.find(q=>q.person===person&&q.status==='refused'&&q.due+90>=w.day);
- const order=army.refusal?.commander===person&&army.refusal.day+90>=w.day?army.refusal:undefined;
+ const order=army?.refusal?.commander===person&&army.refusal.day+90>=w.day?army.refusal:undefined;
  const kept=w.politics?.assurances.some(q=>q.person===person&&q.chief===chief&&q.status==='kept'&&q.due+90>=w.day);
  const illness=lifeOf(w,protector)?.illness;
  const ill=!!illness&&(illness.severity===3||illness.severity===2&&w.day-illness.since>=30);
@@ -134,7 +135,9 @@ function npcDecision(w:World,e:Event){
  let command:HistoricalCommand={...base,optionId:'wait'};
  if(d.kind==='north'){
   const hosts=worldRealms(w).filter(r=>r!==e.origin&&!w.realm!.annexed?.[r]).sort((a,b)=>Number(b==='liang')-Number(a==='liang')||relationOpinion(w,d.actor,governingAuthority(w,b))-relationOpinion(w,d.actor,governingAuthority(w,a)));
-  for(const realm of hosts){const q={...base,optionId:'seek',realm,terms:'retain'} as const;if(!historicalReason(w,q,d.actor)){command=q;break;}}
+  choose:for(const terms of ['retain','personal'] as const)for(const realm of hosts){const q={...base,optionId:'seek',realm,terms} as const;if(!historicalReason(w,q,d.actor)){command=q;break choose;}}
+  // Travel, duties or influence can temporarily block every legal request. Retry the same decision.
+  if(command.optionId==='wait')return;
  }else if(d.kind==='security-demand'){if(relationOpinion(w,e.actors.protagonist,d.actor)<=-30)command={...base,optionId:'demand'};}
  else if(d.kind==='security-answer'){
   const p=historicalPact(w,e)!,pair=diplomaticPair(w,p.from,p.to),troops=(r:typeof p.from)=>w.realm!.armies.filter(a=>a.realm===r).reduce((n,a)=>n+a.troops,0);
@@ -196,7 +199,7 @@ export function advanceHistorical(w:World){
   const conflict=northConflict(w,e);
   if(!conflict){if(e.phase==='north'){phase(w,e,'dormant','保护关系与交接争议已缓和。');delete e.lastConflict;}continue;}
   const chief=governingAuthority(w,e.origin);
-  if(e.phase==='dormant'||e.lastConflict!==conflict){phase(w,e,'north','原有权力保护出现动摇，河南军政交接需要议定。');e.lastConflict=conflict;
+  if(e.phase==='dormant'||e.lastConflict!==conflict){phase(w,e,'north','原有权力保护出现动摇，个人待遇与现有兵权需要重新议定。');e.lastConflict=conflict;
    if(chief===w.characterId&&id!==w.characterId){const politics=ensurePowerPolitics(w);if(!politics.assurances.some(q=>q.person===id&&q.chief===chief&&q.status==='pending'))politics.assurances.push({realm:e.origin,person:id,chief,due:w.day+30,status:'pending'});decide(w,e,'council',chief);}
    else decide(w,e,'north',id);
   }else if(e.decision?.kind==='council'&&e.decision.handled&&e.decision.created<w.day)decide(w,e,'north',id);

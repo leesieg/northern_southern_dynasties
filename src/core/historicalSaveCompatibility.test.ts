@@ -15,3 +15,11 @@ it('preserves the exact previous health release while rejecting mismatched depen
  expect(officialSaveCompatible({...prior,engine:'unknown'},current)).toBe(false);
  expect(officialSaveCompatible({...prior,assets:'unknown'},current)).toBe(false);
 });
+
+it('imports the exact official checkpoint before unarmed handover support without allowing forged locks',()=>{
+ const prior={packageId:'official-nsd',digest:'cc15a79032922accfa233eb785150c004f639260644231694d47baeed9796371',engine:'c86f67a546fbaab22629b5fb2ce246a47574e4ff933a0d2976815d4e81312d99',assets:'74361bfbf572ba0c4928f662a47e563a9a16cdc96cb19c24c4c7702735e26a58'},current={...prior,digest:'current',engine:'current'};
+ expect(officialSaveCompatible(prior,current)).toBe(true);
+ expect(officialSaveCompatible({...prior,digest:'unknown'},current)).toBe(false);
+ expect(officialSaveCompatible({...prior,engine:'unknown'},current)).toBe(false);
+ expect(officialSaveCompatible({...prior,assets:'unknown'},current)).toBe(false);
+});
