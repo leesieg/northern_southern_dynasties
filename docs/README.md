@@ -56,7 +56,7 @@
 | 顶部资源、时间与待办（已实施，待审美确认） | [预期效果、实机与验证](art-direction/top-hud/README.md) |
 | 旌旗、家族与城市事务（本地已实施，待审美确认） | [目标与实机对照](art-direction/identity-city-redesign/verification/index.html)、[8张效果图及控件样板](art-direction/identity-city-redesign/index.html)、[评审与历史取意](art-direction/identity-city-redesign/README.md) |
 | 弹窗与详情页重设计（已实施，待审美确认） | [10张效果图／37个状态](art-direction/dialog-redesign/index.html)、[评审与入口映射](art-direction/dialog-redesign/README.md)、[实机对照](art-direction/dialog-redesign/comparison.html)、[实施记录](实施记录/弹窗与详情页效果图对齐.md) |
-| 人物外观与遗传 | [人物形象与遗传设计](art-direction/人物形象与遗传设计.md)、[五位历史人物肖像（预期图已确认，接入待人工验收）](art-direction/portrait-studies/historical-five-546-v1/README.md) |
+| 人物外观与遗传 | [人物形象与遗传设计](art-direction/人物形象与遗传设计.md)、[五位历史人物肖像（预期图已确认，接入待人工验收）](art-direction/portrait-studies/historical-five-546-v1/README.md)、[高澄／萧纲／高洋／元善见（预期图待确认）](art-direction/portrait-studies/historical-four-546-v1/README.md) |
 | 人物分层素材 | [生成提示词](art-direction/人物分层素材提示词.md) |
 | 生活重心插画 | [插画提示词](art-direction/lifestyle-art-prompts.md) |
 | 地形纹理 | [地图图集提示词](art-direction/terrain-atlas-prompt.txt) |
