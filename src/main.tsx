@@ -9,17 +9,6 @@ import {ContentLibraryPanel} from './ui/ContentLibraryPanel';
 import {useEffect,useState} from 'react';
 import {cancelContentLaunch} from './host/contentTransfer';
 import {copySaveDiagnostics} from './host/saveDiagnostics';
-import './ui/style.css';
-import './ui/detailScenes.css';
-import './ui/terrainScene.css';
-import './ui/campaignSetup.css';
-import './ui/experience.css';
-import './ui/decisionPresentation.css';
-import './ui/immersiveInterface.css';
-import './ui/dialogDesign.css';
-import './ui/identityCityDesign.css';
-import './ui/typography.css';
-import './ui/courtyardMenu.css';
 
 if (import.meta.env.BASE_URL.startsWith('/games/fengyun-nanbeichao/')) {
   let owner: string | undefined;
@@ -46,6 +35,8 @@ async function boot(){
  await prepareStorage();const id=sessionStorage.getItem(LAUNCH_KEY),launch=id?await library.launch(id):undefined;if(id&&!launch)throw new Error('未完成的内容切换记录缺失，请取消切换并恢复原行记。');
  const text=launch?null:await readSaveFile(),content=launch?await library.get(launch.digest):text?await library.resolve(text):bundle.content;
  setContentContext({content,environment:bundle.environment,library,launch,scope:storageScope()});await installContentPackage(content,bundle.environment);
- const {App}=await import('./ui/App');root.render(<StrictMode><App/></StrictMode>);
+ const {App}=await import('./ui/App');
+ // Load the final skin after App's component CSS, as before content-aware boot.
+ await import('./ui/gameStyles');root.render(<StrictMode><App/></StrictMode>);
 }
-void boot().catch(error=>{setContentContext({content:bundle.content,environment:bundle.environment,library});root.render(<Recovery error={error instanceof Error?error.message:String(error)}/>);});
+void boot().catch(async error=>{await import('./ui/gameStyles');setContentContext({content:bundle.content,environment:bundle.environment,library});root.render(<Recovery error={error instanceof Error?error.message:String(error)}/>);});
