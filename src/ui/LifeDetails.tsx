@@ -13,8 +13,14 @@ import {ArtIcon} from './ArtIcon';
 import {isDeceased,ageLabel,ageOf,healthLabel,lifeOf,lifeStage,illnessNames} from '../core/lifeState';
 import {autoCareReason,careReason} from '../core/life';
 import {birthRecords} from '../data/lifespans';
+import {healthProfileFor} from '../data/healthProfiles';
 import {dateLabel} from '../core/world';
 import type {World,GameCommand} from '../core/types';
+/** Nonhereditary scenario habits share the dedicated trait area. */
+export function HealthHabitTrait({world,id}:{world:World;id:string}){
+ const profile=healthProfileFor(id);if(!profile)return null;
+ return <span className="person-named-trait"><HoverHint label={profile.name+' · 生活习惯'} content={<><strong>{profile.name}</strong><p>{profile.description}</p>{id==='gao-huan'&&resting(world,id)&&<p>正在休养，积劳修正暂停。</p>}</>}><span className="trait-badge trait-icon-only" role="img" aria-label={profile.name}>{id==='xiao-yan'?<svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 31C8 30 5 23 5 17c7 0 12 3 15 10 3-7 8-10 15-10 0 6-3 13-15 14Zm0-4C11 20 14 10 20 5c6 5 9 15 0 22ZM9 35h22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>:<ArtIcon name="stress" size={32}/>}</span></HoverHint><small>{profile.name}</small></span>;
+}
 /** Temporary acquired condition; never written into congenital/personality traits. */
 export function TemporaryIllnessTrait({world,id}:{world:World;id:string}){
  const life=lifeOf(world,id),illness=life?.illness;if(!illness||isDeceased(world,id))return null;

@@ -18,7 +18,7 @@ import {clanStanding} from '../core/clans';
 import {HoverHint} from './HoverHint';
 import {ActivityProgress} from './MobilityPanel';
 import {DetailTabs} from './DetailTabs';
-import {LifeSummary,LifeDetails,TemporaryIllnessTrait} from './LifeDetails';
+import {LifeSummary,LifeDetails,TemporaryIllnessTrait,HealthHabitTrait} from './LifeDetails';
 import {isDeceased} from '../core/lifeState';
 import { OpinionDetails } from './OpinionDetails';
 import {diplomaticQuote,returnRoute} from '../core/diplomacy';
@@ -79,7 +79,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,familyView,onFam
   <div className="person-demographics"><LifeSummary world={w} id={lifeId}/><HoverHint label="文化身份" content={(id==='gao-huan'?cultureSources.gao.note:id.startsWith('hulu-')?cultureSources.hulu.note:id==='hou-jing'?cultureSources.hou.note:'文化身份为剧本概括。')+' 文化独立于家族与效忠，换官、换国、换衣不改变身份。'}><small>{cultureNames[personCulture(w,id)]}</small></HoverHint>{model.site&&!deceased&&<button type="button" onClick={()=>onCity(model.site!)}>{model.traveling?'在途':'驻留'}{siteById[model.site]?.name}</button>}</div>
  </header>
  <PersonAbilities world={w} person={id} labels/>
- <div className="person-dossier-traits"><span>特质</span><div>{(c||extra)&&traitsFor(w,id).map(t=><span className="person-named-trait" key={t}><TraitBadge trait={t}/><small>{traitDefinitions[t].name}</small></span>)}<TemporaryIllnessTrait world={w} id={lifeId}/></div></div>
+ <div className="person-dossier-traits"><span>特质</span><div>{(c||extra)&&traitsFor(w,id).map(t=><span className="person-named-trait" key={t}><TraitBadge trait={t}/><small>{traitDefinitions[t].name}</small></span>)}<HealthHabitTrait world={w} id={lifeId}/><TemporaryIllnessTrait world={w} id={lifeId}/></div></div>
  <DetailTabs label="人物章节" value={tab} onChange={onTab} items={([{id:'overview',label:'总览',icon:'person'},{id:'family',label:'家族',icon:'renown'},{id:'relations',label:'关系',icon:'gregarious'},{id:'focus',label:'重心',icon:'diligent'},{id:'interaction',label:'互动',icon:'person'}] as const).filter(({id:key})=>key==='overview'||key==='family'||key==='relations'||key==='focus'&&self||key==='interaction'&&canInteract)}/>
 
  <div key={id+'|'+tab} className="person-page-content">

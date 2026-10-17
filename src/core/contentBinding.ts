@@ -53,8 +53,10 @@ const phaseDOfficialSave={packageId:'official-nsd',digest:'3288e381ba307a19420c2
 // Captured from the unchanged official tables before the five-portrait asset update.
 // Artwork changes the asset fingerprint; only this exact prior lock may bridge it.
 const preHistoricalPortraitSave={packageId:'official-nsd',digest:'e2e1d0c4b71f0518590d46a170bb2ce2560ea188da5e47425acfe198f64238c9',engine:'a6f9823aaed196965d9b0b18d974b75366ad52e032677a63eb2d84699ccaea1e',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+// Exact official lock reconstructed from the local pre-health checkpoint; tables unchanged.
+const preHistoricalHealthSave={"packageId":"official-nsd","digest":"7552d2d58e4581fbb45f022305332fc36200c273e614fbfd238ee6e79fdef8ac","engine":"503eab013dd173d6b1913cb31ecd5a0283d68eae4cf664ede971c43d45348afd","assets":"74361bfbf572ba0c4928f662a47e563a9a16cdc96cb19c24c4c7702735e26a58"};
 function officialSaveCheckpoints(expected:ContentLock,additional:ContentLock[]){
- return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,preHistoricalPortraitSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
+ return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,preHistoricalPortraitSave,preHistoricalHealthSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
 }
 export function officialSaveCompatible(value:unknown,expected:ContentLock,additional:ContentLock[]=[]):boolean {return officialSaveCheckpoints(expected,additional).some(lock=>sameContentLock(value,lock));}
 /** Saved launch records contain a digest, not a save header. Only known exact

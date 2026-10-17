@@ -15,7 +15,7 @@ export const illnessCourse:Record<Illness,{recovery:number;worsening:number;dama
  flux:{recovery:.65,worsening:.08,damage:3},
  wasting:{recovery:.38,worsening:.10,damage:3},
 };
-export function monthlyIllnessRisk(age:number,stress=0,vigorous=false){return Math.max(.002,Math.min(.05,.007+Math.max(0,age-55)*.00035+Math.max(0,Math.min(100,stress))*.00012-(vigorous?.003:0)));}
+export function monthlyIllnessRisk(age:number,stress=0,vigorous=false,multiplier=1){return Math.min(1,Math.max(.002,Math.min(.05,.007+Math.max(0,age-55)*.00035+Math.max(0,Math.min(100,stress))*.00012-(vigorous?.003:0)))*multiplier);}
 export function illnessKind(age:number,draw:number):Illness {return age>=60?(draw<.35?'wasting':draw<.65?'cold':draw<.85?'flux':'fever'):(draw<.55?'cold':draw<.8?'flux':'fever');}
 /** Gameplay balance, not historical mortality estimates or a scheduled lifespan.
  * Pure senescence starts at sixty; younger deaths require illness, injury or another actual cause. */
@@ -25,13 +25,13 @@ export function monthlyAgeRisk(age:number){
  const annual=annualAgeRisk.filter(([from])=>age>=from).at(-1)?.[1]??0;
  return 1-(1-annual)**(1/12);
 }
-export function mortalityRisk(age:number,health:number,severity:number,care=false,vigorous=false){
- const aging=monthlyAgeRisk(age)*(vigorous?.9:1);
+export function mortalityRisk(age:number,health:number,severity:number,care=false,vigorous=false,agingMultiplier=1){
+ const aging=monthlyAgeRisk(age)*(vigorous?.9:1)*agingMultiplier;
  const illness=Math.min(1,Math.max(severity===3?.04:0,Math.max(0,25-health)*.003)*(care?.6:1)*(vigorous?.8:1));
  return {aging,illness,total:1-(1-aging)*(1-illness)};
 }
-export function recoveryChance(kind:Illness,severity:1|2|3,elapsed:number,care=false,vigorous=false){
- return Math.min(.95,illnessCourse[kind].recovery*([1,.65,.35][severity-1])+(care?.25:0)+(vigorous?.08:0)+(severity===1?Math.min(.16,Math.floor(Math.max(0,elapsed)/60)*.08):0));
+export function recoveryChance(kind:Illness,severity:1|2|3,elapsed:number,care=false,vigorous=false,baseMultiplier=1){
+ return Math.min(.95,illnessCourse[kind].recovery*([1,.65,.35][severity-1])*baseMultiplier+(care?.25:0)+(vigorous?.08:0)+(severity===1?Math.min(.16,Math.floor(Math.max(0,elapsed)/60)*.08):0));
 }
 export interface PersonLife {
  health:number;illness:{kind:Illness;since:number;severity:1|2|3}|null;

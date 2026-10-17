@@ -1,4 +1,6 @@
 import {initialPresence} from './scenarioLife';
+import {healthProfileFor} from '../data/healthProfiles';
+import {resting} from './householdLife';
 import {advanceNPCCare} from './npcLife';
 import {inheritEstates} from './estates';
 import {accountWallet} from './obligations';
@@ -126,14 +128,15 @@ export function advanceLife(w:World){
   const p=s.people[id];if(p.death||initialPresence(id)!=='active')continue;
   const age=ageAt(w,id)!,self=id===(w.characterId??'fictional'),stress=self?w.social?.stress??0:0,care=p.careUntil>=w.day&&p.careUntil>0;
   const genome=w.identities?.people[id]?.genome,vigorous=genome?expressGenome(genome).congenital.includes('vitality'):false;
-  const mortality=mortalityRisk(age,p.health,p.illness?.severity??0,care,vigorous),draw=roll(w);
+  const profile=id==='gao-huan'&&resting(w,id)?undefined:healthProfileFor(id);
+  const mortality=mortalityRisk(age,p.health,p.illness?.severity??0,care,vigorous,profile?.aging),draw=roll(w);
   if(p.health===0||draw<mortality.total){die(w,id,p.health===0||draw>=mortality.aging?'illness':'age');if(w.campaign&&w.campaign.status!=='active')break;continue;}
   if(p.injuryUntil!==undefined&&(p.injuryUntil<=w.day||care&&(p.injuryUntil-=15)<=w.day))delete p.injuryUntil;
-  const max=healthCapacity(age),risk=monthlyIllnessRisk(age,stress,vigorous);
+  const max=healthCapacity(age),risk=monthlyIllnessRisk(age,stress,vigorous,profile?.illness);
   if(p.illness){
-   const ill=p.illness,course=illnessCourse[ill.kind],elapsed=w.day-ill.since,healing=recoveryChance(ill.kind,ill.severity,elapsed,care,vigorous);
+   const ill=p.illness,course=illnessCourse[ill.kind],elapsed=w.day-ill.since,healing=recoveryChance(ill.kind,ill.severity,elapsed,care,vigorous,profile?.recovery);
    if(roll(w)<healing){p.illness=null;p.health=Math.min(max,p.health+(care?18:10));log(w,personName(w,id)+'病势消退，逐渐康复。');}
-   else {if(roll(w)<course.worsening*(care?.3:1)&&ill.severity<3)ill.severity=(ill.severity+1) as 2|3;p.health=Math.max(0,p.health-Math.ceil(ill.severity*course.damage*(care?.5:1)));}
+   else {if(roll(w)<Math.min(1,course.worsening*(care?.3:1)*(profile?.worsening??1))&&ill.severity<3)ill.severity=(ill.severity+1) as 2|3;p.health=Math.max(0,p.health-Math.ceil(ill.severity*course.damage*(care?.5:1)));}
   }else{
    p.health=Math.min(max,p.health+(care?12:4));
    if(roll(w)<risk){p.illness={kind:illnessKind(age,roll(w)),since:w.day,severity:1};p.health=Math.max(0,p.health-8);log(w,personName(w,id)+'患上'+illnessNames[p.illness.kind]+'。');}
