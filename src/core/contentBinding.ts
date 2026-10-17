@@ -50,8 +50,11 @@ const reportedOfficialDevelopmentSave={packageId:'official-nsd',digest:'a57eb816
 export function sameContentLock(a:unknown,b:ContentLock):boolean {return !!a&&typeof a==='object'&&!Array.isArray(a)&&Object.keys(a).length===4&&Object.entries(b).every(([key,value])=>(a as Record<string,unknown>)[key]===value);}
 // Captured from the completed stage D source before this recovery patch.
 const phaseDOfficialSave={packageId:'official-nsd',digest:'3288e381ba307a19420c2c9c02fac64a55ee5c6b61dee0a6c1f41191837d5fdd',engine:'ddd5ba828d83987db10031079a93d10f27cb9b01e39991f962ba9d406fe594eb',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
+// Captured from the unchanged official tables before the five-portrait asset update.
+// Artwork changes the asset fingerprint; only this exact prior lock may bridge it.
+const preHistoricalPortraitSave={packageId:'official-nsd',digest:'e2e1d0c4b71f0518590d46a170bb2ce2560ea188da5e47425acfe198f64238c9',engine:'a6f9823aaed196965d9b0b18d974b75366ad52e032677a63eb2d84699ccaea1e',assets:'164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d'};
 function officialSaveCheckpoints(expected:ContentLock,additional:ContentLock[]){
- return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
+ return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,preHistoricalPortraitSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
 }
 export function officialSaveCompatible(value:unknown,expected:ContentLock,additional:ContentLock[]=[]):boolean {return officialSaveCheckpoints(expected,additional).some(lock=>sameContentLock(value,lock));}
 /** Saved launch records contain a digest, not a save header. Only known exact

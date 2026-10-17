@@ -49,12 +49,12 @@ it('所有朝服逐格登记脸部，保留五官采样与遗传比例并同步�
   expect(c).toEqual(before);
  }
 });
-it('高欢两套朝服的鼻口落在新底图的脸部，不再停留在旧脸坐标',()=>{
+it('保留旧朝服模板的高欢两格鼻口登记，独立于专属人物的新入口',()=>{
  const c=portraitContext('gao-huan');
  // Canonical 724×1086 panel coordinates, checked against cheek/chin landmarks.
  // The old recipe put the nose near x=402 and mouth near x=385 in both panels.
  for(const [office,noseX,mouthX] of [['governor',419,402],['ruler',447,431]] as const){
-  const r=approvedPaintedRecipe('gao-huan',{...c,office});
+  const r=courtCostume(composePaintedRoster('gao-huan',c),{...c,office});
   const center=(slot:string)=>{const p=r.parts.find(p=>p.slot===slot)!.place;return (p.x+p.width/2)*724;};
   expect(Math.abs(center('nose')-noseX)).toBeLessThan(2);
   expect(Math.abs(center('mouth')-mouthX)).toBeLessThan(2);

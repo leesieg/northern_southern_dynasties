@@ -20,7 +20,7 @@ export function paintLifeLayer(canvas:HTMLCanvasElement,recipe:PaintedRecipe,lif
   for(let y=Math.max(0,Math.floor(eyeY-faceH*.9));y<Math.min(h,mouthY+faceH*.9);y++)for(let x=Math.max(0,Math.floor(centerX-faceW));x<Math.min(w,centerX+faceW);x++){
    const dx=(x-centerX)/faceW,dy=(y-eyeY)/faceH;
    const temple=Math.max(0,1-Math.abs(Math.abs(dx)-.85)/.18)*Math.max(0,1-Math.abs(dy+.25)/.7);
-   const beard=(life.beard===false?0:1)*Math.max(0,1-Math.abs(dx)/.52)*Math.max(0,1-Math.abs(dy-1.45)/.55);
+   const beard=((recipe.facialHair??life.beard)===false?0:1)*Math.max(0,1-Math.abs(dx)/.52)*Math.max(0,1-Math.abs(dy-1.45)/.55);
    const i=(y*w+x)*4,lum=data[i]*.3+data[i+1]*.59+data[i+2]*.11,chroma=Math.max(data[i],data[i+1],data[i+2])-Math.min(data[i],data[i+1],data[i+2]);
    const strength=Math.max(temple,beard)*a.silver*.64*Math.max(0,1-lum/115)*Math.max(0,1-chroma/65);
    for(let c=0;c<3;c++)data[i+c]+=([185,181,163][c]-data[i+c])*strength;

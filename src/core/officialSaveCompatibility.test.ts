@@ -2,6 +2,7 @@ import {beforeEach,describe,expect,it,vi} from 'vitest';
 const assets='164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d';
 // Independent fixtures: checkpoint exports and the user's read-only save diagnostic.
 const checkpoints=[
+ {packageId:'official-nsd',digest:'e2e1d0c4b71f0518590d46a170bb2ce2560ea188da5e47425acfe198f64238c9',engine:'a6f9823aaed196965d9b0b18d974b75366ad52e032677a63eb2d84699ccaea1e',assets},
  {packageId:'official-nsd',digest:'a57eb8168d647065963d0ab9198554e65cb0ac16147c76df66e4e173cf5d8e7f',engine:'99bc51e78e4404a7f20fcbe97943e09e3d161b55cddeb10302ab25a6e1945654',assets},
  {packageId:'official-nsd',digest:'3288e381ba307a19420c2c9c02fac64a55ee5c6b61dee0a6c1f41191837d5fdd',engine:'ddd5ba828d83987db10031079a93d10f27cb9b01e39991f962ba9d406fe594eb',assets},
  {packageId:'official-nsd',digest:'5cd6adc35d88ba7990f3f4b342708bdec2e2614ee6843e51ba209e1952a177da',engine:'1531be96b5f86a8045da2eb2c2dc8d41441cc7089d7c9de44dff1b52a520b0cf',assets},
@@ -17,6 +18,11 @@ const checkpoints=[
 const current={...checkpoints[0],digest:'current',engine:'current'};
 describe('official save compatibility',()=>{
  beforeEach(()=>vi.resetModules());
+ it('bridges the exact pre-portrait official checkpoint across the new artwork fingerprint only',async()=>{
+  const b=await import('./contentBinding'),next={...current,assets:'new-portrait-assets'};b.bindContent(next,{},true);
+  expect(()=>b.assertSaveContent(checkpoints[0])).not.toThrow();expect(b.officialSaveDigestCompatible(checkpoints[0].digest,next)).toBe(true);
+  for(const field of ['packageId','digest','engine','assets'] as const)expect(()=>b.assertSaveContent({...checkpoints[0],[field]:'unknown'})).toThrow();
+ });
  it.each(checkpoints)('accepts only the exact registered lock $digest',async previous=>{
   const b=await import('./contentBinding');b.bindContent(current,{},true);
   expect(()=>b.assertSaveContent(previous)).not.toThrow();
