@@ -9,6 +9,7 @@ import {ContentLibraryPanel} from './ui/ContentLibraryPanel';
 import {useEffect,useState} from 'react';
 import {cancelContentLaunch} from './host/contentTransfer';
 import {copySaveDiagnostics} from './host/saveDiagnostics';
+import {loadGameSkin,reportGameSkinFailure} from './host/gameSkin';
 
 if (import.meta.env.BASE_URL.startsWith('/games/fengyun-nanbeichao/')) {
   let owner: string | undefined;
@@ -37,6 +38,9 @@ async function boot(){
  setContentContext({content,environment:bundle.environment,library,launch,scope:storageScope()});await installContentPackage(content,bundle.environment);
  const {App}=await import('./ui/App');
  // Load the final skin after App's component CSS, as before content-aware boot.
- await import('./ui/gameStyles');root.render(<StrictMode><App/></StrictMode>);
+ await loadGameSkin();root.render(<StrictMode><App/></StrictMode>);
 }
-void boot().catch(async error=>{await import('./ui/gameStyles');setContentContext({content:bundle.content,environment:bundle.environment,library});root.render(<Recovery error={error instanceof Error?error.message:String(error)}/>);});
+void boot().catch(async error=>{
+ try{await loadGameSkin();}catch(styleError){reportGameSkinFailure({cause:error,styles:styleError});return;}
+ setContentContext({content:bundle.content,environment:bundle.environment,library});root.render(<Recovery error={error instanceof Error?error.message:String(error)}/>);
+});
