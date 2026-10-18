@@ -1,10 +1,10 @@
 /* 2026-10-18 user reference: carved wood, gilt cloud fittings, bamboo plaques,
    silk pendants and a paper scroll. All text and state remain live HTML. */
-.focused-shell{--rail-width:68px;--campaign-header:98px;--dial-unit:.805714px;--reference-ink:#14231e;--reference-gold:#c6a260;--reference-paper:#ecd8ac}
+.focused-shell{--rail-width:68px;--campaign-header:84px;--dial-unit:.805714px;--reference-ink:#14231e;--reference-gold:#c6a260;--reference-paper:#ecd8ac}
 .reference-hud-frame{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none;overflow:visible}
 .reference-hud-icon{display:block;width:100%;height:100%;flex:none;overflow:hidden;pointer-events:none}
-.focused-shell :is(.sovereign-strip,.chronicle-control){position:absolute;top:8px;height:84px;min-height:0;border:0;border-image:none;border-radius:0;background:none;box-shadow:none;filter:drop-shadow(0 3px 3px #0a100e77);padding:0;gap:0;box-sizing:border-box;isolation:isolate}
-.focused-shell .sovereign-strip{left:8px;width:420px;max-width:calc(100vw - 16px);display:block}
+.focused-shell :is(.sovereign-strip,.chronicle-control){position:absolute;top:0;height:84px;min-height:0;border:0;border-image:none;border-radius:0;background:none;box-shadow:none;filter:drop-shadow(0 3px 3px #0a100e77);padding:0;gap:0;box-sizing:border-box;isolation:isolate}
+.focused-shell .sovereign-strip{left:0;width:420px;max-width:100vw;display:block}
 .focused-shell .player-hud-identity{position:absolute;inset:12px auto auto 22px;width:140px;height:54px;min-height:0;display:flex;flex-direction:row;gap:12px;padding:0;border:0;background:none;box-shadow:none;z-index:1}
 .focused-shell .player-hud-identity .painted-portrait.compact{width:50px;height:50px;flex:0 0 50px;margin:0;aspect-ratio:1;border:1px solid #d0b071;border-radius:0;box-shadow:inset 0 0 0 2px #e1c58e,0 0 0 2px #30291c}
 .focused-shell .player-hud-identity>span{gap:3px;align-self:center;width:78px;min-width:0}
@@ -21,7 +21,7 @@
 .focused-shell .sovereign-strip .art-unit{display:inline;font:10px/1 var(--serif);color:#d3c7a1;margin-left:2px}
 .player-hud-footnote{position:absolute;left:22px;top:69px;width:140px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:10px/1.2 var(--serif);color:#e5d3a9}
 
-.focused-shell .chronicle-control{left:auto;right:8px;width:380px;display:block}
+.focused-shell .chronicle-control{left:auto;right:0;width:380px;display:block}
 .focused-shell .chronicle-date{position:absolute;left:94px;top:13px;width:126px;height:58px;max-width:none;min-width:0;min-height:0;padding:5px 6px;box-sizing:border-box;display:grid;align-content:center;gap:3px;clip-path:none;background:linear-gradient(90deg,#c7a77022,#f7e8c4b3 20%,#efdcb280 78%,#9d7b4122),url('/art/interface/dialog-paper.svg') center/cover;border:1px solid #b1945e;box-shadow:inset 0 0 0 2px #e1c89b,inset 0 0 0 3px #ab8e5f;color:#30261b}
 .focused-shell .chronicle-date>strong{font:var(--text-body)/1.2 var(--serif);white-space:nowrap;color:#211c15;letter-spacing:0}
 .focused-shell .chronicle-date>div{display:flex;gap:2px 5px;flex-wrap:wrap;font:10px/1.2 var(--serif);color:#3e3020}
@@ -56,7 +56,7 @@
 .focused-shell .operations-host{top:var(--campaign-header)}
 
 /* Restore the compact central flags; positioning follows the actual two HUD bounds. */
-.focused-shell .topbar>.reference-hud-frame--eventTrim{left:auto;right:8px;top:92px;width:72px;height:220px;z-index:4}
+.focused-shell .topbar>.reference-hud-frame--eventTrim{left:auto;right:0;top:84px;width:72px;height:220px;z-index:4}
 .focused-shell .ongoing-flags{width:auto;max-width:none;max-height:none;overflow:visible}
 .focused-shell .ongoing-flag-row{justify-content:start}
 .focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-row{box-sizing:border-box;padding-right:32px}
@@ -64,7 +64,7 @@
 .focused-shell .topbar:has(.ongoing-flags[data-below-header=true]:not([data-empty=true])) .army-dock{top:calc(var(--ongoing-flags-bottom,var(--campaign-header)) + 10px);max-height:calc(100dvh - var(--ongoing-flags-bottom,var(--campaign-header)) - 24px)}
 
 /* Paper map dial, gilded arc, fixed circular targets and carved pedestal. */
-.focused-shell .map-command-dock.campaign-navigation{right:14px;bottom:24px;width:calc(350 * var(--dial-unit));height:calc(336 * var(--dial-unit));max-width:none;--dial-metal:radial-gradient(ellipse at 35% 18%,#3b3a2a,#17221b 50%,#0d1511)}
+.focused-shell .map-command-dock.campaign-navigation{right:0;bottom:0;width:calc(350 * var(--dial-unit));height:calc(336 * var(--dial-unit));max-width:none;--dial-metal:radial-gradient(ellipse at 35% 18%,#3b3a2a,#17221b 50%,#0d1511)}
 .focused-shell .campaign-navigation>.reference-hud-frame--dial{z-index:0}
 .focused-shell .campaign-minimap-frame{left:calc(49 * var(--dial-unit));top:calc(55 * var(--dial-unit));width:calc(226 * var(--dial-unit));height:calc(226 * var(--dial-unit));padding:calc(12 * var(--dial-unit));box-sizing:border-box;background:conic-gradient(from 20deg,#836235,#d7b677 12%,#53401f 26%,#c5a15f 43%,#6b512b 64%,#e4c48a 82%,#7e5d2e);box-shadow:inset 0 0 0 2px #152219,0 0 0 1px #d9bd7d,0 3px 6px #0009}
 .focused-shell .campaign-minimap-frame::after{inset:calc(6 * var(--dial-unit));border-color:#e7cf95;box-shadow:0 0 0 2px #30271b,inset 0 0 0 2px #68502c}
@@ -99,14 +99,15 @@
 .focused-shell .campaign-navigation .map-tool-popover .reference-hud-frame{display:none}
 .focused-shell .campaign-navigation .map-tool-popover .reference-hud-icon{width:25px;height:25px}
 .focused-shell .map-command-dock.campaign-navigation>.map-options{width:260px;max-width:calc(100vw - 24px)}
-.focused-shell .three-map-attribution{right:calc(26 * var(--dial-unit));bottom:calc(14 * var(--dial-unit));padding:calc(6 * var(--dial-unit)) calc(16 * var(--dial-unit));border:3px double #aa874b;background:#18251ef5;box-shadow:inset 0 0 0 2px #101c15,0 2px 4px #0007;color:#e7d2a0;font:10px/1.2 var(--serif)}
-.focused-shell .three-map-attribution[open]{bottom:calc(45 * var(--dial-unit));max-height:55dvh;overflow:auto;font-size:12px}
+/* The renderer's attribution and the fixed dial share the same viewport origin. */
+.focused-shell .three-map-attribution{position:fixed;right:calc(26 * var(--dial-unit));bottom:calc(15 * var(--dial-unit));width:calc(132 * var(--dial-unit));height:calc(30 * var(--dial-unit));box-sizing:border-box;padding:0;border:3px double #aa874b;background:#18251ef5;box-shadow:inset 0 0 0 2px #101c15,0 2px 4px #0007;color:#e7d2a0;font:10px/1.2 var(--serif);z-index:6}
+.focused-shell .three-map-attribution>summary{height:100%;line-height:calc(30 * var(--dial-unit) - 6px);list-style-position:inside;text-align:center;white-space:nowrap}
+.focused-shell .three-map-attribution[open]>p{position:fixed;right:calc(16 * var(--dial-unit));bottom:calc(336 * var(--dial-unit) + 12px);width:min(330px,calc(100vw - 24px));max-height:calc(100dvh - 336 * var(--dial-unit) - 24px);overflow:auto;box-sizing:border-box;margin:0;padding:12px;border:3px double #ae8b50;background:linear-gradient(110deg,#26382bf7,#14241dfc);box-shadow:inset 0 0 0 2px #0f1d17,0 4px 15px #0007;font:12px/1.7 var(--serif)}
 .focused-shell .three-map-attribution summary:focus-visible{outline:2px solid #ebce91;outline-offset:3px}
 @media(max-width:850px){
- .focused-shell .chronicle-control{top:100px;max-width:calc(100vw - 84px)}
- .focused-shell .army-dock{top:194px;max-height:calc(100dvh - 218px)}
- .focused-shell .topbar>.reference-hud-frame--eventTrim{top:184px}
- .focused-shell .map-command-dock.campaign-navigation{right:6px;bottom:22px}
+ .focused-shell .chronicle-control{top:84px;max-width:calc(100vw - 76px)}
+ .focused-shell .army-dock{top:178px;max-height:calc(100dvh - 202px)}
+ .focused-shell .topbar>.reference-hud-frame--eventTrim{top:168px}
 }
 @media(max-width:600px){
  .focused-shell .player-hud-identity{left:18px;width:129px;gap:7px}
@@ -115,7 +116,7 @@
  .focused-shell .sovereign-strip .reference-hud-icon{width:18px;height:21px}
  .focused-shell .sovereign-strip .art-resource{gap:2px}
  .focused-shell .sovereign-strip .art-unit{display:none}
- .focused-shell .chronicle-control{left:76px;right:8px;width:auto;display:flex;align-items:center;gap:5px;padding:8px}
+ .focused-shell .chronicle-control{left:76px;right:0;width:auto;display:flex;align-items:center;gap:5px;padding:8px}
  .focused-shell .chronicle-date{position:relative;inset:auto;flex:1;width:auto;height:60px;padding-inline:4px}
  .focused-shell .chronicle-date>strong{white-space:normal}
  .focused-shell .chronicle-control .clock-play:is(.is-paused,.is-running){position:relative;inset:auto;flex:0 0 40px;width:40px}
