@@ -2,6 +2,7 @@ import {lifestyleEffects} from './lifestyle';
 import type {World} from './types';
 import {allPeople,getPerson,parentLinksOf} from './personRegistry';
 import {ageAt,isAlive,lifeOf} from './lifeState';
+import {monthStart} from './calendar';
 import {activeMarriage,closeKin,friendship,relationOpinion,changeRelationOpinion} from './relationships';
 import {attributes,pair} from './social';
 import {marriageClanBonus} from './clans';
@@ -10,7 +11,6 @@ import {allegianceRealm} from './officeEligibility';
 import {personResidence,together} from './residence';
 import {accountWallet,transferAccount} from './obligations';
 import {detained} from './custodyState';
-import {serviceBusy} from './assignments';
 import {ensureHouseholdLife} from './householdLife';
 export type FamilyMarriageCommand={type:'familyMarriage';subject:string;target:string;coins:50|100|200;residence:string;family:string};
 export function marriageSubjects(w:World,actor=w.characterId){return actor?[actor,...parentLinksOf(w).filter(p=>p.parent===actor).map(p=>p.child)].filter((id,i,ids)=>ids.indexOf(id)===i&&isAlive(w,id)&&(ageAt(w,id)??0)>=18):[];}
@@ -56,11 +56,12 @@ export function actFamilyMarriage(w:World,c:FamilyMarriageCommand,actor=w.charac
  s.history.push({day:w.day,actor,target:b,text});s.history=s.history.slice(-100);w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);
 }
 
-/** Monthly NPC decisions share marriage checks and real private transfers with the player. */
+/** Meet on any settled day, at most once per person/month; public work does not forbid a local marriage. */
 export function advanceNPCMarriages(w:World){
  if(!w.relationships||!w.social||!w.realm||w.mode!=='sandbox'||w.campaign?.status!=='active'||w.realm.event||w.relationships.marriages.length>=300)return;
  const retired=new Set(w.social.lineage.slice(0,-1).map(p=>p.id));
- const candidates=allPeople(w).filter(p=>p.id!==w.characterId&&!retired.has(p.id)&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=18&&!activeMarriage(w,p.id)&&!detained(w,p.id)&&!personResidence(w,p.id).traveling&&!serviceBusy(w,p.id)&&(lifeOf(w,p.id)?.health??0)>=50&&!lifeOf(w,p.id)?.illness);
+ const checks=ensureHouseholdLife(w).marriageChecks??={},month=monthStart(w.day,w.scriptId);
+ const candidates=allPeople(w).filter(p=>p.id!==w.characterId&&!retired.has(p.id)&&isAlive(w,p.id)&&(ageAt(w,p.id)??0)>=18&&!activeMarriage(w,p.id)&&!detained(w,p.id)&&!personResidence(w,p.id).traveling&&checks[p.id]!==month&&(lifeOf(w,p.id)?.health??0)>=50&&!lifeOf(w,p.id)?.illness);
  const matched=new Set<string>();
  for(const a of candidates){
   if(matched.has(a.id)||activeMarriage(w,a.id))continue;
@@ -71,6 +72,7 @@ export function advanceNPCMarriages(w:World){
   }).filter(o=>!o.quote.reason||o.quote.reason.startsWith('双方婚姻接受度')).sort((a,b)=>b.score-a.score||a.b.id.localeCompare(b.b.id));
   const choice=options[0];if(!choice)continue;
   matched.add(a.id);matched.add(choice.b.id);
+  for(const id of [a.id,choice.b.id])checks[id]=month;
   if(choice.quote.reason){changeRelationOpinion(w,a.id,choice.b.id,6);changeRelationOpinion(w,choice.b.id,a.id,6);const text=getPerson(w,a.id)!.name+'与'+choice.b.name+'同城交往，双方好感各 +6，暂未达成婚意愿。';w.relationships.history.push({day:w.day,actor:a.id,target:choice.b.id,text});w.relationships.history=w.relationships.history.slice(-100);continue;}
   actFamilyMarriage(w,choice.command,a.id);
  }

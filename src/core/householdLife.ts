@@ -23,9 +23,12 @@ export interface HouseholdLife {
  plans:Record<string,{trying:boolean;family:string}>;pregnancies:Pregnancy[];
  moments:FamilyMoment[];milestones:Record<string,number>;rest:Record<string,number>;
  bills:Record<string,{day:number;due:number;paid:number}>;
+ /** Last monthly conception assessment per marriage; arrival mid-month may use an unspent assessment. */
+ conceptionChecks?:Record<string,number>;
+ marriageChecks?:Record<string,number>;
 }
 export type FamilyCommand={type:'familyLife';action:'plan';trying:boolean;family:string}|{type:'familyLife';action:'rest'|'resume'}|{type:'familyLife';action:'resolve';id:number;choice:'encourage'|'discipline'|'decline';teacher?:string};
-export function ensureHouseholdLife(w:World){return w.householdLife??={version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:734611,nextId:1,plans:{},pregnancies:[],moments:[],milestones:{},rest:{},bills:{}};}
+export function ensureHouseholdLife(w:World){return w.householdLife??={version:1,since:w.day,lastMonthly:monthStart(w.day,w.scriptId),seed:734611,nextId:1,plans:{},pregnancies:[],moments:[],milestones:{},rest:{},bills:{},conceptionChecks:{},marriageChecks:{}};}
 function draw(w:World){const s=ensureHouseholdLife(w);s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
 function name(w:World,id:string){return getPerson(w,id)?.name??id;}
 function log(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
@@ -121,16 +124,20 @@ export function advanceHouseholdLife(w:World){
  for(const p of s.pregnancies)deliverChild(w,p);
  for(const e of s.moments)if(e.status==='pending'&&(!isAlive(w,e.actor)||!isAlive(w,e.person))){e.status='resolved';e.choice='decline';}
  for(const [id,until] of Object.entries(s.rest)){if(!isAlive(w,id)){delete s.rest[id];continue;}if(w.day<until)continue;const p=lifeOf(w,id);if(p){p.health=Math.min(healthCapacity(ageAt(w,id)??0),p.health+8);if((p.injuryUntil??0)>w.day)p.injuryUntil=Math.max(w.day,p.injuryUntil!-30);}delete s.rest[id];if(id===w.characterId)log(w,name(w,id)+'完成三十日休养，恢复健康并缓解伤情。');}
- if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
+ const month=monthStart(w.day,w.scriptId);
+ // Legacy saves already assessed at lastMonthly: do not reroll that month after loading.
+ s.conceptionChecks??=Object.fromEntries(w.relationships.marriages.map(m=>[m.id,s.lastMonthly]));
  advanceNPCMarriages(w);
  for(const marriage of w.relationships.marriages){
   if(marriage.until!==null)continue;
   const a=marriage.a,b=marriage.b,player=[a,b].includes(w.characterId!),father=getPerson(w,a)!.sex==='male'?a:b,mother=father===a?b:a,children=Object.values(w.generatedPeople??{}).filter(p=>p.mother===mother).length;
   const plan=s.plans[marriage.id],trying=plan?.trying??!player;
-  if(!trying||!player&&children>=2||familyPlanningReason(w,a)||draw(w)>=.18)continue;
+  if(!trying||!player&&children>=2||s.conceptionChecks[marriage.id]===month||familyPlanningReason(w,a))continue;
+  s.conceptionChecks[marriage.id]=month;if(draw(w)>=.18)continue;
   s.pregnancies.push({id:s.nextId++,father,mother,family:plan?.family??getPerson(w,father)!.family,since:w.day,due:w.day+270,status:'expecting',child:null});
   log(w,name(w,mother)+'有孕，预计二百七十日后添丁。');
  }
+ if(!isMonthStart(w.day,w.scriptId)||s.lastMonthly>=w.day)return;s.lastMonthly=w.day;
  // Only dependent generated children consume this small household provision; no duplicate NPC starting purse.
  const costs=new Map<string,number>();
  for(const child of Object.values(w.generatedPeople??{})){

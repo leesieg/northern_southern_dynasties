@@ -5,18 +5,26 @@ import {ageAt,isAlive} from './lifeState';
 import type {World} from './types';
 import type {RealmId} from './realm';
 import {dynasticKin,rulerEligibility} from './claims';
+import {detained} from './custodyState';
 export type PublicOffice='ruler'|'executive';
 export interface PublicHeirs {ruler:string|null;executive:string|null;dynasty:string|null}
 export type NominateCommand={type:'government';action:'nominate';office:PublicOffice;candidate:string|null;name?:string};
 export function publicFamily(id:string,w?:World):string|undefined {return (w?getPerson(w,id):relationshipPersonById[id])?.family;}
-export function successionCandidates(w:World,r:RealmId,office:PublicOffice='executive'){return allPeople(w).filter(p=>allegianceRealm(w,p.id)===r&&isAlive(w,p.id)&&(office==='ruler'?!rulerEligibility(w,r,p.id):(ageAt(w,p.id)??0)>=16)).map(p=>p.id);}
+export function successionCandidates(w:World,r:RealmId,office:PublicOffice='executive'){return allPeople(w).filter(p=>allegianceRealm(w,p.id)===r&&isAlive(w,p.id)&&!detained(w,p.id)&&(office==='ruler'?!rulerEligibility(w,r,p.id):(ageAt(w,p.id)??0)>=16)).map(p=>p.id);}
+/** Descendants, siblings, other collateral kin, then ancestors; age only orders within a tier. */
+export function successionKinTier(w:World,holder:string,id:string){
+ const links=parentLinksOf(w),descendants=(root:string)=>{const seen=new Set<string>(),queue=[root];for(let i=0;i<queue.length;i++)for(const l of links)if(l.parent===queue[i]&&!seen.has(l.child)){seen.add(l.child);queue.push(l.child);}return seen;};
+ const down=descendants(holder);if(down.has(id))return 0;
+ const parents=new Set(links.filter(l=>l.child===holder).map(l=>l.parent));if(links.some(l=>l.child===id&&parents.has(l.parent)))return 1;
+ return descendants(id).has(holder)?3:2;
+}
 /** Recorded children precede collateral kin; stable age ordering is a game succession rule. */
 export function publicSuccessor(w:World,r:RealmId,office:PublicOffice,former?:string):string|null {
  const g=w.realm!.governments!.realms[r],holder=former??(office==='ruler'?g.ruler:g.executives[0]),eligible=successionCandidates(w,r,office).filter(id=>id!==holder);
  const designated=g.heirs?.[office];if(designated&&isAlive(w,designated)&&allegianceRealm(w,designated)===r&&(eligible.includes(designated)||office==='ruler'&&!!g.heirs?.dynasty&&!rulerEligibility(w,r,designated,{allowFounder:true})))return designated;
  if(office==='executive'){const continuing=g.executives.find(id=>eligible.includes(id));if(continuing)return continuing;}
  const kin=eligible.filter(id=>dynasticKin(w,holder,id)),children=new Set(parentLinksOf(w).filter(l=>l.parent===holder).map(l=>l.child));
- kin.sort((a,b)=>Number(children.has(b))-Number(children.has(a))||(ageAt(w,b)??0)-(ageAt(w,a)??0)||a.localeCompare(b));
+ kin.sort((a,b)=>successionKinTier(w,holder,a)-successionKinTier(w,holder,b)||Number(children.has(b))-Number(children.has(a))||(ageAt(w,b)??0)-(ageAt(w,a)??0)||a.localeCompare(b));
  if(kin[0])return kin[0];if(office==='executive'){const ministers=Object.values(g.court?.ministries??{});return eligible.sort((a,b)=>Number(ministers.includes(b))-Number(ministers.includes(a))-(g.merit[a]??0)+(g.merit[b]??0)||(ageAt(w,b)??0)-(ageAt(w,a)??0)||a.localeCompare(b))[0]??null;}return null;
 }
 export function nominationReason(w:World,c:NominateCommand,authority:string|undefined):string {

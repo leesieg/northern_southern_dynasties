@@ -28,6 +28,8 @@ export function validHouseholdLife(w:World){
  const person=(v:unknown)=>str(v)&&!!getPerson(w,v);
  if(!obj(s)||s.version!==1||!n(s.since,w.day)||!n(s.lastMonthly,w.day)||!isMonthAnchor(s.lastMonthly,w.scriptId)||!n(s.seed,0xffffffff)||!n(s.nextId)||s.nextId<1||!obj(s.plans)||!obj(s.rest)||!obj(s.bills)||!obj(s.milestones)||!Array.isArray(s.pregnancies)||s.pregnancies.length>2000||!Array.isArray(s.moments)||s.moments.length>10000)return false;
  const ids=new Set<number>(),keys=new Set<string>(),mothers=new Set<string>(),children=new Set<string>();
+ if(s.conceptionChecks!==undefined&&(!obj(s.conceptionChecks)||!Object.entries(s.conceptionChecks).every(([id,day])=>w.relationships?.marriages.some(m=>m.id===id)&&n(day,w.day)&&isMonthAnchor(day,w.scriptId))))return false;
+ if(s.marriageChecks!==undefined&&(!obj(s.marriageChecks)||!Object.entries(s.marriageChecks).every(([id,day])=>person(id)&&n(day,w.day)&&isMonthAnchor(day,w.scriptId))))return false;
  for(const p of s.pregnancies){
   if(!obj(p)||!n(p.id,s.nextId-1)||!p.id||ids.has(p.id)||!person(p.father)||!person(p.mother)||getPerson(w,p.father)?.sex!=='male'||getPerson(w,p.mother)?.sex!=='female'||!str(p.family)||![getPerson(w,p.father)?.family,getPerson(w,p.mother)?.family].includes(p.family)||!n(p.since,w.day)||p.due!==p.since+270||!['expecting','born','ended'].includes(String(p.status)))return false;ids.add(p.id);
   if(p.status==='born'){const child=typeof p.child==='string'?w.generatedPeople?.[p.child]:null;if(!child||p.child!=='born-'+p.id||children.has(p.child!)||child.father!==p.father||child.mother!==p.mother||child.person.family!==p.family||child.birthDay<p.due)return false;children.add(p.child!);}
