@@ -15,3 +15,5 @@ export interface HistoricalState {version:1;since:number;items:HistoricalEventIn
 export type HistoricalCommand={type:'historicalEvent';instanceId:string;decisionId:string;revision:number;optionId:'wait'|'muster'|'seek'|'assure'|'rise'|'demand'|'guarantee'|'reform'|'withhold'|'protect'|'withdrawDemand';realm?:RealmId;terms?:import('./allegiancePacts').ReceptionTerms};
 /** One decision owner. Ordinary player commands remain available. */
 export function historicalOwnsDecision(w:World,person:string){return w.mode==='sandbox'&&person==='hou-jing'&&!!w.historical?.items.some(e=>e.actors.protagonist===person&&e.status!=='cancelled');}
+/** A protector's death reopens the asylum question even inside the ordinary cooling period. */
+export function historicalReceptionRetry(w:World,person:string){return w.mode==='sandbox'&&!!w.historical?.items.some(e=>e.actors.protagonist===person&&e.status==='active'&&e.phase==='north'&&e.appliedEffects.includes('reopen:protector-death'));}

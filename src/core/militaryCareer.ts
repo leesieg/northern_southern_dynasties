@@ -29,11 +29,11 @@ export function commanderCompliance(w:World,a:Army,kind:'replace'|'disband',succ
 export function attemptCompliance(w:World,a:Army,kind:'replace'|'disband',successor?:string){const q=commanderCompliance(w,a,kind,successor);if(!q.refuses){delete a.refusal;return true;}if(!a.refusal){a.refusal={kind,commander:armyCommander(w,a)??null,day:w.day,reason:q.reason};log(w,`第 ${a.id} 军拒绝${kind==='replace'?'更换统帅':'遣散'}，原编制与资源保留，须安抚或结清欠饷。`);}return false;}
 export function awardMilitaryExperience(w:World,id:string,amount:number){const s=w.militaryCareer??={lastDay:w.day,xp:{},studies:{}};s.xp[id]=Math.min(240,(s.xp[id]??0)+Math.max(0,Math.floor(amount)));}
 function studyAvailable(w:World,id:string){return !(id===w.characterId?w.people[0].journey:w.mobility?.residences[id]?.journey)&&!commandArmy(w,id)&&!w.diplomacy?.missions.some(m=>m.envoy===id)&&!w.service?.tasks.some(t=>t.phase!=='closed'&&(t.officer===id||t.helper===id))&&!w.mobility?.activities.some(a=>!['done','cancelled'].includes(a.phase)&&(a.actor===id||a.delegate===id));}
-export function privateRecruitmentQuote(w:World,c:Extract<MilitaryCareerCommand,{action:'privateRaise'}>,id=w.characterId!){
- const q=manpower(w,c.site,id),owns=ownedEstates(w,id).length>0,amount=c.amount??Math.min(200,owns?q.privateAvailable:q.publicAvailable),grain=Math.ceil(amount*.3),cost=Math.ceil((troopKinds[c.kind]?.cost??0)*amount/200),stock=ownedEstates(w,id).filter(e=>e.location===c.site&&!estateAccessReason(w,e)).reduce((n,e)=>n+e.grain,0),estateGrain=Math.min(grain,stock),purchase=grain-estateGrain;
+export function privateRecruitmentQuote(w:World,c:Extract<MilitaryCareerCommand,{action:'privateRaise'}>,id=w.characterId!,bankGrain=0){
+ const q=manpower(w,c.site,id),owns=ownedEstates(w,id).length>0,amount=c.amount??Math.min(200,owns?q.privateAvailable:q.publicAvailable),grain=Math.ceil(amount*.3),cost=Math.ceil((troopKinds[c.kind]?.cost??0)*amount/200),stock=ownedEstates(w,id).filter(e=>e.location===c.site&&!estateAccessReason(w,e)).reduce((n,e)=>n+e.grain,0),estateGrain=Math.min(grain,stock),bank=Math.max(0,Math.min(grain-estateGrain,bankGrain)),purchase=grain-estateGrain-bank;
  const compatible=w.realm?.armies.filter(a=>a.owner===id&&a.realm===allegianceRealm(w,id)&&a.location===c.site&&!a.journey&&!a.convoy&&a.troops+amount<=6000&&(a.regiments?.length??1)<55);
  const target=c.target===undefined?compatible?.[0]:compatible?.find(a=>a.id===c.target);
- return {amount,grain,cost,estateGrain,purchase,coins:cost+purchase,target};
+ return {amount,grain,cost,estateGrain,bankGrain:bank,purchase,coins:cost+purchase,target};
 }
 function privateSources(w:World,c:Extract<MilitaryCareerCommand,{action:'privateRaise'}>,id:string,rally:boolean){
  const allowed=rally&&w.historical?.items.some(e=>e.status==='active'&&e.phase==='north'&&e.actors.protagonist===id&&e.origin===allegianceRealm(w,id)&&!!e.lastConflict&&!e.appliedEffects.includes('old-followers'))&&(c.amount??0)<=800;
@@ -45,7 +45,7 @@ export function militaryCareerReason(w:World,c:MilitaryCareerCommand,id=w.charac
  if(c.action==='study')return (ageAt(w,id)??0)<16?'须成年':w.militaryCareer?.studies[id]?'研习尚未完成':(w.militaryCareer?.xp[id]??0)>=240?'历练已达到研习上限':!studyAvailable(w,id)?'须在驻地且没有在办军务、差事或出使':(accountWallet(w,'person:'+id)?.read()??0)<10?'兵法研习需要私财 10 钱':'';
  if(c.action==='supplyPolicy')return !governingExecutives(w,r).includes(id)?'须实际执政者调整国家征粮政策':!['civilian','normal','emergency'].includes(c.policy)?'无效征粮政策':'';
  if(c.action==='privateRaise'){
-  const city=w.realm.cities[c.site],q=privateRecruitmentQuote(w,c,id),sources=privateSources(w,c,id,rally),target=q.target;
+  const city=w.realm.cities[c.site],q=privateRecruitmentQuote(w,c,id,rally?w.realm.treasuries[r].grain:0),sources=privateSources(w,c,id,rally),target=q.target;
   return !city||city.owner!==r||city.controller!==r||!presentAt(w,id,c.site)?'须在本国控制的驻地私募':!Object.hasOwn(troopKinds,c.kind)?'无效兵种':sources.reason?sources.reason:c.target!==undefined&&!target?'须编入本人同城兼容部曲':target&&((target.regiments?.length??1)+sources.parts.length>60||target.troops+q.amount>6000)?'已有部曲编制已满':!target&&(w.realm.armies.length>=48||w.realm.armies.filter(a=>a.realm===r).length>=16)?'军队编制已满':city.population-mobilizedTransportLabor(w,c.site)<q.amount+100?'须保留至少 100 名居民':city.grain-q.purchase<civilianFood(w,c.site)*2&&q.purchase>0?'购买公粮须保留两期民食':(w.realm.fiscal?.balances[territoryAccount(w,r,'county:'+c.site)]??0)+q.purchase>1_000_000?'当地公库无法收取购粮款':(accountWallet(w,'person:'+id)?.read()??0)<q.coins?'私财不足以支付兵装与购粮':'';
  }
  const a=w.realm.armies.find(a=>a.id===c.army);if(!a)return '军队不存在';if(!authorityGrant(w,id,'command',{realm:a.realm,site:a.location,army:a}).allowed)return '没有本军指挥权';
@@ -59,13 +59,13 @@ export function actMilitaryCareer(w:World,c:MilitaryCareerCommand,id=w.character
  if(c.action==='study'){const wallet=accountWallet(w,'person:'+id)!;wallet.write(wallet.read()-10);s.studies[id]={started:w.day,due:w.day+30,progress:0};log(w,'支出私财 10 钱研习兵法，三十个有效驻留日形成历练，收益随已有历练递减。');return;}
  if(c.action==='supplyPolicy'){(w.realm!.supplyPolicies??={})[r]=c.policy;return;}
  if(c.action==='privateRaise'){
-  ensureArmyOrganization(w);const q=privateRecruitmentQuote(w,c,id),city=w.realm!.cities[c.site],payer='person:'+id,wallet=accountWallet(w,payer)!,destination=territoryAccount(w,r,'county:'+c.site),sources=privateSources(w,c,id,rally);
-  ensureFiscal(w)!.balances[destination]??=0;if(q.purchase)transferAccount(w,payer,destination,q.purchase,'私募部曲购买军粮');wallet.write(wallet.read()-q.cost);city.grain-=q.purchase;
+  ensureArmyOrganization(w);const q=privateRecruitmentQuote(w,c,id,rally?w.realm!.treasuries[r].grain:0),city=w.realm!.cities[c.site],payer='person:'+id,wallet=accountWallet(w,payer)!,destination=territoryAccount(w,r,'county:'+c.site),sources=privateSources(w,c,id,rally);
+  ensureFiscal(w)!.balances[destination]??=0;if(q.purchase)transferAccount(w,payer,destination,q.purchase,'私募部曲购买军粮');wallet.write(wallet.read()-q.cost);city.grain-=q.purchase;if(q.bankGrain)w.realm!.treasuries[r].grain-=q.bankGrain;
   let left=q.estateGrain;for(const e of ownedEstates(w,id).filter(e=>e.location===c.site&&!estateAccessReason(w,e))){const n=Math.min(left,e.grain);e.grain-=n;left-=n;}
   consumeManpower(w,c.site,sources.parts);const armyId=w.realm!.nextArmyId!++,units=recruitmentRegiments(sources.parts,armyId,c.site,c.kind).map(u=>({...u,institution:30,commanderLoyalty:60,loyalTo:id,cohesion:60,trainingStarted:w.day,readyDay:w.day+30}));
   if(q.target){q.target.troops+=q.amount;q.target.supply+=q.grain;q.target.regiments!.push(...units);}
   else w.realm!.armies.push({id:armyId,owner:id,payer,realm:r,location:c.site,troops:q.amount,morale:60,supply:q.grain,journey:null,siege:0,arrears:0,trainingStarted:w.day,trainingUntil:w.day+30,regiments:units});
-  log(w,`私财组织 ${q.amount} 人部曲，庄粮 ${q.estateGrain}、购买公粮 ${q.purchase}；来源兵额保留，三十日训练后满百人才可独立出征。`);return;
+  log(w,`私财组织 ${q.amount} 人部曲，庄粮 ${q.estateGrain}、原部军粮 ${q.bankGrain}、购买公粮 ${q.purchase}；来源兵额保留，三十日训练后满百人才可独立出征。`);return;
  }
  const a=w.realm!.armies.find(a=>a.id===c.army)!;
  if(c.action==='automation'){a.automation=c.control;return;}

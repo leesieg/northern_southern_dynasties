@@ -19,6 +19,7 @@ import {civilReason,actCivilWar,warCitySide} from './civilWars';
 import {activeWars} from './wars';
 import {worldRealms} from './polityRuntime';
 import {ensurePowerPolitics,actPower,powerReason} from './powerPolitics';
+import {ensureFiscal,territoryAccount,fiscalRecord} from './treasury';
 import {siteById} from '../data/scenario';
 import type {PauseEvent} from './pauseEvents';
 import {planRoute} from './world';
@@ -50,8 +51,10 @@ export function northConflict(w:World,e:Event){
  const illness=lifeOf(w,protector)?.illness;
  const ill=!!illness&&(illness.severity===3||illness.severity===2&&w.day-illness.since>=30);
  const insecure=!isAlive(w,protector)||!governingExecutives(w,r).includes(protector)||ill;
+ // A real command is both a bargaining chip and a threat, so it lowers the estrangement bar.
+ const estranged=army?-20:-25;
  if(broken||warrant||refused||order)return '现实交接争议:'+chief+':'+(broken?'失信':warrant?'拘捕':order?order.kind==='replace'?'撤将争议':'解散争议':'拒绝待遇');
- if(!kept&&insecure&&(relationOpinion(w,person,chief)<=-30||ill&&successor&&relationOpinion(w,person,successor)<=-30))return '保护关系动摇:'+chief+':'+(ill?illness?.severity===3?'重症':'病势迁延':'交替');
+ if(!kept&&insecure&&(relationOpinion(w,person,chief)<=estranged||ill&&successor&&relationOpinion(w,person,successor)<=estranged))return '保护关系动摇:'+chief+':'+(ill?illness?.severity===3?'重症':'病势迁延':'交替');
  return '';
 }
 function decide(w:World,e:Event,kind:HistoricalDecision['kind'],actor:string){e.revision++;e.decision={id:e.id+':'+e.revision,revision:e.revision,actor,kind,created:w.day};}
@@ -173,18 +176,40 @@ function npcDecision(w:World,e:Event){
 /** An accepted private force must actually march into host territory before local settlement. */
 function marchToHost(w:World,e:Event,p:AllegiancePact){
  if(p.person===w.characterId||p.terms==='personal'||p.status!=='active')return;
- const a=w.realm!.armies.find(v=>v.id===p.army);if(!a||a.journey||a.troops<100||(a.trainingUntil??0)>w.day||armyCommander(w,a)!==p.person||w.realm!.cities[a.location].controller===p.to)return;
- const paths=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===p.to&&w.realm!.cities[id].controller===p.to).map(id=>planRoute(a.location,id,node=>canMarchThrough(w,p.to,node,id,a))).filter(v=>v!==null).sort((a,b)=>a.days-b.days);
- const route=paths[0];if(!route)return;
- a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};a.siege=0;
- remember(w,e,'host-march:'+p.id,'归附部曲沿实际道路前往'+siteById[route.route.at(-1)!].name+'安置，沿途照常耗粮并受通行与城防限制。');
+ const a=w.realm!.armies.find(v=>v.id===p.army);if(!a||a.troops<100||(a.trainingUntil??0)>w.day||armyCommander(w,a)!==p.person)return;
+ let destination=a.location;
+ if(w.realm!.cities[a.location].controller!==p.to){
+  if(a.journey)return;
+  const paths=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===p.to&&w.realm!.cities[id].controller===p.to).map(id=>planRoute(a.location,id,node=>canMarchThrough(w,p.to,node,id,a))).filter(v=>v!==null).sort((a,b)=>a.days-b.days);
+  const route=paths[0];if(!route)return;destination=route.route.at(-1)!;
+  a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};a.siege=0;
+  if(!personResidence(w,p.person).traveling&&personResidence(w,p.person).site!==destination)dispatchNPC(w,p.person,destination);
+  remember(w,e,'host-march:'+p.id,'归附部曲与本人沿实际道路前往'+siteById[destination].name+'安置，沿途照常耗粮并受通行与城防限制。');
+ }
+}
+/** The host's protection budget becomes the base's real local funds when a crisis is actually handled. */
+function ensurePlacementFund(w:World,e:Event,p:AllegiancePact){
+ if(e.appliedEffects.includes('placement-fund:'+p.id))return;
+ const a=w.realm!.armies.find(v=>v.id===p.army);if(!a)return;
+ const site=w.realm!.cities[a.location]?.controller===p.to?a.location:personResidence(w,p.person).site;
+ if(w.realm!.cities[site]?.controller!==p.to)return;
+ const dest=territoryAccount(w,p.to,'county:'+site),fiscal=ensureFiscal(w)!;
+ fiscal.balances[dest]=(fiscal.balances[dest]??0)+100;
+ fiscalRecord(w,p.to,'central:'+p.to,dest,100,'接纳降将安置经费');
+ e.appliedEffects.push('placement-fund:'+p.id);e.appliedEffects=e.appliedEffects.slice(-128);
+ remember(w,e,'placement-fund:'+p.id,'接纳国将已付的 100 钱保护预算拨作'+siteById[site].name+'安置经费，作为部曲落脚的地方公款。');
 }
 /** Called only at stable command/day boundaries; creates at most one decision per instance. */
 export function advanceHistorical(w:World){
  const state=ensureHistorical(w);if(!state||w.campaign?.status!=='active')return;
  for(const e of state.items){
   const id=e.actors.protagonist,live=activeWars(w).find(v=>v.civil?.claimant===id),p=w.allegiancePacts?.items.filter(p=>p.person===id&&['pending','active'].includes(p.status)).at(-1);
-  const previous=historicalPact(w,e),retry=!p&&!live&&e.warId===undefined&&previous?.status==='rejected'&&w.day-previous.created>=180&&allegianceRealm(w,id)===e.origin&&!!northConflict(w,e);
+  const previous=historicalPact(w,e),death=lifeOf(w,e.actors.protector)?.death;
+  const conflictNow=!p&&!live&&e.warId===undefined&&previous?.status==='rejected'&&allegianceRealm(w,id)===e.origin?northConflict(w,e):'';
+  // The protector's death is a new fact, not a repeat of the earlier refusal.
+  const deathAfter=!!death&&e.resolvedAt!==undefined&&death.day>=e.resolvedAt;
+  const reopenDeath=!!conflictNow&&deathAfter&&!e.appliedEffects.includes('reopen:protector-death');
+  const retry=!!conflictNow&&(reopenDeath||w.day-previous!.created>=180);
   if(p?.status==='active'&&e.status!=='cancelled'&&e.warId===undefined&&!live&&isAlive(w,id)&&!detained(w,id))syncSecurity(w,e,p);
   if(p&&e.pactId===p.id)recordPact(w,e,p);
   if(e.status!=='active'){
@@ -193,7 +218,11 @@ export function advanceHistorical(w:World){
    e.status='active';delete e.result;delete e.resolvedAt;delete e.warId;delete e.stableSince;delete e.handlingDue;
    remember(w,e,'renewed:'+w.day,'新的现实冲突出现，重新审议当前处境。',!!live);
   }
-  if(retry){delete e.pactId;delete e.host;delete e.lastConflict;phase(w,e,'dormant','先前来书未获接纳；冷却期已过，仍存交接争议，可改投其他朝廷。');}
+  if(retry){
+   if(reopenDeath){e.appliedEffects.push('reopen:protector-death');e.appliedEffects=e.appliedEffects.slice(-128);}
+   delete e.pactId;delete e.host;delete e.lastConflict;
+   phase(w,e,'dormant',reopenDeath?'保护人去世，先前来书未获接纳；旧部与处境需要重新议定。':'先前来书未获接纳；冷却期已过，仍存交接争议，可改投其他朝廷。');
+  }
   if(live){delete e.handlingDue;delete e.stableSince;e.warId=live.id;e.host=live.attacker;e.site=live.target;
    const occupied=warCitySide(w,live,live.target)==='attack';
    const siege=w.realm!.sieges?.find(s=>s.war===live.id&&s.site===live.target&&s.side==='attack');
@@ -223,11 +252,13 @@ export function advanceHistorical(w:World){
    if(breaches.length){
     delete e.stableSince;phase(w,e,'dispute','归附承诺出现争议：'+breaches.join('、')+'。');
     e.handlingDue??=w.day+30;
-    if(w.day>=e.handlingDue&&(!e.decision||e.decision.handled&&e.decision.created<e.handlingDue)){decide(w,e,'crisis',id);npcDecision(w,e);}continue;
+    if(w.day>=e.handlingDue&&(!e.decision||e.decision.handled&&e.decision.created<e.handlingDue)){ensurePlacementFund(w,e,p);decide(w,e,'crisis',id);npcDecision(w,e);}continue;
    }
    if(e.phase!=='settlement')phase(w,e,'settlement',p.integrationCompletedAt!==undefined?'部曲已按约完成改编。':'归附之约生效，当前没有未解决的争议。');
    delete e.handlingDue;e.stableSince??=w.day;
-   if(w.day-e.stableSince>=30&&(p.terms!=='reform'||p.integrationCompletedAt!==undefined))finish(w,e,p.integrationCompletedAt!==undefined?'改编安定：归附双方持续履约。':'归附稳定：当前争议已经化解。');
+   // A retained private army still faces the 90-day placement review; do not close the file first.
+   const reviewPending=p.terms==='retain'&&p.integrationCompletedAt===undefined&&!e.appliedEffects.includes('review:'+p.id)&&!!w.realm!.armies.find(a=>a.id===p.army&&a.troops>=100)&&w.day-e.stableSince<180;
+   if(!reviewPending&&w.day-e.stableSince>=30&&(p.terms!=='reform'||p.integrationCompletedAt!==undefined))finish(w,e,p.integrationCompletedAt!==undefined?'改编安定：归附双方持续履约。':'归附稳定：当前争议已经化解。');
    continue;
   }
   if(e.pactId!==undefined){finish(w,e,'归附请求撤回、逾期或未获接纳，当前来书结案。');continue;}
@@ -235,7 +266,7 @@ export function advanceHistorical(w:World){
   const conflict=northConflict(w,e);
   if(!conflict){if(e.phase==='north'){phase(w,e,'dormant','保护关系与交接争议已缓和。');delete e.lastConflict;}continue;}
   const chief=governingAuthority(w,e.origin);
-  if(e.phase==='dormant'||e.lastConflict!==conflict){phase(w,e,'north','原有权力保护出现动摇，个人待遇与现有兵权需要重新议定。');e.lastConflict=conflict;
+  if(e.phase==='dormant'||e.lastConflict!==conflict){phase(w,e,'north','原有权力保护出现动摇，个人待遇与现有兵权需要重新议定。',true);e.lastConflict=conflict;
    if(chief===w.characterId&&id!==w.characterId){const politics=ensurePowerPolitics(w);if(!politics.assurances.some(q=>q.person===id&&q.chief===chief&&q.status==='pending'))politics.assurances.push({realm:e.origin,person:id,chief,due:w.day+30,status:'pending'});decide(w,e,'council',chief);}
    else decide(w,e,'north',id);
   }else if(e.decision?.kind==='council'&&e.decision.handled&&e.decision.created<w.day)decide(w,e,'north',id);

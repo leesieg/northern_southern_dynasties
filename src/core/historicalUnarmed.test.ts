@@ -24,6 +24,7 @@ function start(id='hou-jing',armed=false){
  }
  return w;
 }
+function noOldFollowers(w:ReturnType<typeof start>){w.realm!.treasuries.east.grain=0;for(const s of ['yingchuan','chenliu','liangxian','luoyang','pengcheng'])if(w.realm!.cities[s])w.realm!.cities[s].grain=0;}
 function command(w:ReturnType<typeof start>,terms:'personal'|'retain'='personal'){
  const e=w.historical!.items[0],d=e.decision!;
  return {type:'historicalEvent',instanceId:e.id,decisionId:d.id,revision:d.revision,optionId:'seek',realm:'liang',terms} as const;
@@ -51,7 +52,7 @@ describe('Hou Jing handover after loss of his army',()=>{
   expect(w.realm!.wars).toEqual(before.realm!.wars);expect(parseWorld(serializeWorld(w)).historical).toEqual(w.historical);
  });
  it('lets an unarmed NPC send a personal request to the player host rather than silently waiting',()=>{
-  const w=start('xiao-yan'),before=structuredClone(w.realm),influence=personInfluence(w,'hou-jing');die(w,'gao-huan','illness');
+  const w=start('xiao-yan'),before=structuredClone(w.realm),influence=personInfluence(w,'hou-jing');die(w,'gao-huan','illness');noOldFollowers(w);
   advanceHistorical(w);advanceHistorical(w);
   expect(w.allegiancePacts!.items[0]).toMatchObject({person:'hou-jing',to:'liang',terms:'personal',army:null,status:'pending'});
   expect(w.historical!.items[0].phase).toBe('reception');expect(historicalPending(w)).toHaveLength(1);
@@ -59,7 +60,7 @@ describe('Hou Jing handover after loss of his army',()=>{
   const once=structuredClone(w);advanceHistorical(w);expect(w).toEqual(once);
  });
  it('keeps an NPC decision pending while a real request condition is blocked, then retries without a new conflict',()=>{
-  const w=start('xiao-yan');die(w,'gao-huan','illness');awardInfluence(w,'hou-jing',19-personInfluence(w,'hou-jing'));
+  const w=start('xiao-yan');die(w,'gao-huan','illness');noOldFollowers(w);awardInfluence(w,'hou-jing',19-personInfluence(w,'hou-jing'));
   advanceHistorical(w);expect(w.historical!.items[0].phase).toBe('north');expect(w.historical!.items[0].decision?.handled).not.toBe(true);
   expect(w.allegiancePacts?.items??[]).toHaveLength(0);const once=structuredClone(w);advanceHistorical(w);expect(w).toEqual(once);
   awardInfluence(w,'hou-jing',1);advanceHistorical(w);expect(w.allegiancePacts!.items).toHaveLength(1);expect(w.allegiancePacts!.items[0].terms).toBe('personal');expect(personInfluence(w,'hou-jing')).toBe(0);
@@ -72,7 +73,7 @@ describe('Hou Jing handover after loss of his army',()=>{
  });
  it('preserves the actual relationship and recent-assurance gates even without an army',()=>{
   const w=start();die(w,'gao-huan','illness');const e=w.historical!.items[0],chief=governingAuthority(w,'east');
-  changeRelationOpinion(w,'hou-jing',chief,-29-relationOpinion(w,'hou-jing',chief));expect(northConflict(w,e)).toBe('');
+  changeRelationOpinion(w,'hou-jing',chief,-24-relationOpinion(w,'hou-jing',chief));expect(northConflict(w,e)).toBe('');
   changeRelationOpinion(w,'hou-jing',chief,-1);expect(northConflict(w,e)).not.toBe('');
   ensurePowerPolitics(w).assurances.push({realm:'east',person:'hou-jing',chief,due:w.day,status:'kept'});expect(northConflict(w,e)).toBe('');
  });
