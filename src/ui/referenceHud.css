@@ -4,9 +4,7 @@
 .reference-hud-frame{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none;overflow:visible}
 .reference-hud-icon{display:block;width:100%;height:100%;flex:none;overflow:hidden;pointer-events:none}
 .focused-shell :is(.sovereign-strip,.chronicle-control){position:absolute;top:0;border:0;border-image:none;border-radius:0;background:none;box-shadow:none;filter:drop-shadow(0 3px 3px #0a100e77);padding:0;gap:0;min-height:0;box-sizing:border-box;isolation:isolate}
-.focused-shell :is(.sovereign-strip,.chronicle-control)::before{content:'';position:absolute;z-index:-1;pointer-events:none}
 .focused-shell .sovereign-strip{left:0;width:calc(720 * var(--hud-unit));height:calc(180 * var(--hud-unit));max-width:none;display:block}
-.focused-shell .sovereign-strip::before{inset:calc(25 * var(--hud-unit)) calc(49 * var(--hud-unit)) calc(32 * var(--hud-unit)) calc(23 * var(--hud-unit));background:radial-gradient(ellipse at 35% 12%,#33403544,transparent 55%),repeating-linear-gradient(93deg,#c4aa6510 0 1px,transparent 1px 5px),linear-gradient(110deg,#192a22,#11221d 65%,#1c2e25);clip-path:polygon(0 0,100% 0,100% 78%,97% 100%,0 100%)}
 .focused-shell .player-hud-identity{position:absolute;inset:calc(30 * var(--hud-unit)) auto auto calc(29 * var(--hud-unit));width:calc(244 * var(--hud-unit));height:calc(104 * var(--hud-unit));min-height:0;display:flex;flex-direction:row;gap:calc(16 * var(--hud-unit));padding:0;border:0;background:none;box-shadow:none;z-index:1}
 .focused-shell .player-hud-identity .painted-portrait.compact{width:calc(104 * var(--hud-unit));height:calc(104 * var(--hud-unit));flex:0 0 calc(104 * var(--hud-unit));margin:0;aspect-ratio:1;border:1px solid #d0b071;border-radius:0;box-shadow:inset 0 0 0 2px #e1c58e,0 0 0 2px #30291c}
 .focused-shell .player-hud-identity>span{gap:calc(9 * var(--hud-unit));align-self:center;width:calc(115 * var(--hud-unit));min-width:0}
@@ -24,7 +22,6 @@
 .player-hud-footnote{position:absolute;left:calc(92 * var(--hud-unit));top:calc(146 * var(--hud-unit));width:calc(166 * var(--hud-unit));text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:calc(15 * var(--hud-unit))/1.3 var(--serif);color:#e5d3a9}
 
 .focused-shell .chronicle-control{left:auto;right:0;width:calc(592 * var(--hud-unit));height:calc(166 * var(--hud-unit));display:block}
-.focused-shell .chronicle-control::before{left:calc(119 * var(--hud-unit));right:calc(12 * var(--hud-unit));top:calc(15 * var(--hud-unit));height:calc(110 * var(--hud-unit));background:linear-gradient(100deg,#17231d,#25291f);border:1px solid #80633d}
 .focused-shell .chronicle-date{position:absolute;left:calc(157 * var(--hud-unit));top:calc(28 * var(--hud-unit));width:calc(218 * var(--hud-unit));height:calc(85 * var(--hud-unit));max-width:none;min-width:0;min-height:0;padding:calc(10 * var(--hud-unit)) calc(8 * var(--hud-unit));box-sizing:border-box;display:grid;align-content:center;gap:calc(8 * var(--hud-unit));clip-path:none;background:linear-gradient(90deg,#c7a77022,#f7e8c4b3 20%,#efdcb280 78%,#9d7b4122),url('/art/interface/dialog-paper.svg') center/cover;border:1px solid #b1945e;box-shadow:inset 0 0 0 3px #e1c89b,inset 0 0 0 4px #ab8e5f;color:#30261b}
 .focused-shell .chronicle-date>strong{font:calc(25 * var(--hud-unit))/1.2 var(--serif);white-space:nowrap;color:#211c15;letter-spacing:0}
 .focused-shell .chronicle-date>div{display:flex;gap:calc(7 * var(--hud-unit));flex-wrap:wrap;font:calc(16 * var(--hud-unit))/1.2 var(--serif);color:#3e3020}
@@ -44,9 +41,8 @@
 /* Eight horizontal bamboo plaques on the carved wooden column. */
 .focused-shell .command-rail{position:relative;grid-column:1;grid-row:1;align-self:start;box-sizing:border-box;width:calc(200 * var(--hud-unit));height:calc(761 * var(--hud-unit));max-height:calc(100dvh - 180 * var(--hud-unit));margin:calc(180 * var(--hud-unit)) 0 0;padding:calc(43 * var(--hud-unit)) calc(31 * var(--hud-unit)) calc(30 * var(--hud-unit)) calc(5 * var(--hud-unit));display:flex;flex-direction:column;align-items:stretch;gap:0;border:0;border-image:none;border-radius:0;background:none;box-shadow:none;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;isolation:isolate}
 .focused-shell .command-rail>.reference-hud-frame{width:calc(200 * var(--hud-unit));height:calc(761 * var(--hud-unit));z-index:-1}
-.focused-shell .command-rail::before{content:'';position:absolute;z-index:-2;left:calc(22 * var(--hud-unit));top:calc(25 * var(--hud-unit));width:calc(122 * var(--hud-unit));height:calc(682 * var(--hud-unit));background:repeating-linear-gradient(90deg,#100e0a 0 2px,#59402a 3px,#302619 6px,#38271b 13px,#6b4c2d 15px,#291f16 18px);pointer-events:none}
+.focused-shell .command-rail::before{content:'';position:absolute;z-index:-2;left:calc(22 * var(--hud-unit));top:calc(25 * var(--hud-unit));width:calc(110 * var(--hud-unit));height:calc(682 * var(--hud-unit));background:repeating-linear-gradient(90deg,#100e0a 0 2px,#59402a 3px,#302619 6px,#38271b 13px,#6b4c2d 15px,#291f16 18px);pointer-events:none}
 .focused-shell .command-rail>button{position:relative;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;box-sizing:border-box;width:calc(164 * var(--hud-unit));height:calc(74 * var(--hud-unit));min-height:calc(74 * var(--hud-unit));padding:calc(8 * var(--hud-unit)) calc(11 * var(--hud-unit));gap:calc(10 * var(--hud-unit));margin:0;flex:none;border:0;border-radius:0;background:none;box-shadow:none;color:#efdeaf;font:calc(24 * var(--hud-unit))/1 var(--serif);letter-spacing:calc(1 * var(--hud-unit));text-shadow:0 1px 3px #000;isolation:isolate}
-.focused-shell .command-rail>button::after{content:'';position:absolute;z-index:-2;inset:calc(7 * var(--hud-unit)) calc(8 * var(--hud-unit));background:radial-gradient(ellipse at 25% 4%,#4b4c302e,transparent 70%),repeating-linear-gradient(92deg,#bfa77308 0 1px,transparent 1px 5px),linear-gradient(120deg,#19271f,#101b17);clip-path:polygon(8% 0,97% 0,100% 12%,100% 85%,94% 100%,0 100%,0 14%)}
 .focused-shell .command-rail>button>.reference-hud-frame{z-index:-1}
 .focused-shell .command-rail .rail-emblem{display:block;position:relative;width:calc(63 * var(--hud-unit));height:calc(59 * var(--hud-unit));flex:0 0 calc(63 * var(--hud-unit));margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;filter:none}
 .focused-shell .command-rail .rail-emblem::before,.focused-shell .command-rail .rail-emblem::after,.focused-shell .command-rail>button[aria-expanded=true]::before{display:none}
@@ -59,7 +55,7 @@
 .focused-shell .operations-host{top:calc(190 * var(--hud-unit))}
 
 /* The silk tasks now hang beneath the right-hand scroll, as in the reference. */
-.focused-shell .topbar>.reference-hud-frame--eventTrim{left:auto;right:0;top:calc(145 * var(--hud-unit));width:calc(77 * var(--hud-unit));height:calc(460 * var(--hud-unit));z-index:4}
+.focused-shell .topbar>.reference-hud-frame--eventTrim{left:auto;right:0;top:calc(166 * var(--hud-unit));width:calc(144 * var(--hud-unit));height:calc(439 * var(--hud-unit));z-index:4}
 .focused-shell .ongoing-flags{left:auto;right:calc(32 * var(--hud-unit));top:calc(129 * var(--hud-unit));width:calc(232 * var(--hud-unit));max-width:calc(100vw - var(--rail-width) - 24px);padding:0;max-height:calc(100dvh - 170 * var(--hud-unit));overflow:visible;--flag-color:#aa8652}
 .focused-shell .ongoing-flag-row{justify-content:end;row-gap:calc(5 * var(--hud-unit))}
 .focused-shell .ongoing-flag-entry,.focused-shell .ongoing-flag-entry>.ongoing-flag,.focused-shell .ongoing-flag-entry>.hover-hint,.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry>.hover-hint{height:calc(176 * var(--hud-unit))}
@@ -129,7 +125,7 @@
  .focused-shell{--hud-unit:.72px}
  .focused-shell .chronicle-control{top:calc(180 * var(--hud-unit))}
  .focused-shell .ongoing-flags{top:calc(317 * var(--hud-unit))}
- .focused-shell .topbar>.reference-hud-frame--eventTrim{top:calc(325 * var(--hud-unit))}
+ .focused-shell .topbar>.reference-hud-frame--eventTrim{top:calc(346 * var(--hud-unit))}
  .focused-shell .army-dock{right:calc(280 * var(--hud-unit));top:calc(190 * var(--hud-unit));width:210px;max-height:calc(100dvh - 240px)}
  .focused-shell .topbar:has(.ongoing-flags:not([data-rows="1"]):not([data-empty="true"])) .army-dock{top:calc(190 * var(--hud-unit))}
  .focused-shell .sovereign-strip .art-resource-value>small:not(.art-unit){font-size:11px}

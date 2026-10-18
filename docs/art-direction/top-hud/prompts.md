@@ -1,6 +1,19 @@
 # 顶部组件效果图提示词
 
-生成方式：内置 image_gen；仅用于待确认预期图。
+生成方式：内置 image_gen；包含预期图与生产透明素材，具体状态见各节。
+
+## 2026-10-18 透明边缘整改
+
+内置 `image_gen` 编辑，输入为用户提供的 `public/art/interface/reference-hud.png`，`transparent_background: true`。输出原件复制为 `public/art/interface/reference-hud-clean-v1.png`（1672×941 RGBA），用于独立装饰层；不是实机截图，待用户人工验收。
+
+```text
+Use case: background-extraction / precise-object-edit.
+Asset type: production transparent HUD decoration atlas for an existing Chinese Northern and Southern Dynasties strategy game.
+Edit target: the attached 1672 x 941 reference screenshot. Preserve the existing canvas aspect ratio and EXACT screen positions, proportions, silhouettes, weathered gilt cloud scrollwork, carved dark timber, bamboo plaques, black-green lacquer, parchment scroll and silk. Do not redesign or rearrange anything.
+Primary request: cleanly isolate the interface decoration from this screenshot onto a TRUE TRANSPARENT alpha background. Remove ALL geographic map, mountains, water, terrain, cities, flags on the map, character portrait, explanatory callout cards, red annotation lines and dots, and foreground landscape/sculpture/railings. Remove ALL Chinese or Latin text, dates, numerals, punctuation, resource illustrations, action illustrations, button glyphs and circular-button pictograms. The live game supplies those separately.
+Keep: top-left outer character plaque with its original fine golden cloud and dragon carvings, empty square transparent portrait aperture, blank dark-green lacquer information field and blank narrow lower identity strip; the left carved wooden rail and all eight blank dark-green action plaques with precise gilt rims and jade/metal hanging ornaments; the upper-right original carved clock housing and parchment scroll with blank paper, blank red pause panel, blank speed and step buttons; the two hanging pendants with original beige and purple silk, red cords, top brass rods and precise gold embroidered hems, but NO text or icons; the far-right carved wooden edge and plum blossom branch cleanly isolated; the lower-right original gilded circular minimap surround and blank circular controls, carved pedestal and blank small rectangular court/data plaques. The large minimap center must be a fully TRANSPARENT circular aperture, not a blank map or painted disk.
+Ensure every retained component has a complete, natural, detailed outer contour including gaps between cloud curls, pendants, flowers and fittings. All pixels between separate objects must be transparent; do not leave opaque green/grey/map fragments or rough polygon cutouts. Preserve thin gold lines and fine tassel threads with clean anti-aliased alpha edges, no white or grey matte, no glows or fuzzy halo. Keep blank lacquer and paper areas within the UI opaque. Do not draw a checkerboard. Keep the reference composition fixed for accurate atlas coordinates. Output ONLY the clean transparent decoration atlas, no labels, no typography, no surrounding board.
+```
 
 ## 组件细节图
 
