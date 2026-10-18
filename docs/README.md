@@ -60,6 +60,7 @@
 | 弹窗与详情页重设计（已实施，待审美确认） | [10张效果图／37个状态](art-direction/dialog-redesign/index.html)、[评审与入口映射](art-direction/dialog-redesign/README.md)、[实机对照](art-direction/dialog-redesign/comparison.html)、[实施记录](实施记录/弹窗与详情页效果图对齐.md) |
 | 人物外观与遗传 | [人物形象与遗传设计](art-direction/人物形象与遗传设计.md)、[五位历史人物肖像（预期图已确认，接入待人工验收）](art-direction/portrait-studies/historical-five-546-v1/README.md)、[高澄／萧纲／高洋／元善见（预期图已确认，接入待人工验收）](art-direction/portrait-studies/historical-four-546-v1/README.md) |
 | 第三批人物肖像（预期图已确认，接入待人工验收） | [慕容绍宗／韦孝宽／宇文护／娄昭君／萧绎](art-direction/portrait-studies/historical-third-546-v1/README.md) |
+| 西魏七人立绘（预期图待确认） | [李弼／独孤信／杨忠／元宝炬／苏绰／宇文毓／宇文觉](art-direction/portrait-studies/historical-west-seven-546-v1/README.md) |
 | 人物分层素材 | [生成提示词](art-direction/人物分层素材提示词.md) |
 | 人物特质徽章（待人工验收） | [20 枚统一图标样板](art-direction/trait-icons/index.html)，性格、疾病、健康修正、伤势与后天专长，含 64px／32px 比较 |
 | 生活重心插画 | [插画提示词](art-direction/lifestyle-art-prompts.md) |
