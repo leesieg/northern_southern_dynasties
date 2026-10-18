@@ -1,3 +1,4 @@
+import {administrativeRealm} from '../core/polityRuntime';
 import {DialogArt} from './DialogArt';
 import {afterCommand} from './actionFeedback';
 import {useState} from 'react';
@@ -16,7 +17,7 @@ import type {World,GameCommand} from '../core/types';
 export function OfficialActions({world:w,pending,send,site,person,iconOnly=false}:{world:World;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;site?:string;person?:string;iconOnly?:boolean}){
  const [open,setOpen]=useState(false),[kind,setKind]=useState<AssignmentKind>('marketworks'),[city,setCity]=useState(site??w.people[0].location),[candidate,setCandidate]=useState(person??w.characterId!);
  if(!w.realm||!w.characterId)return null;
- const r=playerRealm(w),sites=Object.keys(w.realm.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r),at=site??(sites.includes(city)?city:sites[0]??''),chief=canCommission(w,w.characterId,r,at,kind),command={type:'service',action:'open',kind,site:at,officer:candidate} as const;
+ const r=playerRealm(w),sites=Object.keys(w.realm.cities).filter(id=>administrativeRealm(w,id)===r&&w.realm!.cities[id].controller===r),at=site??(sites.includes(city)?city:sites[0]??''),chief=canCommission(w,w.characterId,r,at,kind),command={type:'service',action:'open',kind,site:at,officer:candidate} as const;
  const choices=officeCandidates(w,r).filter(p=>(chief?(!person||p.id===person):p.id===w.characterId));
  const kinds=(Object.keys(dutyMinistries) as AssignmentKind[]).filter(k=>!person||!officialDutyReason(w,person,k));
  if(!kinds.length||person&&!chief&&person!==w.characterId)return null;

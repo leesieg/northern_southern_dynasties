@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import {civilCanAdmin} from './civilWars';
 import {survivingRealm} from './polityLifecycle';
 import type {World} from './types';
@@ -22,7 +23,7 @@ const commissionMinistries:Partial<Record<AssignmentKind,MinistryId[]>>={relief:
 // Shared duties participate in the core import cycle; read them only when evaluating a command.
 function centralCommission(w:World,actor:string,r:RealmId,kind:AssignmentKind){const ministry=centralMinistry(w,actor);return !!ministry&&presentAt(w,actor,capital(r,w))&&!!(commissionMinistries[kind]??dutyMinistries[kind])?.includes(ministry);}
 export function canCommission(w:World,actor:string,r:RealmId,site:string,kind:AssignmentKind){
- if(!isAlive(w,actor)||!civilCanAdmin(w,actor,site)||allegianceRealm(w,actor)!==r||w.realm?.cities[site]?.owner!==r||w.realm.cities[site].controller!==r)return false;
+ if(!isAlive(w,actor)||!civilCanAdmin(w,actor,site)||allegianceRealm(w,actor)!==r||!w.realm?.cities[site]||administrativeRealm(w,site)!==r||w.realm.cities[site].controller!==r)return false;
  if(governingExecutives(w,r).includes(actor))return true;
  if(national(kind))return false;if(centralCommission(w,actor,r,kind))return true;
  return [countyTerritory(site),...localAncestors(countyTerritory(site)).map(n=>n.id)].some(t=>localActive(w,t,r)&&localHolder(w,t,r)===actor);

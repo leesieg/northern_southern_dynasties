@@ -1,6 +1,6 @@
 import {getPerson} from './personRegistry';
 import {governmentOf,governingAuthority,governingExecutives} from './government';
-import {worldRealms} from './polityRuntime';
+import {worldRealms,administrativeRealm,provisionalRealm} from './polityRuntime';
 import {allegianceRealm} from './officeEligibility';
 import {isAlive,isDeceased,lifeOf} from './lifeState';
 import {detained} from './custodyState';
@@ -17,18 +17,18 @@ export interface RulerHonor {tenure:number;posthumous:string;temple:string|null;
 export interface RulerHistoryState {version:1;nextId:number;tenures:PublicTenure[];local:GovernorTenure[];honors:RulerHonor[];notifications:{tenure:number;acknowledged:boolean;reason?:'death'|'deposed'}[]}
 export type HonorCommand={type:'honor';action:'confer';tenure:number;posthumous:string;temple?:string}|{type:'honor';action:'acknowledge';tenure:number};
 export function ensureRulerHistory(w:World){if(w.rulerHistory)return w.rulerHistory;const s:RulerHistoryState={version:1,nextId:1,tenures:[],local:[],honors:[],notifications:[]};w.rulerHistory=s;
- for(const r of worldRealms(w)){const g=governmentOf(w,r);if(!g||w.realm?.annexed?.[r])continue;for(const office of ['ruler','executive'] as const)for(const person of office==='ruler'?[g.ruler]:governingExecutives(w,r))if(getPerson(w,person)&&isAlive(w,person))s.tenures.push({id:s.nextId++,realm:r,dynasty:g.dynasty,regimeId:g.regimeId,office,person,from:w.day,until:null,basis:w.day===0?'initial':'migration',source:null});}
+ for(const r of worldRealms(w)){const g=governmentOf(w,r);if(!g||w.realm?.annexed?.[r])continue;for(const office of ['ruler','executive'] as const)for(const person of office==='ruler'?(provisionalRealm(w,r)?[]:[g.ruler]):governingExecutives(w,r))if(getPerson(w,person)&&isAlive(w,person))s.tenures.push({id:s.nextId++,realm:r,dynasty:g.dynasty,regimeId:g.regimeId,office,person,from:w.day,until:null,basis:w.day===0?'initial':'migration',source:null});}
  syncLocalHistory(w);return s;
 }
 /** Observation starts at migration day, never reconstructing dates from a dynasty's founding date. */
 export function syncRulerHistory(w:World,basis:TenureBasis='power',source:string|null=null){const s=ensureRulerHistory(w);
- for(const r of worldRealms(w)){const g=governmentOf(w,r);if(!g)continue;for(const office of ['ruler','executive'] as const){const holders=w.realm?.annexed?.[r]?[]:(office==='ruler'?[g.ruler]:governingExecutives(w,r)).filter(p=>getPerson(w,p)&&isAlive(w,p));
+ for(const r of worldRealms(w)){const g=governmentOf(w,r);if(!g)continue;for(const office of ['ruler','executive'] as const){const holders=w.realm?.annexed?.[r]?[]:(office==='ruler'?(provisionalRealm(w,r)?[]:[g.ruler]):governingExecutives(w,r)).filter(p=>getPerson(w,p)&&isAlive(w,p));
  for(const t of s.tenures.filter(t=>t.realm===r&&t.office===office&&t.until===null))if(!holders.includes(t.person)||t.regimeId!==g.regimeId)t.until=w.day;
  for(const person of holders)if(!s.tenures.some(t=>t.realm===r&&t.office===office&&t.until===null&&t.person===person))s.tenures.push({id:s.nextId++,realm:r,dynasty:g.dynasty,regimeId:g.regimeId,office,person,from:w.day,until:null,basis,source});}}
  syncLocalHistory(w);
  for(const q of w.politics?.reassessments??[])if(q.choice==='pending'&&(!isAlive(w,q.person)||detained(w,q.person)||allegianceRealm(w,q.person)!==q.realm||governmentOf(w,q.realm)?.ruler!==q.to)){q.choice='expired';q.reason='人物死亡、被拘、离国或朝廷再次交接，原表态对象失效';}
 }
-function localHolders(w:World){const rows:Pick<GovernorTenure,'realm'|'territory'|'person'>[]=[];for(const [territory,c] of Object.entries(w.realm?.cities??{}))if(c.governor&&c.owner!=='frontier'&&isAlive(w,c.governor))rows.push({realm:c.owner,territory,person:c.governor});for(const [key,seat] of Object.entries(w.realm?.local?.seats??{})){const [realm,territory]=key.split('|');if(seat.holder&&isAlive(w,seat.holder))rows.push({realm:realm as RealmId,territory,person:seat.holder});}return rows;}
+function localHolders(w:World){const rows:Pick<GovernorTenure,'realm'|'territory'|'person'>[]=[];for(const [territory,c] of Object.entries(w.realm?.cities??{}))if(c.governor&&c.owner!=='frontier'&&isAlive(w,c.governor))rows.push({realm:administrativeRealm(w,territory) as RealmId,territory,person:c.governor});for(const [key,seat] of Object.entries(w.realm?.local?.seats??{})){const [realm,territory]=key.split('|');if(seat.holder&&isAlive(w,seat.holder))rows.push({realm:realm as RealmId,territory,person:seat.holder});}return rows;}
 export function syncLocalHistory(w:World){const s=w.rulerHistory;if(!s)return;const holders=localHolders(w);for(const t of s.local)if(t.until===null&&!holders.some(q=>q.realm===t.realm&&q.territory===t.territory&&q.person===t.person))t.until=w.day;for(const q of holders)if(!s.local.some(t=>t.until===null&&t.realm===q.realm&&t.territory===q.territory&&t.person===q.person))s.local.push({...q,from:w.day,until:null,source:'observed'});}
 export function honorTenureOfPerson(w:World,r:RealmId,person:string){const ended=(w.rulerHistory?.tenures??[]).filter(t=>t.realm===r&&t.person===person&&t.until!==null);return ended.filter(t=>t.office==='ruler').at(-1)??ended.at(-1);}
 export function announceSuccession(w:World,r:RealmId,previous:string){

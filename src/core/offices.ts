@@ -1,5 +1,5 @@
 import {getCharacter} from './personRegistry';
-import {worldRealms} from './polityRuntime';
+import {worldRealms,provisionalRealm,administrativeRealm} from './polityRuntime';
 import {localHolder,localActive,localSeatSite,localTitle,countyTerritory,localAncestors} from './localAdministration';
 import {territoryNodes} from '../data/territorialHierarchy';
 import {isAlive} from './lifeState';
@@ -19,11 +19,11 @@ export interface OfficeNode {
 export function officeHierarchy(w:World,person?:string):OfficeNode[]{
  const nodes:OfficeNode[]=[];
  for(const r of worldRealms(w)){
-  const g=governmentOf(w,r);if(!g)continue;
+  const g=governmentOf(w,r);if(!g||w.realm!.annexed?.[r])continue;
   const root=`office:${r}:sovereign`,chief=`office:${r}:executive:0`;
   const relation=g.type==='feudal'?'liege':g.type==='tribal'||g.type==='nomadic'?'chief':'administration';
   const add=(n:Omit<OfficeNode,'realm'|'regimeId'>)=>{if(person&&n.holder!==person)return;nodes.push({...n,holder:n.holder&&isAlive(w,n.holder)?n.holder:null,active:n.active&&(!n.holder||isAlive(w,n.holder)),realm:r,regimeId:g.regimeId});};
-  add({id:root,name:g.type==='tribal'||g.type==='nomadic'?'最高首领':'君主',holder:g.ruler,parentId:null,kind:'sovereign',relation:'sovereignty',active:true});
+  add({id:root,name:provisionalRealm(w,r)?'军府领袖':g.type==='tribal'||g.type==='nomadic'?'最高首领':'君主',holder:g.ruler,parentId:null,kind:'sovereign',relation:'sovereignty',active:true});
   governingExecutives(w,r).forEach((holder,i)=>add({id:`office:${r}:executive:${i}`,name:i?'参与执政':'实际执政',holder,parentId:i?chief:root,kind:'executive',relation:'administration',active:true}));
   // Initial titles are scenario evidence, not automatically reissued by a successor court.
   if(g.court)for(const m of ministryIds)add({id:`office:${r}:ministry:${m}`,name:ministries[m].name,holder:g.court.ministries[m],parentId:chief,kind:'office',relation:'administration',active:['meritocratic','celestial','khanate'].includes(g.type)});
@@ -32,10 +32,10 @@ export function officeHierarchy(w:World,person?:string):OfficeNode[]{
    const ownExecutive=governingExecutives(w,r).indexOf(o.holder);
    add({id:`office:546:${o.id}`,name:o.name,holder:o.holder,parentId:o.kind==='honour'?root:ownExecutive>=0?`office:${r}:executive:${ownExecutive}`:chief,kind:o.kind,relation:o.kind==='honour'?'honour':'administration',active:true,source:c.sources});
   }
-  const upper=person?new Set(Object.entries(w.realm!.local?.seats??{}).filter(([key,s])=>s.holder===person&&key.startsWith(r+'|')).map(([key])=>key.split('|')[1])):new Set(Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r).flatMap(([id])=>localAncestors(countyTerritory(id)).map(n=>n.id)));
+  const upper=person?new Set(Object.entries(w.realm!.local?.seats??{}).filter(([key,s])=>s.holder===person&&key.startsWith(r+'|')).map(([key])=>key.split('|')[1])):new Set(Object.entries(w.realm!.cities).filter(([id])=>administrativeRealm(w,id)===r).flatMap(([id])=>localAncestors(countyTerritory(id)).map(n=>n.id)));
   for(const id of upper){const n=territoryNodes[id];add({id:`office:local:${r}:${n.id}`,territory:n.id,seatSite:localSeatSite(w,n.id,r),name:localTitle(n.id),holder:localHolder(w,n.id,r),parentId:n.level==='province'?chief:`office:local:${r}:${n.parent}`,kind:'office',relation,active:localActive(w,n.id,r)});}
-  for(const [site,c] of Object.entries(w.realm!.cities))if(c.owner===r&&(!person||c.governor===person)){
-   add({id:`office:city:${site}`,territory:countyTerritory(site),name:localTitle(countyTerritory(site)),holder:c.governor,parentId:localAncestors(countyTerritory(site)).at(-1)?`office:local:${r}:${localAncestors(countyTerritory(site)).at(-1)!.id}`:chief,kind:'city',relation,active:c.controller===c.owner,site});
+  for(const [site,c] of Object.entries(w.realm!.cities))if(administrativeRealm(w,site)===r&&(!person||c.governor===person)){
+   add({id:`office:city:${site}`,territory:countyTerritory(site),name:localTitle(countyTerritory(site)),holder:c.governor,parentId:localAncestors(countyTerritory(site)).at(-1)?`office:local:${r}:${localAncestors(countyTerritory(site)).at(-1)!.id}`:chief,kind:'city',relation,active:c.controller===r,site});
   }
  }
  return nodes;

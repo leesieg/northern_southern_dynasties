@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import type {World} from './types';
 import {sites,siteById,roads} from '../data/scenario';
 import {capital,fortificationLevel,cityOperatingExpense} from './realm';
@@ -25,7 +26,7 @@ export function establishCapitalFortification(w:World,id:string){
 export function fortificationQuote(w:World,id:string,actor=w.characterId!){
  const city=w.realm?.cities[id],r=actor&&allegianceRealm(w,actor),level=city?fortificationLevel(w,id):0,cost=(level+1)*80,days=(level+1)*30;
  const reason=!city||!r||!w.realm||w.campaign?.status!=='active'?'仅历史沙盒有效城市可用':
-  !civilCanAdmin(w,actor,id)||city.owner!==r||city.controller!==r?'须控制本国法理城市':
+  !civilCanAdmin(w,actor,id)||administrativeRealm(w,id)!==r||city.controller!==r?'须控制本国法理城市':
   !authorityGrant(w,actor,'levy',{realm:r,site:id}).allowed?'须有本城军务权限':
   level>=3?'城防已达最高等级':city.fortification?.due!=null?'城防正在修筑':localBalance(w,id)<cost?`本城公款不足 ${cost}`:'';
  return {level,cost,days,reason};
@@ -42,7 +43,7 @@ export function advanceFortificationAI(w:World){
   if(s.annexed?.[r]||governingExecutives(w,r).includes(w.characterId!))continue;
   const actor=governingAuthority(w,r);if(!actor)continue;
   const wars=activeWars(w).filter(war=>!!warRealmSide(war,r)),enemies=new Set(worldRealms(w).filter(other=>wars.some(war=>warRealmSide(war,other)&&warRealmSide(war,other)!==warRealmSide(war,r))));
-  const candidates=Object.entries(s.cities).filter(([id,c])=>c.owner===r&&c.controller===r&&!s.sieges?.some(siege=>siege.site===id)&&!authorityGrant(w,w.characterId!,'levy',{realm:r,site:id}).allowed).map(([id,c])=>{
+  const candidates=Object.entries(s.cities).filter(([id,c])=>administrativeRealm(w,id)===r&&c.controller===r&&!s.sieges?.some(siege=>siege.site===id)&&!authorityGrant(w,w.characterId!,'levy',{realm:r,site:id}).allowed).map(([id,c])=>{
    const seat=isCapitalSite(w,id),neighbors=roads.filter(e=>!e.legacyOnly&&(e.from===id||e.to===id)).map(e=>s.cities[e.from===id?e.to:e.from]);
    const border=neighbors.some(other=>other.controller!==r&&other.controller!=='frontier'),threat=neighbors.some(other=>enemies.has(other.controller as typeof r));
    const target=seat?(wars.length?3:2):threat?2:border?1:c.population>=15000?1:0;

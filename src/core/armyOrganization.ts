@@ -1,6 +1,8 @@
 import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {armyCommander} from './mobility';
 import {authorityGrant} from './authority';
+import {administrativeRealm} from './polityRuntime';
+import {independentCivil} from './civilPolities';
 import {civilWar,civilCanAdmin,playerCommandsArmy} from './civilWars';
 import {armyCampaign} from './militaryCampaigns';
 import {enactPoliticalAction} from './politicalActions';
@@ -74,17 +76,17 @@ export function armyOrganizationReason(w:World,c:ArmyCommand){
  const s=w.realm,r=playerRealm(w);
  if(c.action==='raise'){
   const amount=c.amount??200,grain=Math.ceil(amount*.3),cost=Math.ceil(troopKinds[c.kind]?.cost*amount/200*(c.service==='standing'?2:1));
-  const city=s.cities[c.site];if(!civilCanAdmin(w,w.characterId!,c.site))return '不能在内战对方控制地区征募';if(!city||city.owner!==r||city.controller!==r)return '须在本国法理和控制下征募';
+  const city=s.cities[c.site];if(!civilCanAdmin(w,w.characterId!,c.site))return '不能在内战对方控制地区征募';if(!city||administrativeRealm(w,c.site)!==r||city.controller!==r)return '须在本国法理和控制下征募';
   const grant=authorityGrant(w,w.characterId,'levy',{realm:r,site:c.site});if(!grant.allowed)return grant.reason;
   if(!Object.hasOwn(troopKinds,c.kind)||!['levy','standing'].includes(c.service))return '无效兵种或役制';
   if(c.target===undefined&&(s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16))return '军队编制已满';
-  if(c.target!==undefined){const a=s.armies.find(a=>a.id===c.target);if(!a||a.realm!==r||a.location!==c.site||a.journey||!playerCommandsArmy(w,a))return '须编入本城停驻且可统领的军队';const command=authorityGrant(w,w.characterId,'command',{realm:r,site:c.site,army:a});if(!command.allowed)return command.reason;if(a.convoy||armyCampaign(w,a)||civilWar(w,r))return '运粮、战役或内战期间不能扩编';if(a.payer!==grant.account)return '须由同一公库供饷';if(a.troops+amount>6000||a.supply+grain>armySupplyCapacity({...a,troops:a.troops+amount})||((a.regiments?.length??1)+recruitmentSources(w,c.site,amount).parts.length>60))return '超过兵额或随军粮容量';}
+  if(c.target!==undefined){const a=s.armies.find(a=>a.id===c.target);if(!a||a.realm!==r||a.location!==c.site||a.journey||!playerCommandsArmy(w,a))return '须编入本城停驻且可统领的军队';const command=authorityGrant(w,w.characterId,'command',{realm:r,site:c.site,army:a});if(!command.allowed)return command.reason;if(a.convoy||armyCampaign(w,a)||civilWar(w,r)&&!independentCivil(civilWar(w,r)!))return '运粮、战役或内战期间不能扩编';if(a.payer!==grant.account)return '须由同一公库供饷';if(a.troops+amount>6000||a.supply+grain>armySupplyCapacity({...a,troops:a.troops+amount})||((a.regiments?.length??1)+recruitmentSources(w,c.site,amount).parts.length>60))return '超过兵额或随军粮容量';}
   const sources=recruitmentSources(w,c.site,amount);if(sources.reason)return sources.reason;
   if(city.population-mobilizedTransportLabor(w,c.site)<amount+100)return '须保留至少 100 名居民';
   const source=authorityGrant(w,w.characterId!,'levy',{realm:r,site:c.site}).account!;
   return publicBalance(w,source)<cost?'拨付公库不足 '+cost+' 钱':city.grain<grain?'驻地粮仓不足 '+grain:governmentMusterReason(w,r);
  }
- const a=s.armies.find(a=>a.id===c.army&&a.realm===r);if(!a)return '军队不存在';if(!playerCommandsArmy(w,a))return '不能调整内战对方军队';const grant=authorityGrant(w,w.characterId,'command',{realm:r,site:a.location,army:a});if(!grant.allowed)return grant.reason;if(civilWar(w,r))return '内战期间须保留各军编制';
+ const a=s.armies.find(a=>a.id===c.army&&a.realm===r);if(!a)return '军队不存在';if(!playerCommandsArmy(w,a))return '不能调整内战对方军队';const grant=authorityGrant(w,w.characterId,'command',{realm:r,site:a.location,army:a});if(!grant.allowed)return grant.reason;if(civilWar(w,r)&&!independentCivil(civilWar(w,r)!))return '内战期间须保留各军编制';
  if(a.refusal)return '军队拒命期间须先安抚';
  if(a.journey||s.cities[a.location].controller!==r)return '须在本国驻地停驻整编';
  if(c.action==='split'){

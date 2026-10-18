@@ -1,5 +1,5 @@
 import {allPeople,getCharacter,getPerson} from './personRegistry';
-import {worldRealms} from './polityRuntime';
+import {worldRealms,administrativeRealm} from './polityRuntime';
 import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
 import {constitutionalExecutives} from './government';
 import {isMonthStart,monthStart,nextMonthStart} from './calendar';
@@ -57,7 +57,7 @@ export function ministryPerformance(w:World,r:RealmId,m:MinistryId){const holder
 export function ministryCompetent(w:World,r:RealmId,m:MinistryId){return ministryPerformance(w,r,m).score>=10;}
 export function movementPowerParts(w:World,r:RealmId,id:string){
  if(!isAlive(w,id)||(ageAt(w,id)??18)<16||governmentOf(w,r)?.ruler===id||allegianceRealm(w,id)!==r)return [];
- const c=courtOf(w,r)!,g=governmentOf(w,r)!,upperSites=new Set(Object.entries(w.realm!.local?.seats??{}).filter(([key,seat])=>seat.holder===id&&key.startsWith(r+'|')&&localActive(w,key.split('|')[1],r)).flatMap(([key])=>localSites(w,key.split('|')[1],r,true))),cities=Object.entries(w.realm!.cities).filter(([site,p])=>p.owner===r&&p.controller===r&&(p.governor===id||upperSites.has(site))).map(([,p])=>p),group=c.members[id],traits=traitsFor(w,id);
+ const c=courtOf(w,r)!,g=governmentOf(w,r)!,upperSites=new Set(Object.entries(w.realm!.local?.seats??{}).filter(([key,seat])=>seat.holder===id&&key.startsWith(r+'|')&&localActive(w,key.split('|')[1],r)).flatMap(([key])=>localSites(w,key.split('|')[1],r,true))),cities=Object.entries(w.realm!.cities).filter(([site,p])=>administrativeRealm(w,site)===r&&p.controller===r&&(p.governor===id||upperSites.has(site))).map(([,p])=>p),group=c.members[id],traits=traitsFor(w,id);
  return [{label:'政治资历',value:10+Math.floor((g.merit[id]??0)/5)},{label:'中央职掌',value:Object.values(c.ministries).filter(p=>p===id).length*20},{label:'地方人口与税基',value:Math.min(60,cities.reduce((n,c)=>n+Math.floor(c.population/10000)+Math.floor(c.population*c.prosperity/500000),0))},{label:'统领军队',value:Math.floor((commandArmy(w,id)?.troops??0)/20)},{label:'家族声望',value:familyStanding(w,id).tier*3},{label:'政治倾向',value:(group==='reform'&&traits.includes('diligent')||group==='conservative'&&traits.includes('frugal')||group==='dynastic'&&traits.includes('gregarious')||group==='expansion'&&traits.includes('steadfast'))?5:0},{label:'清议动员',value:c.boosts[id]?.until>w.day?c.boosts[id].power:0},{label:'实际执政',value:governingExecutives(w,r).includes(id)?10:0}];
 }
 export function movementPower(w:World,r:RealmId,id:string){return movementPowerParts(w,r,id).reduce((n,p)=>n+p.value,0);}
@@ -108,7 +108,7 @@ function centralAppointmentReason(w:World,cmd:Extract<CourtCommand,{action:'appo
  const r=allegianceRealm(w,actor),g=r&&governmentOf(w,r),c=r&&courtOf(w,r);
  if(!w.realm||!isAlive(w,actor)||w.campaign?.status!=='active'||!g||!c)return '当前无法办理中央官职';
  if(!courtEnabled(w,r!))return '需贤能、天朝或宫帐政体';if(w.realm.event&&actor===w.characterId)return '先处理待决事务';
- if(w.realm.cities[capital(r,w)].owner!==r||w.realm.cities[capital(r,w)].controller!==r)return '须实际控制本国都城';
+ if(administrativeRealm(w,capital(r,w))!==r||w.realm.cities[capital(r,w)].controller!==r)return '须实际控制本国都城';
  if(!governingExecutives(w,r!).includes(actor))return '需要实际执政权';if(!ministryIds.includes(cmd.ministry))return '未知中央职位';
  if((c.cooldowns['appoint|'+cmd.ministry]??0)>w.day)return '行动冷却中，余 '+(c.cooldowns['appoint|'+cmd.ministry]-w.day)+' 日';
  if(cmd.candidate!==null&&allegianceRealm(w,cmd.candidate)!==r)return '需当前效忠本国的人物';if(cmd.candidate&&publicOfficeReason(w,cmd.candidate))return publicOfficeReason(w,cmd.candidate);if(cmd.candidate&&!npcRoute(w,cmd.candidate,capital(r!,w)))return '赴任道路不通，需先恢复通行';
@@ -183,7 +183,7 @@ export function courtCatalysts(w:World,r:RealmId,powers=movementPowers(w,r)){con
  const rows:{label:string;value:number}[]=[];const add=(label:string,value:number)=>rows.push({label,value});
  const ongoing=activeWars(w).filter(v=>warRealmSide(v,r));if(ongoing.length)add('实际战线与续战负担',Math.min(6,ongoing.length*2));const disputed=(w.claims?.records??[]).filter(q=>q.realm===r&&q.until===null&&q.person!==g.ruler&&isAlive(w,q.person)&&isAlive(w,q.patron)&&allegianceRealm(w,q.patron)!==r);if(disputed.length)add('境外支持的君位宣称',Math.min(6,disputed.length*2));
  if(gap)add('拟拨预算与月支出缺口 '+gap+' 钱',Math.min(10,Math.max(1,Math.ceil(gap/Math.max(1,forecast.expense+promised)*10))));
- if(capitalCity.owner!==r||capitalCity.controller!==r)add('都城失守冲击',c.capitalLost?0:8);const unpaid=s.armies.filter(a=>a.realm===r&&(a.arrears??0)>0);if(unpaid.length)add('军队实际欠饷',Math.min(8,unpaid.length*2));if(local.pressure)add('地方失序与民食缺口',local.pressure);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
+ if(administrativeRealm(w,capital(r,w))!==r||capitalCity.controller!==r)add('都城失守冲击',c.capitalLost?0:8);const unpaid=s.armies.filter(a=>a.realm===r&&(a.arrears??0)>0);if(unpaid.length)add('军队实际欠饷',Math.min(8,unpaid.length*2));if(local.pressure)add('地方失序与民食缺口',local.pressure);if(g.legitimacy<40)add('天命受疑',8);if(g.support<40)add('朝野离心',6);if(c.corruption>=50)add('积弊深重',6);
  const incapable=ministryIds.filter(m=>c.ministries[m]&&!ministryCompetent(w,r,m));if(incapable.length)add('官署履职受阻',Math.min(5,incapable.length));
  const political=movementIds.reduce((n,group)=>n+movementMood(w,r,group,powers).tension,0),baseline=Math.min(35,15+Math.max(0,political)*2);if(c.tension<baseline&&political>0)add('集团分歧',Math.round(Math.min(political,baseline-c.tension)));else if(political<0)add('集团支持',Math.round(political)||0);
  if(!gap&&!unpaid.length)add('收支与军饷平稳',-2);if(!local.pressure&&capitalCity.controller===r)add('民食与地方秩序平稳',-2);if(ministryCompetent(w,r,'censorate'))add('监察履职',-2);
@@ -218,7 +218,7 @@ export function advanceCourts(w:World){if(!w.realm?.governments)return;for(const
  if(supportDelta)log(w,r,'集团态度：朝野支持 '+(supportDelta>0?'+':'')+supportDelta+'。');
  if(!c.petition&&(c.cooldowns.petition??0)<=w.day){const opposition=moods.filter(m=>m.leader&&m.leader!==w.characterId&&m.satisfaction<40&&m.share>=25).sort((a,b)=>b.share-a.share)[0];if(opposition){c.petition={group:opposition.group,sponsor:opposition.leader!,due:w.day+15};c.cooldowns.petition=w.day+90;log(w,r,movements[opposition.group].name+'因诉求未获满足呈递奏议，15 日内等待裁决。');}}
  const catalysts=projection.causes,previous=c.phase,before=c.tension;c.tension=projection.tension;c.phase=projection.phase;
- c.capitalLost=w.realm.cities[capital(r,w)].owner!==r||w.realm.cities[capital(r,w)].controller!==r;c.settlement={day:w.day,from:previous,to:c.phase,tensionBefore:before,tensionAfter:c.tension,supportDelta,corruptionDelta,causes:catalysts};
+ c.capitalLost=administrativeRealm(w,capital(r,w))!==r||w.realm.cities[capital(r,w)].controller!==r;c.settlement={day:w.day,from:previous,to:c.phase,tensionBefore:before,tensionAfter:c.tension,supportDelta,corruptionDelta,causes:catalysts};
  log(w,r,`月度局势：${catalysts.map(v=>v.label+(v.value>0?'+':'')+v.value).join('；')}。紧张 ${c.tension}。`);
  if(previous!==c.phase)log(w,r,'局势转入'+({stable:'安定',strained:'动荡',chaos:'危局'})[c.phase]+'。');
  }}

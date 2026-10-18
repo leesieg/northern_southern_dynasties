@@ -1,5 +1,5 @@
 import {allegianceRealm} from './officeEligibility';
-import {worldRealms,realmOrigin,initialPoliticalRealm} from './polityRuntime';
+import {worldRealms,realmOrigin,initialPoliticalRealm,permanentRealmCount} from './polityRuntime';
 import {validArrangement} from './powerPoliticsSave';
 import {validGovernanceRules} from './governanceRules';
 import {policyDomains} from './politicalActions';
@@ -23,11 +23,11 @@ const unique=(v:unknown):v is string[]=>Array.isArray(v)&&v.every(x=>typeof x===
 export function validGovernments(w:World):boolean {
  const ids=worldRealms(w);const person=(id:unknown,_r:string)=>text(id)&&!!getPerson(w,id);
  const state:unknown=w.realm?.governments;if(state===undefined)return true;
- if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthAnchor(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==ids.length||ids.length>9)return false;
- if(!Array.isArray(state.regimes)||state.regimes.length<ids.length||state.regimes.length>108||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
+ if(!obj(state)||state.version!==1||!int(state.since,w.day)||!int(state.lastMonthly,w.day)||!isMonthAnchor(state.lastMonthly,w.scriptId)||state.lastMonthly<monthStart(state.since,w.scriptId)||!obj(state.realms)||Object.keys(state.realms).length!==ids.length||permanentRealmCount(w)>9)return false;
+ if(!Array.isArray(state.regimes)||state.regimes.length<ids.length||state.regimes.length>ids.length*12||new Set(state.regimes.map(v=>v?.id)).size!==state.regimes.length)return false;
  if(!state.regimes.every(v=>obj(v)&&ids.includes(v.realm as never)))return false;
  for(const r of ids){const origin=realmOrigin(w,r),g=state.realms[r];if(!obj(g)||!governmentTypes.includes(g.type as never)||!text(g.dynasty)||!text(g.regimeId)||!person(g.ruler,r)||!unique(g.executives)||g.executives.length>2||!g.executives.every(id=>person(id,r))||!int(g.legitimacy,100)||!int(g.support,100)||!int(g.herd,1000)||!site(g.camp)||!int(g.lastCamp,w.day+90)||!obj(g.merit)||!obj(g.contracts)||!obj(g.cooldowns)||!unique(g.laws)||!unique(g.stages))return false;
- if(!w.realm?.annexed?.[r]&&[g.ruler,...g.executives].some(id=>allegianceRealm(w,id as string)!==r))return false;
+ if(!w.realm?.annexed?.[r]&&[g.ruler,...g.executives].some(id=>allegianceRealm(w,id as string)!==r&&!w.realm?.wars?.some(v=>v.civil&&v.defender===r&&v.civil.claimant===id&&v.attacker===allegianceRealm(w,id as string))))return false;
  if(g.resignedExecutives!==undefined&&(!unique(g.resignedExecutives)||!g.resignedExecutives.every(id=>person(id,r))))return false;
  const expectedExecutives=(ids:readonly string[])=>{const remaining=ids.filter(id=>!(g.resignedExecutives as string[]|undefined)?.includes(id));return (remaining.length?remaining:[String(g.ruler)]).join('|');};
  const roster=historicalCharacters.filter(c=>c.polity===r);if(Object.entries(g.merit).some(([id,n])=>!getPerson(w,id)||!int(n,100))||!roster.every(p=>Object.hasOwn(g.merit as object,p.id)&&int((g.merit as Record<string,unknown>)[p.id],100)))return false;
@@ -50,7 +50,7 @@ export function validGovernments(w:World):boolean {
  if(versions.length<1||versions.length>12)return false;
  for(let i=0;i<versions.length;i++){
  const v=versions[i];if(!obj(v)||!person(v.ruler,r)||!int(v.from,w.day)||v.from<state.since||v.until!==null&&!int(v.until,w.day,v.from)||!unique(v.cities)||!v.cities.every(site)||v.predecessor!==(i===0?null:versions[i-1].id))return false;
- if(i===0&&initialPoliticalRealm(r)){const start=initialPoliticalRealm(r)!;if(v.id!==r+'-0'||v.dynasty!==r||v.from!==state.since||v.kind!==undefined||v.name!==start.name||v.ruler!==start.ruler||v.source!==null)return false;}else if(i===0&&r.startsWith('realm-')){const identity=w.realm?.identities?.[r];if(!identity||v.id!==r+'-0'||v.dynasty!==r||v.from!==identity.created||v.kind!=='political'||!validDynastyName(v.name)||v.source!==null)return false;}else if(i===0){if(v.id!==r+'-0'||v.dynasty!==r||v.from!==state.since||v.kind!==undefined||v.name!==undefined||v.source!==null)return false;}
+ if(i===0&&initialPoliticalRealm(r)){const start=initialPoliticalRealm(r)!;if(v.id!==r+'-0'||v.dynasty!==r||v.from!==state.since||v.kind!==undefined||v.name!==start.name||v.ruler!==start.ruler||v.source!==null)return false;}else if(i===0&&(r.startsWith('realm-')||r.startsWith('rebel-'))){const identity=w.realm?.identities?.[r];if(!identity||v.id!==r+'-0'||v.dynasty!==r||v.from!==identity.created||v.kind!=='political'||!(r.startsWith('rebel-')?v.name===(getPerson(w,v.ruler as string)?.name??'起兵')+'军府':validDynastyName(v.name))||v.source!==null)return false;}else if(i===0){if(v.id!==r+'-0'||v.dynasty!==r||v.from!==state.since||v.kind!==undefined||v.name!==undefined||v.source!==null)return false;}
  else {
  if(v.from!==versions[i-1].until)return false;
  if(v.kind==='political'){const restored=v.dynasty!==v.id&&versions.slice(0,i).some(old=>old.dynasty===v.dynasty&&dynasticKin(w,v.ruler as string,old.ruler as string))&&w.claims?.records.some(c=>c.realm===r&&c.person===v.ruler&&c.dynasty===v.dynasty&&c.since<=(v.from as number));if(v.id!==`${r}-political-${v.from}-${i}`||v.dynasty!==v.id&&!restored||!validDynastyName(v.name)||!unique(v.executives)||v.executives.length!==1||!v.executives.every(id=>person(id,r)))return false;}else if(v.kind==='inheritance'){const transition=w.life?.successions.find(e=>e.realm===r&&e.regimeId===v.id&&e.day===v.from&&e.ruler===v.ruler);if(v.id!==`${r}-inheritance-${v.from}-${i}`||v.dynasty!==v.id||!validDynastyName(v.name)||v.source!==null||!transition||dynasticKin(w,transition.deceased,v.ruler as string))return false;}

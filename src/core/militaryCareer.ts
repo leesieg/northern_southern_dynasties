@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import {getPerson} from './personRegistry';
 import {culturalMilitarySupport} from './culture';
 import {pactBreachRisk} from './allegiancePacts';
@@ -46,7 +47,7 @@ export function militaryCareerReason(w:World,c:MilitaryCareerCommand,id=w.charac
  if(c.action==='supplyPolicy')return !governingExecutives(w,r).includes(id)?'须实际执政者调整国家征粮政策':!['civilian','normal','emergency'].includes(c.policy)?'无效征粮政策':'';
  if(c.action==='privateRaise'){
   const city=w.realm.cities[c.site],q=privateRecruitmentQuote(w,c,id,rally?w.realm.treasuries[r].grain:0),sources=privateSources(w,c,id,rally),target=q.target;
-  return !city||city.owner!==r||city.controller!==r||!presentAt(w,id,c.site)?'须在本国控制的驻地私募':!Object.hasOwn(troopKinds,c.kind)?'无效兵种':sources.reason?sources.reason:c.target!==undefined&&!target?'须编入本人同城兼容部曲':target&&((target.regiments?.length??1)+sources.parts.length>60||target.troops+q.amount>6000)?'已有部曲编制已满':!target&&(w.realm.armies.length>=48||w.realm.armies.filter(a=>a.realm===r).length>=16)?'军队编制已满':city.population-mobilizedTransportLabor(w,c.site)<q.amount+100?'须保留至少 100 名居民':city.grain-q.purchase<civilianFood(w,c.site)*2&&q.purchase>0?'购买公粮须保留两期民食':(w.realm.fiscal?.balances[territoryAccount(w,r,'county:'+c.site)]??0)+q.purchase>1_000_000?'当地公库无法收取购粮款':(accountWallet(w,'person:'+id)?.read()??0)<q.coins?'私财不足以支付兵装与购粮':'';
+  return !city||administrativeRealm(w,c.site)!==r||city.controller!==r||!presentAt(w,id,c.site)?'须在本国控制的驻地私募':!Object.hasOwn(troopKinds,c.kind)?'无效兵种':sources.reason?sources.reason:c.target!==undefined&&!target?'须编入本人同城兼容部曲':target&&((target.regiments?.length??1)+sources.parts.length>60||target.troops+q.amount>6000)?'已有部曲编制已满':!target&&(w.realm.armies.length>=48||w.realm.armies.filter(a=>a.realm===r).length>=16)?'军队编制已满':city.population-mobilizedTransportLabor(w,c.site)<q.amount+100?'须保留至少 100 名居民':city.grain-q.purchase<civilianFood(w,c.site)*2&&q.purchase>0?'购买公粮须保留两期民食':(w.realm.fiscal?.balances[territoryAccount(w,r,'county:'+c.site)]??0)+q.purchase>1_000_000?'当地公库无法收取购粮款':(accountWallet(w,'person:'+id)?.read()??0)<q.coins?'私财不足以支付兵装与购粮':'';
  }
  const a=w.realm.armies.find(a=>a.id===c.army);if(!a)return '军队不存在';if(!authorityGrant(w,id,'command',{realm:a.realm,site:a.location,army:a}).allowed)return '没有本军指挥权';
  if(c.action==='automation')return !['direct','delegated'].includes(c.control)?'无效指挥方式':'';

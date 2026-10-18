@@ -27,7 +27,7 @@ export interface RelationshipState {
  bonds:Record<string,{a:string;b:string;kind:Friendship;since:number}>;marriages:Marriage[];
  maritalBasis:Record<string,'unknown'|'recorded'|'simulation'|'widowed'|'free'>;
  opinions:Record<string,number>;hooks:Record<string,number>;reserves:Record<string,number>;
- allegiances?:Record<string,{source?:'custody'|'pact'|'partition'|'retained';realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
+ allegiances?:Record<string,{source?:'custody'|'pact'|'partition'|'retained'|'civil';realm:RealmId;from:RealmId;since:number;army:number}>;oaths:Record<string,{lord:string;since:number;loyalty:number}>;regencies:Partial<Record<RealmId,Regency>>;
  cooldowns:Record<string,number>;scheme:{kind:'befriend'|'control';actor:string;target:string;started:number;due:number;chance:number;basis:string|null}|null;
  history:{day:number;actor:string;target:string|null;text:string}[];
 }
@@ -168,7 +168,7 @@ export function actRelationship(w:World,command:RelationshipCommand){const q=rel
  }
  log(w,a,b,relationName(a,w)+'对'+relationName(b,w)+'执行「'+relationshipActionNames[action]+'」。');
 }
-export function syncRelationships(w:World){ensureRelationships(w);const s=w.relationships;if(!s)return;for(const r of worldRealms(w)){if(w.realm?.annexed?.[r]){delete s.regencies[r];continue;}const old=s.regencies[r],g=governmentOf(w,r);if(old?.origin==='custody'&&(!w.custody?.records[g!.ruler]||!activeWars(w).some(v=>v.civil&&v.id===w.custody!.records[g!.ruler].war))){delete s.regencies[r];}if(!s.regencies[r]||old?.basis!==powerBasis(w,r)){if(old){delete s.regencies[r];log(w,old.controller,old.ruler,'政权执政格局变更，旧控制关系结束。');}if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)s.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}}
+export function syncRelationships(w:World){ensureRelationships(w);const s=w.relationships;if(!s)return;for(const r of worldRealms(w)){if(w.realm?.annexed?.[r]){delete s.regencies[r];continue;}const old=s.regencies[r],g=governmentOf(w,r);if(g&&allegianceRealm(w,g.ruler)!==r){delete s.regencies[r];continue;}if(old?.origin==='custody'&&(!w.custody?.records[g!.ruler]||!activeWars(w).some(v=>v.civil&&v.id===w.custody!.records[g!.ruler].war))){delete s.regencies[r];}if(!s.regencies[r]||old?.basis!==powerBasis(w,r)){if(old){delete s.regencies[r];log(w,old.controller,old.ruler,'政权执政格局变更，旧控制关系结束。');}if(g&&g.executives[0]&&isAlive(w,g.ruler)&&g.executives[0]!==g.ruler)s.regencies[r]={realm:r,regimeId:g.regimeId,basis:powerBasis(w,r),ruler:g.ruler,controller:g.executives[0],since:w.day,grip:70,origin:'scenario'};}}
  if(s.scheme&&(s.scheme.actor!==w.characterId||s.scheme.kind==='control'&&s.scheme.basis!==powerBasis(w, getPerson(w,s.scheme.actor)!.realm))){log(w,s.scheme.actor,s.scheme.target,'人物或朝廷已变，关系计谋失效；成本不退。');s.scheme=null;}
 }
 export function advanceRelationships(w:World){const s=w.relationships;if(!s)return;syncRelationships(w);

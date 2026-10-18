@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import {detained} from './custodyState';
 import {armyCommander} from './mobility';
 import type {World} from './types';
@@ -28,7 +29,7 @@ export function authorityGrant(w:World,actor:string,capability:Capability,scope:
  case 'inspect':allowed=central||governmentOf(w,scope.realm)?.court?.ministries.censorate===actor||!!held&&held!==t;break;
  }
  if(!allowed)return denied('没有当前职掌或有效委任');
- if(scope.site&&(capability==='levy'||capability==='delegate')&&(w.realm.cities[scope.site]?.owner!==scope.realm||w.realm.cities[scope.site]?.controller!==scope.realm))return denied('须在本国法理和实际控制的辖区内');
+ if(scope.site&&(capability==='levy'||capability==='delegate')&&(administrativeRealm(w,scope.site)!==scope.realm||w.realm.cities[scope.site]?.controller!==scope.realm))return denied('须在本方管理和实际控制的辖区内');
  const available=capability==='command'&&campaign?.commander===actor?campaign.remaining:account?publicBalance(w,account):0;
  if(scope.amount!==undefined&&(!Number.isSafeInteger(scope.amount)||scope.amount<0||scope.amount>available))return denied('授权可用预算不足');
  return {allowed:true,reason:'',source,account,available,expires:campaign?.commander===actor?campaign.deadline:null};

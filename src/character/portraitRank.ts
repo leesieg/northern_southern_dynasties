@@ -2,6 +2,7 @@ import {isAdventurer} from '../core/resignation';
 import {lifeOf} from '../core/lifeState';
 import {characterById} from '../data/characters';
 import {officeHierarchy} from '../core/offices';
+import {provisionalRealm} from '../core/polityRuntime';
 import type {World} from '../core/types';
 
 export type PortraitRank='sovereign'|'official'|'commander'|'noble'|'adventurer';
@@ -11,6 +12,7 @@ export function portraitRank(id:string,world?:World):PortraitRank{
  if(world&&isAdventurer(world,id))return 'adventurer';
  if(world?.realm?.governments&&!lifeOf(world,id)?.death){
   const offices=officeHierarchy(world).filter(o=>o.active&&o.holder===id);
+  if(offices.some(o=>o.kind==='sovereign'&&provisionalRealm(world,o.realm)))return 'commander';
   if(offices.some(o=>o.kind==='sovereign'))return 'sovereign';
   if(offices.some(o=>o.kind==='executive'))return 'official';
   if(offices.some(o=>o.kind==='office'&&(/将军|都督|都护/.test(o.name)||character?.role==='commander')))return 'commander';

@@ -1,6 +1,6 @@
 import {terrainSceneStyle} from './terrainScene';
 import {monthStart} from '../core/calendar';
-import {civilWar} from '../core/civilWars';
+import {civilWar,warCitySide} from '../core/civilWars';
 import {politicalName} from '../core/government';
 import {localEfficiency} from '../core/localAdministration';
 import {populationEstimates,populationBasisLabel} from '../data/populationEstimates';
@@ -24,7 +24,7 @@ import type {World,GameCommand} from '../core/types';
 export function CitySummary({world:w,site,pending,send,onPerson,onDiplomacy}:{world:World;site:string;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson?:(id:string)=>void;onDiplomacy:(r:RealmId)=>void}){
  const [warOpen,setWarOpen]=useState(false);
  const city=siteById[site],c=w.realm?.cities[site],owner=c?.owner??city.polity,controller=c?.controller??owner,r=controller==='frontier'?null:controller,holder=c?.governor;
- const internal=r?civilWar(w,r):undefined,controllerPerson=internal?.civil&&(internal.civil.cities.includes(site)?internal.civil.claimant:internal.civil.loyalist);
+ const internal=r?civilWar(w,r):undefined,controllerPerson=internal?.civil&&(warCitySide(w,internal,site)==='attack'?internal.civil.claimant:warCitySide(w,internal,site)==='defend'?internal.civil.loyalist:null);
  const entries=w.realm?.fiscal?.entries.filter(e=>e.day>=monthStart(w.day,w.scriptId)&&(e.from===fiscalPath(w,site)[0]||e.to===fiscalPath(w,site)[0]))??[],net=entries.reduce((n,e)=>n+(e.to===fiscalPath(w,site)[0]?e.coins:-e.coins),0),signed=(n:number)=>(n>=0?'+':'')+n;
  const y=c?cityYield(w,site):null;
  const integration=c?.integration?integrationGain(w,site):null;

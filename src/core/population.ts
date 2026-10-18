@@ -1,3 +1,4 @@
+import {administrativeRealm,provisionalRealm} from './polityRuntime';
 import {removeCountyPopulation,restoreEstatePopulation,estateById as allEstateForReturn} from './estates';
 import {civilWar} from './civilWars';
 import {worldRealms} from './polityRuntime';
@@ -51,14 +52,14 @@ export function populationReason(w:World,c:PopulationCommand,actor=w.characterId
  if(!['assisted','forced','raid','grain'].includes(c.kind)||!Number.isSafeInteger(c.amount)||c.amount<1)return '数量须为正整数';
  const a=s.cities[c.from],b=s.cities[c.to];if(!a||!b||c.from===c.to)return '请选择不同的有效城市';
  if((s.population?.transfers.filter(t=>t.status==='traveling').length??0)>=30)return '在途队伍已达上限';
- if(b.owner!==r||b.controller!==r||a.controller!==r)return '起点与目的地须受本国控制，目的地须为本国城市';
+ if(administrativeRealm(w,c.to)!==r||b.controller!==r||a.controller!==r)return '起点与目的地须受本国控制，目的地须为本国城市';
  if(c.kind==='raid'){
  if(s.population?.transfers.some(t=>t.realm===r&&t.kind==='raid'&&t.status==='traveling'))return '押送队伍尚未返回，不能重复掠夺';
  const army=s.armies.find(a=>a.realm===r&&!a.journey&&a.location===c.from);
- if(!s.mandate||!army||!atWar(w,r,a.owner as RealmId)||a.owner===r)return '须有军务授权、驻军并占领交战敌城';
+ if(!s.mandate||!army||!atWar(w,r,a.owner as RealmId)||administrativeRealm(w,c.from)===r)return '须有军务授权、驻军并占领交战敌城';
  if(c.amount>army.troops||c.amount>Math.floor(a.population*.2))return '掠夺人数不得超过驻军人数与当地人口的两成';
  }else if(!governingExecutives(w,r).includes(actor)&&!(c.kind==='grain'&&a.governor===actor))return '迁民政策须有实际执政权，调粮亦可由本县主官发起';
- if(c.kind!=='raid'&&a.owner!==r)return '迁民须从本国城市出发';
+ if(c.kind!=='raid'&&administrativeRealm(w,c.from)!==r)return '迁民须从本国城市出发';
  if(c.kind==='grain'){if(c.amount>a.grain+(c.from===capital(r,w)?s.treasuries[r].grain:0))return '本城公粮不足';if(b.grain+c.amount>grainCapacity(w,c.to))return '目的地仓容不足';}
  else if(b.population+c.amount+(s.population?.transfers.filter(t=>t.to===c.to&&t.status==='traveling'&&t.kind!=='grain').reduce((n,t)=>n+t.sent,0)??0)>1_000_000)return '目的地人口承载已达上限';
  else if(c.amount>a.population-100)return '须保留至少 100 人';
@@ -81,7 +82,7 @@ export function advancePopulation(w:World){if(!w.realm)return;ensurePopulation(w
  p.transfers=[...p.transfers.filter(t=>t.status!=='traveling').slice(-60),...p.transfers.filter(t=>t.status==='traveling')];w.chronicle=w.chronicle.slice(-100);
 }
 /** Local harvest after civilian consumption. The capital is the central grain depot. */
-export function settleLocalGrain(w:World,r:RealmId,yieldFor:(id:string)=>number){const s=w.realm!;for(const [id,c] of Object.entries(s.cities)){if(c.controller!==r)continue;const net=yieldFor(id)-civilianFood(w,id);let before=c.grain;if(id===capital(r,w)&&c.owner===r&&!civilWar(w,r)?.civil?.cities.includes(id)){const supplement=Math.min(s.treasuries[r].grain,Math.max(0,-(before+net)));s.treasuries[r].grain-=supplement;before+=supplement;}c.grain=Math.max(0,before+net);if(before+net<0){const deaths=Math.min(c.population-100,Math.ceil(-(before+net)*10));removeCountyPopulation(w,id,Math.max(0,deaths));c.order=Math.max(0,c.order-8);}const loss=Math.floor(c.grain*Math.max(.005,.03-(w.holdings.cities[id]?.levels.granary??0)*.008));c.grain=Math.min(grainCapacity(w,id),c.grain-loss);if(id===capital(r,w)&&c.owner===r&&!civilWar(w,r)?.civil?.cities.includes(id)){const reserve=civilianFood(w,id)*2,transfer=Math.max(0,c.grain-reserve);c.grain-=transfer;s.treasuries[r].grain=Math.min(1_000_000,s.treasuries[r].grain+transfer);}}}
+export function settleLocalGrain(w:World,r:RealmId,yieldFor:(id:string)=>number){const s=w.realm!;for(const [id,c] of Object.entries(s.cities)){if(c.controller!==r)continue;const net=yieldFor(id)-civilianFood(w,id);let before=c.grain;if(id===capital(r,w)&&administrativeRealm(w,id)===r&&(!civilWar(w,r)?.civil?.cities.includes(id)||provisionalRealm(w,r))){const supplement=Math.min(s.treasuries[r].grain,Math.max(0,-(before+net)));s.treasuries[r].grain-=supplement;before+=supplement;}c.grain=Math.max(0,before+net);if(before+net<0){const deaths=Math.min(c.population-100,Math.ceil(-(before+net)*10));removeCountyPopulation(w,id,Math.max(0,deaths));c.order=Math.max(0,c.order-8);}const loss=Math.floor(c.grain*Math.max(.005,.03-(w.holdings.cities[id]?.levels.granary??0)*.008));c.grain=Math.min(grainCapacity(w,id),c.grain-loss);if(id===capital(r,w)&&administrativeRealm(w,id)===r&&(!civilWar(w,r)?.civil?.cities.includes(id)||provisionalRealm(w,r))){const reserve=civilianFood(w,id)*2,transfer=Math.max(0,c.grain-reserve);c.grain-=transfer;s.treasuries[r].grain=Math.min(1_000_000,s.treasuries[r].grain+transfer);}}}
 export function validPopulation(w:World){
  const p=w.realm?.population;if(p===undefined)return true;
  const int=(v:unknown,max=1_000_000):v is number=>Number.isSafeInteger(v)&&Number(v)>=0&&Number(v)<=max;

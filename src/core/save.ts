@@ -1,3 +1,4 @@
+import {migrateCivilPolities} from './civilPolities';
 import {validAuthoredEvents} from './authoredEventValidation';
 import {contentLock,assertSaveContent} from './contentBinding';
 import {validHistorical} from './historicalValidation';
@@ -216,6 +217,7 @@ export function parseWorld(source: string): World {
   migrateLifestyles(world);if(!world.lifestyles)ensureLifestyle(world);
   ensureService(world);
   ensureMobility(world);ensureCustody(world);migrateArmyFood(world);migrateManpower(world);ensureRetinue(world);ensurePersonalInfluence(world);ensureFiscal(world);migrateCountyAccounts(world);ensureLocalAdministration(world);
+  migrateCivilPolities(world);
   if(world.realm){ensureClaims(world);ensureNobility(world);ensureRulerHistory(world);ensureIntrigue(world);cancelInvalidClaimantWars(world);syncRulerHistory(world);}
   const renamed=normalizeLegacyDynastyNames(world);
   if(repairLegacyWestDynastyName(world)||renamed)validateWorld(world);

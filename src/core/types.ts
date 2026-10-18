@@ -16,7 +16,7 @@ import type { RealmState,RealmCommand } from './realm';
 import type { Social, SocialCommand } from './social';
 import type { Campaign } from './campaign';
 import type { BuildCommand, Holdings } from './construction';
-export type Polity = 'liang' | 'east' | 'west' | 'frontier' | `realm-${number}`;
+export type Polity = 'liang' | 'east' | 'west' | 'frontier' | `realm-${number}` | `rebel-${number}`;
 export interface Site {
   id: string; name: string; lon: number; lat: number; polity: Polity;
   terrain: '平原' | '山地' | '河谷' | '绿洲' | '丘陵';

@@ -10,7 +10,7 @@ import {dynastyNames} from '../data/governments';
 export interface DynastyNotice {realm:RealmId;regime:string;previousName:string;name:string;previousRuler:string;ruler:string;rulerName:string;executives:{id:string;name:string}[];day:number;cause:'political'|'inheritance'|'civilWar'}
 export function dynastySnapshot(w:World){
  const state=w.realm?.governments;
- return {versions:new Set(state?.regimes.map(v=>v.id)),rulers:new Map(Object.values(state?.realms??{}).map(g=>[g.regimeId,g.ruler])),civilWars:(w.realm?.wars??[]).filter(v=>v.civil&&v.civil.grievance===undefined&&(!v.civil.arrangement||v.civil.arrangement.goal==='dynasty')).map(v=>({id:v.id,realm:v.attacker,ruler:v.civil!.arrangement?.beneficiary??v.civil!.claimant,name:v.civil!.arrangement?.name??v.civil!.name}))};
+ return {versions:new Set(state?.regimes.map(v=>v.id)),rulers:new Map(Object.values(state?.realms??{}).map(g=>[g.regimeId,g.ruler])),civilWars:(w.realm?.wars??[]).filter(v=>v.civil&&v.civil.grievance===undefined&&(!v.civil.arrangement||v.civil.arrangement.goal==='dynasty')).map(v=>({id:v.id,realm:v.defender,ruler:v.civil!.arrangement?.beneficiary??v.civil!.claimant,name:v.civil!.arrangement?.name??v.civil!.name}))};
 }
 export function dynastyEvents(before:ReturnType<typeof dynastySnapshot>,w:World):PauseEvent[]{
  const realm=w.characterId&&w.realm?allegianceRealm(w,w.characterId):null,state=w.realm?.governments;

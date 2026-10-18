@@ -15,6 +15,7 @@ import {bilateralWar} from './wars';
 import {diplomaticKey,diplomaticPair} from './diplomacy';
 import {detained} from './custodyState';
 import {pactReason,pactQuote,actPact,advancePactReception,currentPactBreaches,receptionNames,type AllegiancePact,type PactCommand} from './allegiancePacts';
+import {civilOrigin} from './civilPolities';
 import {civilReason,actCivilWar,warCitySide} from './civilWars';
 import {activeWars} from './wars';
 import {worldRealms} from './polityRuntime';
@@ -235,11 +236,11 @@ export function advanceHistorical(w:World){
    if(released){delete e.security;delete e.securitySince;delete e.securitySignals;}
    phase(w,e,'dormant',released?'先前拘押已经解除，按当前统属与交接处境重新审议。':reopenDeath?'保护人去世，先前来书未获接纳；旧部与处境需要重新议定。':'先前来书未获接纳；冷却期已过，仍存交接争议，可改投其他朝廷。');
   }
-  if(live){delete e.handlingDue;delete e.stableSince;e.warId=live.id;e.host=live.attacker;e.site=live.target;
+  if(live){delete e.handlingDue;delete e.stableSince;e.warId=live.id;e.host=civilOrigin(live);e.site=live.target;
    const occupied=warCitySide(w,live,live.target)==='attack';
    const siege=w.realm!.sieges?.find(s=>s.war===live.id&&s.site===live.target&&s.side==='attack');
    phase(w,e,occupied?'court':siege?'siege':'rebellion',occupied?'首都失守，君主是否被俘及地方抵抗仍按实际局势处理。':siege?'叛军已形成首都围城，守城与援军按真实军令行动。':'侯景公开举兵，战争开始。',true);
-   if(occupied){const ruler=governmentOf(w,live.attacker)!.ruler,c=w.custody?.records[ruler];if(c?.war===live.id)remember(w,e,'captive:'+ruler,'在城君主被本场战争俘获。',true);}
+   if(occupied){const ruler=governmentOf(w,civilOrigin(live))!.ruler,c=w.custody?.records[ruler];if(c?.war===live.id)remember(w,e,'captive:'+ruler,'在城君主被本场战争俘获。',true);}
    continue;
   }
   if(e.warId!==undefined){finish(w,e,!isAlive(w,id)||detained(w,id)?'起兵收场：侯景已死亡或被俘。':governingExecutives(w,e.host!).includes(id)?'战争结束：侯景取得实际执政权。':'战争结束，按已生效的和约与控制范围收场。');continue;}

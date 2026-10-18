@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import {allPeople,getPerson,getCharacter} from './personRegistry';
 import {worldRealms} from './polityRuntime';
 import {actCustody,custodyReason,ensureCustody} from './custody';
@@ -86,7 +87,7 @@ export function activityQuote(w:World,c:Extract<MobilityCommand,{action:'plan'}>
  else if(c.kind==='mentor'&&attributes(w,c.target!)[lifestyleFocuses[w.lifestyles!.people[id].focus!].branch]<=attributes(w,id)[lifestyleFocuses[w.lifestyles!.people[id].focus!].branch])reason='对方在当前生活重心对应的能力须高于你';
  else if(['family','succession'].includes(c.kind)&&(c.site!==w.holdings.estate.location|| getPerson(w,c.target!)?.family!== getCharacter(w,id)?.family))reason='请在自家庄园与同族议事';
  else if(c.kind==='succession'&&w.social?.heir!==c.target)reason='须与已指定的家业继任者共理家业';
- else if(c.kind==='tour'&&(!(g.ruler===id||governingExecutives(w,r).includes(id)||w.realm.cities[c.site].governor===id)||w.realm.cities[c.site].controller!==r||w.realm.cities[c.site].owner!==r))reason='须对本国控制的城市有治理或巡察权限';
+ else if(c.kind==='tour'&&(!(g.ruler===id||governingExecutives(w,r).includes(id)||w.realm.cities[c.site].governor===id)||w.realm.cities[c.site].controller!==r||administrativeRealm(w,c.site)!==r))reason='须对本国控制的城市有治理或巡察权限';
  else if(c.kind==='tour'&&w.realm.cities[c.site].order>=75&&w.realm.cities[c.site].prosperity>=65)reason='当地政务安定，无需重复巡察';
  else if(c.kind==='training'&&!activityTrainingArmy(w,id,c.site))reason='须有本军指挥权并选择当地驻军';
  else if(c.target&&!['family','succession'].includes(c.kind)&&personResidence(w,c.target).site!==c.site)reason='请在对方当前驻地会面';
@@ -104,7 +105,7 @@ export function activityAuthorityReason(w:World,a:Activity){
  if(detained(w,executor)||a.target&&detained(w,a.target))return '参加者被拘押';
  if(a.delegate&&(!governingExecutives(w,r).includes(a.actor)||allegianceRealm(w,a.delegate)!==r))return '原派遣授权失效或承办人已改换效忠';
  const city=w.realm.cities[a.site],g=governmentOf(w,r);
- if(a.kind==='tour'&&(!g||!(g.ruler===a.actor||governingExecutives(w,r).includes(a.actor)||city.governor===a.actor)||city.owner!==r||city.controller!==r))return '已失去当地治理或巡察权限';
+ if(a.kind==='tour'&&(!g||!(g.ruler===a.actor||governingExecutives(w,r).includes(a.actor)||city.governor===a.actor)||administrativeRealm(w,a.site)!==r||city.controller!==r))return '已失去当地治理或巡察权限';
  if(a.kind==='training'&&!activityTrainingArmy(w,a.actor,a.site))return '已无可指挥的当地驻军';
  if(a.kind==='audience'&&(!a.target||!governingExecutives(w,r).includes(a.target)||a.site!==capital(r,w)))return '会见对象已非本国执政者或朝廷已迁移';
  return '';

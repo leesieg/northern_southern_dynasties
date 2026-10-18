@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import {armyAdvanceRoute,armyAtEnemyCity} from './militaryRoutes';
 import {getPerson} from './personRegistry';
 import {worldRealms} from './polityRuntime';
@@ -37,7 +38,7 @@ export function campaignReason(w:World,c:MilitaryCampaignCommand){
  if(c.doctrine!==undefined&&!['cautious','balanced','aggressive'].includes(c.doctrine)||c.allowLoot!==undefined&&typeof c.allowLoot!=='boolean')return '无效战役授权';
  if(!['capture','defend'].includes(c.goal)||!Number.isInteger(c.budget)||c.budget<100||c.budget>1000||![25,50,75].includes(c.lossLimit))return '预算须为 100–1000 钱；损失上限为 25%、50% 或 75%';
  const city=w.realm.cities[c.target],enemy=warRealmSide(war,r)==='attack'?war.defender:war.attacker;
- if(!city||c.goal==='capture'&&city.controller!==enemy||c.goal==='defend'&&city.owner!==r)return '攻取须敌方控制；守备须本国领土';
+ if(!city||c.goal==='capture'&&city.controller!==enemy||c.goal==='defend'&&administrativeRealm(w,c.target)!==r)return '攻取须敌方控制；守备须本国领土';
  const current=armyCommander(w,a),eligible=current===c.commander&&w.mobility?{...w,mobility:{...w.mobility,armyCommanders:Object.fromEntries(Object.entries(w.mobility.armyCommanders??{}).filter(([key])=>Number(key)!==a.id)),commanders:Object.fromEntries(Object.entries(w.mobility.commanders).filter(([,id])=>id!==c.commander))}}:w;
  return allegianceRealm(w,c.commander)!==r?'统帅须效忠本国':publicOfficeReason(eligible,c.commander)||(!presentAt(w,c.commander,a.location)?'统帅须赴军队驻地接掌军权':a.journey?'军队抵达后方可委任':readyTroops(a,w.day)<100?'可出征兵员不足 100':publicBalance(w,a.owner?'central:'+r:a.payer??'central:'+r)<c.budget?'供饷账户预算不足':'');
 }

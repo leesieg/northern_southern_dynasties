@@ -1,3 +1,4 @@
+import {administrativeRealm} from './polityRuntime';
 import {recruitmentSources,consumeManpower,recruitmentRegiments,manpower} from './manpower';
 import {resting} from './householdLife';
 import {getPerson,allPeople} from './personRegistry';
@@ -102,7 +103,7 @@ export function serviceReason(w:World,c:ServiceCommand,actor=w.characterId):stri
  if(c.action==='routine')return !routineServiceKinds.includes(c.kind)?'该差事不能设为例行授权':!Object.keys(w.realm.cities).some(site=>canCommission(w,actor,r,site,c.kind))?'须由在任辖区主管设置例行授权':typeof c.enabled!=='boolean'?'无效授权':c.enabled&&(s.routine?.length??0)>=512&&!s.routine?.some(m=>m.realm===r&&m.issuer===actor&&m.kind===c.kind)?'授权记录已满':'';
  if(c.action==='open'){
   if(!Object.hasOwn(assignmentTemplates,c.kind)||!Object.hasOwn(siteById,c.site))return '无效差事或城市';
-  if(w.realm.cities[c.site].owner!==r||w.realm.cities[c.site].controller!==r)return '只能办理本国法理及控制下的城市';
+  if(administrativeRealm(w,c.site)!==r||w.realm.cities[c.site].controller!==r)return '只能办理本国法理及控制下的城市';
   if(!civilCanAdmin(w,c.officer,c.site))return '承办人与目的地分属内战双方';
   if(c.officer!==actor&&!canCommission(w,actor,r,c.site,c.kind))return '只能在职掌辖区委任他人，其他地区须自荐';
   if(c.plan!==undefined&&(!Object.hasOwn(assignmentPlans,c.plan)||c.officer===actor||!canCommission(w,actor,r,c.site,c.kind)))return '仅有辖区主管可预先批定有效方案';
@@ -237,7 +238,7 @@ export function actService(w:World,c:ServiceCommand,actor=w.characterId){
  if(c.action!=='close'&&c.action!=='cancel'){if(t.direct!==undefined)t.direct=addChange(t.direct,localChange(directBefore,localSnapshot(w,t)));if(['spend','strain','delay'].includes(c.action))enactPoliticalAction(w,t.realm,serviceDomain(t.kind),assignmentPoliticalContext(w,t,'execution',c.action==='strain'?1:c.action==='spend'?.5:-.5));}
 }
 function chooseNPCPlan(w:World,t:Assignment):AssignmentPlan{return traitsFor(w,t.officer).includes('frugal')?'thorough':assignmentTemplates[t.kind].category==='military'&&realmAtWar(w,t.realm)?'urgent':'balanced';}
-export function assignmentOptions(w:World,r:RealmId){const cities=Object.entries(w.realm!.cities).filter(([,c])=>c.owner===r&&c.controller===r).sort((a,b)=>a[1].order+a[1].prosperity-b[1].order-b[1].prosperity);const priority=w.service?.councils[r].priority??recommendedPriority(w,r);return (Object.keys(assignmentTemplates) as AssignmentKind[]).sort((a,b)=>Number(assignmentTemplates[b].category===priority)-Number(assignmentTemplates[a].category===priority)).flatMap(kind=>{const eligible=['training','supply'].includes(kind)?cities.filter(([id])=>w.realm!.armies.some(a=>a.realm===r&&a.location===id&&!a.journey)):kind==='envoy'?cities.filter(([id])=>id===capital(r,w)):cities;return eligible.flatMap<{kind:AssignmentKind;site:string;target?:RealmId}>(([site])=>kind==='envoy'?worldRealms(w).filter(target=>target!==r&&!atWar(w,r,target)).map(target=>({kind,site,target})): [{kind,site}]);}).map(option=>({option,score:serviceNeed(w,option.kind,option.site).score})).sort((a,b)=>b.score-a.score).map(row=>row.option);}
+export function assignmentOptions(w:World,r:RealmId){const cities=Object.entries(w.realm!.cities).filter(([site,c])=>administrativeRealm(w,site)===r&&c.controller===r).sort((a,b)=>a[1].order+a[1].prosperity-b[1].order-b[1].prosperity);const priority=w.service?.councils[r].priority??recommendedPriority(w,r);return (Object.keys(assignmentTemplates) as AssignmentKind[]).sort((a,b)=>Number(assignmentTemplates[b].category===priority)-Number(assignmentTemplates[a].category===priority)).flatMap(kind=>{const eligible=['training','supply'].includes(kind)?cities.filter(([id])=>w.realm!.armies.some(a=>a.realm===r&&a.location===id&&!a.journey)):kind==='envoy'?cities.filter(([id])=>id===capital(r,w)):cities;return eligible.flatMap<{kind:AssignmentKind;site:string;target?:RealmId}>(([site])=>kind==='envoy'?worldRealms(w).filter(target=>target!==r&&!atWar(w,r,target)).map(target=>({kind,site,target})): [{kind,site}]);}).map(option=>({option,score:serviceNeed(w,option.kind,option.site).score})).sort((a,b)=>b.score-a.score).map(row=>row.option);}
 export function advanceService(w:World){
  const s=ensureService(w);if(!s||!w.realm||w.campaign?.status!=='active'||s.lastDay>=w.day)return;s.lastDay=w.day;
  if(s.routine)s.routine=s.routine.filter(m=>Object.keys(w.realm!.cities).some(site=>canCommission(w,m.issuer,m.realm,site,m.kind)));

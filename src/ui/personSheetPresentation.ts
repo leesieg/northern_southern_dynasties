@@ -1,3 +1,4 @@
+import {provisionalRealm} from '../core/polityRuntime';
 import {officeHierarchy,superiorOffice,type OfficeNode} from '../core/offices';
 import {allegianceRealm} from '../core/officeEligibility';
 import {governmentOf,regimeName} from '../core/government';
@@ -16,7 +17,7 @@ export function personSheetPresentation(w:World,id:string){
  const nodes=w.realm?officeHierarchy(w):[],offices=nodes.filter(o=>o.holder===id&&o.active).sort((a,b)=>officeOrder(a)-officeOrder(b)||a.id.localeCompare(b.id));
  const office=offices.find(o=>o.kind!=='honour'),superior=office?superiorOffice(nodes,office):undefined;
  const government=realm&&w.realm?governmentOf(w,realm):undefined;
- const title=deceased?'已故':office?.kind==='sovereign'?regimeName(w,realm!)+'君主':office?.kind==='executive'?regimeName(w,realm!)+'执政':office?.name??(isAdventurer(w,id)?'在野行旅':'未任官');
+ const title=deceased?'已故':office?.kind==='sovereign'?regimeName(w,realm!)+(provisionalRealm(w,realm!)?'领袖':'君主'):office?.kind==='executive'?regimeName(w,realm!)+'执政':office?.name??(isAdventurer(w,id)?'在野行旅':'未任官');
  const noble=nobleTitle(w,id),honour=noble?noble.name+nobleRanks[noble.rank].name:offices.find(o=>o.kind==='honour')?.name;
  const site=personTerrainSite(w,id),residence=site?personResidence(w,id):undefined;
  return {name:person?.name??'未录人物',realm,offices,office,superior,title,honour,rites:noble?.rites??false,deceased,site,traveling:residence?.traveling??false,ruler:!deceased?government?.ruler:undefined};

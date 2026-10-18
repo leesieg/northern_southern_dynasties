@@ -1,3 +1,4 @@
+import {provisionalRealm} from '../core/polityRuntime';
 import {OperationsArt} from './OperationsHeader';
 import {ConfirmAction} from './ConfirmAction';
 import {afterCommand} from './actionFeedback';
@@ -45,7 +46,7 @@ export function DiplomacyPanel({world:w,selected:target,tab,onTab:setTab,onSelec
  const treasury=w.realm.treasuries[target],cities=Object.values(w.realm.cities),held=cities.filter(c=>c.owner===target),controlled=cities.filter(c=>c.controller===target);
  const population=controlled.reduce((sum,c)=>sum+c.population,0),court=courtOf(w,target),realmWars=activeWars(w).filter(v=>!!warRealmSide(v,target));
  const person=(id:string)=><button className="diplomacy-person-link" onClick={()=>onPerson(id)}>{politicalName(id,w)} ›</button>;
- const leaders=[{id:g.ruler,title:exec.includes(g.ruler)?'君主 · 执政':'君主'},...exec.filter(id=>id!==g.ruler).map(id=>({id,title:'执政'}))];
+ const leaders=[{id:g.ruler,title:provisionalRealm(w,target)?'军府领袖':exec.includes(g.ruler)?'君主 · 执政':'君主'},...exec.filter(id=>id!==g.ruler).map(id=>({id,title:'执政'}))];
  const [missionReply,setMissionReply]=useState<{action:'accept'|'reject';mission:number}|null>(null);
  const bilateral=(a:RealmId,b:RealmId)=>target===r?a===r||b===r:[a,b].includes(r)&&[a,b].includes(target);
  const missions=s.missions.filter(m=>bilateral(m.from,m.to)),history=s.history.filter(h=>bilateral(h.from,h.to));

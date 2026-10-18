@@ -1,3 +1,4 @@
+import {establishCivilPolity,civilOrigin} from './civilPolities';
 import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {allPeople,getPerson} from './personRegistry';
 import type {World} from './types';
@@ -61,7 +62,7 @@ function rise(w:World,q:LocalUnrest){if(unrestBlock(w,q))return;ensureWars(w);en
  s.armies.push({id,realm:q.realm,location:q.site,payer:fiscalPath(w,q.site)[0],troops:200,morale:50,supply,journey:null,siege:0,regiments:recruitmentRegiments(sources.parts,id,q.site,'spear').map(u=>({...u,institution:20,commanderLoyalty:70,loyalTo:q.organizer!,cohesion:40}))});
  // A commander remains bound to the existing army; the new levy needs its own appointment.
  if(w.mobility&&!following.length)(w.mobility.armyCommanders??={})[id]=q.organizer!;
- q.stage='armed';q.war=war.id;q.deadline=null;log(w,siteById[q.site].name+'民变起事：'+demandNames[q.demand]+'；动员本地 200 人、支出已控制公款 50，取当地公粮 '+supply+'。');
+ q.stage='armed';q.war=war.id;establishCivilPolity(w,war);q.deadline=null;log(w,siteById[q.site].name+'民变起事：'+demandNames[q.demand]+'；动员本地 200 人、支出已控制公款 50，取当地公粮 '+supply+'。');
 }
 export function unrestReason(w:World,c:UnrestCommand,actor=w.characterId!){const q=w.unrest?.items.find(q=>q.id===c.id);if(!q||!['warning','armed'].includes(q.stage))return '该诉求当前无需裁决';if(!['report','accommodate'].includes(c.action))return '未知诉求处理';
  if(w.realm!.cities[q.site].owner!==q.realm||w.realm!.cities[q.site].controller!==q.realm)return '原诉求治所已易手';
@@ -88,7 +89,7 @@ export function advanceUnrest(w:World){if(!w.realm||w.mode!=='sandbox')return;co
  for(const c of Object.values(w.realm.cities))if(c.culturalExemption&&(!isAlive(w,c.culturalExemption.leader)||allegianceRealm(w,c.culturalExemption.leader)!==c.owner||!organizedCommander(w,c.owner,c.culturalExemption.leader)))delete c.culturalExemption;
  for(const [site,c] of Object.entries(w.realm.cities))if(c.owner!=='frontier'&&c.owner===c.controller&&!w.realm.annexed?.[c.owner]&&c.order<=35){const demand=c.tax==='heavy'?'tax':c.grain<Math.max(50,civilianFood(w,site))?'food':null;if(demand)add(w,c.owner,site,demand,'conditions:'+site+':'+w.day,null);}
  for(const q of s.items){if(q.stage==='closed')continue;const c=w.realm.cities[q.site];
-  if(c.owner!==q.realm||c.controller!==q.realm||w.realm.annexed?.[q.realm]){if(q.stage==='armed'){const war=civilWar(w,q.realm);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'white','loyal');}else close(w,q,'地方易手，原朝廷诉求终止，实际困境保留');continue;}
+  if(c.owner!==q.realm||c.controller!==q.realm&&!(q.stage==='armed'&&w.realm.identities?.[c.controller as RealmId]?.civilWar===q.war)||w.realm.annexed?.[q.realm]){if(q.stage==='armed'){const war=civilWar(w,q.realm);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'white','loyal');}else close(w,q,'地方易手，原朝廷诉求终止，实际困境保留');continue;}
   if(q.stage==='armed'){const war=civilWar(w,q.realm);if(!war||war.id!==q.war)close(w,q,'战事终止，地方仍按实际钱粮与政策结算');else if(demandSatisfied(w,q))settleCivilWar(w,war,'yield','rebel');continue;}
   if(q.demand==='customs'&&(!q.organizer||!isAlive(w,q.organizer)||allegianceRealm(w,q.organizer)!==q.realm||!organizedCommander(w,q.realm,q.organizer))){close(w,q,'原军镇组织条件已失效，待遇诉求终止');continue;}
   const solved=demandSatisfied(w,q),distress=q.demand==='customs'||c.order<=35;
@@ -104,7 +105,7 @@ export function validUnrest(w:World){const s=w.unrest;if(s===undefined)return tr
  if(q.stage!=='closed'){if(active.has(q.site))return false;active.add(q.site);if(q.closed!==null||q.outcome)return false;}else if(!n(q.closed,q.started,w.day)||!q.outcome)return false;
  if(q.stage==='growing'&&q.distressedDays>=30||['warning','armed'].includes(q.stage)&&q.distressedDays<30)return false;
  if(q.stage==='warning'?!n(q.deadline,q.started+60,w.day+30):q.deadline!==null)return false;
- if(q.stage==='armed'){const war=w.realm!.wars?.find(v=>v.id===q.war);return q.distressedDays>=60&&!!q.organizer&&!!war&&war.civil?.grievance===q.id&&war.attacker===q.realm&&war.civil.base===q.site&&war.civil.claimant===q.organizer;}
+ if(q.stage==='armed'){const war=w.realm!.wars?.find(v=>v.id===q.war);return q.distressedDays>=60&&!!q.organizer&&!!war&&war.civil?.grievance===q.id&&civilOrigin(war)===q.realm&&war.civil.base===q.site&&war.civil.claimant===q.organizer;}
  return q.war===null||q.stage==='closed'&&n(q.war,1,(w.realm!.nextWarId??1)-1);
  });
 }

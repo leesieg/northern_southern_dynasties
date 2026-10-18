@@ -90,7 +90,7 @@ describe('Hou Jing security negotiations',()=>{
   w.people[0].location='shouchun';w.mobility!.residences['hou-jing']={site:'shouchun',journey:null};w.realm!.cities.shouchun.governor='hou-jing';routeGrant(w,'shouchun',200,'测试：合法基地拨款');
   const money=w.people[0].coins,local=localBalance(w,'shouchun'),troops=w.realm!.armies.reduce((n,a)=>n+a.troops,0);
   expect(historicalReason(w,rise(),'hou-jing')).toBe('');actHistorical(w,rise(),'hou-jing');advanceHistorical(w);e=w.historical!.items[0];
-  expect(e.phase).toBe('rebellion');expect(w.people[0].coins).toBe(money-100);expect(localBalance(w,'shouchun')).toBe(local+100);expect(w.realm!.armies.reduce((n,a)=>n+a.troops,0)).toBe(troops);
+  expect(e.phase).toBe('rebellion');expect(w.people[0].coins).toBe(money-100);expect(localBalance(w,'shouchun')+w.realm!.treasuries[w.realm!.wars!.find(v=>v.civil?.claimant==='hou-jing')!.attacker].coins).toBe(local+100);expect(w.realm!.armies.reduce((n,a)=>n+a.troops,0)).toBe(troops);
   expect(personInfluence(w,'hou-jing')).toBe(0);expect(w.realm!.cities.jiankang.controller).toBe('liang');
  });
  it('does not backfill an old peace or resurrect an ended instance from a legacy save',()=>{

@@ -1,5 +1,5 @@
 import {getCharacter,allPeople} from './personRegistry';
-import {worldRealms,polityStyle,initialPoliticalRealm,realmOrigin} from './polityRuntime';
+import {worldRealms,administrativeRealm,polityStyle,initialPoliticalRealm,realmOrigin} from './polityRuntime';
 import {capital as realmCapital} from './realm';
 import {applyPowerArrangement,actPower,powerReason} from './powerPolitics';
 import {supportClaim,claimantProvenance} from './claims';
@@ -63,7 +63,7 @@ export function governmentBonus(w:World,r:Polity,site?:string){
  const g=r==='frontier'?undefined:governmentOf(w,r);if(!g)return {tax:0,pay:0,attack:0};const base=governmentDefinitions[g.type];
  let tax:number=base.tax,pay:number=base.pay,attack:number=base.attack;
  if(g.type==='celestial'&&g.legitimacy<25)tax=-20;
- if(g.type==='feudal'){const contract=site?g.contracts[site]:'balanced';if(contract==='tax')tax+=20;if(contract==='levy')tax-=15;const levy=Object.entries(g.contracts).filter(([id,c])=>c==='levy'&&w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r).length;attack+=Math.min(20,levy*5);}
+ if(g.type==='feudal'){const contract=site?g.contracts[site]:'balanced';if(contract==='tax')tax+=20;if(contract==='levy')tax-=15;const levy=Object.entries(g.contracts).filter(([id,c])=>c==='levy'&&administrativeRealm(w,id)===r&&w.realm!.cities[id].controller===r).length;attack+=Math.min(20,levy*5);}
  if(g.type==='tribal')attack+=g.support>=70?15:g.support<40?-15:0;
  if(g.laws.includes('west-militia')){pay-=15;attack+=10;}if(g.laws.includes('west-offices')||g.laws.includes('east-assessment'))tax+=10;
  const court=courtBonus(w,r as RealmId);return {tax:tax+court.tax,pay:pay+court.pay,attack:attack+court.attack+allegianceBonus(w,r as RealmId)};
@@ -79,9 +79,9 @@ export function meritAccess(w:World,kind:'office'|'military'){
 }
 export function governmentMusterReason(w:World,r=currentRealm(w)){const g=governmentOf(w,r);if(!g)return '';if(g.type==='nomadic'&&g.herd<100)return '游牧动员需畜群 100';if(g.type==='khanate'&&g.herd<50)return '宫帐动员需畜群 50';if(g.type==='tribal'&&g.support<50)return '部众支持需达到 50';return '';}
 export function spendGovernmentMuster(w:World,r=currentRealm(w)){const g=governmentOf(w,r);if(!g)return;if(g.type==='nomadic')g.herd-=100;if(g.type==='khanate')g.herd-=50;if(g.type==='tribal')g.support-=10;}
-const averageOrder=(w:World,r:RealmId)=>{const cities=Object.values(w.realm!.cities).filter(c=>c.owner===r&&c.controller===r);return cities.length?cities.reduce((n,c)=>n+c.order,0)/cities.length:0;};
-function ownsCapital(w:World,r:RealmId){const c=w.realm!.cities[realmCapital(r,w)];return c.owner===r&&c.controller===r;}
-function nativeCities(w:World,r:RealmId){return Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].owner===r&&w.realm!.cities[id].controller===r);}
+const averageOrder=(w:World,r:RealmId)=>{const cities=Object.entries(w.realm!.cities).filter(([id,c])=>administrativeRealm(w,id)===r&&c.controller===r).map(([,c])=>c);return cities.length?cities.reduce((n,c)=>n+c.order,0)/cities.length:0;};
+function ownsCapital(w:World,r:RealmId){const c=w.realm!.cities[realmCapital(r,w)];return administrativeRealm(w,realmCapital(r,w))===r&&c.controller===r;}
+function nativeCities(w:World,r:RealmId){return Object.keys(w.realm!.cities).filter(id=>administrativeRealm(w,id)===r&&w.realm!.cities[id].controller===r);}
 export function governmentTaskPause(w:World,r:RealmId){const g=governmentOf(w,r);if(!g?.task)return '';if(detained(w,g.task.sponsor))return '主持者被拘押，履职暂停';if(['celestial','meritocratic','khanate'].includes(g.type)&&g.court?.phase==='chaos')return '朝廷危局，改革暂停';if(realmAtWar(w,r))return '战争期间暂停';if(!ownsCapital(w,r))return '失去都城控制，暂停';if(g.support<40)return '支持低于 40，需议政争取';if(averageOrder(w,r)<40)return '平均秩序低于 40，需先赈济';if(g.task.kind==='government'){const target=g.task.target;if(target==='celestial'&&(g.legitimacy<80||!hasHegemony(w,r)))return '天命或统一程度不足，暂停';if((target==='nomadic'||target==='khanate')&&(!validCamp(w,r,g.camp)||g.herd<(target==='nomadic'?200:100)))return '失去驻牧地，暂停';}return '';}
 function hasHegemony(w:World,r:RealmId){const cities=Object.values(w.realm!.cities).filter(c=>c.owner!=='frontier');return nativeCities(w,r).length>=Math.ceil(cities.length*.6);}
 export function validCamp(w:World,r:RealmId,site:string){const c=w.realm!.cities[site];return !!c&&c.owner===r&&c.controller===r&&siteById[site].lat>=38;}
