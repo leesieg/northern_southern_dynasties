@@ -61,7 +61,24 @@ it('army dossier binds troops and orders to a real mustered army and handles a s
 });
 it('journal has a route to older entries and personal filtering does not misclassify other records',()=>{
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');
- world.chronicle=Array.from({length:72},(_,i)=>({day:0,text:'国事记录 '+i,person:i===71?'player':'merchant'}));
+ world.chronicle=Array.from({length:72},(_,i)=>({day:0,text:(i===71?'你收到':'')+'国事记录 '+i,person:i===71?'player':'merchant'}));
  const before=serializeWorld(world),all=render(<OperationsJournal world={world} scope="all" onScope={noop} onClose={noop} onPerson={noop}/>),own=render(<OperationsJournal world={world} scope="player" onScope={noop} onClose={noop} onPerson={noop}/>);
  expect(all).toContain('翻阅更早纪事');expect(all).toContain('国事记录 71');expect(own).toContain('国事记录 71');expect(own).not.toContain('国事记录 70');expect(serializeWorld(world)).toBe(before);
+});
+it('journal links the people named in legacy events instead of the player who received them',()=>{
+ const world=newCampaignWorld('xiao-yan',undefined,'sandbox');
+ world.chronicle=[
+  {day:0,person:'player',text:'高欢患上风寒。'},
+  {day:0,person:'player',text:'高欢身后，高澄居君位，侯景主持朝政。'},
+  {day:0,person:'player',text:'建康朝廷：本季公粮不足。'},
+  {day:0,person:'player',text:'你在建康补充了 30 日行粮。'},
+ ];
+ const before=serializeWorld(world),html=render(<OperationsJournal world={world} scope="all" onScope={noop} onClose={noop} onPerson={noop}/>);
+ const row=(text:string)=>html.match(/<article class="journal-entry"[^>]*>[\s\S]*?<\/article>/g)!.find(s=>s.includes(text))!;
+ expect(row('高欢患上风寒')).toContain('高欢的肖像');expect(row('高欢患上风寒')).not.toContain('萧衍的肖像');
+ for(const name of ['高欢','高澄','侯景'])expect(row('高欢身后')).toContain(name+'的肖像');
+ expect(row('本季公粮不足')).not.toContain('journal-person');expect(row('你在建康')).toContain('萧衍的肖像');
+ const own=render(<OperationsJournal world={world} scope="player" onScope={noop} onClose={noop} onPerson={noop}/>);
+ expect(own).toContain('你在建康');expect(own).not.toContain('高欢患上风寒');expect(own).not.toContain('本季公粮不足');
+ expect(serializeWorld(world)).toBe(before);
 });
