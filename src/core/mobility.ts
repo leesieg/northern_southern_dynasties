@@ -178,6 +178,8 @@ export function advanceMobility(w:World){
  for(const [id,location] of Object.entries(s.residences)){
   if(detained(w,id)||w.diplomacy?.missions.some(m=>m.envoy===id)||id===w.characterId||!isAlive(w,id)||commandArmy(w,id)||lifeOf(w,id)?.illness?.severity===3)continue;
   const j=location.journey;if(j){const realm=allegianceRealm(w,id);if(realm&&(!civilCanAdmin(w,id,j.route[j.leg+1])||!canEnter(w,realm,w.realm.cities[j.route[j.leg+1]].controller,id))){location.journey=null;continue;}j.elapsed++;if(j.elapsed>=j.durations[j.leg]){location.site=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)location.journey=null;}continue;}
+  // Keep a free NPC at the place where its pending letter can actually be accepted. Existing journeys still finish above.
+  if(w.allegiancePacts?.items.some(p=>p.person===id&&p.status==='pending'&&p.due>w.day))continue;
   if(Object.values(s.pendingCommanders??{}).some(v=>v.person===id))continue;
   const posting=w.realm.offices.find(o=>o.candidate===id);if(posting&&posting.due<=w.day+1){dispatchNPC(w,id,posting.site);continue;}
   const appointment=s.appointments[id];if(appointment&&appointment.until>=w.day){dispatchNPC(w,id,appointment.site);continue;}

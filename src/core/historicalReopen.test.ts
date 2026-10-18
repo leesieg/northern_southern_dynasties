@@ -39,7 +39,9 @@ describe('Hou Jing trigger buffer and protector-death reopening',()=>{
   expect(reopened.status).toBe('active');
   expect(reopened.phase).toBe('north');
   expect(reopened.appliedEffects.filter(v=>v==='reopen:protector-death')).toHaveLength(1);
-  expect(pactReason(w,{type:'pact',action:'request',realm:'west',terms:'personal'},'hou-jing')).toBe('');
+  // Reopening already sent the new letter; its cooling exception must not permit a duplicate live request.
+  expect(w.allegiancePacts!.items).toHaveLength(2);
+  expect(pactReason(w,{type:'pact',action:'request',realm:'west',terms:'personal'},'hou-jing')).toContain('已有归附');
   advanceHistorical(w);
   expect(w.allegiancePacts!.items).toHaveLength(2);
   expect(w.allegiancePacts!.items.at(-1)!.to).toBe('west');

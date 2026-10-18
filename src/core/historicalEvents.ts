@@ -5,7 +5,7 @@ import {allegianceRealm} from './officeEligibility';
 import {isAlive,lifeOf} from './lifeState';
 import {getPerson} from './personRegistry';
 import {personResidence} from './residence';
-import {governingAuthority,governingExecutives,governmentOf} from './government';
+import {governingAuthority,governingExecutives,governmentOf,regimeName} from './government';
 import {publicSuccessor} from './publicSuccession';
 import {armyCommander,dispatchNPC} from './mobility';
 import {historicalMusterQuote,historicalMusterDestination,actHistoricalMuster} from './historicalMuster';
@@ -14,7 +14,7 @@ import {personInfluence,awardInfluence} from './personalInfluence';
 import {bilateralWar} from './wars';
 import {diplomaticKey,diplomaticPair} from './diplomacy';
 import {detained} from './custodyState';
-import {pactReason,actPact,currentPactBreaches,receptionNames,type AllegiancePact,type PactCommand} from './allegiancePacts';
+import {pactReason,pactQuote,actPact,advancePactReception,currentPactBreaches,receptionNames,type AllegiancePact,type PactCommand} from './allegiancePacts';
 import {civilReason,actCivilWar,warCitySide} from './civilWars';
 import {activeWars} from './wars';
 import {worldRealms} from './polityRuntime';
@@ -194,27 +194,34 @@ function ensurePlacementFund(w:World,e:Event,p:AllegiancePact){
  const site=w.realm!.cities[a.location]?.controller===p.to?a.location:personResidence(w,p.person).site;
  if(w.realm!.cities[site]?.controller!==p.to)return;
  const dest=territoryAccount(w,p.to,'county:'+site),fiscal=ensureFiscal(w)!;
- fiscal.balances[dest]=(fiscal.balances[dest]??0)+100;
- fiscalRecord(w,p.to,'central:'+p.to,dest,100,'接纳降将安置经费');
+ const amount=Math.min(100,Math.max(0,1_000_000-(fiscal.balances[dest]??0)));
+ fiscal.balances[dest]=(fiscal.balances[dest]??0)+amount;
+ // The central payment was already booked at reception; reverse only the part now used locally.
+ fiscalRecord(w,p.to,'expense',dest,amount,'已付保护支出转作安置经费');
  e.appliedEffects.push('placement-fund:'+p.id);e.appliedEffects=e.appliedEffects.slice(-128);
- remember(w,e,'placement-fund:'+p.id,'接纳国将已付的 100 钱保护预算拨作'+siteById[site].name+'安置经费，作为部曲落脚的地方公款。');
+ remember(w,e,'placement-fund:'+p.id,'接纳国将已付保护支出中的 '+amount+' 钱转作'+siteById[site].name+'安置经费。'+(amount<100?'受地方公库容量限制，其余仍计保护支出。':''));
 }
 /** Called only at stable command/day boundaries; creates at most one decision per instance. */
 export function advanceHistorical(w:World){
  const state=ensureHistorical(w);if(!state||w.campaign?.status!=='active')return;
  for(const e of state.items){
+  // A restored reception must not depend on a missed daily subsystem tick to finish.
+  const letter=w.allegiancePacts?.items.find(p=>p.person===e.actors.protagonist&&p.status==='pending');
+  if(letter&&e.status!=='cancelled'&&w.day>letter.created)advancePactReception(w,letter.id);
   const id=e.actors.protagonist,live=activeWars(w).find(v=>v.civil?.claimant===id),p=w.allegiancePacts?.items.filter(p=>p.person===id&&['pending','active'].includes(p.status)).at(-1);
   const previous=historicalPact(w,e),death=lifeOf(w,e.actors.protector)?.death;
-  const conflictNow=!p&&!live&&e.warId===undefined&&previous?.status==='rejected'&&allegianceRealm(w,id)===e.origin?northConflict(w,e):'';
+  const failed=previous?.status==='rejected'||!previous&&e.pactId!==undefined;
+  const conflictNow=!p&&!live&&e.warId===undefined&&failed&&allegianceRealm(w,id)===e.origin?northConflict(w,e):'';
   // The protector's death is a new fact, not a repeat of the earlier refusal.
-  const deathAfter=!!death&&e.resolvedAt!==undefined&&death.day>=e.resolvedAt;
+  const deathAfter=!!death&&death.day>=(e.resolvedAt??e.phaseSince);
   const reopenDeath=!!conflictNow&&deathAfter&&!e.appliedEffects.includes('reopen:protector-death');
-  const retry=!!conflictNow&&(reopenDeath||w.day-previous!.created>=180);
+  const retry=!!conflictNow&&(reopenDeath||w.day-(previous?.created??e.resolvedAt??e.phaseSince)>=180);
   if(p?.status==='active'&&e.status!=='cancelled'&&e.warId===undefined&&!live&&isAlive(w,id)&&!detained(w,id))syncSecurity(w,e,p);
   if(p&&e.pactId===p.id)recordPact(w,e,p);
   if(e.status!=='active'){
    if(e.status==='cancelled'||!isAlive(w,id)||detained(w,id))continue;
-   if(!retry&&!live&&!(p?.status==='pending'&&p.id!==e.pactId)&&!(e.warId===undefined&&p?.status==='active'&&(historicalDisputes(w,e,p).length||e.security&&['concern','demanded','negotiating'].includes(e.security.status))))continue;
+   const freshPact=p&&(p.id!==e.pactId||e.phase==='reception');
+   if(!retry&&!live&&!freshPact&&!(e.warId===undefined&&p?.status==='active'&&(historicalDisputes(w,e,p).length||e.security&&['concern','demanded','negotiating'].includes(e.security.status))))continue;
    e.status='active';delete e.result;delete e.resolvedAt;delete e.warId;delete e.stableSince;delete e.handlingDue;
    remember(w,e,'renewed:'+w.day,'新的现实冲突出现，重新审议当前处境。',!!live);
   }
@@ -237,7 +244,12 @@ export function advanceHistorical(w:World){
    marchToHost(w,e,p);
    e.pactId=p.id;e.host=p.to;e.site=personResidence(w,id).site;recordPact(w,e,p);
    if(w.realm!.annexed?.[p.to]){finish(w,e,'接纳政权已终止。',true);continue;}
-   if(p.status==='pending'){phase(w,e,'reception','来书已送达，等待双方确认接纳条款。');continue;}
+   if(p.status==='pending'){
+    phase(w,e,'reception','来书已送达，等待双方确认接纳条款。');
+    const chief=governingAuthority(w,p.to),reason=pactReason(w,{type:'pact',action:'answer',id:p.id,accept:true},chief)||(pactQuote(w,p).acceptance<-10?'接纳方对当前安置条款的认可不足':'');
+    if(reason)remember(w,e,'pact-wait:'+p.id+':'+reason.slice(0,80),'来书暂未获接纳：'+reason+'；答复期限为'+(p.due-w.day)+'日后，届期自动结束本次来书。');
+    continue;
+   }
    if(e.security?.status==='negotiating'&&!p.offer)e.security.status=p.terms==='reform'?'protected':'demanded';
    if(e.security&&['concern','demanded','negotiating'].includes(e.security.status)){
     phase(w,e,'dispute',e.security.status==='concern'?'两国和好引起安置担忧，原国正在议定是否提出交还要求。':e.security.status==='negotiating'?'双方正在商议改编条款，原有安置继续有效。':settlementReview(e,p)?'接纳方复议长期私军安置，须议定安全担保或协商改编。':'原国提出交还要求，接纳方须议定安全担保。');
@@ -254,7 +266,7 @@ export function advanceHistorical(w:World){
     e.handlingDue??=w.day+30;
     if(w.day>=e.handlingDue&&(!e.decision||e.decision.handled&&e.decision.created<e.handlingDue)){ensurePlacementFund(w,e,p);decide(w,e,'crisis',id);npcDecision(w,e);}continue;
    }
-   if(e.phase!=='settlement')phase(w,e,'settlement',p.integrationCompletedAt!==undefined?'部曲已按约完成改编。':'归附之约生效，当前没有未解决的争议。');
+   if(e.phase!=='settlement')phase(w,e,'settlement',p.integrationCompletedAt!==undefined?'部曲已按约完成改编。':'侯景已归附'+regimeName(w,p.to)+'，当前进入安置阶段。',allegianceRealm(w,id)===p.to);
    delete e.handlingDue;e.stableSince??=w.day;
    // A retained private army still faces the 90-day placement review; do not close the file first.
    const reviewPending=p.terms==='retain'&&p.integrationCompletedAt===undefined&&!e.appliedEffects.includes('review:'+p.id)&&!!w.realm!.armies.find(a=>a.id===p.army&&a.troops>=100)&&w.day-e.stableSince<180;

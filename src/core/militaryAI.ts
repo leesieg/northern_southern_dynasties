@@ -62,6 +62,7 @@ export function delegatedArmyDecision(w:World,a:Army,context=armyDecisionContext
  const s=w.realm!,r=a.realm,{wars,own,reserve,playerExecutive}=context;
  const report=(intent:string,current:string,reason:string,next:string,target?:string):ArmyDecision=>({intent,current,reason,next,target});
  if(a.journey)return report(a.withdrawalUntil?'撤往安全据点':'执行既定行程','行军中','沿已经下达的路线前进','抵达后按指挥方式重新核对局势',a.journey.route.at(-1));
+ if(w.allegiancePacts?.items.some(p=>p.person!==w.characterId&&p.army===a.id&&p.status==='pending'&&p.due>w.day))return report('归附交涉','驻留候复','统帅正在以本军议定归附条款','收到答复或交涉结束后恢复军令判断');
  if(a.automation==='direct')return report('亲自下令','驻留待命','本军已由你直接指挥','等待新的手动军令');
  if(w.mobility?.pendingCommanders?.[a.id!])return report('将领交接','等待赴任','新任统帅尚未抵营','抵营交接后重新判断行军');
  if(a.withdrawalUntil)return report('战后撤离','撤离保护中','撤离期限尚未清除','保护结束后重新判断局势');
