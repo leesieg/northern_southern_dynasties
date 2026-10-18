@@ -1,12 +1,14 @@
 import {ArtIcon,type ArtName} from './ArtIcon';
 import {ViewControl} from './ViewControl';
+import {ReferenceHudFrame,ReferenceHudIcon,type ReferenceHudIconName} from './ReferenceHudArt';
 import type {MapMode} from '../map/WorldMap';
 import type {CameraAction} from '../map/atlasPresentation';
 
 type Props={mode:MapMode;onMode:(mode:MapMode)=>void;hasRealm:boolean;options:boolean;onOptions:()=>void;travelers:boolean;onTravelers:()=>void;tilted:boolean;onTilted:()=>void;models:boolean;onModels:()=>void;motion:boolean;onMotion:()=>void;sceneryDetail:boolean;onSceneryDetail:()=>void};
 type Glyph='in'|'out'|'location'|'camera'|'layers'|'settings'|'left'|'right'|'north'|'player'|'selected'|'home'|'political'|'domains'|'diplomacy'|'terrain'|'roads';
 const toolArt:Partial<Record<Glyph,ArtName>>={location:'person',camera:'world',layers:'world',settings:'diligent',player:'person',selected:'city',home:'world',political:'influence',domains:'city',diplomacy:'gregarious',terrain:'world',roads:'grain'};
-function MapToolIcon({name}:{name:Glyph}){const art=toolArt[name];return art?<ArtIcon name={art} size={25}/>:<span aria-hidden="true" className="map-bearing-glyph">{name==='left'?'↶':name==='right'?'↷':'北'}</span>;}
+const referenceArt:Partial<Record<Glyph,ReferenceHudIconName>>={location:'location',camera:'camera',settings:'settings',political:'political',domains:'domains',diplomacy:'pacts',terrain:'terrain',roads:'roads'};
+function MapToolIcon({name}:{name:Glyph}){const reference=referenceArt[name],art=toolArt[name];return <>{reference?<ReferenceHudIcon name={reference}/>:art?<ArtIcon name={art} size={25}/>:<span aria-hidden="true" className="map-bearing-glyph">{name==='left'?'↶':name==='right'?'↷':'北'}</span>}{reference&&<ReferenceHudFrame kind="medallion"/>}</>;}
 export function MapCameraControls({focus}:{focus:(action:CameraAction)=>void}){
  return <div className="zoom-tools compact-map-tools" role="group" aria-label="地图视角">
  {(['in','out'] as const).map(action=><ViewControl key={action} action={action} label={action==='in'?'放大地图':'缩小地图'} tooltip={false} onClick={()=>focus(action)}/>)}

@@ -2,6 +2,9 @@ import {beforeEach,describe,expect,it,vi} from 'vitest';
 const assets='164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d';
 // Independent fixtures: checkpoint exports and the user's read-only save diagnostic.
 const checkpoints=[
+ {"packageId":"official-nsd","digest":"fa3434bcc393deabbd380c9427c911ba48362e36a07ad49266b6f0b4c20714ed","engine":"e0811d2617e93133112f116cd5bd1a6469de6424065d5551eb82d6d68d89c0a1","assets":"65c918a601cd76c8a42c937d90d9a3ffafe80aa7e1fe2aef09053c2a387944ba"},
+ {"packageId":"official-nsd","digest":"061a16ba104c0fcfa37120b434a97bd26d782266a79291983e35193f28f4d559","engine":"e0811d2617e93133112f116cd5bd1a6469de6424065d5551eb82d6d68d89c0a1","assets":"e750511af4450e3e8b7a045236f2ce50880f3492a86ee9fc821892af98339119"},
+ {"packageId":"official-nsd","digest":"e8275fcf3ac8a8bc325ec57b80f89ee2a6a81a2de60cc95086fdfe4b6e05a118","engine":"e0811d2617e93133112f116cd5bd1a6469de6424065d5551eb82d6d68d89c0a1","assets":"be5744c861e1e352c51a363be1ca159b0a1e3a646b930a41cb5fe319c723bc26"},
  {packageId:'official-nsd',digest:'7a1cd07569b41b7252f37548518970f678eb17d9b75e198b616a4939fe439d73',engine:'54e28088346c44d8d8da86eef75f9064c2a6ab3632c004802b6c3d855b173f43',assets:'66a1f59215430c104e079deaf91c39673bac53cb18c3e86d11d8ade11e72d98c'},
  {"packageId":"official-nsd","digest":"c445d936905a08a188dba370243f47413827d45fb1fd17d13138108e1b236c0b","engine":"c5448279ad5d01242d976cece1fd187a6f68ac5a237a737dcec6809e7083e7bb","assets":"ba42b668580d827e6c1005046908a87041f495dea1cbab9f41fb07b32db17439"},
  {"packageId":"official-nsd","digest":"a1d06e83b2d832e11b62a5a9b805a3aeddda566e35fec173a7f4fc373a1d640a","engine":"5c2dd68c60ae54cd3c77960b3179465a01e5e17dbf366d1f3d1d2d5bb55bb4b1","assets":"66a1f59215430c104e079deaf91c39673bac53cb18c3e86d11d8ade11e72d98c"},

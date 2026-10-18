@@ -1,4 +1,5 @@
 import {useEffect,useRef} from 'react';
+import {ReferenceHudFrame} from './ReferenceHudArt';
 export function TimeControl({date,day,speed,locked,lockReason,onSpeed,onStep,onMenu,onSave}:{date:string;day:number;speed:number;locked:boolean;lockReason:string;onSpeed:(speed:number)=>void;onStep:()=>void;onMenu:()=>void;onSave:()=>void}){
  const lastSpeed=useRef(1);useEffect(()=>{if(speed)lastSpeed.current=speed;},[speed]);
  useEffect(()=>{
@@ -13,6 +14,7 @@ export function TimeControl({date,day,speed,locked,lockReason,onSpeed,onStep,onM
   return()=>{window.removeEventListener('keydown',onKeyDown,true);window.removeEventListener('keyup',onKeyUp,true);};
  },[locked,speed,onSpeed]);
  return <section className="chronicle-control" aria-label="日期与时间控制">
+  <ReferenceHudFrame kind="clock"/>
   <div className="chronicle-date"><strong>{date}</strong><div><span>第 {day+1} 日</span><span className={speed?'clock-running':'clock-paused'} role="status">{locked?lockReason:speed?'时间推进':'已暂停'}</span></div></div>
   <button className={"clock-play "+(speed?"is-running":"is-paused")} disabled={locked} aria-keyshortcuts="Space" aria-label={speed?'暂停时间':'继续时间'} onClick={()=>onSpeed(speed?0:lastSpeed.current)}><svg viewBox="0 0 24 24" aria-hidden="true">{speed?<path d="M7 5h3v14H7zm7 0h3v14h-3z"/>:<path d="m7 4 14 8-14 8z"/>}</svg><small>{speed?'暂停':'继续'}</small></button>
   <div className="speed-dial" role="group" aria-label="时间速度">
