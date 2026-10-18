@@ -36,7 +36,7 @@
 .focused-shell :is(.player-hud-identity,.chronicle-control button):focus-visible{outline:2px solid #d3b475;outline-offset:3px}
 .focused-shell .command-rail{margin-top:98px;max-height:calc(100% - 98px)}
 
-.focused-shell .ongoing-flags{padding-top:8px}
+.focused-shell .ongoing-flags{padding-top:0}
 .focused-shell .ongoing-flag-entry>.hover-hint,.focused-shell .ongoing-flag-entry>.ongoing-flag,.focused-shell .ongoing-flag{height:104px}
 .focused-shell .ongoing-flag{width:calc(100% - 4px);filter:drop-shadow(0 3px 2px #15201855);color:#f1e3bf}
 .focused-shell .ongoing-flag-content{inset:12px 6px 18px;gap:3px;background:none;text-shadow:0 1px 1px #22251d80}
