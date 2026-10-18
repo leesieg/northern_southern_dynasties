@@ -32,15 +32,17 @@ const frames:Record<Frame,{box:string;shape:string;holes?:string}>={
  silkFlag:{box:'1534 129 102 183',shape:'M1534 129H1634V312H1534Z',holes:'M1548 166H1623V270L1586 298 1548 271Z'},
  eventTrim:{box:'1528 166 144 439',shape:'M1634 166H1672V315H1634Z M1528 315H1672V605H1528Z'},
 };
+// Preserve the carved ends when the wide reference plaque becomes a compact rail target.
+const compactButtonSlices=[[4,20,0,17],[24,124,17,26],[148,20,43,17]];
 export function ReferenceHudFrame({kind}:{kind:Frame}){
  const id='reference-hud-'+useId().replace(/:/g,''),frame=frames[kind];
  const [x,y,width,height]=frame.box.split(' ').map(Number);
- return <svg className={'reference-hud-frame reference-hud-frame--'+kind} viewBox={frame.box} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+ return <svg className={'reference-hud-frame reference-hud-frame--'+kind} viewBox={kind==='button'?'0 0 60 62':frame.box} preserveAspectRatio="none" aria-hidden="true" focusable="false">
   <defs>
    <mask id={id} maskUnits="userSpaceOnUse" x="0" y="0" width="1672" height="941" style={{maskType:'luminance'}}><path d={frame.shape} fill="white"/>{frame.holes&&<path d={frame.holes} fill="black"/>}</mask>
    <filter id={id+'-alpha'} filterUnits="userSpaceOnUse" x={x} y={y} width={width} height={kind==='clock'?228:height} colorInterpolationFilters="sRGB"><feComponentTransfer><feFuncA type="linear" slope="1.02" intercept="-.01"/></feComponentTransfer></filter>
   </defs>
-  <image href={cleanAtlas} width="1672" height="941" mask={'url(#'+id+')'} filter={'url(#'+id+'-alpha)'}/>
+  {kind==='button'?compactButtonSlices.map(([sourceX,sourceWidth,left,width])=><svg key={sourceX} x={left} y="0" width={width} height="62" viewBox={`${sourceX} 300 ${sourceWidth} 74`} preserveAspectRatio="none" overflow="hidden"><image href={cleanAtlas} width="1672" height="941" mask={'url(#'+id+')'} filter={'url(#'+id+'-alpha)'}/></svg>):<image href={cleanAtlas} width="1672" height="941" mask={'url(#'+id+')'} filter={'url(#'+id+'-alpha)'}/>}
  </svg>;
 }
 
