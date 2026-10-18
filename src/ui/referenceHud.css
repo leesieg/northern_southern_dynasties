@@ -54,33 +54,13 @@
 .focused-shell .command-rail .rail-alert{position:absolute;right:calc(1 * var(--hud-unit));top:calc(-2 * var(--hud-unit));display:grid;place-items:center;box-sizing:border-box;width:calc(27 * var(--hud-unit));height:calc(29 * var(--hud-unit));border:1px solid #f0bf7a;border-radius:50%;background:linear-gradient(#cd552d,#96321f);box-shadow:0 1px 3px #0008;color:#ffe8b6;font:calc(22 * var(--hud-unit))/1 var(--serif);letter-spacing:0}
 .focused-shell .operations-host{top:calc(190 * var(--hud-unit))}
 
-/* The silk tasks now hang beneath the right-hand scroll, as in the reference. */
+/* Restore the compact central flags; positioning follows the actual two HUD bounds. */
 .focused-shell .topbar>.reference-hud-frame--eventTrim{left:auto;right:0;top:calc(166 * var(--hud-unit));width:calc(144 * var(--hud-unit));height:calc(439 * var(--hud-unit));z-index:4}
-.focused-shell .ongoing-flags{left:auto;right:calc(32 * var(--hud-unit));top:calc(129 * var(--hud-unit));width:calc(232 * var(--hud-unit));max-width:calc(100vw - var(--rail-width) - 24px);padding:0;max-height:calc(100dvh - 170 * var(--hud-unit));overflow:visible;--flag-color:#aa8652}
-.focused-shell .ongoing-flag-row{justify-content:end;row-gap:calc(5 * var(--hud-unit))}
-.focused-shell .ongoing-flag-entry,.focused-shell .ongoing-flag-entry>.ongoing-flag,.focused-shell .ongoing-flag-entry>.hover-hint,.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry>.hover-hint{height:calc(176 * var(--hud-unit))}
-.focused-shell .ongoing-flag,.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag{width:100%;height:calc(176 * var(--hud-unit));color:#f0dfb8;filter:drop-shadow(2px 3px 2px #17120b77)}
-.focused-shell .ongoing-cloth{inset:calc(25 * var(--hud-unit)) 10% auto;width:80%;height:calc(146 * var(--hud-unit));stroke:#bfa16a}
-.focused-shell .ongoing-flag-content,.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-content{inset:calc(45 * var(--hud-unit)) calc(11 * var(--hud-unit)) calc(27 * var(--hud-unit));gap:calc(7 * var(--hud-unit));justify-content:flex-start;background:none;text-shadow:0 1px 1px #30251866}
-.focused-shell .ongoing-flag[data-kind=focus][data-todo=true] .ongoing-cloth{fill:#c5a168}
-.focused-shell .ongoing-flag[data-kind=focus][data-todo=true] .ongoing-flag-content{color:#302416;text-shadow:none;background:linear-gradient(90deg,#d5b77a,#e2c691 40%,#c6a36b);margin:calc(-7 * var(--hud-unit)) calc(-2 * var(--hud-unit));padding-top:calc(7 * var(--hud-unit))}
-.focused-shell .ongoing-flag-seal,.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-seal{width:calc(29 * var(--hud-unit));height:calc(29 * var(--hud-unit));flex:0 0 calc(29 * var(--hud-unit))}
-.focused-shell .ongoing-flag-content .hud-art,.focused-shell .ongoing-flags[data-compact=true] .hud-art{width:calc(29 * var(--hud-unit));height:calc(29 * var(--hud-unit))}
-.focused-shell .ongoing-flag-name,.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-name{display:block;font:calc(18 * var(--hud-unit))/1.25 var(--serif);letter-spacing:0;max-width:100%}
-.focused-shell .ongoing-countdown{font:calc(15 * var(--hud-unit))/1.2 var(--serif);color:#e1c799}
-.focused-shell .ongoing-flag[data-todo=true] .ongoing-countdown{border:0;transform:none;color:#e1c799;background:none;padding:0;font:calc(15 * var(--hud-unit))/1.2 var(--serif)}
-.focused-shell .ongoing-flag[data-kind=focus] .ongoing-countdown{color:#77502d}
-.focused-shell .ongoing-flag-content .reference-hud-icon{width:calc(29 * var(--hud-unit));height:calc(29 * var(--hud-unit))}
-.focused-shell .ongoing-flag-count{top:calc(36 * var(--hud-unit));right:calc(9 * var(--hud-unit));height:calc(20 * var(--hud-unit));min-width:calc(20 * var(--hud-unit));border:1px solid #dab371;border-radius:2px;background:#733e31;color:#f6dfad;font-size:calc(14 * var(--hud-unit))}
-.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-content{inset-inline:3px}
-.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-name{font-size:12px}
-.focused-shell .ongoing-war-flag .ongoing-flag-content{gap:calc(4 * var(--hud-unit))}
-.focused-shell .ongoing-war-score{font-size:calc(18 * var(--hud-unit))}
-.focused-shell .ongoing-war-flag .ongoing-countdown{font-size:calc(13 * var(--hud-unit))}
-.focused-shell .army-dock{top:calc(325 * var(--hud-unit));max-height:calc(100dvh - 670 * var(--hud-unit));width:calc(290 * var(--hud-unit))}
-.focused-shell .army-dock:not(:has(.army-unit)){top:calc(185 * var(--hud-unit))}
-/* Flag rows may wrap at extreme density without covering the army controls. */
-.focused-shell .topbar:has(.ongoing-flags:not([data-rows="1"]):not([data-empty="true"])) .army-dock{right:calc(280 * var(--hud-unit));top:calc(180 * var(--hud-unit))}
+.focused-shell .ongoing-flags{width:auto;max-width:none;max-height:none;overflow:visible}
+.focused-shell .ongoing-flag-row{justify-content:center}
+.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-row{box-sizing:border-box;padding-right:32px}
+.focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry .ongoing-flag{width:60px;height:96px}
+.focused-shell .topbar:has(.ongoing-flags[data-below-header=true]:not([data-empty=true])) .army-dock{top:calc(var(--ongoing-flags-bottom,var(--campaign-header)) + 10px);max-height:calc(100dvh - var(--ongoing-flags-bottom,var(--campaign-header)) - 24px)}
 
 /* Paper map dial, gilded arc, fixed circular targets and carved pedestal. */
 .focused-shell .map-command-dock.campaign-navigation{right:0;bottom:0;width:calc(350 * var(--hud-unit));height:calc(336 * var(--hud-unit));max-width:none;--dial-metal:radial-gradient(ellipse at 35% 18%,#3b3a2a,#17221b 50%,#0d1511)}
@@ -124,10 +104,8 @@
 @media(max-width:1100px){
  .focused-shell{--hud-unit:.72px}
  .focused-shell .chronicle-control{top:calc(180 * var(--hud-unit))}
- .focused-shell .ongoing-flags{top:calc(317 * var(--hud-unit))}
+ .focused-shell .army-dock{top:calc(346 * var(--hud-unit) + 10px);max-height:calc(100dvh - 346 * var(--hud-unit) - 24px)}
  .focused-shell .topbar>.reference-hud-frame--eventTrim{top:calc(346 * var(--hud-unit))}
- .focused-shell .army-dock{right:calc(280 * var(--hud-unit));top:calc(190 * var(--hud-unit));width:210px;max-height:calc(100dvh - 240px)}
- .focused-shell .topbar:has(.ongoing-flags:not([data-rows="1"]):not([data-empty="true"])) .army-dock{top:calc(190 * var(--hud-unit))}
  .focused-shell .sovereign-strip .art-resource-value>small:not(.art-unit){font-size:11px}
  .focused-shell .chronicle-date>div{font-size:12px}
 }
@@ -141,6 +119,5 @@
  .focused-shell .sovereign-strip .art-resource{gap:2px}
  .focused-shell .sovereign-strip .art-unit{display:none}
  .focused-shell .chronicle-control{top:calc(180 * var(--hud-unit))}
- .focused-shell .army-dock{right:8px;top:calc(505 * var(--hud-unit));width:190px;max-height:180px}
 }
 @media(prefers-reduced-motion:reduce){.focused-shell .command-rail>button,.focused-shell .map-command-dock.campaign-navigation :is(button,summary){transition:none}}
