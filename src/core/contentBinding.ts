@@ -70,8 +70,17 @@ const preHouJingChainSave={"packageId":"official-nsd","digest":"c445d936905a08a1
 const preReceptionRecoverySave={"packageId":"official-nsd","digest":"a1d06e83b2d832e11b62a5a9b805a3aeddda566e35fec173a7f4fc373a1d640a","engine":"5c2dd68c60ae54cd3c77960b3179465a01e5e17dbf366d1f3d1d2d5bb55bb4b1","assets":"66a1f59215430c104e079deaf91c39673bac53cb18c3e86d11d8ade11e72d98c"};
 // Captured before Western Wei portrait and age-stage assets; official tables unchanged.
 const preWestSevenPortraitSave={packageId:'official-nsd',digest:'7a1cd07569b41b7252f37548518970f678eb17d9b75e198b616a4939fe439d73',engine:'54e28088346c44d8d8da86eef75f9064c2a6ab3632c004802b6c3d855b173f43',assets:'66a1f59215430c104e079deaf91c39673bac53cb18c3e86d11d8ade11e72d98c'};
+// Reported official auto saves at days 161/175/176, taken while the Western Wei
+// portraits were still landing in public/; that asset fingerprint is a transient
+// subset of the committed set, so the tables and rule fingerprint are unchanged
+// and the world still loads. Recomputed from the current official tables.
+const portraitStagingOfficialSave={packageId:'official-nsd',digest:'24e1afbf9c75dbb41396c68aec99328011aee8610aadfc1cdbf669b09a571bc8',engine:'3d38b16c1484f7d88c8398b5d3df100881b69142abfa4f65fa4311a08db3d4e2',assets:'f6c116b32013776fcef1c288b52e3a8459681bc8d1cd5c7f7c0d2261985951b3'};
+// Captured from HEAD before registering the staging lock above. The rule
+// fingerprint covers this file, so that registration alone would orphan every
+// save written by the preceding build; keep the exact prior lock readable.
+const prePortraitStagingFixSave={packageId:'official-nsd',digest:'108aab003e1eef4410a8bb133e25f88125be5da86c6f603cdd05da17eedd8111',engine:'3d38b16c1484f7d88c8398b5d3df100881b69142abfa4f65fa4311a08db3d4e2',assets:'65c918a601cd76c8a42c937d90d9a3ffafe80aa7e1fe2aef09053c2a387944ba'};
 function officialSaveCheckpoints(expected:ContentLock,additional:ContentLock[]){
- return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,preHistoricalPortraitSave,preHistoricalHealthSave,preHealthCalibrationSave,preUnarmedHandoverSave,preFourHistoricalPortraitSave,preHonorVisibilitySave,preThirdHistoricalPortraitSave,preHouJingChainSave,preReceptionRecoverySave,preWestSevenPortraitSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
+ return expected.packageId==='official-nsd'?[expected,phaseOneOfficialSave,phaseTwoOfficialSave,phaseThreeOfficialSave,phaseFourDevelopmentSave,phaseFourOfficialSave,preEraOfficialSave,phaseAOfficialSave,phaseBOfficialSave,phaseCOfficialSave,reportedOfficialDevelopmentSave,phaseDOfficialSave,preHistoricalPortraitSave,preHistoricalHealthSave,preHealthCalibrationSave,preUnarmedHandoverSave,preFourHistoricalPortraitSave,preHonorVisibilitySave,preThirdHistoricalPortraitSave,preHouJingChainSave,preReceptionRecoverySave,preWestSevenPortraitSave,portraitStagingOfficialSave,prePortraitStagingFixSave,...additional.filter(l=>l.packageId==='official-nsd'&&l.assets===expected.assets)]:[];
 }
 export function officialSaveCompatible(value:unknown,expected:ContentLock,additional:ContentLock[]=[]):boolean {return officialSaveCheckpoints(expected,additional).some(lock=>sameContentLock(value,lock));}
 /** Saved launch records contain a digest, not a save header. Only known exact
