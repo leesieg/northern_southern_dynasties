@@ -5,7 +5,8 @@ import {adjustPaintedFeature,validatePaintedRecipe,type PaintedPart,type Painted
 
 type Bounds=readonly [x:number,y:number,width:number,height:number];
 type Face=readonly [Bounds,Bounds,Bounds,Bounds,Bounds,Bounds];
-interface Registration {native:PortraitOffice;face:Face;thumbnail:Bounds;outfits:readonly [Face,Face,Face,Face];collection?:'historical-four-v1'|'historical-third-v1';facialHair?:boolean;sex?:'female';coveredEye?:'left'|'right'}
+interface AgeStage {from:number;until:number;variant:'canonical'|'adolescent';face?:Face;thumbnail?:Bounds}
+interface Registration {native:PortraitOffice;face:Face;thumbnail:Bounds;outfits:readonly [Face,Face,Face,Face];collection?:'historical-four-v1'|'historical-third-v1'|'historical-west-seven-v1';facialHair?:boolean;sex?:'female';coveredEye?:'left'|'right';ageStages?:readonly AgeStage[]}
 /** Observed against the approved 1024×1536 originals and EACH 512×768 outfit cell.
  * Left/right are image coordinates. These are art anchors, never inherited genes.
  * Outfit order: civilian, official, commander, sovereign. Original art remains the
@@ -95,6 +96,48 @@ export const historicalPortraitRegistration={
   [[241,137,57,15],[311,160,40,17],[235,147,62,46],[311,171,35,20],[277,195,34,30],[255,219,67,30]],
   [[210,150,57,15],[280,173,40,17],[204,160,62,46],[280,184,35,20],[245,210,34,30],[223,238,67,30]],
  ]},
+ 'li-bi':{collection:'historical-west-seven-v1',native:'commander',facialHair:true,thumbnail:[337,204,295,295],face:[[380,276,49,20],[440,247,72,26],[394,293,35,25],[458,267,45,25],[415,306,61,47],[432,355,69,38]],outfits:[
+  [[190,129,29,17],[224,117,42,18],[199,143,21,16],[235,132,30,16],[209,149,30,30],[218,175,46,27]],
+  [[175,130,30,17],[211,119,42,18],[183,145,22,16],[223,133,30,16],[196,151,30,30],[206,177,46,27]],
+  [[181,115,30,16],[218,106,41,18],[188,129,23,16],[229,120,30,16],[199,137,30,30],[210,164,46,27]],
+  [[176,124,30,17],[211,113,42,18],[184,138,22,16],[222,127,30,16],[197,145,30,30],[206,171,46,27]],
+ ]},
+ 'dugu-xin':{collection:'historical-west-seven-v1',native:'governor',facialHair:true,thumbnail:[409,263,280,280],face:[[454,304,75,28],[548,306,51,30],[468,325,53,29],[553,328,43,28],[512,349,52,52],[489,402,84,43]],outfits:[
+  [[286,168,49,18],[342,166,28,18],[297,184,31,17],[346,183,23,18],[326,197,29,33],[302,229,51,28]],
+  [[215,173,50,18],[271,171,29,18],[226,189,32,17],[276,187,24,18],[255,201,29,33],[231,233,51,28]],
+  [[278,157,48,18],[333,158,28,18],[289,174,31,17],[337,174,23,18],[317,185,29,33],[294,216,50,28]],
+  [[222,153,49,18],[279,155,28,18],[233,171,31,17],[283,172,23,18],[263,183,29,33],[239,214,51,28]],
+ ]},
+ 'yang-zhong':{collection:'historical-west-seven-v1',native:'commander',facialHair:true,thumbnail:[405,260,285,285],face:[[437,304,87,27],[531,300,48,25],[457,325,54,24],[539,318,36,27],[508,343,49,51],[489,390,82,36]],outfits:[
+  [[273,127,44,18],[320,128,27,17],[281,142,30,16],[326,143,22,16],[309,156,28,30],[291,185,50,24]],
+  [[222,125,44,18],[268,125,28,17],[230,140,30,16],[274,140,22,16],[257,153,28,30],[239,181,50,24]],
+  [[239,133,43,17],[287,133,27,17],[247,148,29,16],[292,148,22,16],[275,160,28,30],[257,188,49,24]],
+  [[228,125,44,18],[274,125,28,17],[236,140,30,16],[280,140,22,16],[263,152,28,30],[245,180,50,24]],
+ ]},
+ 'yuan-baoju':{collection:'historical-west-seven-v1',native:'ruler',facialHair:true,thumbnail:[364,223,285,285],face:[[410,262,47,20],[471,255,70,24],[418,279,36,23],[480,277,48,24],[435,299,52,46],[429,341,72,37]],outfits:[
+  [[214,115,29,16],[250,114,38,17],[222,129,21,15],[260,128,27,16],[231,143,28,29],[227,171,40,25]],
+  [[188,117,29,16],[223,116,38,17],[196,131,21,15],[233,130,27,16],[205,145,28,29],[201,173,40,25]],
+  [[213,115,29,16],[248,114,38,17],[221,129,21,15],[258,128,27,16],[230,143,28,29],[226,171,40,25]],
+  [[187,131,29,16],[222,130,38,17],[195,145,21,15],[232,144,27,16],[204,158,28,29],[200,186,40,25]],
+ ]},
+ 'su-chuo':{collection:'historical-west-seven-v1',native:'civilian',facialHair:true,thumbnail:[367,229,285,285],face:[[400,282,49,24],[463,263,64,27],[413,301,35,26],[482,277,35,25],[441,307,49,51],[450,361,69,38]],outfits:[
+  [[199,156,28,17],[236,146,41,18],[207,171,22,17],[247,159,28,17],[222,179,29,30],[228,206,44,26]],
+  [[175,155,28,17],[212,145,41,18],[183,170,22,17],[223,158,28,17],[198,178,29,30],[204,205,44,26]],
+  [[194,140,28,17],[231,129,41,18],[202,155,22,17],[242,142,28,17],[217,163,29,30],[223,190,44,26]],
+  [[175,139,28,17],[212,128,41,18],[183,154,22,17],[223,141,28,17],[198,161,29,30],[204,188,44,26]],
+ ]},
+ 'yuwen-yu':{collection:'historical-west-seven-v1',native:'civilian',facialHair:false,thumbnail:[435,234,285,285],face:[[510,281,80,28],[606,286,47,24],[520,305,53,31],[607,316,36,29],[571,333,45,55],[556,397,52,34]],ageStages:[{"from":10,"until":16,"variant":"canonical"}],outfits:[
+  [[276,143,47,17],[331,149,26,16],[284,158,32,18],[335,164,23,18],[316,176,26,29],[302,209,37,23]],
+  [[270,144,47,17],[325,150,26,16],[278,159,32,18],[329,165,23,18],[310,176,26,29],[296,209,37,23]],
+  [[282,150,47,17],[337,155,26,16],[290,166,32,18],[341,170,23,18],[322,182,26,29],[308,214,37,23]],
+  [[277,150,47,17],[332,155,26,16],[285,166,32,18],[336,170,23,18],[317,182,26,29],[303,214,37,23]],
+ ]},
+ 'yuwen-jue':{collection:'historical-west-seven-v1',native:'civilian',facialHair:false,thumbnail:[411,293,300,300],face:[[482,346,82,25],[594,327,55,26],[485,373,70,39],[599,354,46,42],[560,408,49,39],[557,452,63,39]],ageStages:[{"from":0,"until":10,"variant":"canonical"},{"from":10,"until":16,"variant":"adolescent","thumbnail":[420,270,285,285],"face":[[487,309,78,25],[592,290,49,25],[493,332,64,33],[596,316,42,34],[560,363,46,38],[557,409,52,35]]}],outfits:[
+  [[264,142,44,17],[316,134,28,17],[274,156,29,21],[321,148,22,21],[302,171,28,25],[303,195,32,24]],
+  [[246,144,44,17],[298,136,28,17],[256,158,29,21],[303,150,22,21],[284,174,28,25],[285,198,32,24]],
+  [[263,138,44,17],[315,130,28,17],[273,152,29,21],[320,144,22,21],[301,168,28,25],[302,192,32,24]],
+  [[246,138,44,17],[298,130,28,17],[256,152,29,21],[303,144,22,21],[284,168,28,25],[285,192,32,24]],
+ ]},
 } as const satisfies Record<string,Registration>;
 export type HistoricalPortraitId=keyof typeof historicalPortraitRegistration;
 const offices:PortraitOffice[]=['civilian','governor','commander','ruler'];
@@ -104,17 +147,19 @@ const baselines=new Map<HistoricalPortraitId,ReturnType<typeof expressGenome>['f
 const rect=([x,y,width,height]:Bounds):PaintedRect=>({x,y,width,height});
 
 /** Same eight-layer contract, cache, health wash and cutout as every other person.
- * Only registered adult identities of the matching sex opt in. */
+ * Registered juveniles use explicit age stages; other identities require adulthood. */
 export function historicalPaintedRecipe(id:string|undefined,context:PortraitContext):PaintedRecipe|undefined {
- if(!id||!Object.hasOwn(historicalPortraitRegistration,id)||(context.life?.age??18)<16)return;
+ if(!id||!Object.hasOwn(historicalPortraitRegistration,id))return;
  const person=id as HistoricalPortraitId,registration:Registration=historicalPortraitRegistration[person];
  if(context.identity.sex!==(registration.sex??'male'))return;
- const native=context.office===registration.native,index=offices.indexOf(context.office),width=native?1024:512,height=native?1536:768;
+ const age=context.life?.age??18,stage=registration.ageStages?.find(s=>age>=s.from&&age<s.until);
+ if(age<16&&!stage)return;
+ const native=!!stage||!registration.ageStages&&context.office===registration.native,index=offices.indexOf(context.office),width=native?1024:512,height=native?1536:768;
  const cellX=native?0:index%2*width,cellY=native?0:Math.floor(index/2)*height;
- const bounds=native?registration.face:registration.outfits[index];
+ const bounds=stage?.face??(native?registration.face:registration.outfits[index]);
  const collection=registration.collection??'historical-five-v1';
- const prefix=import.meta.env.BASE_URL+'art/portraits/painted-c/'+collection+'/'+person+(native?'-canonical':'');
- const source=prefix+'-faces.png',palette=collection+':'+person+':'+context.office;
+ const prefix=import.meta.env.BASE_URL+'art/portraits/painted-c/'+collection+'/'+person+(stage?'-'+stage.variant:native?'-canonical':'');
+ const source=prefix+'-faces.png',palette=collection+':'+person+':'+(stage?.variant??context.office);
  const common={rig:'c-historical-'+person+'-v1',view:'authored-three-quarter',palette};
  const features=expressGenome(context.identity.genome).features;
  let baseline=baselines.get(person);if(!baseline){baseline=expressGenome(applyPortraitProfile(founderGenome(person),person)).features;baselines.set(person,baseline);}
@@ -135,6 +180,6 @@ export function historicalPaintedRecipe(id:string|undefined,context:PortraitCont
   return fixed(i)?part:adjustPaintedFeature(part,.5+features[parameters[i][0]]-baseline![parameters[i][0]],.5+features[parameters[i][1]]-baseline![parameters[i][1]]);
  })];
  const side=Math.max(maxX-minX,maxY-minY)*1.55;
- const thumbnail=native?normalized(rect(registration.thumbnail)):normalized({x:Math.max(0,(minX+maxX-side)/2),y:Math.max(0,(minY+maxY-side)/2),width:side,height:side});
+ const thumbnail=native?normalized(rect(stage?.thumbnail??registration.thumbnail)):normalized({x:Math.max(0,(minX+maxX-side)/2),y:Math.max(0,(minY+maxY-side)/2),width:side,height:side});
  const recipe:PaintedRecipe={version:1,...common,parts,thumbnail,facialHair:registration.facialHair??true,...(registration.coveredEye?{coveredEye:registration.coveredEye}:{})};validatePaintedRecipe(recipe);return recipe;
 }

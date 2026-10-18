@@ -8,16 +8,17 @@ import {parseWorld,serializeWorld} from '../core/save';
 
 const ids=Object.keys(historicalPortraitRegistration) as HistoricalPortraitId[];
 const offices=['civilian','governor','commander','ruler'] as const;
-it('only registered adult identities of the matching sex use the new art',()=>{
+it('only registered identities of matching sex and supported age use the new art',()=>{
  const context=portraitContext('gao-huan');
- expect(historicalPaintedRecipe('__proto__',context)).toBeUndefined();expect(historicalPaintedRecipe('dugu-xin',context)).toBeUndefined();
+ expect(historicalPaintedRecipe('__proto__',context)).toBeUndefined();expect(historicalPaintedRecipe('su-wei',context)).toBeUndefined();
  expect(historicalPaintedRecipe('gao-huan',{...context,identity:{...context.identity,sex:'female'}})).toBeUndefined();
  expect(historicalPaintedRecipe('gao-huan',{...context,life:{age:12,baselineAge:12,sickness:0,deceased:false}})).toBeUndefined();
  expect(approvedPaintedRecipe('guest-east',portraitContext('guest-east')).rig).not.toContain('c-historical-');
  for(const id of ids){
   const registered=historicalPortraitRegistration[id],sex='sex' in registered?registered.sex:'male';
   expect(historicalPaintedRecipe(id,{...portraitContext(id),identity:{...context.identity,sex:sex==='female'?'male':'female'}})).toBeUndefined();
-  expect(historicalPaintedRecipe(id,{...portraitContext(id),life:{age:12,baselineAge:12,sickness:0,deceased:false}})).toBeUndefined();
+  const young=historicalPaintedRecipe(id,{...portraitContext(id),life:{age:12,baselineAge:12,sickness:0,deceased:false}});
+  if('ageStages' in registered)expect(young?.parts[0].source).toContain(id+'-');else expect(young).toBeUndefined();
  }
 });
 it('new portraits follow actual offices and beard registration, including Gao Yang accession and Yuan Shanjian retirement',()=>{
@@ -35,8 +36,8 @@ it('new portraits follow actual offices and beard registration, including Gao Ya
  expect(approvedPaintedRecipe('yuan-shanjian',portraitContext('yuan-shanjian',world)).parts[0].source).toContain('/yuan-shanjian-faces.png');
 });
 it('stored genetic changes use the blank face and bounded features without moving the head, clothing or thumbnail',()=>{
- for(const id of ids)for(const office of offices){
-  const context={...portraitContext(id),office},neutral=approvedPaintedRecipe(id,context);
+ for(const id of ids)for(const age of id==='yuwen-jue'?[4,12,16]:id==='yuwen-yu'?[12,16]:[portraitContext(id).life!.age])for(const office of offices){
+  const original=portraitContext(id),context={...original,office,life:{...original.life!,age}},neutral=approvedPaintedRecipe(id,context);
   for(const value of [0,100]){
    const altered=structuredClone(context),before=structuredClone(altered);
    for(const pair of Object.values(altered.identity.genome.facial!))pair.fill(value);
@@ -71,7 +72,38 @@ it('all shared portrait entry points can render restored people without changing
   const context=portraitContext(id,world),recipe=approvedPaintedRecipe(id,context);
   expect(recipe.rig).toBe('c-historical-'+id+'-v1');
   expect(approvedPaintedRecipe(id,portraitContext(id,restored))).toEqual(recipe);
-  expect(approvedPaintedRecipe(id,{...context,life:{...context.life!,age:85,sickness:3,deceased:true}})).toEqual(recipe);
+  const aged=approvedPaintedRecipe(id,{...context,life:{...context.life!,age:85,sickness:3,deceased:true}});
+  if('ageStages' in historicalPortraitRegistration[id]){expect(aged.parts[0].source).toContain('/'+id+'-faces.png');expect(aged.parts[0].source).not.toBe(recipe.parts[0].source);}else expect(aged).toEqual(recipe);
  }
  expect(serializeWorld(world)).toBe(before);expect(restored).toEqual(world);
+});
+it('Western Wei opening portraits follow actual offices without changing the world',()=>{
+ const world=newCampaignWorld('yuan-baoju',undefined,'sandbox'),before=serializeWorld(world);
+ for(const [id,office] of [['li-bi','civilian'],['dugu-xin','commander'],['yang-zhong','civilian'],['yuan-baoju','ruler'],['su-chuo','civilian'],['yuwen-yu','civilian'],['yuwen-jue','civilian']] as const){
+  const context=portraitContext(id,world),recipe=approvedPaintedRecipe(id,context);
+  expect(context.office).toBe(office);expect(recipe.rig).toBe('c-historical-'+id+'-v1');
+  expect(recipe.parts[0].source).toContain('/historical-west-seven-v1/');
+  expect(recipe.facialHair).toBe(!id.startsWith('yuwen-'));
+ }
+ expect(serializeWorld(world)).toBe(before);
+});
+it('the two young relatives grow through authored age stages and only adult outfits follow offices',()=>{
+ const world=newCampaignWorld('yuan-baoju',undefined,'sandbox');
+ const source=(id:string)=>approvedPaintedRecipe(id,portraitContext(id,world)).parts[0].source;
+ expect(source('yuwen-yu')).toContain('yuwen-yu-canonical-faces.png');expect(source('yuwen-jue')).toContain('yuwen-jue-canonical-faces.png');
+ for(const [year,suffix] of [[551,'canonical'],[552,'adolescent'],[557,'adolescent'],[558,'adult']] as const){
+  world.day=(Date.UTC(year,0,1)-Date.UTC(546,0,1))/86400000;
+  expect(source('yuwen-jue')).toContain('yuwen-jue-'+(suffix==='adult'?'faces':suffix+'-faces')+'.png');
+  if(year>=552)expect(source('yuwen-yu')).toContain('yuwen-yu-faces.png');
+ }
+ const juvenile=portraitContext('yuwen-jue');
+ expect(approvedPaintedRecipe('yuwen-jue',{...juvenile,office:'ruler'})).toEqual(approvedPaintedRecipe('yuwen-jue',juvenile));
+ for(const id of ['yuwen-yu','yuwen-jue']){
+  const context=portraitContext(id,world),before=structuredClone(context),crops=new Set();
+  for(const office of offices){const r=approvedPaintedRecipe(id,{...context,office});expect(validatePaintedRecipe(r)).toHaveLength(8);crops.add(JSON.stringify(r.parts[0].crop));expect(r.facialHair).toBe(false);}
+  expect(crops.size).toBe(4);expect(context).toEqual(before);
+ }
+ const noInfant=historicalPaintedRecipe('yuwen-yu',{...portraitContext('yuwen-yu'),life:{age:4,baselineAge:12,sickness:0,deceased:false}});expect(noInfant).toBeUndefined();
+ world.life!.people['yuwen-jue'].death={day:0,cause:'illness'};
+ const deceased=portraitContext('yuwen-jue',world);expect(deceased.life?.age).toBe(4);expect(source('yuwen-jue')).toContain('yuwen-jue-canonical-faces.png');
 });

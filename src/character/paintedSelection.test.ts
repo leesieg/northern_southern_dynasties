@@ -15,7 +15,8 @@ it('全部开局、关系与架空人物接入绘制肖像，独立身份保留�
 });
 it('女性、幼年和老年素材不错误套用青年男性底稿；陌生行旅也有绘制肖像',()=>{
  expect(approvedPaintedRecipe('xiao-yan',portraitContext('xiao-yan')).rig).toContain('xiao-yan');
- for(const id of ['xiao-fangzhi','yuwen-jue'])expect(approvedPaintedRecipe(id,portraitContext(id)).rig).toContain('child');
+ expect(approvedPaintedRecipe('xiao-fangzhi',portraitContext('xiao-fangzhi')).rig).toContain('child');
+ expect(approvedPaintedRecipe('yuwen-jue',portraitContext('yuwen-jue')).parts[0].source).toContain('/yuwen-jue-canonical-faces.png');
  for(const p of relationshipPeople.filter(p=>p.sex==='female'))expect(approvedPaintedRecipe(p.id,portraitContext(p.id)).rig).not.toContain('young-adult');
  const context=portraitContext('gao-huan');context.identity.sex='female';expect(approvedPaintedRecipe('gao-huan',context).rig).toContain('female');
  expect(validatePaintedRecipe(approvedPaintedRecipe('traveller-99',portraitContext('traveller-99')))).toHaveLength(8);

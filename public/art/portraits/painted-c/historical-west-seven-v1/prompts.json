@@ -1,0 +1,249 @@
+{
+  "type": "historical-portrait-runtime-assets",
+  "date": "2026-10-18",
+  "mode": "built-in image_gen",
+  "status": "integrated-pending-human-visual-review",
+  "canvas": {
+    "width": 1024,
+    "height": 1536,
+    "cellWidth": 512,
+    "cellHeight": 768
+  },
+  "canonicals": [
+    {
+      "id": "li-bi",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/li-bi.png",
+      "output": "li-bi-canonical-faces.png",
+      "native": "commander",
+      "approximateOpeningAge": 52
+    },
+    {
+      "id": "dugu-xin",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/dugu-xin.png",
+      "output": "dugu-xin-canonical-faces.png",
+      "native": "governor",
+      "approximateOpeningAge": 43
+    },
+    {
+      "id": "yang-zhong",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yang-zhong.png",
+      "output": "yang-zhong-canonical-faces.png",
+      "native": "commander",
+      "approximateOpeningAge": 39
+    },
+    {
+      "id": "yuan-baoju",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuan-baoju.png",
+      "output": "yuan-baoju-canonical-faces.png",
+      "native": "ruler",
+      "approximateOpeningAge": 39
+    },
+    {
+      "id": "su-chuo",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/su-chuo.png",
+      "output": "su-chuo-canonical-faces.png",
+      "native": "civilian",
+      "approximateOpeningAge": 48
+    },
+    {
+      "id": "yuwen-yu",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-yu.png",
+      "output": "yuwen-yu-canonical-faces.png",
+      "native": "civilian",
+      "adultAtlasApproximateAge": 22
+    },
+    {
+      "id": "yuwen-jue",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-jue.png",
+      "output": "yuwen-jue-canonical-faces.png",
+      "native": "civilian",
+      "adultAtlasApproximateAge": 20
+    }
+  ],
+  "edits": [
+    {
+      "id": "li-bi",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/li-bi.png",
+      "output": "li-bi-faces.png",
+      "generated_file": "exec-03b4b526-292b-4cde-ae8d-810dd2d9b7f6.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\nMature 52-year-old strong long-square face, deep-set steady eyes, broad brows, prominent nose, close dark moustache and full short beard with slight grey. Distinctive charcoal sleeves, pale taupe cloak, dark brown leather and silver lamellar accents. CIVILIAN charcoal-brown robe, pale taupe scarf, modest hair bun, no armor/helmet. GOVERNOR brown-grey robe, ivory collar, simple dark official cap. COMMANDER the source's dark BROWN low dome helmet with shallow concentric curved ridges, ear/neck guards, silver small laced lamellae and taupe cloak. RULER restrained dark brown/red formal robe and upright court crown without beads. Keep the one hand near belt in all four, no raised hand covering forehead."
+    },
+    {
+      "id": "li-bi",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/li-bi.png",
+      "output": "li-bi-canonical-base.png",
+      "generated_file": "exec-28327e07-f6ed-44fe-81b3-4f5cef77b1ac.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "dugu-xin",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/dugu-xin.png",
+      "output": "dugu-xin-faces.png",
+      "generated_file": "exec-ef3ada0a-8f21-4a44-b946-81f0ea286d27.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\nHandsome naturally mature 43-year-old long oval face, precise straight brows, clear long dark eyes, straight nose, neat narrow moustache and small pointed chin beard. Distinctive vermilion red, muted purple, ochre and ivory palette. CIVILIAN red robe with purple edging, ivory collar, modest tied hair, no huge chest panel. GOVERNOR source's red patterned broad sleeves, purple/ochre front panel, two ivory shoulder bands and narrow dark gold-ribbed tall crown. COMMANDER modest silver small lamellar armor, red sleeves and small purple shoulder cloak, simple low helmet. RULER red/purple dignified ceremonial robe and restrained tall crown, no pearl curtains. Hands near waist with small dark seal where appropriate; no extra status text."
+    },
+    {
+      "id": "dugu-xin",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/dugu-xin.png",
+      "output": "dugu-xin-canonical-base.png",
+      "generated_file": "exec-3a8726a8-1a57-4310-98a7-7ef3e4d987a8.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "yang-zhong",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yang-zhong.png",
+      "output": "yang-zhong-faces.png",
+      "generated_file": "exec-7c098a20-c7eb-42a1-b8be-0b082f44afec.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\nStrong 39-year-old broad rectangular face, thick brows, confident dark eyes, full medium-length BLACK beard and moustache. Burnt-orange/rust cloak, dark brown armor and silver iron accents. CIVILIAN dark brown robe and short rust-red shoulder cloth, hair bun without helmet. GOVERNOR ivory-collared brown robe and restrained rust edging, simple dark official cap. COMMANDER silver segmented helmet with SHORT compact tan plume, silver-grey small shoulder lamellae, dark brown torso and rust cloak matching source. RULER formal dark brown/red robe and restrained upright crown. No later Sui dragon emperor emblems. All plumes entirely inside cell with paper above. One hand at sheathed sword hilt, other near belt, no extended blades."
+    },
+    {
+      "id": "yang-zhong",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yang-zhong.png",
+      "output": "yang-zhong-canonical-base.png",
+      "generated_file": "exec-b9236a63-05e4-43ff-8471-a2afbdbd6cf8.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "yuan-baoju",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuan-baoju.png",
+      "output": "yuan-baoju-faces.png",
+      "generated_file": "exec-c4ae56e3-9ba0-4f56-bc0b-bf5eb9a7e5a9.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\nNaturally mature 39-year-old fuller oval face, straight brows, attentive eyes, short neat moustache and narrow small chin beard; preserve source face. Red broad robe, jade-green edging, layered ivory drape and rust lower robe. CIVILIAN quiet red robe with narrow green edging, ivory inner collar, plain hair bun. GOVERNOR red/green formal robe with simple dark court cap. COMMANDER modest silver small lamellar armor over red sleeves and dark green shoulder cloak, practical helmet. RULER source's vermilion robe, jade-green lapels and ivory folds, pale fan-like crown with narrow gold ribs on dark green base and little cicada fitting. That crown is 通天冠 artistic direction: NO horizontal mian board, NO hanging beads or side pearl curtains. Slim dark green sheathed ceremonial sword held at hip, hands remain inside all cells."
+    },
+    {
+      "id": "yuan-baoju",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuan-baoju.png",
+      "output": "yuan-baoju-canonical-base.png",
+      "generated_file": "exec-6b267919-e4b4-49a4-804e-47a4beeb9a94.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "su-chuo",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/su-chuo.png",
+      "output": "su-chuo-faces.png",
+      "generated_file": "exec-5ec97c2c-4c78-4b88-a63f-c3c53f22611c.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\n48-year-old slender angular scholarly face, high forehead, serious attentive eyes, long straight nose, thin moustache and long narrow pointed beard with minor grey at sides; plain sober grey/ivory clothing. CIVILIAN source's warm stone-grey wide sleeves, dark brown-grey lapels, ivory collar, modest upright brown scholarly hair crown, two small pale scrolls and one writing brush. GOVERNOR simple grey-brown official robe and dark cap, one scroll. COMMANDER modest silver-grey lamellar armor over plain grey cloth with practical low cap/helmet, sheathed sword, same scholar's face, no huge muscles. RULER restrained grey/ivory ceremonial robe with dark edging and narrow upright crown, no gold excess. Healthy thoughtful late forties, no forced illness or death symbolism."
+    },
+    {
+      "id": "su-chuo",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/su-chuo.png",
+      "output": "su-chuo-canonical-base.png",
+      "generated_file": "exec-e69a9bb3-cfa0-461a-8ac8-bd1f20ca000d.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "yuwen-yu",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-yu.png",
+      "output": "yuwen-yu-faces.png",
+      "generated_file": "exec-71f01ce3-5626-4f9f-b6f0-46a2f784879d.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\nCreate an ADULT AGE-PROGRESSION of the source's 12-year-old BOY into a believable approximately 22-year-old Yuwen Yu, keeping recognizable dark almond eyes, fine brows, straight small nose line, hairline, warm brown-black hair and slender oval face. Slightly longer and firmer adult jaw, mature proportions and shoulders; not a child wearing adult clothes. Clean-shaven young man in all cells, NO beard or moustache, not forty years old, not an unrelated adult face. Rust BRICK-RED robe, warm dark-grey geometric edging, small old-bronze curved bird/wing hair ornament. CIVILIAN rust-red robe and small hair ornament, GOVERNOR rust-red/charcoal official robe with modest dark cap, COMMANDER practical iron lamellar armor over rust sleeves and dark cloak, low simple helmet, RULER restrained red ceremonial robe with dark geometric edging and a modest upright crown without pearls. No assumption that he has actually acquired an office or ascended: these are potential game-state wardrobes only."
+    },
+    {
+      "id": "yuwen-yu",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-yu.png",
+      "output": "yuwen-yu-canonical-base.png",
+      "generated_file": "exec-d69d79c0-9772-41a3-bb17-6e8de0f79b02.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "yuwen-jue",
+      "kind": "wardrobe",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-jue.png",
+      "output": "yuwen-jue-faces.png",
+      "generated_file": "exec-39f73107-8ad4-4946-9546-28970698e69b.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit atlas for the existing game portrait compositor.\nReference image is the SAME character's approved portrait; preserve identity, ink/watercolor style and ivory paper. Create EXACTLY ONE 1024x1536 PNG with a precise 2x2 grid of FOUR 512x768 portrait cells, no gaps, no frame, no dividing lines or text. Each cell contains the SAME person, face, hairstyle direction, three-quarter head pose and head scale, standing waist-to-upper-thigh half-length, all crown/helmet/plume tips and both hands fully within its own cell. Order: TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign. Center each person in their cell, keep eye line near local y=180, face readable for square avatar, moderate head size. No montage overlap between cells, no extreme poses. Keep all hands near waist. Pale uniform ivory paper in all four backgrounds. Fine irregular hand-ink contours, transparent muted watercolor/mineral pigment, subtle paper grain, natural flat anatomy. No map, landscape, letters, logo, watermark, blood, theatrical fantasy armor, CGI or modern anime. Sixth-century Northern dynasties costume artistic interpretation; crowns/armor do not grant actual office. No giant pauldrons or later Ming/Qing dragon robes.\nCreate an ADULT AGE-PROGRESSION of this four-year-old BOY into a believable approximately 20-year-old Yuwen Jue. Preserve recognizable big dark almond eyes, soft brow arcs, nose direction, hairline and calm alert temperament, with longer adult oval face, firmer jaw, adult shoulders and hands. Not a child in adult clothes and not an unrelated mature general. Clean-shaven young adult man, NO beard, moustache or stubble. Distinctive muted teal-blue diamond-patterned robe, dark indigo lapels, ivory undergarment, brick-red sash and white tie. CIVILIAN this blue/ivory/red palette with modest adult hair binding; GOVERNOR blue/indigo official robe and simple dark cap; COMMANDER practical silver small lamellar armor over teal sleeves, short indigo cloak, plain low helmet; RULER restrained teal/indigo ceremonial robe, ivory inner folds, red sash and a modest upright crown without pearls. Future adult game-state wardrobes only; no fixed accession, no later history enforced."
+    },
+    {
+      "id": "yuwen-jue",
+      "kind": "canonical-blank",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-jue.png",
+      "output": "yuwen-jue-canonical-base.png",
+      "generated_file": "exec-3a1035e2-065b-4281-8cb7-095293bb8abe.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    },
+    {
+      "id": "yuwen-jue",
+      "kind": "adolescent",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-west-seven-546-v1/yuwen-jue.png",
+      "output": "yuwen-jue-adolescent-faces.png",
+      "generated_file": "exec-f32b0535-74fb-4af0-b563-25da29e72294.png",
+      "prompt": "Use case: identity-preserve. Asset: original adolescent age-stage portrait for the existing historical RPG, 1024x1536 2:3.\nAge-progress this exact four-year-old Yuwen Jue into a recognizable TWELVE-year-old boy. Same dark almond eyes, brow/nose direction, dark hairline, blue/teal diamond-patterned robe, dark indigo lapel, ivory inner robe, red sash and white tie, same three-quarter standing waist-to-upper-thigh composition, quiet alert look and hands gently joined near waist. Make a natural preteen oval face, less round cheeks than age four, longer nose/jaw but smooth immature features, slender age-appropriate shoulders and hands, NO beard/moustache/stubble, NOT a miniature adult. Hair tied in compact youthful half-bun with ivory cloth binding, no tall ceremonial crown, weapon or adult official regalia. Preserve fine hand-ink and delicate transparent watercolor style and clean uniform pale ivory paper background. Both eyes and all hands/head details visible, complete hair with at least 45px paper above. Single portrait, no grid, no scenery, no text/logos/watermark. Clothing and identity remain recognizable; this does not change game birth year or grant an office."
+    },
+    {
+      "id": "li-bi",
+      "kind": "wardrobe-blank",
+      "reference": "li-bi-faces.png",
+      "output": "li-bi-base.png",
+      "generated_file": "exec-e873790f-760f-4d06-99f0-ef8e80e96a7f.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "dugu-xin",
+      "kind": "wardrobe-blank",
+      "reference": "dugu-xin-faces.png",
+      "output": "dugu-xin-base.png",
+      "generated_file": "exec-d934a80a-ead3-41e1-a3be-ccd6a7741a51.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "yang-zhong",
+      "kind": "wardrobe-blank",
+      "reference": "yang-zhong-faces.png",
+      "output": "yang-zhong-base.png",
+      "generated_file": "exec-fd8c0729-c40b-41f9-8dab-e364b24a9966.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "yuan-baoju",
+      "kind": "wardrobe-blank",
+      "reference": "yuan-baoju-faces.png",
+      "output": "yuan-baoju-base.png",
+      "generated_file": "exec-5357b14f-91b3-4cbe-b581-a7bb0e9f9ece.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "su-chuo",
+      "kind": "wardrobe-blank",
+      "reference": "su-chuo-faces.png",
+      "output": "su-chuo-base.png",
+      "generated_file": "exec-d36c1df2-9aec-44b9-925b-b46b36128638.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "yuwen-yu",
+      "kind": "wardrobe-blank",
+      "reference": "yuwen-yu-faces.png",
+      "output": "yuwen-yu-base.png",
+      "generated_file": "exec-494f3542-577a-4f40-b7af-ef6a4d02876a.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "yuwen-jue",
+      "kind": "wardrobe-blank",
+      "reference": "yuwen-jue-faces.png",
+      "output": "yuwen-jue-base.png",
+      "generated_file": "exec-d668c4dc-48cc-4a22-bb00-8fd7888fe73f.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects.\nThis is a FOUR-CELL 2x2 outfit atlas. Erase those internal facial features from ALL FOUR faces, preserving each cell's exact 512x768 position, all four head shapes, crowns, beards, garments, hands, props and paper. Do not alter the 1024x1536 grid or any cell placement."
+    },
+    {
+      "id": "yuwen-jue",
+      "kind": "adolescent-blank",
+      "reference": "yuwen-jue-adolescent-faces.png",
+      "output": "yuwen-jue-adolescent-base.png",
+      "generated_file": "exec-8331868d-492e-46e3-96fe-7be680ed9c99.png",
+      "prompt": "Use case: precise-object-edit. Asset: matching blank-face base for layered genetic portrait composition.\nEdit THIS exact portrait. Erase ONLY the internal visible facial features: both eyebrows, both eyes including pupils/lashes/crease, nose outlines/shading and lips/mouth contours. Replace with natural smooth skin-colored paper/watercolor wash matching adjacent face, while preserving exact face silhouette, skin tone, head shape, ears, hairline, all hair, any beard/moustache OUTSIDE the mouth area, every headwear/helmet detail, clothing, pose, hands, props, background, dimensions and placement. Do not redraw, resize, move or improve any other part. No residual eyeballs, nostrils or mouth line. This is an intentional faceless layer base, not the final portrait. Keep original 1024x1536 canvas. No text or new objects."
+    }
+  ]
+}
