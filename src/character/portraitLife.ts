@@ -10,6 +10,7 @@ export function paintLifeLayer(canvas:HTMLCanvasElement,recipe:PaintedRecipe,lif
  const a=lifeAppearance(life),w=canvas.width,h=canvas.height;
  const part=(slot:string)=>recipe.parts.find(p=>p.slot===slot)!.place;
  const left=part('eye-left'),right=part('eye-right'),nose=part('nose'),mouth=part('mouth');
+ const covered=recipe.coveredEye?part('eye-'+recipe.coveredEye):undefined;
  const eyes=[left,right].map(b=>({x:(b.x+b.width/2)*w,y:(b.y+b.height/2)*h,width:b.width*w,height:b.height*h}));
  const centerX=(eyes[0].x+eyes[1].x)/2,eyeY=(eyes[0].y+eyes[1].y)/2,span=Math.abs(eyes[1].x-eyes[0].x);
  const mouthY=(mouth.y+mouth.height/2)*h,faceH=Math.max(span,mouthY-eyeY),faceW=span*1.5;
@@ -18,6 +19,7 @@ export function paintLifeLayer(canvas:HTMLCanvasElement,recipe:PaintedRecipe,lif
  if(a.silver>0){
   const pixels=ctx.getImageData(0,0,w,h),data=pixels.data;
   for(let y=Math.max(0,Math.floor(eyeY-faceH*.9));y<Math.min(h,mouthY+faceH*.9);y++)for(let x=Math.max(0,Math.floor(centerX-faceW));x<Math.min(w,centerX+faceW);x++){
+   if(covered&&x>=covered.x*w&&x<(covered.x+covered.width)*w&&y>=covered.y*h&&y<(covered.y+covered.height)*h)continue;
    const dx=(x-centerX)/faceW,dy=(y-eyeY)/faceH;
    const temple=Math.max(0,1-Math.abs(Math.abs(dx)-.85)/.18)*Math.max(0,1-Math.abs(dy+.25)/.7);
    const beard=((recipe.facialHair??life.beard)===false?0:1)*Math.max(0,1-Math.abs(dx)/.52)*Math.max(0,1-Math.abs(dy-1.45)/.55);
@@ -31,6 +33,7 @@ export function paintLifeLayer(canvas:HTMLCanvasElement,recipe:PaintedRecipe,lif
  const line=(x:number,y:number,dx:number,dy:number,opacity:number)=>{ctx.strokeStyle=`rgba(94,68,52,${opacity})`;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+dx*.55,y+dy*.25+1.5*w/768,x+dx,y+dy);ctx.stroke();};
  const ink=(a.wrinkles*.12+a.additionalAge*.17);
  for(const [i,e] of eyes.entries()){
+  if(recipe.coveredEye===(i===0?'left':'right'))continue;
   const outward=i===0?-1:1;
   for(let k=0;k<3;k++)line(e.x+outward*e.width*.3,e.y+k*2*h/1152,outward*e.width*.24,(k-1)*3*h/1152,ink);
   line(e.x-e.width*.28,e.y+e.height*.34,e.width*.52,1,ink*.65+a.pallor*.17);
@@ -41,8 +44,11 @@ export function paintLifeLayer(canvas:HTMLCanvasElement,recipe:PaintedRecipe,lif
   line((nose.x+nose.width)*w,(nose.y+nose.height*.75)*h,span*.12,faceH*.4,ink);
  }
  if(a.pallor){
+  ctx.save();
+  if(covered){ctx.beginPath();ctx.rect(0,0,w,h);ctx.rect(covered.x*w,covered.y*h,covered.width*w,covered.height*h);ctx.clip('evenodd');}
   const wash=ctx.createRadialGradient(centerX,eyeY+faceH*.35,span*.1,centerX,eyeY+faceH*.35,faceW);
   wash.addColorStop(0,`rgba(171,177,157,${a.pallor*.2})`);wash.addColorStop(1,'rgba(171,177,157,0)');ctx.fillStyle=wash;ctx.fillRect(centerX-faceW,eyeY-faceH*.5,faceW*2,faceH*2);
+  ctx.restore();
  }
  ctx.restore();
  if(a.deceased){const memory=document.createElement('canvas');memory.width=w;memory.height=h;memory.getContext('2d')!.drawImage(canvas,0,0);ctx.save();ctx.filter='grayscale(1) sepia(.22)';ctx.drawImage(memory,0,0);ctx.restore();}

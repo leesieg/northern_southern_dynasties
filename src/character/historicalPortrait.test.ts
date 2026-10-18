@@ -8,14 +8,15 @@ import {parseWorld,serializeWorld} from '../core/save';
 
 const ids=Object.keys(historicalPortraitRegistration) as HistoricalPortraitId[];
 const offices=['civilian','governor','commander','ruler'] as const;
-it('only registered adult male identities use the new art; other relatives, women and children keep their own rigs',()=>{
+it('only registered adult identities of the matching sex use the new art',()=>{
  const context=portraitContext('gao-huan');
  expect(historicalPaintedRecipe('__proto__',context)).toBeUndefined();expect(historicalPaintedRecipe('dugu-xin',context)).toBeUndefined();
  expect(historicalPaintedRecipe('gao-huan',{...context,identity:{...context.identity,sex:'female'}})).toBeUndefined();
  expect(historicalPaintedRecipe('gao-huan',{...context,life:{age:12,baselineAge:12,sickness:0,deceased:false}})).toBeUndefined();
- expect(approvedPaintedRecipe('yuwen-hu',portraitContext('yuwen-hu')).rig).not.toContain('c-historical-');
+ expect(approvedPaintedRecipe('guest-east',portraitContext('guest-east')).rig).not.toContain('c-historical-');
  for(const id of ids){
-  expect(historicalPaintedRecipe(id,{...portraitContext(id),identity:{...context.identity,sex:'female'}})).toBeUndefined();
+  const registered=historicalPortraitRegistration[id],sex='sex' in registered?registered.sex:'male';
+  expect(historicalPaintedRecipe(id,{...portraitContext(id),identity:{...context.identity,sex:sex==='female'?'male':'female'}})).toBeUndefined();
   expect(historicalPaintedRecipe(id,{...portraitContext(id),life:{age:12,baselineAge:12,sickness:0,deceased:false}})).toBeUndefined();
  }
 });
@@ -43,10 +44,24 @@ it('stored genetic changes use the blank face and bounded features without movin
    expect(validatePaintedRecipe(recipe)).toHaveLength(8);expect(altered).toEqual(input);
    expect(recipe.parts[1].source).toContain('-base.png');expect(recipe.parts[1].place).toEqual(neutral.parts[1].place);
    expect(recipe.parts[0]).toEqual(neutral.parts[0]);expect(recipe.thumbnail).toEqual(neutral.thumbnail);
-   expect(recipe.parts.find(p=>p.slot==='eye-left')!.place).not.toEqual(neutral.parts.find(p=>p.slot==='eye-left')!.place);
+   const visible=recipe.coveredEye==='left'?'eye-right':'eye-left';
+   expect(recipe.parts.find(p=>p.slot===visible)!.place).not.toEqual(neutral.parts.find(p=>p.slot===visible)!.place);
+   if(recipe.coveredEye)for(const slot of ['eye-'+recipe.coveredEye,'brow-'+recipe.coveredEye])expect(recipe.parts.find(p=>p.slot===slot)).toEqual(neutral.parts.find(p=>p.slot===slot));
    expect(before.identity.genome).toEqual(context.identity.genome);
   }
  }
+});
+it('third batch keeps the woman female and the eye patch fixed without inventing offices, illness or mutations',()=>{
+ const world=newCampaignWorld('xiao-yi',undefined,'sandbox'),before=serializeWorld(world);
+ for(const [id,sex,office] of [['murong-shaozong','male','civilian'],['wei-xiaokuan','male','civilian'],['yuwen-hu','male','civilian'],['lou-zhaojun','female','civilian'],['xiao-yi','male','governor']] as const){
+  const context=portraitContext(id,world),recipe=approvedPaintedRecipe(id,context);
+  expect(context.identity.sex).toBe(sex);expect(context.office).toBe(office);
+  expect(recipe.parts[0].source).toContain('/historical-third-v1/'+id);
+  expect(recipe.facialHair).toBe(sex==='male');expect(recipe.coveredEye).toBe(id==='xiao-yi'?'left':undefined);
+  const native=approvedPaintedRecipe(id,{...context,office:historicalPortraitRegistration[id].native});
+  expect(native.parts[0].source).toContain('-canonical-faces.png');
+ }
+ expect(serializeWorld(world)).toBe(before);
 });
 it('all shared portrait entry points can render restored people without changing their world, health, genes or date',()=>{
  const world=newCampaignWorld('gao-huan',undefined,'sandbox');

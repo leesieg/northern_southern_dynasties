@@ -10,7 +10,7 @@ it.each(Object.keys(historicalPortraitRegistration))('%s preserves the approved 
  const native=approvedPaintedRecipe(id,{...context,office:historicalPortraitRegistration[id].native});
  const body=native.parts.find(p=>p.slot==='body');
  const registration=historicalPortraitRegistration[id],collection=registration.collection??'historical-five-v1';
- const study=collection==='historical-four-v1'?'historical-four-546-v1':'historical-five-546-v1';
+ const study=collection==='historical-third-v1'?'historical-third-546-v1':collection==='historical-four-v1'?'historical-four-546-v1':'historical-five-546-v1';
  expect(readFileSync('public'+body.source)).toEqual(readFileSync('docs/art-direction/portrait-studies/'+study+'/'+id+'.png'));
  for(const office of ['civilian','governor','commander','ruler']){
   const recipe=approvedPaintedRecipe(id,{...context,office});

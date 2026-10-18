@@ -5,7 +5,7 @@ import {adjustPaintedFeature,validatePaintedRecipe,type PaintedPart,type Painted
 
 type Bounds=readonly [x:number,y:number,width:number,height:number];
 type Face=readonly [Bounds,Bounds,Bounds,Bounds,Bounds,Bounds];
-interface Registration {native:PortraitOffice;face:Face;thumbnail:Bounds;outfits:readonly [Face,Face,Face,Face];collection?:'historical-four-v1';facialHair?:boolean}
+interface Registration {native:PortraitOffice;face:Face;thumbnail:Bounds;outfits:readonly [Face,Face,Face,Face];collection?:'historical-four-v1'|'historical-third-v1';facialHair?:boolean;sex?:'female';coveredEye?:'left'|'right'}
 /** Observed against the approved 1024×1536 originals and EACH 512×768 outfit cell.
  * Left/right are image coordinates. These are art anchors, never inherited genes.
  * Outfit order: civilian, official, commander, sovereign. Original art remains the
@@ -65,6 +65,36 @@ export const historicalPortraitRegistration={
   [[210,159,34,18],[251,158,35,19],[216,177,26,16],[255,176,29,17],[232,189,30,34],[233,224,45,24]],
   [[168,175,34,18],[209,173,35,19],[175,194,26,16],[214,191,29,17],[191,205,30,34],[192,240,45,24]],
  ]},
+ 'murong-shaozong':{collection:'historical-third-v1',native:'commander',thumbnail:[422,196,295,295],face:[[486,249,86,28],[582,271,48,29],[502,273,57,26],[583,290,37,23],[545,296,56,62],[493,352,105,45]],outfits:[
+  [[280,156,54,20],[342,170,33,18],[290,174,38,18],[345,183,26,17],[320,187,34,38],[281,226,69,34]],
+  [[257,157,54,20],[318,171,33,18],[266,175,38,18],[321,184,26,17],[295,188,34,38],[257,227,69,34]],
+  [[263,123,50,18],[317,137,30,17],[272,139,35,17],[320,150,24,16],[298,155,31,36],[264,194,65,32]],
+  [[271,142,52,20],[330,156,32,18],[280,160,37,18],[333,171,25,17],[310,177,33,37],[274,215,67,33]],
+ ]},
+ 'wei-xiaokuan':{collection:'historical-third-v1',native:'commander',thumbnail:[414,210,285,285],face:[[480,241,78,29],[569,240,44,29],[487,265,64,27],[575,267,35,26],[541,284,55,53],[492,334,108,47]],outfits:[
+  [[267,160,44,16],[326,157,30,17],[276,176,35,17],[333,173,22,17],[309,187,30,34],[282,220,59,27]],
+  [[257,163,44,16],[317,160,30,17],[266,178,35,17],[324,175,22,17],[299,189,30,34],[272,221,59,27]],
+  [[261,131,43,16],[317,127,29,17],[269,145,34,17],[326,141,21,17],[303,156,29,33],[278,189,57,26]],
+  [[256,131,43,16],[315,127,29,17],[264,145,34,17],[323,141,21,17],[297,155,29,33],[272,188,57,26]],
+ ]},
+ 'yuwen-hu':{collection:'historical-third-v1',native:'commander',thumbnail:[413,194,285,285],face:[[487,247,82,31],[578,234,49,31],[504,272,54,28],[583,260,38,28],[553,281,52,55],[527,336,103,47]],outfits:[
+  [[282,165,60,21],[348,156,35,20],[297,183,37,21],[357,172,25,20],[334,194,31,40],[308,232,73,30]],
+  [[259,169,61,21],[326,158,36,20],[274,188,37,20],[335,176,25,20],[310,199,31,40],[285,236,73,30]],
+  [[262,130,59,20],[326,119,35,19],[276,149,36,20],[336,137,24,19],[311,159,31,38],[286,195,71,30]],
+  [[268,154,59,20],[332,143,35,19],[282,173,36,20],[342,161,24,19],[318,183,31,38],[291,218,71,30]],
+ ]},
+ 'lou-zhaojun':{collection:'historical-third-v1',native:'civilian',sex:'female',facialHair:false,thumbnail:[414,283,285,285],face:[[465,327,74,25],[555,344,61,26],[475,351,53,29],[561,367,46,27],[520,378,48,62],[490,446,78,37]],outfits:[
+  [[272,194,49,20],[331,208,35,19],[280,212,35,18],[336,225,28,17],[313,228,29,36],[289,267,48,24]],
+  [[223,193,49,20],[282,207,35,19],[231,211,35,18],[287,224,28,17],[264,227,29,36],[240,266,48,24]],
+  [[272,149,49,20],[331,163,35,19],[280,167,35,18],[336,180,28,17],[313,183,29,36],[289,222,48,24]],
+  [[232,171,49,20],[291,184,35,19],[240,189,35,18],[296,201,28,17],[273,205,29,36],[249,243,48,24]],
+ ]},
+ 'xiao-yi':{collection:'historical-third-v1',native:'governor',coveredEye:'left',thumbnail:[386,220,300,300],face:[[457,250,77,24],[552,280,61,24],[450,263,86,62],[557,301,50,30],[513,327,49,48],[472,375,96,49]],outfits:[
+  [[242,154,57,15],[314,175,40,17],[236,164,62,46],[316,189,35,20],[279,213,34,30],[257,239,67,30]],
+  [[200,156,57,15],[272,176,40,17],[194,166,62,46],[277,187,36,20],[238,215,34,30],[216,242,68,30]],
+  [[241,137,57,15],[311,160,40,17],[235,147,62,46],[311,171,35,20],[277,195,34,30],[255,219,67,30]],
+  [[210,150,57,15],[280,173,40,17],[204,160,62,46],[280,184,35,20],[245,210,34,30],[223,238,67,30]],
+ ]},
 } as const satisfies Record<string,Registration>;
 export type HistoricalPortraitId=keyof typeof historicalPortraitRegistration;
 const offices:PortraitOffice[]=['civilian','governor','commander','ruler'];
@@ -74,10 +104,11 @@ const baselines=new Map<HistoricalPortraitId,ReturnType<typeof expressGenome>['f
 const rect=([x,y,width,height]:Bounds):PaintedRect=>({x,y,width,height});
 
 /** Same eight-layer contract, cache, health wash and cutout as every other person.
- * Only registered adult male identities opt in; no other person borrows their art. */
+ * Only registered adult identities of the matching sex opt in. */
 export function historicalPaintedRecipe(id:string|undefined,context:PortraitContext):PaintedRecipe|undefined {
- if(!id||!Object.hasOwn(historicalPortraitRegistration,id)||context.identity.sex!=='male'||(context.life?.age??18)<16)return;
+ if(!id||!Object.hasOwn(historicalPortraitRegistration,id)||(context.life?.age??18)<16)return;
  const person=id as HistoricalPortraitId,registration:Registration=historicalPortraitRegistration[person];
+ if(context.identity.sex!==(registration.sex??'male'))return;
  const native=context.office===registration.native,index=offices.indexOf(context.office),width=native?1024:512,height=native?1536:768;
  const cellX=native?0:index%2*width,cellY=native?0:Math.floor(index/2)*height;
  const bounds=native?registration.face:registration.outfits[index];
@@ -89,7 +120,9 @@ export function historicalPaintedRecipe(id:string|undefined,context:PortraitCont
  let baseline=baselines.get(person);if(!baseline){baseline=expressGenome(applyPortraitProfile(founderGenome(person),person)).features;baselines.set(person,baseline);}
  // Approved art represents the founder's existing genes. Only a real difference
  // in the stored genes changes its proportions; never write a new founder genome.
- const changed=parameters.some(pair=>pair.some(g=>Math.abs(features[g]-baseline![g])>1e-9));
+ // The covered eye/brow samples contain the patch, not a visible facial feature.
+ const fixed=(i:number)=>registration.coveredEye==='left'&&(i===0||i===2)||registration.coveredEye==='right'&&(i===1||i===3);
+ const changed=parameters.some((pair,i)=>!fixed(i)&&pair.some(g=>Math.abs(features[g]-baseline![g])>1e-9));
  const normalized=(b:PaintedRect):PaintedRect=>({x:b.x/width,y:b.y/height,width:b.width/width,height:b.height/height});
  const crop=(b:PaintedRect):PaintedRect=>({...b,x:b.x+cellX,y:b.y+cellY});
  const body:PaintedPart={...common,id:palette+':body',slot:'body',source,crop:{x:cellX,y:cellY,width,height},place:{x:0,y:0,width:1,height:1}};
@@ -97,8 +130,11 @@ export function historicalPaintedRecipe(id:string|undefined,context:PortraitCont
  const maxX=Math.max(...bounds.map(b=>b[0]+b[2]))+padding,maxY=Math.max(...bounds.map(b=>b[1]+b[3]))+padding;
  const headBox={x:minX,y:minY,width:maxX-minX,height:maxY-minY};
  const head:PaintedPart={...common,id:palette+':head',slot:'head',source:changed?prefix+'-base.png':source,crop:crop(headBox),place:normalized(headBox),mask:{kind:'polygon',points:[[.04,0],[.96,0],[1,.04],[1,.96],[.96,1],[.04,1],[0,.96],[0,.04]],softness:.025}};
- const parts=[body,head,...bounds.map((b,i)=>adjustPaintedFeature({...common,id:palette+':'+slots[i],slot:slots[i],source,crop:crop(rect(b)),place:normalized(rect(b)),mask:{kind:'polygon',points:[[.04,.04],[.96,.04],[.99,.2],[.99,.8],[.96,.96],[.04,.96],[.01,.8],[.01,.2]],softness:.025}},.5+features[parameters[i][0]]-baseline![parameters[i][0]],.5+features[parameters[i][1]]-baseline![parameters[i][1]]))];
+ const parts=[body,head,...bounds.map((b,i)=>{
+  const part:PaintedPart={...common,id:palette+':'+slots[i],slot:slots[i],source,crop:crop(rect(b)),place:normalized(rect(b)),mask:{kind:'polygon',points:[[.04,.04],[.96,.04],[.99,.2],[.99,.8],[.96,.96],[.04,.96],[.01,.8],[.01,.2]],softness:.025}};
+  return fixed(i)?part:adjustPaintedFeature(part,.5+features[parameters[i][0]]-baseline![parameters[i][0]],.5+features[parameters[i][1]]-baseline![parameters[i][1]]);
+ })];
  const side=Math.max(maxX-minX,maxY-minY)*1.55;
  const thumbnail=native?normalized(rect(registration.thumbnail)):normalized({x:Math.max(0,(minX+maxX-side)/2),y:Math.max(0,(minY+maxY-side)/2),width:side,height:side});
- const recipe:PaintedRecipe={version:1,...common,parts,thumbnail,facialHair:registration.facialHair??true};validatePaintedRecipe(recipe);return recipe;
+ const recipe:PaintedRecipe={version:1,...common,parts,thumbnail,facialHair:registration.facialHair??true,...(registration.coveredEye?{coveredEye:registration.coveredEye}:{})};validatePaintedRecipe(recipe);return recipe;
 }

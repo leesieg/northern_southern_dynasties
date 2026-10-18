@@ -10,7 +10,7 @@ export interface PaintedPart {
  /** Remove edge-connected paper from opaque painted head sheets after applying the silhouette. */
  removePaper?:boolean;
 }
-export interface PaintedRecipe {version:1;rig:string;view:string;palette:string;parts:PaintedPart[];thumbnail?:PaintedRect;facialHair?:boolean}
+export interface PaintedRecipe {version:1;rig:string;view:string;palette:string;parts:PaintedPart[];thumbnail?:PaintedRect;facialHair?:boolean;coveredEye?:'left'|'right'}
 export const paintedOrder:PaintedSlot[]=['body','head','brow-left','brow-right','eye-left','eye-right','nose','mouth','headwear'];
 export function validatePaintedRecipe(recipe:PaintedRecipe){
  if(recipe.version!==1)throw new Error('未知立绘版本');
