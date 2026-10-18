@@ -1,5 +1,5 @@
 import {updateBanner} from '../ui/heraldry';
-import {realmOrigin as bannerOrigin} from '../core/polityRuntime';
+import {realmBanner as bannerOrigin} from '../core/polityRuntime';
 import {armyMarkerAppearance} from './armyMarkerAppearance';
 import {paperIcon} from './artSample/paperSymbols';
 import {cityAnnotationOffset} from './three/cityScreenBounds';
@@ -35,7 +35,7 @@ import { diplomaticColor } from '../core/diplomacy';
 import {realmReason,canMarchThrough,capital} from '../core/realm';
 import type { Army,RealmId } from '../core/realm';
 import type { ExpressionSpecification } from 'maplibre-gl';
-import { regimeName } from '../core/government';
+import {mapRealmName} from './realmPresentation';
 import { ArtIcon } from '../ui/ArtIcon';
 import {OngoingItemsDialog} from '../ui/OngoingFlags';
 import {estateName} from '../core/construction';
@@ -164,7 +164,7 @@ export function WorldMap(props:Props){
         let marker=realmLabels.get(r);
         if(!marker){const element=document.createElement('button');element.className='atlas-geographic-label realm';element.style.pointerEvents='auto';element.onclick=e=>{e.stopPropagation();current.current.onDiplomacy(r);};marker=new Marker({element,anchor:'center',opacityWhenCovered:.4}).setLngLat([0,0]).addTo(map);realmLabels.set(r,marker);allMarkers.push(marker);}
         const old=atlasLabels.find(v=>v.kind==='realm'&&v.text===(r==='liang'?'梁':r==='east'?'东 魏':r==='west'?'西 魏':'')),site=siteById[capital(r,world)],moved=!!world.realm?.identities?.[r],coords:[number,number]=old&&!moved?[old.lon,old.lat]:[site.lon,site.lat],offset=moved?-50:0,point=map.project(coords),element=marker.getElement();
-        marker.setLngLat(coords).setOffset([0,offset]);element.textContent=regimeName(world,r);element.setAttribute('aria-label','查看'+regimeName(world,r)+'外交');element.hidden=!!world.realm?.annexed?.[r]||zoom<2||zoom>6||!['political','diplomacy'].includes(current.current.mode)||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y-offset)<38);
+        marker.setLngLat(coords).setOffset([0,offset]);element.textContent=mapRealmName(world,r);element.style.color=bannerOrigin(world,r)==='rebel'?polityStyle(world,r).color:'';element.setAttribute('aria-label','查看'+mapRealmName(world,r)+'外交');element.hidden=!!world.realm?.annexed?.[r]||zoom<2||zoom>6||!['political','diplomacy'].includes(current.current.mode)||occupied.some(v=>Math.abs(v.x-point.x)<78&&Math.abs(v.y-point.y-offset)<38);
       }
       const now=performance.now(),activeTravelers=travelers().filter(p=>travelerMotion.active(p,now));travelingIds=new Set(activeTravelers.map(p=>p.id));
       for(const [id,entry] of people)if(!travelingIds.has(id)){entry.marker.remove();const i=allMarkers.indexOf(entry.marker);if(i>=0)allMarkers.splice(i,1);people.delete(id);}
@@ -176,7 +176,7 @@ export function WorldMap(props:Props){
         const face=document.createElement('div');face.className='traveler-face paper-person-face';face.setAttribute('aria-hidden','true');const flag=document.createElement('span');flag.className='paper-person-flag';flag.setAttribute('aria-hidden','true');const label=document.createElement('span');label.className='paper-person-title';element.append(flag,face,label);
         const marker=new Marker({element,anchor:'bottom',offset:[0,-2],opacityWhenCovered:.5}).setLngLat([0,0]).addTo(map);entry={marker,label};people.set(person.id,entry);allMarkers.push(marker);
        }
-       const at=travelerPosition(person),element=entry.marker.getElement();entry.marker.setLngLat([at.lon,at.lat]);element.setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name;const realm=allegianceRealm(world,person.id==='player'?(world.characterId??'fictional'):person.id),flag=element.querySelector<HTMLElement>('.paper-person-flag')!;updateBanner(flag,realm?regimeName(world,realm):'旅',realm?bannerOrigin(world,realm):'frontier');element.style.setProperty('--marker-realm',realm?polityStyle(world,realm).color:'#406e67');
+       const at=travelerPosition(person),element=entry.marker.getElement();entry.marker.setLngLat([at.lon,at.lat]);element.setAttribute('aria-label','查看'+person.name+'详情');entry.label.textContent=person.name;const realm=allegianceRealm(world,person.id==='player'?(world.characterId??'fictional'):person.id),flag=element.querySelector<HTMLElement>('.paper-person-flag')!;updateBanner(flag,realm?mapRealmName(world,realm):'旅',realm?bannerOrigin(world,realm):'frontier');element.style.setProperty('--marker-realm',realm?polityStyle(world,realm).color:'#406e67');
        if(entry.world!==world){const face=element.querySelector<HTMLElement>('.traveler-face');if(face)updateMarkerPortrait(face,person.id==='player'?(world.characterId??'fictional'):person.id,world);entry.world=world;}
        element.dataset.model=String(map.showsTraveler(person.id));element.style.setProperty('--traveler-height',(TRAVELER_MODEL_HEIGHT*campaignUnitPixels(map.unitsPerPixelAt(at.lon,at.lat)))+'px');
       }
@@ -284,7 +284,7 @@ export function WorldMap(props:Props){
         for(const item of places){
           updatePaperCitySymbols(item.symbols,p.world,item.id);
           const site=siteById[item.id],state=p.world.realm?.cities[item.id],controller=state?.controller??site.polity,owner=state?.owner??site.polity;
-          const internal=controller!=='frontier'?civilWar(p.world,controller):undefined,rebel=internal?.civil?.cities.includes(item.id),name=regimeName(p.world,controller);
+          const internal=controller!=='frontier'?civilWar(p.world,controller):undefined,rebel=internal?.civil?.cities.includes(item.id),name=mapRealmName(p.world,controller);
           item.marker.getElement().style.setProperty('--city-realm',polityStyle(p.world,controller).color);
           item.button.replaceChildren(document.createTextNode(site.name+(controller!==owner?' · 占':rebel?' · 举兵':'')));const county=document.createElement('small');county.textContent=administration[site.id]?.prefecture??(site.capital?'都城':'县治');item.button.append(county);
           item.button.dataset.rebel=String(!!rebel);
@@ -311,7 +311,7 @@ export function WorldMap(props:Props){
             button.onclick=select.onclick;
             const marker=new Marker({element:button,anchor:'bottom',offset:[0,68]}).setLngLat([105,34]).addTo(map);item={marker,button,select,flag,strength,label,portrait};armyMarkers.set(key,item);
           }
-          const {lon,lat}=armyPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=regimeName(p.world,a.realm);
+          const {lon,lat}=armyPosition(a),rebel=civilWar(p.world,a.realm)?.civil?.armies.includes(a.id!),view=militaryArmyView(p.world,a),name=mapRealmName(p.world,a.realm);
           item.marker.setLngLat([lon,lat]);item.button.style.setProperty('--army-cloth',polityStyle(p.world,a.realm).color);item.button.dataset.rebel=String(!!rebel);item.button.dataset.exact=String(view.exact);
           const appearance=armyMarkerAppearance(view,view.exact?armyCommander(p.world,a):undefined),commander=appearance.commander;
           if(commander)updateMarkerPortrait(item.portrait,commander,p.world);else {item.portrait.replaceChildren();delete item.portrait.dataset.portraitKey;}
@@ -331,7 +331,7 @@ export function WorldMap(props:Props){
          const kind=combat.items.some(i=>i.ref.kind==='battle')?'battle':'siege';item.button.textContent='';const icon=document.createElement('span');icon.className='atlas-paper-symbol icon-'+(kind==='battle'?'army':'fort');icon.innerHTML=paperIcon(kind==='battle'?'army':'fort');item.button.append(icon);
          const primary=combat.items.find(i=>i.ref.kind===kind)!;
          if(kind==='siege'){const progress=document.createElement('span');progress.className='atlas-siege-progress';const values=combat.items.flatMap(i=>i.progress===undefined?[]:[i.progress]);progress.textContent=values.length>1?Math.min(...values)+'–'+Math.max(...values)+'%':primary.progress+'%';item.button.style.setProperty('--siege-progress',Math.min(...values)+'%');item.button.append(progress);}
-         else if(primary.sides){primary.sides.forEach((side,index)=>{const row=document.createElement('span');row.className='atlas-combat-side';row.dataset.side=index===0?'attack':'defend';const flag=document.createElement('span');flag.className='paper-banner';flag.textContent=regimeName(p.world,side.realm);flag.dataset.long=String(flag.textContent.length>1);flag.style.setProperty('--marker-realm',polityStyle(p.world,side.realm).color);const strength=document.createElement('b');strength.textContent=side.strength;row.append(flag,strength);if(index===0)item!.button.prepend(row);else item!.button.append(row);});}
+         else if(primary.sides){primary.sides.forEach((side,index)=>{const row=document.createElement('span');row.className='atlas-combat-side';row.dataset.side=index===0?'attack':'defend';const flag=document.createElement('span');flag.className='paper-banner';flag.textContent=mapRealmName(p.world,side.realm);flag.dataset.long=String(flag.textContent.length>1);flag.style.setProperty('--marker-realm',polityStyle(p.world,side.realm).color);const strength=document.createElement('b');strength.textContent=side.strength;row.append(flag,strength);if(index===0)item!.button.prepend(row);else item!.button.append(row);});}
          if(kind==='battle'&&combat.items.some(i=>i.progress!==undefined)){const progress=document.createElement('span');progress.className='atlas-combat-siege-mini';const values=combat.items.flatMap(i=>i.progress===undefined?[]:[i.progress]);progress.textContent='围 '+(values.length===1?values[0]:Math.min(...values)+'–'+Math.max(...values))+'%';item.button.append(progress);}
          if(combat.items.length>1){const count=document.createElement('span');count.className='atlas-activity-count';count.textContent=String(combat.items.length);item.button.append(count);}
          item.marker.setLngLat([combat.lon,combat.lat]);item.button.dataset.kind=kind;item.button.setAttribute('aria-label',combat.items.length>1?'查看此地 '+combat.items.length+' 场战事':'查看'+combat.items[0].label);item.button.onclick=e=>{e.stopPropagation();setMenu(null);const latest=engagementGroups(current.current.world).find(c=>c.key===combat.key);if(!latest)return;if(latest.items.length===1)current.current.onEngagement(latest.items[0].ref);else{current.current.onBrowseActivities();setCombatGroupKey(combat.key);}};

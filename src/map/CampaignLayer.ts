@@ -7,7 +7,7 @@ import {controlledSite,campaignCoverage,domainSignature} from './campaignDomains
 import {createSeasonState,seasons} from './sample/seasons';
 import {campaignSeason} from './campaignSeason';
 import {armyHeraldry} from './ArmyHeraldry';
-import {regimeName} from '../core/government';
+import {mapRealmName} from './realmPresentation';
 import {campaignCityAppearance,campaignCityKey,campaignCityPixels,campaignCityMeters,campaignCityPlacements,sceneryVisible,CITY_DETAIL_ZOOM,MAX_DETAILED_CITIES} from './campaignScenery';
 import {updateMilitaryCamera,positionMilitaryModel,militaryModelScale,addMilitaryLighting} from './militaryRendering';
 import {sampleCityGround,groundCityGeometry,waterMaskContains,CAMPAIGN_EXPOSURE} from './campaignTerrain';
@@ -51,15 +51,15 @@ export function campaignLayer(getState:()=>{world:World;selected:string;tilted:b
   let detailed=0;
   for(const {site} of visible){
    const detail=state.sceneryDetail!==false&&map.getZoom()>=CITY_DETAIL_ZOOM&&detailed++<MAX_DETAILED_CITIES?'close':'regional';
-   const appearance=campaignCityAppearance(state.world,site),key=campaignCityKey(appearance)+':'+detail,signature=key+':'+appearance.color+':'+(state.world.realm?.cities[site.id]?.controller??site.polity)+':'+regimeName(state.world,state.world.realm?.cities[site.id]?.controller??site.polity);
+   const appearance=campaignCityAppearance(state.world,site),key=campaignCityKey(appearance)+':'+detail,signature=key+':'+appearance.color+':'+(state.world.realm?.cities[site.id]?.controller??site.polity)+':'+mapRealmName(state.world,state.world.realm?.cities[site.id]?.controller??site.polity);
    active.add(key);let c=cities.get(site.id);
-   if(!c||c.key!==signature){if(c)removeCity(c);const realm=state.world.realm?.cities[site.id]?.controller??site.polity;const root=assets.city(appearance,detail,armyHeraldry(realm,regimeName(state.world,realm),state.world),markView);root.userData.site=site.id;root.matrixAutoUpdate=false;c={root,key:signature,capital:appearance.capital,template:(root.children[0] as Mesh).geometry,groundKey:''};cities.set(site.id,c);scene.add(root);}
+   if(!c||c.key!==signature){if(c)removeCity(c);const realm=state.world.realm?.cities[site.id]?.controller??site.polity;const root=assets.city(appearance,detail,armyHeraldry(realm,mapRealmName(state.world,realm),state.world),markView);root.userData.site=site.id;root.matrixAutoUpdate=false;c={root,key:signature,capital:appearance.capital,template:(root.children[0] as Mesh).geometry,groundKey:''};cities.set(site.id,c);scene.add(root);}
    if(dirty||lastTilt!==state.tilted)c.groundKey='';
   }
   environment.root.visible=true;
   const nextEnvironmentKey=visible.map(p=>p.site.id+':'+p.capital).join(',')+domainSignature(state.world);
   if(dirty||lastTilt!==state.tilted||lastDetail!==state.sceneryDetail||lastSelected!==state.selected||environmentKey!==nextEnvironmentKey){environment.refresh(map,visible.map(p=>({id:p.site.id,capital:p.capital})),state.tilted,state.sceneryDetail!==false,campaignCoverage(state.world));environmentKey=nextEnvironmentKey;}
-  assets.prune(active,new Set(visible.map(p=>{const realm=state.world.realm?.cities[p.site.id]?.controller??p.site.polity;return armyHeraldry(realm,regimeName(state.world,realm),state.world);})));onChange();
+  assets.prune(active,new Set(visible.map(p=>{const realm=state.world.realm?.cities[p.site.id]?.controller??p.site.polity;return armyHeraldry(realm,mapRealmName(state.world,realm),state.world);})));onChange();
  }
  function positionCities(projection:ArrayLike<number>){
   if(!map)return;

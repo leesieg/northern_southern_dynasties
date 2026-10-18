@@ -1,7 +1,7 @@
 import {MapResourceError} from './resourceLoader';
 import {createMilitaryCarryPose} from './MilitaryCarryPose';
 import {attachMilitaryEquipment,loadMilitaryEquipment} from './MilitaryEquipment';
-import {realmOrigin} from '../core/polityRuntime';
+import {realmBanner} from '../core/polityRuntime';
 import type {World} from '../core/types';
 import {Group,Mesh,SphereGeometry,CylinderGeometry,PlaneGeometry,BufferGeometry,Float32BufferAttribute,MeshStandardMaterial,MeshBasicMaterial,TextureLoader,CanvasTexture,SRGBColorSpace,DoubleSide,Vector3,type Material,type Texture} from 'three';
 import type {Army} from '../core/realm';
@@ -19,7 +19,7 @@ export function armyModelKind(army:Army):ArmyModelKind{
  const foot={shield:0,spear:0,archer:0};for(const unit of army.regiments??[])if(unit.kind in foot)foot[unit.kind as keyof typeof foot]+=Math.max(0,unit.troops);
  const variant=(Object.keys(foot) as (keyof typeof foot)[]).reduce((best,kind)=>foot[kind]>foot[best]?kind:best,'shield');return variant==='shield'?'foot':variant;
 }
-export interface MilitaryModel {root:Group;body:Group;camp:Group;banner:Group;animation?:InfantryAnimation;concealed?:boolean;equipped?:boolean;seed:number;kind:ArmyModelKind;realm:Army['realm'];origin:ReturnType<typeof realmOrigin>;bannerName:string}
+export interface MilitaryModel {root:Group;body:Group;camp:Group;banner:Group;animation?:InfantryAnimation;concealed?:boolean;equipped?:boolean;seed:number;kind:ArmyModelKind;realm:Army['realm'];origin:ReturnType<typeof realmBanner>;bannerName:string}
 /** Shared mesh/material per type, independent skeleton and mixer per army. */
 export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void,signal?:AbortSignal){
  const geometries=new Map<string,BufferGeometry>(),materials=new Map<string,Material>(),textures:Texture[]=[],loader=new TextureLoader();
@@ -45,7 +45,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
  function beam(parent:Group,m:Material,from:number[],to:number[],width:number){const a=new Vector3(from[0],from[1],from[2]),b=new Vector3(to[0],to[1],to[2]),delta=b.clone().sub(a),mid=a.clone().add(b).multiplyScalar(.5),o=mesh(parent,cylinder(),m,mid.x,mid.y,mid.z,width,delta.length(),width);o.quaternion.setFromUnitVectors(new Vector3(0,1,0),delta.normalize());return o;}
  function banner(parent:Group,realm:Army['realm'],name:string,world?:World){
   const group=new Group();group.position.set(-.40,0,-.16);parent.add(group);beam(group,wood,[0,.025,0],[0,2.30,0],.026);beam(group,bronze,[-.02,2.22,0],[.54,2.22,0],.020);ellipsoid(group,bronze,0,2.34,0,.040,.075,.040);
-  const key='banner|'+realmOrigin(world,realm)+'|'+realm+'|'+name;let material=materials.get(key);if(!material){const texture=loader.load(armyHeraldry(realm,name,world),()=>repaint());texture.colorSpace=SRGBColorSpace;textures.push(texture);material=new MeshStandardMaterial({map:texture,transparent:true,alphaTest:.12,side:DoubleSide,roughness:.95,depthWrite:true});materials.set(key,material);}
+  const key='banner|'+realmBanner(world,realm)+'|'+realm+'|'+name;let material=materials.get(key);if(!material){const texture=loader.load(armyHeraldry(realm,name,world),()=>repaint());texture.colorSpace=SRGBColorSpace;textures.push(texture);material=new MeshStandardMaterial({map:texture,transparent:true,alphaTest:.12,side:DoubleSide,roughness:.95,depthWrite:true});materials.set(key,material);}
   const g=geo('flag-cloth',()=>{const g=new PlaneGeometry(.54,.67,10,12),p=g.getAttribute('position');for(let i=0;i<p.count;i++)p.setZ(i,Math.sin((p.getX(i)+.27)*13)*.028);g.computeVertexNormals();return g;});mesh(group,g,material,.25,1.895,.022);return group;
  }
  function camp(parent:Group){const group=new Group();parent.add(group);group.position.set(-.55,0,-.58);group.scale.setScalar(.46);const shape=geo('tent',()=>{const g=new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute([-.6,0,-.6,.6,0,-.6,0,.7,-.6,-.6,0,.6,.6,0,.6,0,.7,.6],3));g.setAttribute('uv',new Float32BufferAttribute([0,0,1,0,.5,1,0,0,1,0,.5,1],2));g.setIndex([0,3,2,2,3,5,2,5,1,1,5,4,0,2,1,3,4,5]);g.computeVertexNormals();return g;});mesh(group,shape,linen,0,0,0);for(const side of [-1,1])for(const z of [-1,1])beam(group,linen,[side*.5,.1,z*.5],[side*.8,.02,z*.85],.018);return group;}
@@ -54,7 +54,7 @@ export function militaryModelAssets(repaint:()=>void,warn:(message:string)=>void
   get ready(){return Promise.all([...pending.values(),equipmentPending]);},retry(){if(failed.has('equipment'))ensureEquipment();for(const kind of failed)if(kind!=='equipment')ensure(kind);},release,
   create(a:Pick<Army,'id'|'realm'>,kind:ArmyModelKind,name:string,world?:World,concealed=false):MilitaryModel{
    const root=new Group(),body=new Group();root.matrixAutoUpdate=false;root.add(body);shadow(body);
-   const model:MilitaryModel={concealed,root,body,camp:camp(body),banner:banner(body,a.realm,name,world),kind,realm:a.realm,origin:realmOrigin(world,a.realm),bannerName:name,seed:a.id??0};
+   const model:MilitaryModel={concealed,root,body,camp:camp(body),banner:banner(body,a.realm,name,world),kind,realm:a.realm,origin:realmBanner(world,a.realm),bannerName:name,seed:a.id??0};
    models.add(model);if(kind!=='siege')ensureEquipment();ensure(key(kind));attach(model);return model;
   },
   pruneBanners(active:Set<string>){for(const [key,m] of materials)if(key.startsWith('banner|')&&!active.has(key)){const t=(m as MeshStandardMaterial).map;if(t){t.dispose();const i=textures.indexOf(t);if(i>=0)textures.splice(i,1);}m.dispose();materials.delete(key);}},

@@ -11,7 +11,7 @@ export function controlledSite(world:World,id:string){
  const realm=world.realm?.cities[id]?.controller??siteById[id]?.polity;
  return !!realm&&realm!=='frontier'&&!world.realm?.annexed?.[realm]&&worldRealms(world).includes(realm);
 }
-export function domainSignature(world:World){return territories.features.map(f=>{const id=String(f.properties!.id);return id+':'+(controlledSite(world,id)?world.realm?.cities[id]?.controller??siteById[id].polity:'');}).join('|');}
+export function domainSignature(world:World){return territories.features.map(f=>{const id=String(f.properties!.id);return id+':'+(controlledSite(world,id)?world.realm?.cities[id]?.controller??siteById[id].polity:'')+':'+polityStyle(world,world.realm?.cities[id]?.controller??siteById[id].polity).color;}).join('|');}
 let cached:{signature:string;value:{realms:FeatureCollection<MultiPolygon>;fog:FeatureCollection<MultiPolygon>}}|undefined;
 export function campaignDomains(world:World){
  const signature=domainSignature(world);if(cached?.signature===signature)return cached.value;

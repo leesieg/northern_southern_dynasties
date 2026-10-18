@@ -62,7 +62,7 @@ function rise(w:World,q:LocalUnrest){if(unrestBlock(w,q))return;ensureWars(w);en
  s.armies.push({id,realm:q.realm,location:q.site,payer:fiscalPath(w,q.site)[0],troops:200,morale:50,supply,journey:null,siege:0,regiments:recruitmentRegiments(sources.parts,id,q.site,'spear').map(u=>({...u,institution:20,commanderLoyalty:70,loyalTo:q.organizer!,cohesion:40}))});
  // A commander remains bound to the existing army; the new levy needs its own appointment.
  if(w.mobility&&!following.length)(w.mobility.armyCommanders??={})[id]=q.organizer!;
- q.stage='armed';q.war=war.id;establishCivilPolity(w,war);q.deadline=null;log(w,siteById[q.site].name+'民变起事：'+demandNames[q.demand]+'；动员本地 200 人、支出已控制公款 50，取当地公粮 '+supply+'。');
+ q.stage='armed';q.war=war.id;establishCivilPolity(w,war,true);q.deadline=null;log(w,siteById[q.site].name+'民变起事：'+demandNames[q.demand]+'；动员本地 200 人、支出已控制公款 50，取当地公粮 '+supply+'。');
 }
 export function unrestReason(w:World,c:UnrestCommand,actor=w.characterId!){const q=w.unrest?.items.find(q=>q.id===c.id);if(!q||!['warning','armed'].includes(q.stage))return '该诉求当前无需裁决';if(!['report','accommodate'].includes(c.action))return '未知诉求处理';
  if(w.realm!.cities[q.site].owner!==q.realm||w.realm!.cities[q.site].controller!==q.realm)return '原诉求治所已易手';

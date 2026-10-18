@@ -1,8 +1,8 @@
-import {realmOrigin} from '../core/polityRuntime';
+import {realmBanner} from '../core/polityRuntime';
 import {Camera,Scene,WebGLRenderer,Matrix4,Vector3,ACESFilmicToneMapping} from 'three';
 import {MercatorCoordinate,type Map,type CustomLayerInterface} from 'maplibre-gl';
 import {armyVisualState} from '../core/armyPresentation';
-import {regimeName} from '../core/government';
+import {mapRealmName} from './realmPresentation';
 import type {World} from '../core/types';
 import {roadHeading} from '../core/routeGeometry';
 import {CAMPAIGN_EXPOSURE} from './campaignTerrain';
@@ -27,8 +27,8 @@ export function militaryLayer(getState:()=>{world:World;militaryModels:boolean;a
    if(displayedWorld!==state.world){displayedWorld=state.world;visualStates.clear();for(const a of armies)visualStates.set(a.id!,armyVisualState(state.world,a));}
    const ids=new Set(armies.map(a=>a.id!));for(const [id,m] of models)if(!ids.has(id)){assets.release(m);models.delete(id);}let animating=false;
    for(const a of armies){
-    if(!a.id)continue;const kind=armyModelKind(a),name=regimeName(state.world,a.realm);let m=models.get(a.id);
-    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)assets.release(m);m=assets.create(a,kind,name,state.world);scene.add(m.root);models.set(a.id,m);}
+    if(!a.id)continue;const kind=armyModelKind(a),name=mapRealmName(state.world,a.realm);let m=models.get(a.id);
+    if(!m||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmBanner(state.world,a.realm)){if(m)assets.release(m);m=assets.create(a,kind,name,state.world);scene.add(m.root);models.set(a.id,m);}
     const placement=getPlacement(a.id);m.root.visible=!!placement?.model;if(!placement?.model)continue;
     const {lon,lat}=armyMapPosition(a),modelAnchor={lng:lon,lat};
     const elevation=map.queryTerrainElevation(modelAnchor)??0,coord=MercatorCoordinate.fromLngLat(modelAnchor,elevation),scale=militaryModelScale(args.defaultProjectionData.mainMatrix,coord,map.getCanvas().clientWidth,ARMY_MODEL_PIXELS);

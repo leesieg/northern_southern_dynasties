@@ -20,6 +20,8 @@ import {stopEnvoy} from './envoyTravel';
 import {finishCampaign} from './militaryCampaigns';
 import {returnArmyConvoy} from './armyLogistics';
 import {roads} from '../data/scenario';
+import {setLocalHolder,countyTerritory,localKey} from './localAdministration';
+import {isAlive} from './lifeState';
 
 export const civilOrigin=(war:War)=>war.defender;
 export const independentCivil=(war:War)=>!!war.civil&&war.attacker!==war.defender;
@@ -39,11 +41,12 @@ export function inheritCivilFronts(w:World,war:War){
 }
 
 /** Turn the responding camp into an actual government, without transferring legal title or creating resources. */
-export function establishCivilPolity(w:World,war:War){
+export function establishCivilPolity(w:World,war:War,takeBase=false){
  if(!war.civil||independentCivil(war))return;
  const s=w.realm!,c=war.civil,origin=war.attacker,r:RealmId=`rebel-${war.id!}`,old=governmentOf(w,origin)!;
  if(s.governments!.realms[r])throw new Error('起兵军府标识重复');
- const cities=c.cities.filter(id=>s.cities[id].owner===origin&&s.cities[id].controller===origin);
+ // Only a new uprising takes its real base. Legacy conversion preserves the actual surviving response list.
+ const cities=[...new Set([...(takeBase?[c.base]:[]),...c.cities])].filter(id=>s.cities[id].owner===origin&&s.cities[id].controller===origin);
  const people=[...new Set([c.claimant,...c.supporters])].filter(id=>allegianceRealm(w,id)===origin);
  const armies=s.armies.filter(a=>a.realm===origin&&c.armies.includes(a.id!));
  const commanders=new Map(armies.map(a=>[a.id!,armyCommander(w,a)]));
@@ -71,6 +74,10 @@ export function establishCivilPolity(w:World,war:War){
  const baseAccount=fiscalPath(w,c.base,r)[0],budget=f.balances[baseAccount]??0;
  if(budget){f.balances[baseAccount]=0;s.treasuries[r].coins=budget;fiscalRecord(w,r,baseAccount,'central:'+r,budget,'根据地公款归军府统筹');}
  for(const [key,seat] of Object.entries(s.local?.seats??{}))if(key.startsWith(origin+'|')&&seat.holder&&people.includes(seat.holder)&&descendantSites(key.slice(origin.length+1)).some(id=>cities.includes(id))){s.local!.seats[r+'|'+key.slice(origin.length+1)]={...seat,regime:r+'-0'};seat.holder=null;seat.delegated=false;}
+ if(cities.includes(c.base)){
+  const county=countyTerritory(c.base);delete s.local?.seats[localKey(origin,county)];
+  setLocalHolder(w,county,r,c.claimant);
+ }
  for(const a of armies){returnArmyConvoy(w,a);const campaign=w.militaryCampaigns?.items.find(q=>q.status==='active'&&q.army===a.id);if(campaign)finishCampaign(w,campaign,'failed','军队起兵，原委任结案退款');a.realm=r;a.payer=a.owner?'person:'+a.owner:'central:'+r;const commander=commanders.get(a.id!);if(commander&&people.includes(commander)){w.mobility!.armyCommanders??={};w.mobility!.armyCommanders[a.id!]=commander;}}
  war.attacker=r;
  // Existing enemies contesting a responding county remain enemies there. No alliance or treaty is inherited.
@@ -110,7 +117,18 @@ export function reuniteCivilPolity(w:World,war:War){
  (s.annexed??={})[r]={into:origin,day:w.day,sites,coins:0,grain:0,debt:0};advanceAnnexations(w);reconcileServiceAllegiance(w);reconcileOfficeAllegiance(w);syncCourt(w,r);syncRulerHistory(w);
 }
 
-export function migrateCivilPolities(w:World){for(const war of activeWars(w))if(war.civil&&!independentCivil(war))establishCivilPolity(w,war);}
+export function migrateCivilPolities(w:World){
+ let repaired=false;
+ for(const war of activeWars(w)){
+  if(!war.civil)continue;
+  if(!independentCivil(war)){establishCivilPolity(w,war);continue;}
+  const c=war.civil,city=w.realm!.cities[c.base],county=countyTerritory(c.base);
+  // Fill only a never-handed-over office in a still-held base. A lost county or a later appointment stays authoritative.
+  if(city.controller!==war.attacker||city.governor||w.realm!.local?.seats[localKey(war.attacker,county)]||!isAlive(w,c.claimant)||allegianceRealm(w,c.claimant)!==war.attacker)continue;
+  delete w.realm!.local?.seats[localKey(civilOrigin(war),county)];setLocalHolder(w,county,war.attacker,c.claimant);repaired=true;
+ }
+ if(repaired)syncRulerHistory(w);
+}
 
 /** The same wartime entity becomes a recognized polity; no second treasury, army or population is created. */
 export function recognizeCivilPolity(w:World,war:War,name:string){

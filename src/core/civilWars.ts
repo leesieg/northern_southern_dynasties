@@ -51,7 +51,7 @@ export function actCivilWar(w:World,c:CivilCommand,actor=w.characterId!){if(c.ac
  support.armies=splitRevoltArmies(w,support.supporters,support.cities,support.armies);
  const war:War={id:s.nextWarId!++,attacker:r,defender:r,target:capital(r,w),started:w.day,score:0,battles:0,captureLosses:[],goal:'territory',civil:{...(c.arrangement?{arrangement:c.arrangement}:{}),claimant:actor,loyalist:governingAuthority(w,r),...support,base,name:c.name.trim()||'讨奸'}};s.wars!.push(war);s.war=s.wars![0];
  for(const a of s.armies.filter(a=>support.armies.includes(a.id!)&&!a.owner))a.payer=source;
- if(actor===w.characterId)s.mandate=true;governmentOf(w,r)!.support=Math.max(0,governmentOf(w,r)!.support-20);establishCivilPolity(w,war);w.chronicle.push({day:w.day,person:'player',text:'起兵方设立独立军府，响应地区的钱粮与军队由其统筹；法理归属待和约裁定。'});w.chronicle=w.chronicle.slice(-100);
+ if(actor===w.characterId)s.mandate=true;governmentOf(w,r)!.support=Math.max(0,governmentOf(w,r)!.support-20);establishCivilPolity(w,war,true);w.chronicle.push({day:w.day,person:'player',text:'起兵方设立独立军府，响应地区的钱粮与军队由其统筹；法理归属待和约裁定。'});w.chronicle=w.chronicle.slice(-100);
 }
 export function civilPeaceReason(w:World,war:War,terms:string){if(!['white','demand','yield'].includes(terms))return '无效内战和约';const c=war.civil!,rebel=c.claimant===w.characterId,leader=rebel?c.claimant:c.loyalist;
  if(leader!==w.characterId)return '须由起兵领袖或朝廷执政者议定内战和约';

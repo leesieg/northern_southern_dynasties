@@ -2,9 +2,9 @@ import {ensureWars} from './wars';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act} from './world';
 import type {World} from './types';
-import {civilWar,settleCivilWar,advanceCivilPolitics,warCitySide,civilCityCapture} from './civilWars';
+import {civilWar,settleCivilWar,advanceCivilPolitics,warCitySide,civilCityCapture,civilReason} from './civilWars';
 import {independentCivil,migrateCivilPolities} from './civilPolities';
-import {setLocalHolder,countyTerritory} from './localAdministration';
+import {setLocalHolder,countyTerritory,localKey,localHolder,advanceLocal} from './localAdministration';
 import {ensureArmyOrganization,armyOrganizationReason,actArmyOrganization} from './armyOrganization';
 import {ensureFiscal,fiscalPath,routeGrant,actFiscal} from './treasury';
 import {changeRelationOpinion} from './relationships';
@@ -37,6 +37,25 @@ function saved(w:World){expect({government:validGovernments(w),realm:validRealm(
 const cash=(w:World)=>Object.values(w.realm!.treasuries).reduce((n,t)=>n+t.coins,0)+Object.values(w.realm!.fiscal!.balances).reduce((n,v)=>n+v,0)+w.people[0].coins;
 
 describe('independent wartime military governments',()=>{
+ it('takes the real uprising city and replaces its incumbent with the leader without granting legal land or resources',()=>{
+  const {w,site,a}=fixture(false);setLocalHolder(w,countyTerritory(site),'liang','xiao-gang');
+  for(const u of a.regiments!){u.loyalTo='xiao-yi';u.commanderLoyalty=90;u.institution=30;}
+  const before=cash(w),population=w.realm!.cities[site].population,grain=w.realm!.cities[site].grain,troops=a.troops;
+  const c={type:'civilWar',action:'rise',name:'讨奸',arrangement:{goal:'executive',sponsor:'xiao-yi',beneficiary:'xiao-yan',executive:'xiao-yi',name:''}} as const;
+  expect(civilReason(w,c)).toBe('');act(w,c);const war=civilWar(w,'liang')!,r=war.attacker;
+  expect(war.civil!.cities).toContain(site);expect(w.realm!.cities[site]).toMatchObject({owner:'liang',controller:r,governor:'xiao-yi',occupiedByWar:war.id});
+  expect(localHolder(w,countyTerritory(site),r)).toBe('xiao-yi');expect(localHolder(w,countyTerritory(site),'liang')).toBeNull();
+  expect(allegianceRealm(w,'xiao-gang')).toBe('liang');expect(cash(w)).toBe(before);expect(a.troops).toBe(troops);expect(w.realm!.cities[site]).toMatchObject({population,grain});
+  advanceLocal(w);expect(w.realm!.cities[site].governor).toBe('xiao-yi');saved(w);
+ });
+ it('repairs only a never-handed-over empty base office in existing independent saves, once',()=>{
+  const {w,site}=fixture(),war=civilWar(w,'liang')!,r=war.attacker,county=countyTerritory(site),before=cash(w),day=w.day;
+  setLocalHolder(w,county,r,null);delete w.realm!.local!.seats[localKey(r,county)];syncRulerHistory(w);
+  const loaded=parseWorld(serializeWorld(w));expect(loaded.realm!.cities[site].governor).toBe('xiao-yi');expect(loaded.day).toBe(day);expect(cash(loaded)).toBe(before);saved(loaded);
+  const snapshot=structuredClone(loaded);migrateCivilPolities(loaded);expect(loaded).toEqual(snapshot);
+  setLocalHolder(loaded,county,r,null);migrateCivilPolities(loaded);expect(loaded.realm!.cities[site].governor).toBeNull();
+  const lost=structuredClone(w);lost.realm!.cities[site].controller='west';migrateCivilPolities(lost);expect(lost.realm!.cities[site]).toMatchObject({controller:'west',governor:null});
+ });
  it('also supports a nominal ruler raising a military camp against an actual regent',()=>{
   const {w}=fixture(true,'yuan-shanjian'),war=civilWar(w,'east')!;
   expect(governmentOf(w,'east')!.ruler).toBe('yuan-shanjian');expect(allegianceRealm(w,'yuan-shanjian')).toBe(war.attacker);expect(governmentOf(w,'east')!.executives).toContain('gao-huan');saved(w);
@@ -113,7 +132,14 @@ describe('independent wartime military governments',()=>{
  it('migrates a legacy same-realm civil war once, without advancing time or minting resources',()=>{
   const {w,site,a}=fixture(false),before=cash(w),day=w.day;ensureWars(w);const id=w.realm!.nextWarId!++;
   const war={id,attacker:'liang' as const,defender:'liang' as const,target:'jiankang',started:day,score:0,captureLosses:[],civil:{claimant:'xiao-yi',loyalist:'xiao-yan',supporters:['xiao-yi'],base:site,cities:[site],armies:[a.id!],name:'讨奸'}};w.realm!.wars!.push(war);w.realm!.war=w.realm!.wars![0];
-  syncRulerHistory(w);const old=serializeWorld(w),loaded=parseWorld(old);expect(loaded.day).toBe(day);expect(civilWar(loaded,'liang')!.attacker).toBe(`rebel-${id}`);expect(cash(loaded)).toBe(before);saved(loaded);
+  syncRulerHistory(w);const old=serializeWorld(w),loaded=parseWorld(old);expect(loaded.day).toBe(day);expect(civilWar(loaded,'liang')!.attacker).toBe(`rebel-${id}`);expect(loaded.realm!.cities[site]).toMatchObject({controller:`rebel-${id}`,governor:'xiao-yi'});expect(cash(loaded)).toBe(before);saved(loaded);
   migrateCivilPolities(w);expect(w.day).toBe(day);expect(cash(w)).toBe(before);expect(war.attacker).toBe(`rebel-${id}`);const converted=structuredClone(w);migrateCivilPolities(w);expect(w).toEqual(converted);saved(w);
+ });
+ it.each(['liang','west'] as const)('does not reconquer a lost legacy base held by %s during migration',controller=>{
+  const {w,site,a}=fixture(false);setLocalHolder(w,countyTerritory(site),'liang',null);a.location='jiankang';w.people[0].location='jiankang';w.mobility!.residences['xiao-yi']={site:'jiankang',journey:null};ensureWars(w);
+  if(controller==='west'){const external={id:w.realm!.nextWarId!++,attacker:'west' as const,defender:'liang' as const,target:site,started:w.day,score:0};w.realm!.wars!.push(external);occupyCity(w,external,site,'west',true);}
+  const war={id:w.realm!.nextWarId!++,attacker:'liang' as const,defender:'liang' as const,target:'jiankang',started:w.day,score:0,captureLosses:[],civil:{claimant:'xiao-yi',loyalist:'xiao-yan',supporters:['xiao-yi'],base:site,cities:[],armies:[a.id!],name:'讨奸'}};
+  w.realm!.wars!.push(war);w.realm!.war=w.realm!.wars![0];const before=cash(w);migrateCivilPolities(w);
+  expect(w.realm!.cities[site]).toMatchObject({controller,governor:null});expect(war.civil.cities).toEqual([]);expect(cash(w)).toBe(before);saved(w);
  });
 });

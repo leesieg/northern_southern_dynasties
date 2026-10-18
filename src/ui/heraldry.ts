@@ -1,5 +1,5 @@
 /** Shared DOM / React artwork. Names are escaped and never treated as markup. */
-export const heraldryPalettes={liang:{light:'#719184',cloth:'#294c40',dark:'#142d28'},east:{light:'#a38a9e',cloth:'#65465e',dark:'#342739'},west:{light:'#c2a06c',cloth:'#826039',dark:'#43311f'},frontier:{light:'#92978a',cloth:'#535e53',dark:'#2b352f'}};
+export const heraldryPalettes={liang:{light:'#719184',cloth:'#294c40',dark:'#142d28'},east:{light:'#a38a9e',cloth:'#65465e',dark:'#342739'},west:{light:'#c2a06c',cloth:'#826039',dark:'#43311f'},frontier:{light:'#92978a',cloth:'#535e53',dark:'#2b352f'},rebel:{light:'#c48a72',cloth:'#803f32',dark:'#45271f'}};
 const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 export function bannerSvg(label:string,origin:keyof typeof heraldryPalettes,id:string){
  const p=heraldryPalettes[origin],key=escape(id),letters=Array.from(label);

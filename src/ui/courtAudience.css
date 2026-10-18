@@ -191,7 +191,7 @@
 .court-government-actions{display:flex;justify-content:flex-end;margin-top:auto;padding-top:10px}
 .court-policy-rules .governance-rule-grid{display:grid;grid-template-columns:1fr;gap:9px}
 .court-policy-rules .court-rule{display:flex;align-items:center;gap:9px;min-height:67px;padding:7px;border:0;border-bottom:1px solid #b5945a4d;background:none}
-.court-rule>.art-icon{flex:none}.court-rule>.hover-hint:has(div){flex:1;min-width:0}
+.court-rule>.art-icon{flex:none}.court-rule>.court-rule-summary{flex:1;min-width:0}
 .court-rule small{display:block;font-size:var(--text-caption);color:#bec6ac}.court-rule strong{display:block;margin-top:3px;font:var(--text-reading) var(--serif);color:#e6d09c}
 .court-policy-direction{display:flex;flex-direction:column;gap:11px;margin-top:14px;color:#cbd0b9;font-size:var(--text-caption)}
 .court-policy-direction .hover-hint>div{display:flex;align-items:center;gap:7px}

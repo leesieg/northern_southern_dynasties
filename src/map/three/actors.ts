@@ -12,8 +12,8 @@ import type {Season} from '../sample/seasons';
 import {sites} from '../../data/scenario';
 import type {World} from '../../core/types';
 import {capital} from '../../core/realm';
-import {worldRealms,realmOrigin} from '../../core/polityRuntime';
-import {regimeName} from '../../core/government';
+import {worldRealms,realmBanner} from '../../core/polityRuntime';
+import {mapRealmName} from '../realmPresentation';
 import {militaryArmyView} from '../../core/militaryView';
 import {armyCombatVisual} from '../../core/combatPresentation';
 import {roadHeading} from '../../core/routeGeometry';
@@ -36,7 +36,7 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
  const travelers=travelerActors(view,root,message=>warn('travelers',message),signal);
  const cities=new Map<string,{root:Group;key:string;detail:CityDetail;bounds:Box3;foundation:Mesh}>(),armies=new Map<number,MilitaryModel>();let knownWorld:World|undefined,known=campaignCoverage(getState().world);let world:World|undefined,viewKey='',forestKey='',coverageKey='',sceneryWorldKey='',revision=0;let tier:SceneryTier='far';
  // Army-only snapshots do not change city geometry, terrain foundations or forest placement.
- const sceneryKey=(w:World)=>domainSignature(w)+'|'+worldRealms(w).map(r=>r+':'+capital(r,w)).join(',')+'|'+[...cities.keys()].map(id=>{const site=sites.find(s=>s.id===id)!,realm=w.realm?.cities[id]?.controller??site.polity;return id+':'+campaignCityKey(campaignCityAppearance(w,site))+':'+realm+':'+realmOrigin(w,realm)+':'+regimeName(w,realm);}).join('|');
+ const sceneryKey=(w:World)=>domainSignature(w)+'|'+worldRealms(w).map(r=>r+':'+capital(r,w)).join(',')+'|'+[...cities.keys()].map(id=>{const site=sites.find(s=>s.id===id)!,realm=w.realm?.cities[id]?.controller??site.polity;return id+':'+campaignCityKey(campaignCityAppearance(w,site))+':'+realm+':'+realmBanner(w,realm)+':'+mapRealmName(w,realm);}).join('|');
  const foundationMaterial=landscapeMaterial('Courtyard earth apron',false,view.detailMap);
  const bankClearance=plantClearance([]);
  const originalTreeColors:Float32Array[]=[];let foliageSeason='';
@@ -48,7 +48,7 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
   tier=sceneryTier(zoom,tier);const budget=sceneryBudgets[tier];forests.forEach(t=>{t.castShadow=budget.shadows;});
   const keep=new Set(visible.map(v=>v.site.id));for(const [id,c] of cities)if(!keep.has(id)){root.remove(c.root);c.foundation.geometry.dispose();cities.delete(id);}
   const keys=new Set<string>(),flags=new Set<string>();
-  for(const {site,pixels} of visible){const appearance=campaignCityAppearance(state.world,site),realm=state.world.realm?.cities[site.id]?.controller??site.polity,flag=armyHeraldry(realm,regimeName(state.world,realm),state.world),detail=cityDetailForPixels(pixels,cities.get(site.id)?.detail),key=campaignCityKey(appearance)+':'+detail+':'+flag;keys.add(campaignCityKey(appearance)+':'+detail);flags.add(flag);let city=cities.get(site.id);
+  for(const {site,pixels} of visible){const appearance=campaignCityAppearance(state.world,site),realm=state.world.realm?.cities[site.id]?.controller??site.polity,flag=armyHeraldry(realm,mapRealmName(state.world,realm),state.world),detail=cityDetailForPixels(pixels,cities.get(site.id)?.detail),key=campaignCityKey(appearance)+':'+detail+':'+flag;keys.add(campaignCityKey(appearance)+':'+detail);flags.add(flag);let city=cities.get(site.id);
    if(!city||city.key!==key){if(city){root.remove(city.root);city.foundation.geometry.dispose();}const model=assets.city(appearance,detail,flag,view.repaint);model.userData.site=site.id;model.traverse(o=>{if(o instanceof Mesh){o.castShadow=true;o.receiveShadow=true;}});const bounds=new Box3().setFromObject(model),foundation=new Mesh(new BufferGeometry(),foundationMaterial);foundation.receiveShadow=true;foundation.castShadow=true;model.add(foundation);city={root:model,key,detail,bounds,foundation};cities.set(site.id,city);root.add(model);}
    const layout=view.cityLayout(site.id),p=layout??projectGround(site.lon,site.lat),ll=viewPosition(p.x,p.z),b=city.bounds,scale=campaignCityMeters(site,appearance.capital)/1000/Math.cos(site.lat*Math.PI/180)/Math.max(.001,b.max.x-b.min.x)*(layout?.scale??1);
    const footprint={minX:p.x+b.min.x*scale,maxX:p.x+b.max.x*scale,minZ:p.z+b.min.z*scale,maxZ:p.z+b.max.z*scale};
@@ -87,8 +87,8 @@ export async function campaignActors(view:ActorView,getState:()=>CampaignState,p
   const zoom=view.getZoom();outcrops?.update(zoom>=6.2&&state.sceneryDetail&&state.tilted,state.seasonPreview??campaignSeason(state.world));forests.forEach(t=>{t.visible=zoom>=6.2&&state.sceneryDetail&&state.tilted;});
   for(const city of cities.values())city.root.visible=zoom>=6.2&&state.tilted&&city.root.userData.grounded===true;
   const list=state.world.realm?.armies??[],ids=new Set(list.map(a=>a.id));for(const [id,m] of armies)if(!ids.has(id)){military.release(m);armies.delete(id);}let moving=false;if(knownWorld!==state.world){knownWorld=state.world;known=campaignCoverage(state.world);}
-  for(const a of list){if(a.id===undefined)continue;const exact=militaryArmyView(state.world,a).exact,kind=exact?armyModelKind(a):'foot',name=regimeName(state.world,a.realm);let m=armies.get(a.id);
-   if(!m||m.concealed!==!exact||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmOrigin(state.world,a.realm)){if(m)military.release(m);m=military.create(a,kind,name,state.world,!exact);m.root.matrixAutoUpdate=true;m.root.userData.castShadow=false;m.root.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=true;}});armies.set(a.id,m);root.add(m.root);}
+  for(const a of list){if(a.id===undefined)continue;const exact=militaryArmyView(state.world,a).exact,kind=exact?armyModelKind(a):'foot',name=mapRealmName(state.world,a.realm);let m=armies.get(a.id);
+   if(!m||m.concealed!==!exact||m.kind!==kind||m.realm!==a.realm||m.bannerName!==name||m.origin!==realmBanner(state.world,a.realm)){if(m)military.release(m);m=military.create(a,kind,name,state.world,!exact);m.root.matrixAutoUpdate=true;m.root.userData.castShadow=false;m.root.traverse(o=>{if(o instanceof Mesh){o.castShadow=false;o.receiveShadow=true;}});armies.set(a.id,m);root.add(m.root);}
    const at:{lon:number;lat:number;heading?:number}=state.armyPosition?.(a)??armyMapPosition(a),h=view.height(at.lon,at.lat);m.root.visible=view.getZoom()>4.8&&state.tilted&&state.militaryModels&&!!placement(a.id)?.model&&h!==null&&known(at.lon,at.lat);if(!m.root.visible)continue;
    const p=projectGround(at.lon,at.lat);m.root.position.set(p.x,h!+.08,p.z);m.root.scale.setScalar(CAMPAIGN_BODY_SCALE);const combat=armyCombatVisual(state.world,a,kind),{battle,side}=combat;let visual=combat.state;
    m.body.position.x=battle?(side==='attack'?-.48:.48):0;
