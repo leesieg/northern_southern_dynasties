@@ -24,6 +24,7 @@ import {siteById} from '../data/scenario';
 import type {PauseEvent} from './pauseEvents';
 import {planRoute} from './world';
 import {canMarchThrough} from './realm';
+const custodyInterruption='侯景已被控制，当前危机结束。';
 export function ensureHistorical(w:World){
  if(w.mode!=='sandbox'||!w.realm||!getPerson(w,'hou-jing'))return;
  return w.historical??={version:1,since:w.day,items:campaignSetup.politics&&!campaignSetup.politics.nativeEvents.includes('hou-jing')?[]:[{id:'hou-jing:1',definitionId:'hou-jing',definitionVersion:1,phase:'dormant',status:'active',phaseSince:w.day,actors:{protagonist:'hou-jing',protector:'gao-huan'},origin:allegianceRealm(w,'hou-jing')??'east',site:personResidence(w,'hou-jing').site,revision:0,milestones:[],appliedEffects:[]}]};
@@ -210,6 +211,9 @@ export function advanceHistorical(w:World){
   if(letter&&e.status!=='cancelled'&&w.day>letter.created)advancePactReception(w,letter.id);
   const id=e.actors.protagonist,live=activeWars(w).find(v=>v.civil?.claimant===id),p=w.allegiancePacts?.items.filter(p=>p.person===id&&['pending','active'].includes(p.status)).at(-1);
   const previous=historicalPact(w,e),death=lifeOf(w,e.actors.protector)?.death;
+  // Legacy prewar captivity used the same terminal status as death. Recheck only
+  // that known interruption after release; completed rebellions stay terminal.
+  const released=e.status==='cancelled'&&e.result===custodyInterruption&&e.warId===undefined&&!p&&!live&&isAlive(w,id)&&!detained(w,id)&&allegianceRealm(w,id)===e.origin&&!!northConflict(w,e);
   const failed=previous?.status==='rejected'||!previous&&e.pactId!==undefined;
   const conflictNow=!p&&!live&&e.warId===undefined&&failed&&allegianceRealm(w,id)===e.origin?northConflict(w,e):'';
   // The protector's death is a new fact, not a repeat of the earlier refusal.
@@ -219,16 +223,17 @@ export function advanceHistorical(w:World){
   if(p?.status==='active'&&e.status!=='cancelled'&&e.warId===undefined&&!live&&isAlive(w,id)&&!detained(w,id))syncSecurity(w,e,p);
   if(p&&e.pactId===p.id)recordPact(w,e,p);
   if(e.status!=='active'){
-   if(e.status==='cancelled'||!isAlive(w,id)||detained(w,id))continue;
+   if(e.status==='cancelled'&&!released||!isAlive(w,id)||detained(w,id))continue;
    const freshPact=p&&(p.id!==e.pactId||e.phase==='reception');
-   if(!retry&&!live&&!freshPact&&!(e.warId===undefined&&p?.status==='active'&&(historicalDisputes(w,e,p).length||e.security&&['concern','demanded','negotiating'].includes(e.security.status))))continue;
+   if(!released&&!retry&&!live&&!freshPact&&!(e.warId===undefined&&p?.status==='active'&&(historicalDisputes(w,e,p).length||e.security&&['concern','demanded','negotiating'].includes(e.security.status))))continue;
    e.status='active';delete e.result;delete e.resolvedAt;delete e.warId;delete e.stableSince;delete e.handlingDue;
-   remember(w,e,'renewed:'+w.day,'新的现实冲突出现，重新审议当前处境。',!!live);
+   remember(w,e,'renewed:'+w.day,released?'侯景已恢复自由，现有交接争议需要重新议定。':'新的现实冲突出现，重新审议当前处境。',!!live);
   }
-  if(retry){
+  if(retry||released){
    if(reopenDeath){e.appliedEffects.push('reopen:protector-death');e.appliedEffects=e.appliedEffects.slice(-128);}
    delete e.pactId;delete e.host;delete e.lastConflict;
-   phase(w,e,'dormant',reopenDeath?'保护人去世，先前来书未获接纳；旧部与处境需要重新议定。':'先前来书未获接纳；冷却期已过，仍存交接争议，可改投其他朝廷。');
+   if(released){delete e.security;delete e.securitySince;delete e.securitySignals;}
+   phase(w,e,'dormant',released?'先前拘押已经解除，按当前统属与交接处境重新审议。':reopenDeath?'保护人去世，先前来书未获接纳；旧部与处境需要重新议定。':'先前来书未获接纳；冷却期已过，仍存交接争议，可改投其他朝廷。');
   }
   if(live){delete e.handlingDue;delete e.stableSince;e.warId=live.id;e.host=live.attacker;e.site=live.target;
    const occupied=warCitySide(w,live,live.target)==='attack';
@@ -239,7 +244,7 @@ export function advanceHistorical(w:World){
   }
   if(e.warId!==undefined){finish(w,e,!isAlive(w,id)||detained(w,id)?'起兵收场：侯景已死亡或被俘。':governingExecutives(w,e.host!).includes(id)?'战争结束：侯景取得实际执政权。':'战争结束，按已生效的和约与控制范围收场。');continue;}
   if(!isAlive(w,id)){finish(w,e,'侯景已故，未发生的事件不再继续。',true);continue;}
-  if(detained(w,id)){finish(w,e,'侯景已被控制，当前危机结束。',true);continue;}
+  if(detained(w,id)){finish(w,e,custodyInterruption,true);continue;}
   if(p){
    marchToHost(w,e,p);
    e.pactId=p.id;e.host=p.to;e.site=personResidence(w,id).site;recordPact(w,e,p);
