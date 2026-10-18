@@ -57,7 +57,7 @@
 /* Restore the compact central flags; positioning follows the actual two HUD bounds. */
 .focused-shell .topbar>.reference-hud-frame--eventTrim{left:auto;right:0;top:calc(166 * var(--hud-unit));width:calc(144 * var(--hud-unit));height:calc(439 * var(--hud-unit));z-index:4}
 .focused-shell .ongoing-flags{width:auto;max-width:none;max-height:none;overflow:visible}
-.focused-shell .ongoing-flag-row{justify-content:center}
+.focused-shell .ongoing-flag-row{justify-content:start}
 .focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-row{box-sizing:border-box;padding-right:32px}
 .focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry .ongoing-flag{width:60px;height:96px}
 .focused-shell .topbar:has(.ongoing-flags[data-below-header=true]:not([data-empty=true])) .army-dock{top:calc(var(--ongoing-flags-bottom,var(--campaign-header)) + 10px);max-height:calc(100dvh - var(--ongoing-flags-bottom,var(--campaign-header)) - 24px)}
