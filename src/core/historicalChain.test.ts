@@ -19,6 +19,8 @@ describe('Hou Jing historical chain',()=>{
   expect(e.phase).toBe('rebellion');
   expect(w.realm!.wars?.some(v=>v.civil?.claimant==='hou-jing')).toBe(true);
   expect(army?.troops??0).toBeGreaterThanOrEqual(300);
-  expect(localBalance(w,'shouchun')).toBeGreaterThanOrEqual(100);
+  const war=w.realm!.wars!.find(v=>v.civil?.claimant==='hou-jing')!;
+  // Independent civil polities transfer the base funds into their actual treasury.
+  expect(localBalance(w,war.civil!.base)+w.realm!.treasuries[war.attacker].coins).toBeGreaterThanOrEqual(100);
  },600000);
 });
