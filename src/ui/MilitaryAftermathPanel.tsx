@@ -17,7 +17,7 @@ export function MilitaryAftermathPanel({world:w,army,site,pending,send}:{world:W
  const buttons:{action:MilitaryAction['action'];label:string;icon:ArtName;detail:string;policy?:MilitaryAction['policy']}[]=[
  {action:'scout',label:'派出斥候',icon:'world',detail:'随军粮 5；斥候按往返路程回报十五日路程内驻军人数区间，报告保留日期，不持续更新敌情。'},
  {action:'retreat',label:'撤退',icon:'world',detail:'士气 −8；沿己方控制道路撤离，途中暂不主动交战。'},
- {action:'surrender',label:'招降守城',icon:'steadfast',detail:'围城十日、无有效守军且守城秩序或存粮不足时接管城市，免除强攻破坏；议降交城损失当时居民人口的 0.5%，同场同城同方向仅结算一次，保留人口与劳力下限。'},
+ {action:'surrender',label:'招降守城',icon:'steadfast',detail:'围城进度至少 10 点、无有效守军且守城秩序或存粮不足时接管城市，免除强攻破坏；议降交城损失当时居民人口的 0.5%，同场同城同方向仅结算一次，保留人口与劳力下限。'},
  {action:'assault',label:'强攻城池',icon:'army',detail:assaultDetail},
  {action:'discipline',policy:'restrained',label:'严守军纪',icon:'steadfast',detail:'禁止掠夺公库，保全当地税基。'},
  {action:'discipline',policy:'forage',label:'准许掠财',icon:'army',detail:'准许占领后押运敌方公库；每次掠取会降低当地秩序 15、繁荣 5。'},
