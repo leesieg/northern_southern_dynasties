@@ -256,6 +256,18 @@ export function advanceHistorical(w:World){
     if(reason)remember(w,e,'pact-wait:'+p.id+':'+reason.slice(0,80),'来书暂未获接纳：'+reason+'；答复期限为'+(p.due-w.day)+'日后，届期自动结束本次来书。');
     continue;
    }
+   // A missing force cannot be restored by repeating a military-command grievance forever.
+   // Keep allegiance and the old breach history; settle the person only after actual arrival in host territory.
+   if(p.terms!=='personal'&&p.army!==null&&!w.realm!.armies.some(a=>a.id===p.army)&&!historicalArmy(w,id)){
+    if(e.security)e.security.status='dismissed';delete e.handlingDue;delete e.stableSince;delete e.decision;
+    const at=personResidence(w,id);
+    phase(w,e,'settlement','约定部曲已经不存，当前改办个人安置；沿真实道路撤回接纳国，不再反复追议不存在的兵权。');
+    if(w.realm!.cities[at.site].controller===p.to){
+     p.status='ended';delete p.offer;p.revision=(p.revision??0)+1;
+     finish(w,e,'约定部曲已不存，侯景已抵达接纳国，武装安置结案；个人效忠与私产保留。');
+    }else remember(w,e,'personal-placement:'+p.id,at.traveling?'部曲不存，本人正在沿实际道路撤回接纳国安置。':'部曲不存，本人仍在异国；等待合法返国道路，原军队争议不再反复立案。');
+    continue;
+   }
    if(e.security?.status==='negotiating'&&!p.offer)e.security.status=p.terms==='reform'?'protected':'demanded';
    if(e.security&&['concern','demanded','negotiating'].includes(e.security.status)){
     phase(w,e,'dispute',e.security.status==='concern'?'两国和好引起安置担忧，原国正在议定是否提出交还要求。':e.security.status==='negotiating'?'双方正在商议改编条款，原有安置继续有效。':settlementReview(e,p)?'接纳方复议长期私军安置，须议定安全担保或协商改编。':'原国提出交还要求，接纳方须议定安全担保。');

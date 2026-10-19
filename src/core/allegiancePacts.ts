@@ -87,7 +87,7 @@ function perform(w:World,c:PactCommand,actor:string){const why=pactReason(w,c,ac
  p.status='active';p.due=w.day+90;p.reviewed=w.day;log(w, getPerson(w,p.person)!.name+'获准'+receptionNames[p.terms]+'归附；'+q.troops+' 人真实转投，地方归属保留，'+(q.protection?'接纳国承担保护预算及公饷。':'个人效忠改变。'));}
 export function currentPactBreaches(w:World,p:AllegiancePact){
  const a=w.realm?.armies.find(a=>a.id===p.army);
- return [...(detained(w,p.person)?['安全保证失效']:[]),...(p.terms==='retain'&&p.integrationCompletedAt===undefined&&(!a||armyCommander(w,a)!==p.person&&a.owner!==p.person)?['撤去约定兵权']:[]),...(a&&(a.arrears??0)>0?['连续欠饷']:[])];
+ return [...(detained(w,p.person)?['安全保证失效']:[]),...(p.terms==='retain'&&p.integrationCompletedAt===undefined&&a&&armyCommander(w,a)!==p.person&&a.owner!==p.person?['撤去约定兵权']:[]),...(a&&(a.arrears??0)>0?['连续欠饷']:[])];
 }
 /** Reconcile one pending letter at a stable boundary, including expired imported letters. */
 export function advancePactReception(w:World,id:number){

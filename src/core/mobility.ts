@@ -110,7 +110,20 @@ export function activityAuthorityReason(w:World,a:Activity){
  if(a.kind==='audience'&&(!a.target||!governingExecutives(w,r).includes(a.target)||a.site!==capital(r,w)))return '会见对象已非本国执政者或朝廷已迁移';
  return '';
 }
-export function npcRoute(w:World,id:string,to:string){const from=personResidence(w,id).site,r=allegianceRealm(w,id);if(from===to)return {days:0,route:[from],durations:[]};return r?planRoute(from,to,site=>!w.realm||civilCanAdmin(w,id,site)&&canEnter(w,r,w.realm.cities[site].controller,id)):null;}
+/** A current truce permits a return home through that former opponent, never through a third country. */
+function returnCorridor(w:World,id:string,from:string,to:string){
+ const r=allegianceRealm(w,id),foreign=w.realm?.cities[from]?.controller;
+ if(!r||!foreign||foreign==='frontier'||foreign===r||w.realm!.cities[to]?.controller!==r||atWar(w,r,foreign)||(w.realm!.truces[[r,foreign].sort().join('|')]??0)<=w.day)return;
+ return (site:string)=>w.realm!.cities[site].controller===r||w.realm!.cities[site].controller===foreign;
+}
+export function npcRoute(w:World,id:string,to:string){const from=personResidence(w,id).site,r=allegianceRealm(w,id);if(from===to)return {days:0,route:[from],durations:[]};if(!r)return null;const ordinary=planRoute(from,to,site=>!w.realm||civilCanAdmin(w,id,site)&&canEnter(w,r,w.realm.cities[site].controller,id));if(ordinary)return ordinary;const corridor=returnCorridor(w,id,from,to);return corridor?planRoute(from,to,corridor):null;}
+/** An occupied birthplace is no longer a free NPC's default posting after changing allegiance. */
+function npcHome(w:World,id:string){
+ const r=allegianceRealm(w,id),home=getCharacter(w,id)?.home,at=personResidence(w,id).site;
+ if(!r||!w.realm||isAdventurer(w,id)||home&&w.realm.cities[home]?.controller===r)return home;
+ if(w.realm.cities[at].controller===r)return at;
+ return Object.keys(w.realm.cities).filter(site=>w.realm!.cities[site].controller===r).map(site=>({site,route:npcRoute(w,id,site)})).filter(v=>v.route).sort((a,b)=>a.route!.days-b.route!.days)[0]?.site;
+}
 export function dispatchNPC(w:World,id:string,to:string,prepared?:ReturnType<typeof planRoute>){const s=w.mobility?.residences[id];if(!s||s.journey||s.site===to)return;const route=prepared??npcRoute(w,id,to);if(!route)return;if(route.route[0]!==s.site||route.route.at(-1)!==to)throw new Error('赴任路线已失效');s.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}
 export function mobilityReason(w:World,c:MobilityCommand):string{
  if(!w.mobility||!w.realm||!w.characterId||w.campaign?.status!=='active')return '此局没有行旅事务';
@@ -178,7 +191,7 @@ export function advanceMobility(w:World){
  for(const office of offices)if(office.holder&&office.active){const list=heldOffices.get(office.holder)??[];list.push(office);heldOffices.set(office.holder,list);}
  for(const [id,location] of Object.entries(s.residences)){
   if(detained(w,id)||w.diplomacy?.missions.some(m=>m.envoy===id)||id===w.characterId||!isAlive(w,id)||commandArmy(w,id)||lifeOf(w,id)?.illness?.severity===3)continue;
-  const j=location.journey;if(j){const realm=allegianceRealm(w,id);if(realm&&(!civilCanAdmin(w,id,j.route[j.leg+1])||!canEnter(w,realm,w.realm.cities[j.route[j.leg+1]].controller,id))){location.journey=null;continue;}j.elapsed++;if(j.elapsed>=j.durations[j.leg]){location.site=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)location.journey=null;}continue;}
+  const j=location.journey;if(j){const realm=allegianceRealm(w,id),corridor=returnCorridor(w,id,j.route[0],j.route.at(-1)!),returning=!!corridor&&j.route.every(corridor);if(realm&&(!civilCanAdmin(w,id,j.route[j.leg+1])||!canEnter(w,realm,w.realm.cities[j.route[j.leg+1]].controller,id)&&!returning)){location.journey=null;continue;}j.elapsed++;if(j.elapsed>=j.durations[j.leg]){location.site=j.route[++j.leg];j.elapsed=0;if(j.leg===j.durations.length)location.journey=null;}continue;}
   // Keep a free NPC at the place where its pending letter can actually be accepted. Existing journeys still finish above.
   if(w.allegiancePacts?.items.some(p=>p.person===id&&p.status==='pending'&&p.due>w.day))continue;
   if(Object.values(s.pendingCommanders??{}).some(v=>v.person===id))continue;
@@ -192,7 +205,7 @@ export function advanceMobility(w:World){
   const partnerBound=!!spouse&&(spouse===w.characterId||!!heldOffices.get(spouse)?.some(n=>n.kind==='city'||n.kind==='office')||!!w.retinue?.members[spouse]||Object.values(executives).some(ids=>ids.includes(spouse)));
   // Officials keep their posting; a free partner joins a settled spouse using normal NPC travel.
   const householdSite=spouse&&partner&&isAlive(w,spouse)&&!detained(w,spouse)&&!commandArmy(w,spouse)&&allegianceRealm(w,spouse)===realm?(partner.traveling?location.site:partnerBound||getPerson(w,id)?.sex==='female'?partner.site:undefined):undefined;
-  const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??office?.seatSite??(office&&realm?capital(realm,w):undefined))??(realm&&executives[realm].includes(id)?capital(realm,w):householdSite?? getCharacter(w,id)?.home);
+  const destination=retinueDestination(w,id)??pendingActivity?.site??(task&&['ready','working','incident','aid'].includes(task.phase)?task.site:undefined)??(duty&&duty.phase!=='closed'&&duty.officer===id?'tianshui':undefined)??(office?.site??office?.seatSite??(office&&realm?capital(realm,w):undefined))??(realm&&executives[realm].includes(id)?capital(realm,w):householdSite??npcHome(w,id));
   if(destination&&!commandArmy(w,id))dispatchNPC(w,id,destination);
   }
   for(const [key,pending] of Object.entries(s.pendingCommanders??{})){const army=w.realm.armies.find(a=>a.id===Number(key)),id=pending.person;if(!army||!isAlive(w,id)||allegianceRealm(w,id)!==army.realm||armyCampaign(w,army)){delete s.pendingCommanders![Number(key)];log(w,politicalName(id,w)+'的统帅赴任令因身份、军队或委任变化而结束。');continue;}if(!army.journey&&presentAt(w,id,army.location)){installCommander(w,army,id);continue;}const destination=army.journey?.route.at(-1)??army.location;if(id===w.characterId){if(!w.people[0].journey&&w.people[0].location!==destination){const route=personalRoute(w,destination);if(route&&w.people[0].food>=route.food){w.people[0].food-=route.food;w.people[0].journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};}}}else if(!s.residences[id]?.journey)dispatchNPC(w,id,destination);}
