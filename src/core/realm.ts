@@ -1,3 +1,4 @@
+import {advanceCivilMobilization} from './civilMobilization';
 import {restoreMilitaryOccupation} from './civilPolities';
 import {campaignSetup} from '../data/campaignSetup';
 import {battleRoundArmies,saveBattleRound,siegeSceneSnapshot,saveSiegeEvent,type CombatContact} from './combatSnapshots';
@@ -258,6 +259,7 @@ export function advanceRealm(w:World){
 
  }
  if((s.lastMilitaryDay??-1)>=w.day)return;s.lastMilitaryDay=w.day;
+ advanceCivilMobilization(w);
  advanceDefections(w);
  advanceRecruitmentRallies(w);
  for(const war of activeWars(w))if(war.peaceOffer&&war.peaceOffer.until<w.day)delete war.peaceOffer;advanceRealmStrategy(w);

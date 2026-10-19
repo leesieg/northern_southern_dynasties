@@ -2,6 +2,7 @@ import {beforeEach,describe,expect,it,vi} from 'vitest';
 const assets='164152f982d7f60a5ff95e9af445f8c0f296b398cdaa00df71707dd3392a2c0d';
 // Independent fixtures: checkpoint exports and the user's read-only save diagnostic.
 const checkpoints=[
+ {  "packageId": "official-nsd",  "digest": "afb0dc2f888f4f71c24975e295454911292f0cbb6b5ce5de8ace2fec5e81e9b5",  "engine": "e3945f206f30f251567a6b65f93ddac05c53cab426c1b8db28d4026f7324a9fa",  "assets": "0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e"},
  {"packageId":"official-nsd","digest":"a186d17d52e06bb7521095f96c7be4eb7d1e430d1f9eed72539905e72a27f122","engine":"13a8fe3500adb1e0fd47a52a3ab0fac88bc3a8f87bc32e48b7e1bf474661c51b","assets":"0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e"},
  {"packageId":"official-nsd","digest":"7a2f62a997dfeb5bae169acd2ed973be0e4ba52740d1c273ad8332511d0cae23","engine":"7ff9c183a86c01bbc1d6e4e349fda484836e2b30b95d7d6cb0b2d7d2ba560143","assets":"0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e"},
  {"packageId":"official-nsd","digest":"e52e8928ea81fa43cea10679475f3b04e9c6cce8742b6f0bdb55d32a0b64d14b","engine":"15f118da0abdc3b27b456ff9bfe60486187a51d7fe15d83e97c8dc0046e63f0b","assets":"0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e"},

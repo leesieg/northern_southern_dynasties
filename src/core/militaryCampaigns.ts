@@ -1,3 +1,4 @@
+import {civilArmyObserving} from './civilMobilization';
 import {administrativeRealm} from './polityRuntime';
 import {armyAdvanceRoute,armyAtEnemyCity} from './militaryRoutes';
 import {getPerson} from './personRegistry';
@@ -33,6 +34,8 @@ export function campaignReason(w:World,c:MilitaryCampaignCommand){
  const a=w.realm.armies.find(a=>a.id===c.army&&a.realm===r),war=activeWars(w).find(q=>q.id===c.war&&!!warRealmSide(q,r));
  if(!a||!war)return '须选择本国军队与正在进行的战争';
  if(a.owner&&a.owner!==w.characterId&&relationOpinion(w,a.owner,w.characterId)<20)return '部曲主人尚未同意承担本场战役';
+ if(war.civil?.mobilization?.members[c.commander]?.choice==='pending')return '统帅须先明确战时立场，再接受本场战役委任';
+ if(war.civil?.mobilization?.members[c.commander]?.choice==='watch'||civilArmyObserving(w,war,a)&&armyCommander(w,a)===c.commander)return '统帅选择观望，须先表态参战或依法改任统帅';
  if(armyCampaign(w,a)||w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.commander===c.commander))return '军队或统帅已有战役';
  if((w.militaryCampaigns?.items.filter(q=>q.status==='active').length??0)>=48)return '战役委任已满';
  if(c.doctrine!==undefined&&!['cautious','balanced','aggressive'].includes(c.doctrine)||c.allowLoot!==undefined&&typeof c.allowLoot!=='boolean')return '无效战役授权';

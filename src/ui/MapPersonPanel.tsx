@@ -1,3 +1,4 @@
+import {CivilMobilizationEntry} from './CivilMobilizationPanel';
 import {PersonalContinuity} from './PersonalContinuity';
 import {afterCommand} from './actionFeedback';
 import {NobilityPanel} from './PoliticalIdentity';
@@ -99,6 +100,7 @@ export function MapPersonPanel({world:w,ids,lifeEntry,tab,onTab,familyView,onFam
  {tab==='family'&&<><DetailTabs label="家族事务" value={familyMode} onChange={setFamilyMode} items={[{id:'household' as const,label:'家事',icon:'estate' as const},...family?[{id:'tree' as const,label:'世系',icon:'renown' as const},{id:'contributions' as const,label:'贡献',icon:'influence' as const}]:[],...(self?[{id:'legacy' as const,label:'世业继任',icon:'estate' as const}]:[])]}/>{familyMode==='household'&&(deceased?<p>身后家事由在世亲属办理。</p>:<HouseholdLifePanel world={w} id={lifeId} entry={lifeEntry?.person===id?lifeEntry:null} pending={pending} send={send}/>)}{(familyMode==='tree'||familyMode==='contributions')&&family&&<FamilyPanel world={w} selected={familySelection??id} chapter={familyMode} onSelect={id=>{onFamilyView({selection:id,mode:'tree'});}} onPerson={onPerson}/>} {self&&familyMode==='legacy'&&<SocialPanel world={w} pending={pending} send={send} onPerson={onPerson}/>}</>}
 
  {tab==='focus'&&self&&<LifestylePanel world={w} pending={pending} send={send}/>}
+ {tab==='interaction'&&w.realm&&<div className="person-quick-actions"><CivilMobilizationEntry world={w} person={id} pending={pending} send={send}/></div>}
  {tab==='interaction'&&w.realm&&allegianceRealm(w,id)&&<NobilityPanel world={w} realm={allegianceRealm(w,id)!} person={id} pending={pending} send={send} onPerson={onPerson}/>}
  {tab==='relations'&&<PersonConnections key={id} world={w} person={id} onPerson={onPerson}/>}
  {tab==='interaction'&&self&&w.realm&&!deceased&&<PactRequestPanel world={w} pending={pending} send={send}/>}

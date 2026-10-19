@@ -1,3 +1,4 @@
+import {actCivilPolitics,civilStanceQuote} from './civilMobilization';
 import {ensureWars} from './wars';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act} from './world';
@@ -103,8 +104,9 @@ describe('independent wartime military governments',()=>{
  it('keeps a real subordinate grant request as history after its military government is dissolved',()=>{
   const {w}=fixture(false);setLocalHolder(w,countyTerritory('jiangling'),'liang','xiao-gang');w.mobility!.residences['xiao-gang']={site:'jiangling',journey:null};changeRelationOpinion(w,'xiao-gang','xiao-yi',100);changeRelationOpinion(w,'xiao-gang','xiao-yan',-100);
   act(w,{type:'civilWar',action:'rise',name:'讨奸',arrangement:{goal:'executive',sponsor:'xiao-yi',beneficiary:'xiao-yan',executive:'xiao-yi',name:''}});const war=civilWar(w,'liang')!;
+  const response=civilStanceQuote(w,war,'xiao-gang','rebel');actCivilPolitics(w,{type:'civilWar',action:'stance',war:war.id!,choice:'rebel',revision:response.revision},'xiao-gang');
   expect(allegianceRealm(w,'xiao-gang')).toBe(war.attacker);actFiscal(w,{type:'fiscal',action:'request',site:'jiangling',amount:20,purpose:'construction'},'xiao-gang');expect(w.realm!.fiscal!.requests.at(-1)!.status).toBe('pending');saved(w);
-  settleCivilWar(w,war,'demand','loyal');expect(w.realm!.fiscal!.requests.at(-1)!).toMatchObject({realm:war.attacker,status:'cancelled'});saved(w);
+  settleCivilWar(w,civilWar(w,'liang')!,'demand','loyal');expect(w.realm!.fiscal!.requests.at(-1)!).toMatchObject({realm:war.attacker,status:'cancelled'});saved(w);
  });
  it('preserves separate foreign wars against the same enemy when the camp reunifies',()=>{
   const {w}=fixture(),civil=civilWar(w,'liang')!,r=civil.attacker;

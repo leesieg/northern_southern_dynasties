@@ -1,3 +1,4 @@
+import {ensureCivilMobilization} from './civilMobilization';
 import {applyPowerArrangement} from './powerPolitics';
 import {syncRulerHistory} from './rulerHistory';
 import type {World} from './types';
@@ -127,6 +128,7 @@ export function migrateCivilPolities(w:World){
   if(city.controller!==war.attacker||city.governor||w.realm!.local?.seats[localKey(war.attacker,county)]||!isAlive(w,c.claimant)||allegianceRealm(w,c.claimant)!==war.attacker)continue;
   delete w.realm!.local?.seats[localKey(civilOrigin(war),county)];setLocalHolder(w,county,war.attacker,c.claimant);repaired=true;
  }
+ for(const war of activeWars(w))if(war.civil)ensureCivilMobilization(w,war);
  if(repaired)syncRulerHistory(w);
 }
 

@@ -1,3 +1,4 @@
+import {WarDetailsDialog} from './WarDetails';
 import {CommandConfirmation} from './CommandConfirmation';
 import {activeWars,warRealmSide} from '../core/wars';
 import {capital} from '../core/realm';
@@ -27,12 +28,13 @@ import './situation.css';
 
 const icons:Record<MovementId,ArtName>={dynastic:'renown',expansion:'army',reform:'diligent',conservative:'frugal',unaligned:'person'};
 export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,onService,onFinance,onCourt}:{world:World;realm?:RealmId;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onPerson:(id:string)=>void;onTerritory?:(id:string)=>void;onService?:(id?:number,site?:string)=>void;onFinance?:()=>void;onCourt?:()=>void;embedded?:boolean}){
+ const [responseWar,setResponseWar]=useState<number|null>(null);
  const [causeView,setCauseView]=useState<'wars'|'local'|null>(null);
  const [policyDraft,setPolicyDraft]=useState<CourtPolicy|null>(null);
  const [selected,setSelected]=useState<MovementId>('dynastic'),[cancel,setCancel]=useState(false),[recruit,setRecruit]=useState(false),[candidate,setCandidate]=useState('');
  const [petitionOpen,setPetitionOpen]=useState(false),[revoltOpen,setRevoltOpen]=useState(false),[previewOpen,setPreviewOpen]=useState(false);
  const r=realm??currentRealm(w),ownRealm=r===currentRealm(w),c=courtOf(w,r),g=governmentOf(w,r)!;
- useEffect(()=>{setCauseView(null);setPolicyDraft(null);setCancel(false);setRecruit(false);setPetitionOpen(false);setRevoltOpen(false);setPreviewOpen(false);},[r]);
+ useEffect(()=>{setCauseView(null);setResponseWar(null);setPolicyDraft(null);setCancel(false);setRecruit(false);setPetitionOpen(false);setRevoltOpen(false);setPreviewOpen(false);},[r]);
  useEffect(()=>{if(c?.phase!=='stable')setPolicyDraft(null);},[c?.phase,w.characterId]);
  if(!c)return null;
  const own=c.members[w.characterId!]??'unaligned',m=movementMood(w,r,selected),bonus=courtBonus(w,r),projection=courtMonthPreview(w,r),local=courtLocalPressures(w,r),enabled=courtEnabled(w,r);
@@ -51,7 +53,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
  };
  const responseLabel={wars:'查看战场',finance:'查核财赋',local:'地方应对',groups:'查看集团领袖',court:'朝廷职掌'};
  const cancelCommand={type:'court',action:'cancel'} as const;
- return <div className="court-situation-desk">{policyDraft&&<ActionDialog art="staff" title="议定安定国策" onClose={()=>setPolicyDraft(null)} actions={<><small role="status">{courtReason(w,{type:'court',action:'policy',policy:policyDraft})||'需实际执政者影响力 20；三十日内不能再改。'}</small><button className="primary" disabled={pending||!!courtReason(w,{type:'court',action:'policy',policy:policyDraft})} onClick={()=>{const cmd={type:'court',action:'policy',policy:policyDraft} as const;if(pending||courtReason(w,cmd))return;void afterCommand(send(cmd),()=>{setPolicyDraft(null);});}}>确认国策</button></>}><fieldset className="intrigue-options"><legend>安定时的施政方向</legend>{(Object.keys(policies) as CourtPolicy[]).map(policy=><label key={policy}><input type="radio" name="court-policy" checked={policyDraft===policy} onChange={()=>setPolicyDraft(policy)}/><span>{policies[policy].name}<small>{policies[policy].effect}</small></span></label>)}</fieldset><p className="political-note">顺应主导集团有利于施政；违背集团诉求会增加朝局压力。动荡和危局期间暂停安定国策增益。</p></ActionDialog>}
+ return <div className="court-situation-desk">{activeWars(w).filter(war=>war.civil?.mobilization&&[war.attacker,war.defender].includes(r)).map(war=><button key={war.id} className="civil-situation-link" onClick={()=>setResponseWar(war.id!)}>地方响应 · {war.civil!.name} ›</button>)}{responseWar!==null&&<WarDetailsDialog world={w} warId={responseWar} pending={pending} send={send} onPerson={onPerson} onClose={()=>setResponseWar(null)}/>}{policyDraft&&<ActionDialog art="staff" title="议定安定国策" onClose={()=>setPolicyDraft(null)} actions={<><small role="status">{courtReason(w,{type:'court',action:'policy',policy:policyDraft})||'需实际执政者影响力 20；三十日内不能再改。'}</small><button className="primary" disabled={pending||!!courtReason(w,{type:'court',action:'policy',policy:policyDraft})} onClick={()=>{const cmd={type:'court',action:'policy',policy:policyDraft} as const;if(pending||courtReason(w,cmd))return;void afterCommand(send(cmd),()=>{setPolicyDraft(null);});}}>确认国策</button></>}><fieldset className="intrigue-options"><legend>安定时的施政方向</legend>{(Object.keys(policies) as CourtPolicy[]).map(policy=><label key={policy}><input type="radio" name="court-policy" checked={policyDraft===policy} onChange={()=>setPolicyDraft(policy)}/><span>{policies[policy].name}<small>{policies[policy].effect}</small></span></label>)}</fieldset><p className="political-note">顺应主导集团有利于施政；违背集团诉求会增加朝局压力。动荡和危局期间暂停安定国策增益。</p></ActionDialog>}
   <section className="court-factions court-desk-column">
    <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>政治集团</h3><small>{ownRealm?'你的归属 · '+movements[own].name:'他国集团'}</small></header>
    <div className="court-group-select court-group-ledger" aria-label="政治集团势力与满意度">{movementIds.map(group=>{const mood=movementMood(w,r,group);return <button key={group} aria-label={'查看'+movements[group].name+'，势力 '+mood.share+'%，满意度 '+mood.satisfaction} aria-pressed={selected===group} onClick={()=>setSelected(group)}>{mood.leader?<CharacterPortrait characterId={mood.leader} world={w} compact/>:<ArtIcon name={icons[group]} size={32}/>}<span><strong>{movements[group].name}</strong><small>{mood.leader?politicalName(mood.leader,w):'无领袖'} · {movements[group].goal}</small></span><span className="court-group-numbers"><b>{mood.share}%</b><small>满意 {mood.satisfaction}</small><meter min={0} max={100} value={mood.satisfaction} aria-label={movements[group].name+'满意度'}/></span></button>;})}</div>
