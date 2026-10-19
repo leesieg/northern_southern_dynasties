@@ -11,7 +11,7 @@ import {getPerson,allPeople} from './personRegistry';
 import {allegianceRealm,reconcileOfficeAllegiance} from './officeEligibility';
 import {retainPersonalFollowers,detachRetainer} from './allegianceTransition';
 import {armyCommander} from './mobility';
-import {ensureFiscal,fiscalRecord,fiscalPath} from './treasury';
+import {ensureFiscal,fiscalRecord,remitMilitarySurplus} from './treasury';
 import {descendantSites} from '../data/territorialHierarchy';
 import {newCourt,syncCourt} from './court';
 import {syncRelationships} from './relationships';
@@ -73,15 +73,13 @@ export function establishCivilPolity(w:World,war:War,takeBase=false){
  }
  for(const site of cities){const city=s.cities[site];city.controller=r;city.occupiedSince??=w.day;city.occupiedByWar=war.id;if(city.governor&&!people.includes(city.governor))city.governor=null;}
  c.cities=cities;c.supporters=people;
- const baseAccount=fiscalPath(w,c.base,r)[0],budget=f.balances[baseAccount]??0;
- if(budget){f.balances[baseAccount]=0;s.treasuries[r].coins=budget;fiscalRecord(w,r,baseAccount,'central:'+r,budget,'根据地公款归军府统筹');}
  for(const [key,seat] of Object.entries(s.local?.seats??{}))if(key.startsWith(origin+'|')&&seat.holder&&people.includes(seat.holder)&&descendantSites(key.slice(origin.length+1)).some(id=>cities.includes(id))){s.local!.seats[r+'|'+key.slice(origin.length+1)]={...seat,regime:r+'-0'};seat.holder=null;seat.delegated=false;}
  if(cities.includes(c.base)){
   const county=countyTerritory(c.base);delete s.local?.seats[localKey(origin,county)];
   setLocalHolder(w,county,r,c.claimant);
  }
  for(const a of armies){returnArmyConvoy(w,a);const campaign=w.militaryCampaigns?.items.find(q=>q.status==='active'&&q.army===a.id);if(campaign)finishCampaign(w,campaign,'failed','军队起兵，原委任结案退款');a.realm=r;a.payer=a.owner?'person:'+a.owner:'central:'+r;const commander=commanders.get(a.id!);if(commander&&people.includes(commander)){w.mobility!.armyCommanders??={};w.mobility!.armyCommanders[a.id!]=commander;}}
- war.attacker=r;
+ war.attacker=r;remitMilitarySurplus(w,r);
  // Existing enemies contesting a responding county remain enemies there. No alliance or treaty is inherited.
  inheritCivilFronts(w,war);
  if(w.diplomacy){w.diplomacy.credit[r]=40;w.diplomacy.bases[r]=g.regimeId;for(const other of worldRealms(w).filter(id=>id!==r))w.diplomacy.pairs[[r,other].sort().join('|')]={a:r,b:other,opinion:other===origin?-30:0,recognized:false,treaties:[],cooldowns:{}};}

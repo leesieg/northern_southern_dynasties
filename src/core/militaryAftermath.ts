@@ -53,7 +53,7 @@ function armySiege(w:World,a:Army){
 }
 function finishArmySiege(w:World,a:Army,cause:'battle'|'surrender'){
  const {war,siege,side}=armySiege(w,a)!;
- if(war.civil){civilCityCapture(w,war,a.location,side,a,cause);syncGovernance(w);}else occupyCity(w,war,a.location,side==='attack'?war.attacker:war.defender,true,cause);
+ if(war.civil){civilCityCapture(w,war,a.location,side,a,cause);syncGovernance(w);}else occupyCity(w,war,a.location,side==='attack'?war.attacker:war.defender,cause==='surrender',cause);
  w.realm!.sieges=w.realm!.sieges!.filter(v=>v!==siege);
  for(const b of w.realm!.armies)if(b.location===siege.site&&warArmySide(w,war,b)===side)b.siege=0;
 }

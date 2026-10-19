@@ -19,7 +19,7 @@ import {activeWars} from './wars';
 import {planRoute} from './world';
 import {capital} from './realm';
 import {armyCampaign} from './militaryCampaigns';
-import {isMonthStart} from './calendar';
+import {isMonthStart,nextMonthStart} from './calendar';
 
 export type ReceptionTerms='retain'|'reform'|'personal';
 export const receptionNames={retain:'保留部曲',reform:'逐步改编',personal:'只接纳个人'};
@@ -99,6 +99,13 @@ export function advancePactReception(w:World,id:number){
  const c={type:'pact',action:'answer',id:p.id,accept:true} as const;
  if(pactQuote(w,p).acceptance>=-10&&!pactReason(w,c,chief))perform(w,c,chief);
 }
+/** A bilateral reform is reviewed on the real monthly settlement date; opinion is not a second veto. */
+export function pactReformReview(w:World,p:AllegiancePact){
+ if(p.status!=='active'||p.terms!=='reform'||p.integrationCompletedAt!==undefined)return;
+ const a=w.realm?.armies.find(a=>a.id===p.army),reasons=[...(!a?['约定部队已不存在']:a.realm!==p.to?['约定部队已改属']:[]),...(a?.arrears?['须结清军饷 '+a.arrears+' 钱']:[]),...(detained(w,p.person)?['本人被拘押，安全条件未满足']:[])];
+ const earliest=Math.max(w.day,p.due),nextReview=isMonthStart(earliest,w.scriptId)&&p.reviewed<earliest?earliest:nextMonthStart(earliest,w.scriptId);
+ return {due:p.due,nextReview,reasons};
+}
 export function advancePacts(w:World){if(!w.realm)return;const s=ensure(w);if(isMonthStart(w.day,w.scriptId)){for(const r of worldRealms(w)){const chief=governingAuthority(w,r),candidate=w.realm.armies.find(a=>a.realm===r&&!a.journey&&(a.owner??armyCommander(w,a))!==w.characterId&&!!(a.owner??armyCommander(w,a))&&relationOpinion(w,chief,(a.owner??armyCommander(w,a))!)<=-30);if(!candidate)continue;const person=candidate.owner??armyCommander(w,candidate)!;if(historicalOwnsDecision(w,person))continue;const hosts=worldRealms(w).filter(to=>to!==r&&!w.realm!.annexed?.[to]).sort((a,b)=>relationOpinion(w,person,governingAuthority(w,b))-relationOpinion(w,person,governingAuthority(w,a)));for(const to of hosts){const request={type:'pact',action:'request',realm:to,army:candidate.id,terms:'retain'} as const;if(!pactReason(w,request,person)){perform(w,request,person);break;}}}}for(const p of s.items){
  if(p.offer){
   const q=p.offer,chief=governingAuthority(w,p.to);
@@ -112,7 +119,7 @@ export function advancePacts(w:World){if(!w.realm)return;const s=ensure(w);if(is
  }
  if(p.status==='pending'){advancePactReception(w,p.id);continue;}if(p.status!=='active')continue;if(!isAlive(w,p.person)||allegianceRealm(w,p.person)!==p.to){p.status='ended';delete p.offer;continue;}const a=w.realm.armies.find(a=>a.id===p.army),chief=governingAuthority(w,p.to),breaches=currentPactBreaches(w,p);
  if(isMonthStart(w.day,w.scriptId)&&p.reviewed<w.day){p.reviewed=w.day;for(const cause of breaches){if(!p.breaches.includes(cause)){p.breaches.push(cause);changeRelationOpinion(w,p.person,chief,-20);const oath=w.relationships?.oaths[p.person];if(oath)oath.loyalty=Math.max(1,oath.loyalty-20);log(w, getPerson(w,p.person)!.name+'就「'+cause+'」提出交涉。');}}
- if(p.terms==='reform'&&p.integrationCompletedAt===undefined&&w.day>=p.due&&a&&!a.arrears&&!detained(w,p.person)&&relationOpinion(w,p.person,chief)>=0){delete a.owner;a.payer='central:'+p.to;for(const u of a.regiments??[])u.institution=Math.max(60,u.institution??0);p.integrationCompletedAt=w.day;log(w, getPerson(w,p.person)!.name+'依归附约定完成改编，原籍、经验与个人忠诚保留。');}
+ if(p.terms==='reform'&&p.integrationCompletedAt===undefined&&w.day>=p.due&&a&&!pactReformReview(w,p)!.reasons.length){delete a.owner;a.payer='central:'+p.to;for(const u of a.regiments??[])u.institution=Math.max(60,u.institution??0);p.integrationCompletedAt=w.day;log(w, getPerson(w,p.person)!.name+'依归附约定完成改编，原籍、经验与个人忠诚保留。');}
  if(p.person!==w.characterId&&!historicalOwnsDecision(w,p.person)&&breaches.length&&relationOpinion(w,p.person,chief)<-40){const c={type:'civilWar',action:'rise',name:'新朝'} as const;if(!civilReason(w,c,p.person))actCivilWar(w,c,p.person);}
  }}s.items=s.items.filter(p=>p.status==='pending'||p.status==='active'||w.day-p.created<360||w.historical?.items.some(e=>e.status!=='cancelled'&&e.pactId===p.id)).slice(-100);}
 export function pactBreachRisk(w:World,person:string|undefined,army:number|undefined){return !!person&&w.allegiancePacts?.items.some(p=>p.status==='active'&&p.person===person&&p.army===army&&p.terms==='retain'&&p.integrationCompletedAt===undefined&&relationOpinion(w,person,governingAuthority(w,p.to))<20);}

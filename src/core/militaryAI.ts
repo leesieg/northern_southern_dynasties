@@ -2,7 +2,7 @@ import {civilArmyObserving} from './civilMobilization';
 import {administrativeRealm,provisionalRealm} from './polityRuntime';
 import {independentCivil} from './civilPolities';
 import {armyAdvanceRoute,armyAtEnemyCity} from './militaryRoutes';
-import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
+import {manpower,recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {warObjectiveSites} from './warTerritories';
 import {localBalance,spendLocal,fiscalPath} from './treasury';
 import {governingAuthority} from './government';
@@ -12,7 +12,7 @@ import {isMonthStart} from './calendar';
 import {civilianFood} from './population';
 import type {World} from './types';
 import {activeWars,warRealmSide} from './wars';
-import {capital,playerRealm,armyDailyFood,canMarchThrough,type Army,type RealmId} from './realm';
+import {capital,playerRealm,armyDailyFood,armyMonthlyPay,realmForecast,canMarchThrough,type Army,type RealmId} from './realm';
 import {armyControls,warArmySide,armiesHostile,civilWar,warCitySide} from './civilWars';
 import {armyCampaign} from './militaryCampaigns';
 import {ensureArmyOrganization,readyTroops} from './armyOrganization';
@@ -24,7 +24,10 @@ import {governingExecutives} from './government';
 export function advanceMilitaryAI(w:World){const s=w.realm;if(!s)return;for(const r of worldRealms(w)){if(s.annexed?.[r])continue;const playerExecutive=r===playerRealm(w)&&governingExecutives(w,r).includes(w.characterId!);const wars=activeWars(w).filter(v=>!!warRealmSide(v,r));if(!wars.length)continue;const treasury=s.treasuries[r];
  const internal=civilWar(w,r);if(internal&&!independentCivil(internal)&&internal.civil!.loyalist!==w.characterId&&!s.armies.some(a=>a.realm===r&&warArmySide(w,internal,a)==='defend')){const localOnly=internal.civil!.supporters.includes(governingAuthority(w,r)),site=Object.keys(s.cities).filter(id=>administrativeRealm(w,id)===r&&s.cities[id].controller===r&&!internal.civil!.cities.includes(id)&&s.cities[id].population-mobilizedTransportLabor(w,id)>=700&&s.cities[id].grain>=120&&(!localOnly||localBalance(w,id)>=120)).sort((a,b)=>s.cities[b].population-s.cities[a].population)[0];if(site)mobilizeRealm(w,r,site,localOnly);}
  const own=s.armies.filter(a=>a.realm===r),opponents=new Set(worldRealms(w).filter(other=>wars.some(v=>warRealmSide(v,other)&&warRealmSide(v,other)!==warRealmSide(v,r)))),enemy=s.armies.filter(a=>opponents.has(a.realm)),reserve=defensiveReserve(w,r),offensive=wars.filter(v=>v.attacker===r&&warObjectiveSites(v,w).some(id=>warRealmSide(v,s.cities[id].controller as typeof r)!=='attack')),required=Math.max(0,...offensive.map(v=>enemy.filter(a=>warObjectiveSites(v,w).includes(a.location)&&!a.journey).reduce((n,a)=>n+readyTroops(a,w.day),0)*1.1)),field=own.filter(a=>a!==reserve&&a.automation!=='direct'&&!a.withdrawalUntil&&!armyCampaign(w,a)&&!wars.some(war=>civilArmyObserving(w,war,a))),underpowered=field.reduce((n,a)=>n+a.troops,0)<required||own.reduce((n,a)=>n+a.troops,0)<enemy.reduce((n,a)=>n+readyTroops(a,w.day),0)*.8;
- if((!civilWar(w,r)||independentCivil(civilWar(w,r)!))&&!playerExecutive&&(!own.length&&wars.some(v=>w.day-v.started>=5)||underpowered&&isMonthStart(w.day,w.scriptId))&&own.length<16&&treasury.coins>=120&&governingExecutives(w,r).length>0&&s.armies.length<48&&!governmentMusterReason(w,r)){const site=Object.keys(s.cities).filter(id=>s.cities[id].controller===r&&administrativeRealm(w,id)===r&&s.cities[id].population-mobilizedTransportLabor(w,id)>=700&&(id===capital(r,w)&&!provisionalRealm(w,r)?treasury.grain:s.cities[id].grain)>=120).sort((a,b)=>s.cities[b].population-s.cities[a].population)[0];if(site)mobilizeRealm(w,r,site);}
+ if((!internal||independentCivil(internal))&&!playerExecutive&&(!own.length&&wars.some(v=>w.day-v.started>=5)||underpowered&&isMonthStart(w.day,w.scriptId))&&own.length<16&&treasury.coins>=(internal&&independentCivil(internal)?20:120)&&governingExecutives(w,r).length>0&&s.armies.length<48&&!governmentMusterReason(w,r)){
+  const options=Object.keys(s.cities).filter(id=>s.cities[id].controller===r&&administrativeRealm(w,id)===r).map(site=>({site,amount:internal&&independentCivil(internal)?affordableCivilMuster(w,r,site):600})).filter(({site,amount})=>amount>=100&&s.cities[site].population-mobilizedTransportLabor(w,site)>=amount+100&&(site===capital(r,w)&&!provisionalRealm(w,r)?treasury.grain:s.cities[site].grain)>=Math.ceil(amount*.2)&&!recruitmentSources(w,site,amount).reason).sort((a,b)=>s.cities[b.site].population-s.cities[a.site].population);
+  const plan=options[0];if(plan&&(!internal||!independentCivil(internal)||treasury.coins>=militaryMusterBudget(w,r,plan.site,plan.amount)))mobilizeRealm(w,r,plan.site,false,plan.amount);
+ }
  if(!playerExecutive)appointAICommanders(w,r);
  for(const a of s.armies.filter(a=>a.realm===r)){
   const decision=delegatedArmyDecision(w,a,{wars,own,reserve,playerExecutive});
@@ -36,10 +39,23 @@ export function advanceMilitaryAI(w:World){const s=w.realm;if(!s)return;for(cons
 
 }}
 
+/** Purchase plus two actual monthly operating/pay settlements, before any new tax is assumed. */
+export function militaryMusterBudget(w:World,r:RealmId,site:string,amount=600){
+ const sources=recruitmentSources(w,site,amount),army:Army={id:w.realm!.nextArmyId,realm:r,location:site,troops:amount,morale:70,supply:120,journey:null,siege:0,regiments:recruitmentRegiments(sources.parts,w.realm!.nextArmyId!,site)};
+ const arrears=w.realm!.armies.filter(a=>a.realm===r&&(!a.payer||a.payer==='central:'+r)).reduce((n,a)=>n+(a.arrears??0),0)+(w.realm!.armyDebts??[]).filter(d=>d.realm===r&&d.account==='central:'+r).reduce((n,d)=>n+d.coins,0);
+ return Math.ceil(amount*.2)+arrears+2*(realmForecast(w,r).expense+armyMonthlyPay(w,army));
+}
+/** Largest real levy that leaves the quoted reserve; neither money nor manpower is assumed. */
+function affordableCivilMuster(w:World,r:RealmId,site:string){
+ const city=w.realm!.cities[site],cash=w.realm!.treasuries[r].coins;
+ let low=100,high=Math.min(600,manpower(w,site).publicAvailable,city.population-mobilizedTransportLabor(w,site)-100,city.grain*5),amount=0;
+ while(low<=high){const candidate=Math.floor((low+high)/2);if(militaryMusterBudget(w,r,site,candidate)<=cash){amount=candidate;low=candidate+1;}else high=candidate-1;}
+ return amount;
+}
 /** Paid peacetime preparation uses the same population, grain and muster constraints. */
-export function mobilizeRealm(w:World,r:import('./realm').RealmId,site:string,localOnly=false){
- const s=w.realm!,c=s.cities[site],t=s.treasuries[r],sources=recruitmentSources(w,site,600);if(sources.reason||!c||administrativeRealm(w,site)!==r||c.controller!==r||s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16||c.population-mobilizedTransportLabor(w,site)<700||(localOnly?localBalance(w,site):t.coins)<120||(!localOnly&&site===capital(r,w)&&!provisionalRealm(w,r)?t.grain:c.grain)<120||governmentMusterReason(w,r))return false;
- if(localOnly)spendLocal(w,site,120,'地方守军实际征募');else t.coins-=120;if(!localOnly&&site===capital(r,w)&&!provisionalRealm(w,r))t.grain-=120;else c.grain-=120;consumeManpower(w,site,sources.parts);spendGovernmentMuster(w,r);ensureArmyOrganization(w);const id=s.nextArmyId!++;s.armies.push({id,regiments:recruitmentRegiments(sources.parts,id,site),realm:r,location:site,troops:600,morale:70,supply:120,journey:null,siege:0,...(localOnly?{payer:fiscalPath(w,site)[0]}:{}),automation:'delegated',trainingStarted:w.day,trainingUntil:w.day+30});ensureArmyOrganization(w);return true;
+export function mobilizeRealm(w:World,r:import('./realm').RealmId,site:string,localOnly=false,amount=600){
+ const s=w.realm!,c=s.cities[site],t=s.treasuries[r],sources=recruitmentSources(w,site,amount),cost=Math.ceil(amount*.2),grain=Math.ceil(amount*.2);if(sources.reason||!c||administrativeRealm(w,site)!==r||c.controller!==r||s.armies.length>=48||s.armies.filter(a=>a.realm===r).length>=16||c.population-mobilizedTransportLabor(w,site)<amount+100||(localOnly?localBalance(w,site):t.coins)<cost||(!localOnly&&site===capital(r,w)&&!provisionalRealm(w,r)?t.grain:c.grain)<grain||governmentMusterReason(w,r))return false;
+ if(localOnly)spendLocal(w,site,cost,'地方守军实际征募');else t.coins-=cost;if(!localOnly&&site===capital(r,w)&&!provisionalRealm(w,r))t.grain-=grain;else c.grain-=grain;consumeManpower(w,site,sources.parts);spendGovernmentMuster(w,r);ensureArmyOrganization(w);const id=s.nextArmyId!++;s.armies.push({id,regiments:recruitmentRegiments(sources.parts,id,site),realm:r,location:site,troops:amount,morale:70,supply:grain,journey:null,siege:0,...(localOnly?{payer:fiscalPath(w,site)[0]}:{}),automation:'delegated',trainingStarted:w.day,trainingUntil:w.day+30});ensureArmyOrganization(w);return true;
 }
 
 export function defensiveReserve(w:World,r:import('./realm').RealmId){return w.realm!.armies.filter(a=>a.realm===r&&!a.owner&&!a.journey&&!(a.arrears??0)&&readyTroops(a,w.day)>=100).sort((a,b)=>Number(b.location===capital(r,w))-Number(a.location===capital(r,w))||a.id!-b.id!)[0];}
@@ -74,6 +90,11 @@ export function delegatedArmyDecision(w:World,a:Army,context=armyDecisionContext
  if(readyTroops(a,w.day)<100)return report('整备兵员','等待成军','可战兵员不足 100 人','完成训练或补充可战兵员后再议行军');
  const armyWars=wars.filter(v=>!!warArmySide(w,v,a)),armyEnemy=s.armies.filter(b=>b!==a&&armiesHostile(w,a,b));
  const retreat=a.supply<armyDailyFood(w,a)*2||a.morale<25||(a.arrears??0)>100;
+ const coup=armyWars.find(v=>v.civil&&v.attacker===r&&v.civil.arrangement?.goal==='executive');
+ if(coup&&!playerExecutive&&!retreat&&armyControls(w,a,a.location)){
+  const enemy=armyEnemy.filter(b=>!civilArmyObserving(w,coup,b)&&(b.journey?b.journey.route.at(-1)===coup.target||b.journey.route.at(-1)===a.location:b.location===a.location||b.location===coup.target||(armyAdvanceRoute(w,b,coup.target)?.days??Infinity)<=30)).reduce((n,b)=>n+readyTroops(b,w.day),0),available=own.filter(b=>b.automation!=='direct'&&!b.withdrawalUntil&&!armyCampaign(w,b)&&!civilArmyObserving(w,coup,b)).reduce((n,b)=>n+readyTroops(b,w.day),0);
+  if(available<enemy*.8&&!s.sieges?.some(siege=>siege.war===coup.id&&siege.side==='defend'))return report('争取地方与整军','守住根据地',`本方可战 ${available} 人，朝廷及三十日内可达援军 ${enemy} 人`,'先争取实际领兵守土者，按公库余力征募并完成集训，再进军朝廷',coup.target);
+ }
  const threats=Object.keys(s.cities).filter(id=>administrativeRealm(w,id)===r&&!armyControls(w,a,id)&&(!s.cities[id].occupiedByWar||armyWars.some(v=>v.id===s.cities[id].occupiedByWar))||s.sieges?.some(v=>v.site===id&&armyWars.some(war=>war.id===v.war&&warArmySide(w,war,a)!==v.side)));
  const counters=armyWars.flatMap(v=>counterattackTargets(w,a,v));
  const targets=retreat?Object.keys(s.cities).filter(id=>armyControls(w,a,id)&&s.cities[id].grain>civilianFood(w,id)*2+30):threats.length?threats:armyWars.flatMap(v=>v.civil?[warArmySide(w,v,a)==='attack'?v.target:v.civil.base]:warArmySide(w,v,a)==='defend'?(counters.length?counterattackTargets(w,a,v):[v.target]):v.territory||v.goal==='annexation'?warObjectiveSites(v,w).filter(id=>!armyControls(w,a,id)):[v.target]);

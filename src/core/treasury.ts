@@ -38,6 +38,18 @@ export function publicBalance(w:World,key:string){return key.startsWith('central
 function setBalance(w:World,key:string,n:number){if(key.startsWith('central:'))w.realm!.treasuries[key.slice(8) as RealmId].coins=n;else ensureFiscal(w)!.balances[key]=n;}
 export function fiscalRecord(w:World,r:RealmId,from:string,to:string,coins:number,reason:string){if(!coins)return;const s=ensureFiscal(w)!;for(const realm of worldRealms(w)){if(from===centralAccount(realm))s.net[realm]-=coins;if(to===centralAccount(realm))s.net[realm]+=coins;}s.entries.push({id:s.nextId++,day:w.day,realm:r,from,to,coins,reason});s.entries=s.entries.slice(-1800);}
 function transfer(w:World,r:RealmId,from:string,to:string,amount:number,reason:string){if(!Number.isSafeInteger(amount)||amount<0||publicBalance(w,from)<amount)throw new Error('公库余额不足');if(publicBalance(w,to)+amount>1_000_000)throw new Error('目标公库容量不足');setBalance(w,from,publicBalance(w,from)-amount);setBalance(w,to,publicBalance(w,to)+amount);fiscalRecord(w,r,from,to,amount,reason);}
+/** Wartime remittance moves existing local cash; it creates neither tax nor a startup grant. */
+export function remitMilitarySurplus(w:World,r:RealmId){
+ if(w.realm?.identities?.[r]?.civilWar===undefined)return;
+ const paths=Object.keys(w.realm.cities).filter(site=>w.realm!.cities[site].controller===r&&administrativeRealm(w,site)===r).map(site=>fiscalPath(w,site,r));
+ const keys=[...new Set(paths.flatMap(path=>path.slice(0,-1)))].sort((a,b)=>Math.max(...paths.map(path=>path.indexOf(a)))-Math.max(...paths.map(path=>path.indexOf(b))));
+ for(const key of keys){
+  const path=paths.find(path=>path.includes(key))!,route=path.slice(path.indexOf(key)),territory=key.slice(r.length+1),holder=localHolder(w,territory,r);
+  const operations=Object.entries(w.realm.cities).filter(([site,c])=>c.controller===r&&fiscalPath(w,site,r)[0]===key).reduce((n,[site])=>n+cityOperatingExpense(w,site),0),salary=holder&&localActive(w,territory,r)?territoryNodes[territory]?.level==='province'?12:territoryNodes[territory]?.level==='prefecture'?8:0:0,armyPay=w.realm.armies.filter(a=>a.payer===key).reduce((n,a)=>n+armyMonthlyPay(w,a)+(a.arrears??0),0);
+  const amount=Math.max(0,Math.min(publicBalance(w,key)-2*(operations+salary+armyPay),...route.slice(1).map(to=>1_000_000-publicBalance(w,to))));
+  if(amount>0)for(let i=0;i<route.length-1;i++)transfer(w,r,route[i],route[i+1],amount,'军府地方结余逐级上缴，保留两期本地支出');
+ }
+}
 export function grantRoom(w:World,site:string,r=w.realm!.cities[site].controller as RealmId){return Math.min(...fiscalPath(w,site,r).slice(0,-1).map(key=>1_000_000-publicBalance(w,key)));}
 export function routeGrant(w:World,site:string,amount:number,reason:string,r=w.realm!.cities[site].controller as RealmId){const path=fiscalPath(w,site,r).reverse();if(!Number.isSafeInteger(amount)||amount<0||publicBalance(w,path[0])<amount)throw new Error('公库余额不足');if(path.slice(1).some(key=>publicBalance(w,key)+amount>1_000_000))throw new Error('拨款路径公库容量不足');for(let i=0;i<path.length-1;i++)transfer(w,r,path[i],path[i+1],amount,reason);}
 export function spendLocal(w:World,site:string,amount:number,reason:string,to='expense'){if(!Number.isSafeInteger(amount)||amount<0)throw new Error('无效支出金额');const r=w.realm!.cities[site].controller as RealmId,key=fiscalPath(w,site)[0];if(localBalance(w,site)<amount)throw new Error('本城公库不足，请向上级申请拨款');setBalance(w,key,localBalance(w,site)-amount);fiscalRecord(w,r,key,to,amount,reason);}

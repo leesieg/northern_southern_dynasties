@@ -7,7 +7,7 @@ import type {World,GameCommand} from '../core/types';
 import type {HistoricalEventInstance} from '../core/historicalEventState';
 import {historicalPact,historicalArmy,historicalTitle,historicalReason,visibleHistoricalMilestones,historicalDisputes,historicalSecurityCommand,settlementReview} from '../core/historicalEvents';
 import {historicalMusterQuote} from '../core/historicalMuster';
-import {pactQuote,pactReason,receptionNames,type ReceptionTerms,type PactCommand} from '../core/allegiancePacts';
+import {pactReformReview,pactQuote,pactReason,receptionNames,type ReceptionTerms,type PactCommand} from '../core/allegiancePacts';
 import {governingExecutives,governingAuthority} from '../core/government';
 import {getPerson} from '../core/personRegistry';
 import {allegianceRealm} from '../core/officeEligibility';
@@ -25,13 +25,14 @@ import {PersonHonors} from './PersonHonors';
 import './historicalEvent.css';
 export interface HistoricalNavigation {onPerson:(id:string)=>void;onSite:(id:string)=>void;onWar:(id:number)=>void;onCourt:()=>void;onArmy:()=>void}
 type Props={error?:string;world:World;event:HistoricalEventInstance;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;navigation:HistoricalNavigation};
-const termNotes:Record<ReceptionTerms,string>={retain:'原将继续统领追随部曲；接纳方承担中央公饷与保护责任。',reform:'先接收追随部曲，九十日后按关系、欠饷和安全条件检查改编；条件未满足则延期。',personal:'只改变个人效忠，原部队留在原国；不支付武装保护预算。'};
+const termNotes:Record<ReceptionTerms,string>={retain:'原将继续统领追随部曲；接纳方承担中央公饷与保护责任。',reform:'先接收追随部曲，双方确认九十日后，于月初核验部队、欠饷与人身安全并改编；受阻时展示原因及下次核验日期。',personal:'只改变个人效忠，原部队留在原国；不支付武装保护预算。'};
 export function HistoricalContent({world:w,event:e,pending,send,navigation:n,error}:Props){
  const rawPact=historicalPact(w,e),p=rawPact&&(rawPact.person===w.characterId||governingExecutives(w,rawPact.to).includes(w.characterId!))?rawPact:undefined,d=e.decision,mine=d&&!d.handled&&d.actor===w.characterId;
  const [orderTarget,setOrderTarget]=useState<string|null>(null);
  const [tab,setTab]=useState<'situation'|'history'|'people'>('situation');
  const [terms,setTerms]=useState<ReceptionTerms>(p?.offer?.terms??p?.terms??'retain');
  const [host,setHost]=useState<RealmId>('liang');
+ const review=p?pactReformReview(w,p):undefined;
  const a=historicalArmy(w,e.actors.protagonist),milestones=visibleHistoricalMilestones(w,e),war=w.realm?.wars?.find(v=>v.id===e.warId);
  const pactActor=!!p&&(p.person===w.characterId||governingExecutives(w,p.to).includes(w.characterId!));
  const reception=p?.status==='pending',offerMine=p?.offer?.respondent===w.characterId;
@@ -80,7 +81,7 @@ export function HistoricalContent({world:w,event:e,pending,send,navigation:n,err
  {council&&<button onClick={n.onCourt}>前往朝廷安排继任与职权 ›</button>}
  </>:p&&['pending','active'].includes(p.status)?<>
  <h3>{reception?'请议定接纳之法':'归附之约'}</h3><SingleChoiceCards label={p.offer?'对方提出的新条款':'安置条款'} value={terms} onChange={setTerms} disabled={pending||!pactActor||!!p.offer} options={(Object.keys(receptionNames) as ReceptionTerms[]).filter(t=>reception||t!=='personal').map(t=>({id:t,title:receptionNames[t],description:termNotes[t],art:t==='personal'?'migration':t==='reform'?'rites':'dispatch'}))}/>
- <section className="historical-consequences"><h3>{reception?'接纳后果':'当前约定与争议'}</h3><dl><div><dt>追随兵员</dt><dd>{quote?.troops??0} 人</dd></div><div><dt>{reception?'接纳国中央支出':'现行条款'}</dt><dd>{reception?(quote?.protection??0)+' 钱':receptionNames[p.terms]}</dd></div><div><dt>原地部队</dt><dd>{quote?.remaining??0} 人</dd></div></dl><p>{reception&&terms!=='personal'?'接纳将承担保护战争；原县域归属不随军队转移。':p.integrationCompletedAt!==undefined?'已按约完成改编。':'授职、调军与安置须另行办理。'}</p>{p.status==='active'&&<p>{historicalDisputes(w,e,p).join('、')||'当前没有未解决的违约事项。'}</p>}{p.offer&&<p>新条款由 {getPerson(w,p.offer.proposer)?.name} 提出；等待 {getPerson(w,p.offer.respondent)?.name} 答复。</p>}{command?.action==='propose'&&<p>本次仅提出改约，个人影响力 −10；对方确认后才生效。</p>}</section>
+ <section className="historical-consequences"><h3>{reception?'接纳后果':'当前约定与争议'}</h3><dl><div><dt>追随兵员</dt><dd>{quote?.troops??0} 人</dd></div><div><dt>{reception?'接纳国中央支出':'现行条款'}</dt><dd>{reception?(quote?.protection??0)+' 钱':receptionNames[p.terms]}</dd></div><div><dt>原地部队</dt><dd>{quote?.remaining??0} 人</dd></div></dl><p>{reception&&terms!=='personal'?'接纳将承担保护战争；原县域归属不随军队转移。':p.integrationCompletedAt!==undefined?'已按约完成改编。':'授职、调军与安置须另行办理。'}</p>{review&&<p>原定改编：{dateLabel(review.due,w.scriptId)}；下次月初核验：{dateLabel(review.nextReview,w.scriptId)}。{review.reasons.join('、')||'钱饷与安全条件满足，等待月度结算'}；双方已确认，无须再次达到好感门槛。</p>}{p.status==='active'&&<p>{historicalDisputes(w,e,p).join('、')||'当前没有未解决的违约事项。'}</p>}{p.offer&&<p>新条款由 {getPerson(w,p.offer.proposer)?.name} 提出；等待 {getPerson(w,p.offer.respondent)?.name} 答复。</p>}{command?.action==='propose'&&<p>本次仅提出改约，个人影响力 −10；对方确认后才生效。</p>}</section>
 
  </>:null}
  {war&&<section className="historical-consequences"><h3>{siteById[war.target]?.name}军情</h3><p>起兵方兵力 {w.realm!.armies.filter(v=>warArmySide(w,war,v)==='attack').every(a=>militaryArmyView(w,a).exact)?w.realm!.armies.filter(v=>warArmySide(w,war,v)==='attack').reduce((sum,v)=>sum+v.troops,0)+' 人':'未详'}</p><p>{w.realm?.sieges?.find(s=>s.war===war.id&&s.site===war.target)?'已形成围城；守军、补给与战况详见本场战事。':'尚未形成首都围城；以军队实际行程为准。'}</p><button onClick={()=>n.onWar(war.id!)}>查看战况与议和 ›</button><button onClick={()=>setOrderTarget(war.target)}>{war.civil?.supporters.includes(w.characterId!)?'进军首都':'救援首都'} ›</button>{war.civil&&<button onClick={()=>setOrderTarget(war.civil!.base)}>调军至{siteById[war.civil.base].name} ›</button>}<button onClick={n.onArmy}>军队与粮运 ›</button></section>}

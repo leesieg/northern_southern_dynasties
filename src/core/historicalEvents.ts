@@ -24,7 +24,8 @@ import {ensureFiscal,territoryAccount,fiscalRecord} from './treasury';
 import {siteById} from '../data/scenario';
 import type {PauseEvent} from './pauseEvents';
 import {planRoute} from './world';
-import {canMarchThrough} from './realm';
+import {canMarchThrough,disbandArmyReason,disbandArmy} from './realm';
+import {actMilitaryCareer,militaryCareerReason} from './militaryCareer';
 const custodyInterruption='侯景已被控制，当前危机结束。';
 export function ensureHistorical(w:World){
  if(w.mode!=='sandbox'||!w.realm||!getPerson(w,'hou-jing'))return;
@@ -172,6 +173,15 @@ function npcDecision(w:World,e:Event){
  }else if(d.kind==='crisis'){
   const p=historicalPact(w,e),danger=!!p&&historicalDisputes(w,e,p).some(v=>v.includes('安全')||v.includes('兵权'));
   if(danger||relationOpinion(w,d.actor,governingAuthority(w,e.host!))<-40){const q={...base,optionId:'rise'} as const;if(!historicalReason(w,q,d.actor))command=q;}
+  const a=historicalArmy(w,d.actor);
+  if(command.optionId==='wait'&&p&&a&&a.id===p.army&&a.troops<300&&!a.journey&&(a.owner===d.actor||armyCommander(w,a)===d.actor)){
+   if(p.offer)return;
+   const reform={type:'pact',action:'renegotiate',id:p.id,terms:'reform'} as const;
+   if(p.terms==='retain'&&!p.revision&&!pactReason(w,reform,d.actor)){actPact(w,reform,d.actor);return;}
+   const replenish={type:'militaryCareer',action:'privateRaise',site:a.location,kind:'shield',amount:200,target:a.id} as const;
+   if(!militaryCareerReason(w,replenish,d.actor)){actMilitaryCareer(w,replenish,d.actor);return;}
+   if(!disbandArmyReason(w,a,d.actor)&&disbandArmy(w,a,d.actor))remember(w,e,'residual-demobilized:'+a.id,'残部不足举兵且无合法补充，依原籍、道路与人口容量遣散安置，余粮返仓；本人转入原有个人安置流程。');
+  }
  }
  if(!historicalReason(w,command,d.actor))actHistorical(w,command,d.actor);
 }

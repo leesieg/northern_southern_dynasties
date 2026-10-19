@@ -38,7 +38,7 @@ export function houJingPresentation(w:World){
   waiting.push(entry.pending?'待本人办理事件文书':stanceDue===undefined?'当前无待本人裁决事项':'表态前可先查阅兵地交接后果');
  }else if(entry.pending)waiting.push('待本人办理事件文书。');
  else {
-  const dispute=entry.facts.find(f=>f.label==='当前争议')?.text;
+  const dispute=entry.facts.find(f=>f.label==='改编进度')?.text??entry.facts.find(f=>f.label==='当前争议')?.text;
   waiting.push(dispute??(entry.status==='dormant'?'当前尚无新的公开动向。':'等待新的消息或实际军政变化。'));
   if(deadline)waiting.push('到达处理窗口后按实际局势复议。');
  }

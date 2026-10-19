@@ -71,3 +71,16 @@ describe('manual actions use the army’s actual civil siege',()=>{
  it('keeps supply, morale and real field-force restrictions in civil war',()=>{const {w,a}=civilSiege(),c={type:'militaryAction' as const,action:'assault' as const,army:a.id!,site:a.location};a.supply=0;expect(militaryActionReason(w,c)).toContain('随军粮不足');a.supply=1000;a.morale=20;expect(militaryActionReason(w,c)).toContain('士气');a.morale=100;w.realm!.armies.push({realm:'liang',location:a.location,troops:500,morale:80,supply:100,journey:null,siege:0});ensureArmyOrganization(w);expect(militaryActionReason(w,c)).toContain('野战军');
  });
 });
+
+describe('ordinary and civil conquest share personnel rules',()=>{
+ it.each(['assault','surrender'] as const)('handles an ordinary %s using the same real presence, escape and war provenance',async action=>{
+  const {allPeople}=await import('./personRegistry');
+  const w=newCampaignWorld('gao-huan',undefined,'sandbox');ensureWars(w);const war={id:w.realm!.nextWarId!++,attacker:'east' as const,defender:'liang' as const,target:'jiankang',started:w.day,score:0,captureLosses:[]};w.realm!.wars!.push(war);w.realm!.war=war;
+  const a:Army={realm:'east',location:'jiankang',troops:3000,morale:100,supply:1000,journey:null,siege:100};w.realm!.armies.push(a);ensureArmyOrganization(w);
+  for(const p of allPeople(w))if(p.id!=='xiao-yan'&&p.id!==w.characterId)w.mobility!.residences[p.id]={site:'jiangling',journey:null};w.mobility!.residences['xiao-yan']={site:'jiankang',journey:null};
+  const city=w.realm!.cities.jiankang;city.population=10000;city.order=20;city.grain=0;city.fortification={level:0,due:null};w.realm!.sieges=[{war:war.id,site:'jiankang',side:'attack',progress:100,last:w.day}];w.life!.seed=1000;
+  act(w,{type:'militaryAction',action,army:a.id!,site:'jiankang'});expect(city.controller).toBe('east');expect(city.owner).toBe('liang');
+  if(action==='assault')expect(w.custody!.records['xiao-yan']).toMatchObject({war:war.id,side:'attack',cause:'city',army:a.id});else {expect(w.custody?.records['xiao-yan']).toBeUndefined();expect(w.mobility!.residences['xiao-yan'].journey).not.toBeNull();}
+  expect(w.custody?.records['xiao-gang']).toBeUndefined();expect(parseWorld(serializeWorld(w)).realm!.cities.jiankang.controller).toBe('east');
+ });
+});

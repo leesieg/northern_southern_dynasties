@@ -23,7 +23,7 @@ import {clearLocalPerson} from './localAdministration';
 import {accountWallet} from './obligations';
 import {fiscalRecord} from './treasury';
 import {isMonthStart,monthStart} from './calendar';
-import {civilWar,civilReason,actCivilWar,warArmySide,warCitySide} from './civilWars';
+import {civilWar,civilReason,actCivilWar,warCitySide,warArmySide} from './civilWars';
 import {authorityGrant} from './authority';
 import {interruptCommanderCampaigns} from './militaryCampaigns';
 import {bilateralWar,activeWars,warRealmSide} from './wars';
@@ -45,7 +45,7 @@ export function detainPerson(w:World,id:string,captor:RealmId,site:string,cause:
  const origin=allegianceRealm(w,id);if(!origin)return false;
  if(cause==='abduction'){const scheme=abductionScheme(w,source);if(!scheme||scheme.status!=='active'||scheme.actor!==privateHolder||scheme.target!==id||scheme.realm!==captor||!privateHolder||!isAlive(w,privateHolder)||detained(w,privateHolder)||allegianceRealm(w,privateHolder)!==captor||w.realm!.cities[site].controller!==captor||Object.values(s.records).some(p=>p.cause==='abduction'&&p.captorPerson===privateHolder))return false;}
  s.records[id]={person:id,captor,site,cause,source,origin,captorPerson:cause==='abduction'?privateHolder:army?armyCommander(w,army)??null:governingAuthority(w,captor)??null,army:army?.id??null,since:w.day,treatment:'guarded',talked:null,terms:'',escapeAfter:w.day+30,ransom:Math.min(400,80+Math.floor((governmentOf(w,origin)?.merit[id]??0)/2)),offer:null};
- const battle=/^battle:(\d+)(?::|$)/.exec(source),explicit=/^(?:civil|siege|occupation|war):(\d+)(?::|$)/.exec(source),warId=battle?w.militaryAftermath?.battles.find(b=>b.id===Number(battle[1]))?.war:explicit?Number(explicit[1]):undefined;
+ const battle=/^battle:(\d+)(?::|$)/.exec(source),explicit=/^(?:civil|siege|occupation|war|city):(\d+)(?::|$)/.exec(source),warId=battle?w.militaryAftermath?.battles.find(b=>b.id===Number(battle[1]))?.war:explicit?Number(explicit[1]):undefined;
  const captureWar=warId!==undefined?activeWars(w).find(v=>v.id===warId):army?activeWars(w).find(v=>{const holder=warArmySide(w,v,army),subject=v.civil&&v.attacker===v.defender&&origin===v.attacker?v.civil.supporters.includes(id)?'attack':'defend':warRealmSide(v,origin);return holder&&subject&&holder!==subject;}):bilateralWar(w,captor,origin);
  if(cause!=='abduction'&&captureWar?.id!==undefined){s.records[id].war=captureWar.id;s.records[id].side=(army?warArmySide(w,captureWar,army):warRealmSide(captureWar,captor))??undefined;}
  movePerson(w,id,site);interruptCommanderCampaigns(w,id);
@@ -80,12 +80,15 @@ export function resolveCommanderFate(w:World,a:Army,enemy:Army,source:string,can
  else {if(battle)(battle.fates??={})[id]='escaped';record(w,id,enemy.realm,source,'负伤脱离战场，未被俘获');}
 }
 export function evacuatePerson(w:World,id:string,route:NonNullable<ReturnType<typeof planRoute>>){movePerson(w,id,route.route[0]);const journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};if(route.days>0){w.mobility!.residences[id].journey=structuredClone(journey);if(id===w.characterId)w.people[0].journey=journey;}}
-export function captureCityPeople(w:World,site:string,captor:RealmId,source:string,peaceful=false){
- const s=w.realm!,origin=s.cities[site].controller;if(origin===captor||origin==='frontier')return;
- const army=s.armies.find(a=>a.realm===captor&&a.location===site&&!a.journey)??null;
+export function captureCityPeople(w:World,site:string,captor:RealmId,source:string,peaceful=false,context?:{war:import('./wars').War;army:Army;side:'attack'|'defend'}){
+ const s=w.realm!,origin=s.cities[site].controller,legacy=context?.war.civil&&context.war.attacker===context.war.defender;
+ if(origin==='frontier'||origin===captor&&!legacy)return;
+ const enemy=(id:string)=>legacy?allegianceRealm(w,id)===origin&&context.war.civil!.supporters.includes(id)!==(context.side==='attack'):allegianceRealm(w,id)===origin;
+ const army=context?.army??s.armies.find(a=>a.realm===captor&&a.location===site&&!a.journey)??null;
  const kin= allPeople(w).filter(p=>allegianceRealm(w,p.id)===origin&&captiveImportance(w,{person:p.id,origin}).value>=15).map(p=>p.id);const important=new Set([...kin,s.cities[site].governor,...worldRealms(w).flatMap(r=>{const g=governmentOf(w,r);return g?[g.ruler,...g.executives,...Object.values(g.court?.ministries??{})]:[];}),...s.armies.map(a=>armyCommander(w,a))].filter((v):v is string=>!!v));
- for(const id of important){if(allegianceRealm(w,id)!==origin||detained(w,id)||!presentAt(w,id,site))continue;
-  const escape=Object.keys(s.cities).filter(to=>to!==site&&s.cities[to].controller===origin).map(to=>planRoute(site,to,node=>s.cities[node].controller===origin)).find(p=>!!p);
+ for(const id of important){if(!enemy(id)||detained(w,id)||!presentAt(w,id,site))continue;
+  const safe=(node:string)=>s.cities[node].controller===origin&&(!context||warCitySide(w,context.war,node)!==context.side);
+  const escape=Object.keys(s.cities).filter(to=>to!==site&&safe(to)).map(to=>planRoute(site,to,node=>node===site||safe(node))).find(p=>!!p);
   if(peaceful){if(escape)evacuatePerson(w,id,escape);record(w,id,captor,source,escape?'开城议降，正在沿安全道路撤离，效忠不变':'开城议降，获准留居为自由人物，当前无返国道路');continue;}
   if(escape&&roll(w)<.4){evacuatePerson(w,id,escape);record(w,id,captor,source,'城陷前沿安全道路出逃');}else detainPerson(w,id,captor,site,'city',source,army);
  }

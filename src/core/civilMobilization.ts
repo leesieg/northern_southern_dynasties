@@ -50,9 +50,10 @@ export function civilPoliticalEvaluation(w:World,r:RealmId,rebel:string,loyal:st
  const rebelKin=relative(rebel)||!!arrangement&&relative(arrangement.beneficiary),loyalKin=relative(loyal)||relative(g.ruler),oath=w.relationships?.oaths[id];
  add('与双方领袖的关系差',(relationOpinion(w,id,rebel)-relationOpinion(w,id,loyal))/4,-30,30);
  add('亲缘与拥立对象',(rebelKin?25:0)-(loyalKin?25:0),-25,25);
- add('当前效忠誓约',oath?.lord===rebel?oath.loyalty/3:oath&&(oath.lord===loyal||oath.lord===g.ruler)?-oath.loyalty/3:0,-30,30);
+ const preservesCrown=arrangement?.goal==='executive'&&arrangement.beneficiary===g.ruler;
+ add('当前效忠誓约',oath?.lord===rebel?oath.loyalty/3:oath&&(oath.lord===loyal||oath.lord===g.ruler)?-oath.loyalty/(preservesCrown&&oath.lord===g.ruler?6:3):0,-30,30);
  const current=allegianceRealm(w,id),held=Object.values(w.realm!.cities).some(c=>c.governor===id)||Object.values(g.court?.ministries??{}).includes(id);
- add('合法性与现有职权',-(g.legitimacy-20)/5-(held&&current===r?4:0),-20,10);
+ add('合法性与现有职权',-(g.legitimacy-20)/(preservesCrown&&g.legitimacy>20?10:5)-(held&&current===r?4:0),-20,10);
  const group=g.court?.members[id]??(current&&governmentOf(w,current)?.court?.members[id]),goal=arrangement?.goal??'dynasty';
  const superior=localSuperior(w,countyTerritory(personResidence(w,id).site),current??r)?.holder,superiorChoice=superior&&war?.civil?.mobilization?.members[superior]?.choice;
  const groupRealm=current??r,mood=group&&group!=='unaligned'&&governmentOf(w,groupRealm)?.court?movementMood(w,groupRealm,group).satisfaction:50;
@@ -153,7 +154,7 @@ export function advanceCivilMobilization(w:World){
   }
   if((w.day-m.opened)%30===1)for(const side of ['loyal','rebel'] as const){
    const realm=civilCampRealm(war,side),chief=governingAuthority(w,realm);if(chief===w.characterId)continue;
-   const candidates=Object.entries(m.members).filter(([id,q])=>id!==chief&&!civilFixedSide(w,war,id)&&!q.unavailable&&(q.choice==='watch'||q.choice==='pending')).map(([id])=>({id,score:civilStanceEvaluation(w,war,id).score})).sort((a,b)=>Math.abs(a.score-(side==='rebel'?25:-25))-Math.abs(b.score-(side==='rebel'?25:-25))||a.id.localeCompare(b.id));
+   const candidates=Object.entries(m.members).filter(([id,q])=>id!==chief&&!civilFixedSide(w,war,id)&&!q.unavailable&&(q.choice==='watch'||q.choice==='pending')).map(([id])=>{const assets=civilTransferPreview(w,war,id,realm);return {id,score:civilStanceEvaluation(w,war,id).score,assets:assets.cities.length+assets.armies.length};}).sort((a,b)=>Number(b.assets>0)-Number(a.assets>0)||Math.abs(a.score-(side==='rebel'?25:-25))-Math.abs(b.score-(side==='rebel'?25:-25))||a.id.localeCompare(b.id));
    const command=candidates.map(({id})=>({type:'civilWar' as const,action:'appeal' as const,war:war.id!,person:id,side})).find(c=>!civilPoliticsReason(w,c,chief));
    if(command){const option=civilPromiseOptions(w,war,chief,command.person).find(o=>o.mode==='retain'),pledge:CivilPledgeCommand|undefined=option?{type:'civilWar',action:'pledge',war:war.id!,person:command.person,side,target:option.target,mode:option.mode}:undefined;
     // NPCs reserve only existing enforceable mandates; they never spend the player's influence.
