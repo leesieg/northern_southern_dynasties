@@ -22,7 +22,7 @@ export function EventPersonLink({world,id,onPerson}:{world:World;id:string;onPer
  const person=getPerson(world,id);if(!person)return null;
  return <button type="button" className="event-person" aria-label={'查看'+person.name} onClick={()=>onPerson(id)}><CharacterPortrait world={world} characterId={id} compact/><span className="event-person-name">{person.name} <span aria-hidden="true">›</span></span></button>;
 }
-export function EventBrowser({world:w,initialId,onClose,navigation:n,pending,send,error}:{world:World;initialId:string;onClose:()=>void;navigation:HistoricalNavigation;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;error?:string}){
+export function EventBrowser({world:w,initialId,onClose,navigation:n,pending,send,error,onHouJing}:{world:World;initialId:string;onClose:()=>void;navigation:HistoricalNavigation;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;error?:string;onHouJing?:()=>void}){
  const entries=useMemo(()=>eventCatalog(w),[w]);
  const [query,setQuery]=useState(''),[status,setStatus]=useState<EventStatus|'all'>('all');
  const [selected,setSelected]=useState(initialId.startsWith('hou-jing:')?'hou-jing':initialId),[tab,setTab]=useState<Tab>('situation');
@@ -35,7 +35,7 @@ export function EventBrowser({world:w,initialId,onClose,navigation:n,pending,sen
  const people=(ids:string[])=>ids.map(id=><EventPersonLink key={id} world={w} id={id} onPerson={n.onPerson}/>);
  const timeline=(e:CatalogEntry,recent=false)=><ol className="event-timeline">{(recent?e.history.slice(-3):e.history).map(m=><li key={m.key}><time>{dateLabel(m.day,w.scriptId)}</time><p>{m.text}</p></li>)}</ol>;
  const fullHistory=(e:CatalogEntry)=><>{timeline(e)}<p className="event-note">{e.history.length?'仅列当前身份可知且存档仍保留的经过。':'尚无可展示的经过；未记录更早经过时，不补造日期。'}</p></>;
- return <><ActionDialog title="事件" className="event-browser" heading={<p>历史事件与沿革 <span>已录 {entries.length} 项</span></p>} onClose={onClose} actions={<><small>事件发展以本局局势为准</small>{entry?.war!==undefined&&<button onClick={()=>n.onWar(entry.war!)}>查看战况 ›</button>}{entry?.action&&<button disabled={pending} onClick={()=>setAction(entry.action)}>{entry.action.label} ›</button>}</>}>
+ return <><ActionDialog title="事件" className="event-browser" heading={<p>历史事件与沿革 <span>已录 {entries.length} 项</span></p>} onClose={onClose} actions={<><small>事件发展以本局局势为准</small>{entry?.id==='hou-jing'&&onHouJing?<button disabled={pending} onClick={onHouJing}>查看侯景之乱 ›</button>:<>{entry?.war!==undefined&&<button onClick={()=>n.onWar(entry.war!)}>查看战况 ›</button>}{entry?.action&&<button disabled={pending} onClick={()=>setAction(entry.action)}>{entry.action.label} ›</button>}</>}</>}>
   <div className="event-browser-layout">
    <aside className="event-catalog" aria-label="全部事件目录">
     <div className="event-filters"><label className="event-search"><ArtIcon name="diligent" size={22}/><input aria-label="搜索事件、人物、政权" placeholder="搜索事件、人物、政权" value={query} onChange={e=>{setQuery(e.target.value);setTab('situation');}}/></label><div><select aria-label="事件状态" value={status} onChange={e=>{setStatus(e.target.value as EventStatus|'all');setTab('situation');}}><option value="all">全部状态</option>{Object.entries(eventStatusNames).map(([id,name])=><option key={id} value={id}>{name}</option>)}</select><small>按当前状态排序</small></div></div>
