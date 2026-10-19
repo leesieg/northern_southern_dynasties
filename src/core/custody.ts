@@ -26,7 +26,7 @@ import {isMonthStart,monthStart} from './calendar';
 import {civilWar,civilReason,actCivilWar,warArmySide,warCitySide} from './civilWars';
 import {authorityGrant} from './authority';
 import {interruptCommanderCampaigns} from './militaryCampaigns';
-import {bilateralWar} from './wars';
+import {bilateralWar,activeWars,warRealmSide} from './wars';
 
 export function ensureCustody(w:World){
  if(!w.realm)return;
@@ -45,7 +45,9 @@ export function detainPerson(w:World,id:string,captor:RealmId,site:string,cause:
  const origin=allegianceRealm(w,id);if(!origin)return false;
  if(cause==='abduction'){const scheme=abductionScheme(w,source);if(!scheme||scheme.status!=='active'||scheme.actor!==privateHolder||scheme.target!==id||scheme.realm!==captor||!privateHolder||!isAlive(w,privateHolder)||detained(w,privateHolder)||allegianceRealm(w,privateHolder)!==captor||w.realm!.cities[site].controller!==captor||Object.values(s.records).some(p=>p.cause==='abduction'&&p.captorPerson===privateHolder))return false;}
  s.records[id]={person:id,captor,site,cause,source,origin,captorPerson:cause==='abduction'?privateHolder:army?armyCommander(w,army)??null:governingAuthority(w,captor)??null,army:army?.id??null,since:w.day,treatment:'guarded',talked:null,terms:'',escapeAfter:w.day+30,ransom:Math.min(400,80+Math.floor((governmentOf(w,origin)?.merit[id]??0)/2)),offer:null};
- const foreign=bilateralWar(w,captor,origin);if(cause!=='abduction'&&foreign?.id!==undefined){s.records[id].war=foreign.id;s.records[id].side=foreign.attacker===captor?'attack':foreign.defender===captor?'defend':foreign.allies?.[captor];}const civil=civilWar(w,captor);if(army&&civil){s.records[id].war=civil.id;s.records[id].side=warArmySide(w,civil,army)??undefined;}
+ const battle=/^battle:(\d+)(?::|$)/.exec(source),explicit=/^(?:civil|siege|occupation|war):(\d+)(?::|$)/.exec(source),warId=battle?w.militaryAftermath?.battles.find(b=>b.id===Number(battle[1]))?.war:explicit?Number(explicit[1]):undefined;
+ const captureWar=warId!==undefined?activeWars(w).find(v=>v.id===warId):army?activeWars(w).find(v=>{const holder=warArmySide(w,v,army),subject=v.civil&&v.attacker===v.defender&&origin===v.attacker?v.civil.supporters.includes(id)?'attack':'defend':warRealmSide(v,origin);return holder&&subject&&holder!==subject;}):bilateralWar(w,captor,origin);
+ if(cause!=='abduction'&&captureWar?.id!==undefined){s.records[id].war=captureWar.id;s.records[id].side=(army?warArmySide(w,captureWar,army):warRealmSide(captureWar,captor))??undefined;}
  movePerson(w,id,site);interruptCommanderCampaigns(w,id);
  if(w.diplomacy){for(const m of w.diplomacy.missions.filter(m=>m.envoy===id)){w.diplomacy.history.push({day:w.day,from:m.from,to:m.to,text:'使者被拘押，使命中止；已支付的出使成本不退。'});}w.diplomacy.history=w.diplomacy.history.slice(-80);w.diplomacy.missions=w.diplomacy.missions.filter(m=>m.envoy!==id);if(w.diplomacy.returning?.actor===id)w.diplomacy.returning=null;}
  if(w.mobility){for(const [key,leader] of Object.entries(w.mobility.armyCommanders??{}))if(leader===id)delete w.mobility.armyCommanders![Number(key)];for(const r of worldRealms(w))if(w.mobility.commanders[r]===id)delete w.mobility.commanders[r];for(const [key,v] of Object.entries(w.mobility.pendingCommanders??{}))if(v.person===id)delete w.mobility.pendingCommanders![Number(key)];}
@@ -54,6 +56,11 @@ export function detainPerson(w:World,id:string,captor:RealmId,site:string,cause:
  record(w,id,captor,source,cause==='arrest'?'依拘捕令收押，等待审理':cause==='abduction'?'被秘密绑架，私人看管；原有效忠与家产保留，军务及履职暂停':'被俘，原有效忠与家产保留，军务及履职暂停');mirror(w);return true;
 }
 function release(w:World,p:Detention,result:string){delete w.custody!.records[p.person];movePerson(w,p.person,p.site);mirror(w);record(w,p.person,p.captor,p.source,result);}
+/** Amnesty frees this war's military captives; private abductions and unrelated charges remain separate. */
+export function settleCivilCaptives(w:World,war:number,winner:'attack'|'defend'|null){
+ for(const p of Object.values(w.custody?.records??{}))if(p.war===war&&['battle','city'].includes(p.cause)&&(winner===null||p.side&&p.side!==winner))release(w,p,winner===null?'内战和约赦免，获释':'本方取得内战胜利，获释');
+}
+
 function roll(w:World){const s=w.life!;s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;}
 /** Called at an actual rout, once per battle/person, while the commander still exists. */
 /** Public custody projections keep the real holder in state without disclosing an unexposed scheme. */
@@ -83,8 +90,8 @@ export function captureCityPeople(w:World,site:string,captor:RealmId,source:stri
   if(escape&&roll(w)<.4){evacuatePerson(w,id,escape);record(w,id,captor,source,'城陷前沿安全道路出逃');}else detainPerson(w,id,captor,site,'city',source,army);
  }
 }
-export function custodyChief(w:World,p:Detention){if(w.realm!.annexed?.[p.captor])return;if(p.cause==='abduction'){const holder=p.captorPerson;return holder&&getPerson(w,holder)&&isAlive(w,holder)&&!detained(w,holder)&&allegianceRealm(w,holder)===p.captor&&w.realm!.cities[p.site].controller===p.captor?holder:undefined;}const war=civilWar(w,p.captor);const chief=p.war===war?.id&&p.side?(p.side==='attack'?war!.civil!.claimant:war!.civil!.loyalist):governingAuthority(w,p.captor);return chief&&isAlive(w,chief)&&!detained(w,chief)?chief:undefined;}
-export function custodyAuthority(w:World,actor:string,p:Detention){if(w.realm!.annexed?.[p.captor])return '';if(p.cause==='abduction')return custodyChief(w,p)===actor?'私人看管':'';const escort=w.realm!.armies.find(a=>a.id===p.army&&a.realm===p.captor);const civil=civilWar(w,p.captor),national=p.war===civil?.id&&p.side?custodyChief(w,p)===actor:governingExecutives(w,p.captor).includes(actor);return national?'国家裁定':escort&&armyCommander(w,escort)===actor&&isAlive(w,actor)&&!detained(w,actor)?'看管将领':'';}
+export function custodyChief(w:World,p:Detention){if(w.realm!.annexed?.[p.captor])return;if(p.cause==='abduction'){const holder=p.captorPerson;return holder&&getPerson(w,holder)&&isAlive(w,holder)&&!detained(w,holder)&&allegianceRealm(w,holder)===p.captor&&w.realm!.cities[p.site].controller===p.captor?holder:undefined;}const war=civilWar(w,p.captor,p.war);const chief=p.war===war?.id&&p.side?(p.side==='attack'?war!.civil!.claimant:war!.civil!.loyalist):governingAuthority(w,p.captor);return chief&&isAlive(w,chief)&&!detained(w,chief)?chief:undefined;}
+export function custodyAuthority(w:World,actor:string,p:Detention){if(w.realm!.annexed?.[p.captor])return '';if(p.cause==='abduction')return custodyChief(w,p)===actor?'私人看管':'';const escort=w.realm!.armies.find(a=>a.id===p.army&&a.realm===p.captor);const civil=civilWar(w,p.captor,p.war),national=p.war===civil?.id&&p.side?custodyChief(w,p)===actor:governingExecutives(w,p.captor).includes(actor);return national?'国家裁定':escort&&armyCommander(w,escort)===actor&&isAlive(w,actor)&&!detained(w,actor)?'看管将领':'';}
 function holdsGovernment(w:World,p:Detention){return !w.realm!.annexed?.[p.origin]&&(governmentOf(w,p.origin)?.ruler===p.person||constitutionalExecutives(w,p.origin).includes(p.person));}
 export function arrestEvidence(w:World,id:string){const r=allegianceRealm(w,id);if(!r)return '';const proven=w.economy?.investigations.find(q=>q.realm===r&&q.outcome==='substantiated'&&q.findings.some(f=>w.economy?.misconduct.find(m=>m.id===f)?.person===id));if(proven)return '核实侵吞案 '+proven.id;const revolt=civilWar(w,r)?.civil;if(revolt?.supporters.includes(id))return '参与在案叛乱';const refusal=w.realm?.armies.find(a=>a.refusal?.commander===id);return refusal?'第 '+refusal.id+' 军已记录拒绝交接军令':'';}
 export function recruitQuote(w:World,p:Detention,actor:string,offer:'stipend'|'office',mediator?:string){
@@ -136,7 +143,7 @@ function changeAllegiance(w:World,p:Detention,actor:string,offer:'stipend'|'offi
  const id=p.person,rs=w.relationships!,oldChief=governingAuthority(w,p.origin);
  retainPersonalFollowers(w,id,p.origin);
  delete rs.oaths[id];detachRetainer(w,id);clearLocalPerson(w,id);for(const r of worldRealms(w)){const g=governmentOf(w,r);if(g?.court)for(const m of Object.keys(g.court.ministries) as (keyof typeof g.court.ministries)[])if(g.court.ministries[m]===id)g.court.ministries[m]=null;}
- const war=civilWar(w,p.captor);if(p.war===war?.id&&p.side){if(p.side==='attack'&&!war!.civil!.supporters.includes(id))war!.civil!.supporters.push(id);else if(p.side==='defend')war!.civil!.supporters=war!.civil!.supporters.filter(v=>v!==id);}
+ const war=civilWar(w,p.captor,p.war);if(p.war===war?.id&&p.side){if(p.side==='attack'&&!war!.civil!.supporters.includes(id))war!.civil!.supporters.push(id);else if(p.side==='defend')war!.civil!.supporters=war!.civil!.supporters.filter(v=>v!==id);}
  (rs.allegiances??={})[id]={realm:p.captor,from:p.origin,since:w.day,army:0,source:'custody'};rs.oaths[id]={lord:actor,since:w.day,loyalty:60};
  w.realm!.offices=w.realm!.offices.filter(q=>q.candidate!==id);
  const wallet=accountWallet(w,'person:'+id)!;w.realm!.treasuries[p.captor].coins-=80;wallet.write(wallet.read()+80);fiscalRecord(w,p.captor,'central:'+p.captor,'person:'+id,80,'招降礼金');
@@ -166,7 +173,7 @@ export function advanceCustody(w:World){const s=ensureCustody(w);if(!s||s.lastDa
   if(!isAlive(w,p.person)){release(w,p,'拘押期间亡故，案件终止');continue;}
   if(p.cause==='abduction'&&!custodyChief(w,p)){release(w,p,'私人看管者离世、失去自由或驻地控制，拘押结束');continue;}
   if(w.realm!.annexed?.[p.captor]){release(w,p,'看管政权终止，获释');continue;}
-  const escort=p.army===null?undefined:w.realm!.armies.find(a=>a.id===p.army&&a.realm===p.captor);const civil=civilWar(w,p.captor),held=!!civil&&p.war===civil.id&&p.side?warCitySide(w,civil,p.site)===p.side:w.realm!.cities[p.site].controller===p.captor;
+  const escort=p.army===null?undefined:w.realm!.armies.find(a=>a.id===p.army&&a.realm===p.captor);const civil=civilWar(w,p.captor,p.war),held=!!civil&&p.war===civil.id&&p.side?warCitySide(w,civil,p.site)===p.side:w.realm!.cities[p.site].controller===p.captor;
   if(escort){p.site=escort.location;const at=w.mobility!.residences[p.person];if(at){at.site=escort.location;at.journey=escort.journey?structuredClone(escort.journey):null;}if(p.person===w.characterId){w.people[0].location=escort.location;w.people[0].journey=escort.journey?structuredClone(escort.journey):null;}}
   else if(!held){release(w,p,'看管地点失守且无看管军队，获释');continue;}
   if(p.cause!=='abduction'&&p.person===w.characterId&&(p.origin!==p.captor||p.side)&&!p.offer&&w.realm!.treasuries[p.captor].coins>=80&&!holdsGovernment(w,p))p.offer='stipend';

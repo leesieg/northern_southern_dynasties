@@ -1,4 +1,5 @@
 import {resting} from './householdLife';
+import {recordCivilFact} from './civilConduct';
 import type {World} from './types';
 import type {War} from './wars';
 import type {Army,RealmId} from './realm';
@@ -118,7 +119,7 @@ export function actCivilPolitics(w:World,c:CivilPoliticsCommand,actor=w.characte
  else if(c.action==='appeal'){awardInfluence(next,actor,-10);m.appeals[c.person+'|'+c.side]=next.day;record(next,(getPerson(next,actor)?.name??actor)+'向'+(getPerson(next,c.person)?.name??c.person)+'劝说'+civilStanceNames[c.side]+'；影响力 −10，立场仍由本人决定。');}
  else{
   const q=civilStanceQuote(next,war,actor,c.choice),old=next.relationships?.oaths[actor];
-  if(q.crossing){joinCivilCamp(next,war,actor,q.to!);if(old)changeRelationOpinion(next,actor,old.lord,-25);const oldChief=governingAuthority(next,q.from!);if(oldChief!==old?.lord)changeRelationOpinion(next,actor,oldChief,-25);}
+  if(q.crossing){joinCivilCamp(next,war,actor,q.to!);recordCivilFact(next,war,actor,{source:'switch:'+next.day,kind:'switch',side:c.choice==='rebel'?'attack':'defend',day:next.day,amount:1});if(old)changeRelationOpinion(next,actor,old.lord,-25);const oldChief=governingAuthority(next,q.from!);if(oldChief!==old?.lord)changeRelationOpinion(next,actor,oldChief,-25);}
   m.members[actor]={...m.members[actor],choice:c.choice,day:next.day,checked:next.day};delete m.members[actor].unavailable;
   if(c.choice!=='watch'&&m.members[actor].lastCamp!==c.choice){m.members[actor].lastCamp=c.choice;m.members[actor].lastSwitch=next.day;}
   activateCivilPromises(next,war,actor,c.choice);

@@ -1,3 +1,4 @@
+import {validCivilSettlements} from './civilAftermath';
 import {validCivilPromise} from './civilPromises';
 import {getPerson} from './personRegistry';
 import {governmentYear} from './government';
@@ -7,7 +8,7 @@ import type {PowerArrangement} from './powerPolitics';
 
 import {validDynastyName} from './courtSave';
 export function validArrangement(p:unknown,w?:World):p is PowerArrangement {if(!p||typeof p!=='object')return false;const v=p as PowerArrangement;return ['executive','ruler','dynasty'].includes(v.goal)&&[v.sponsor,v.beneficiary,v.executive].every(id=>typeof id==='string'&&!!getPerson(w,id))&&typeof v.name==='string'&&(v.goal!=='dynasty'||validDynastyName(v.name));}
-export function validPowerPolitics(w:World){const s=w.politics;if(s===undefined)return true;const realms=Object.keys(w.realm?.governments?.realms??{}),person=(id:string)=>typeof id==='string'&&!! getPerson(w,id)!,day=(n:number,max=w.day)=>Number.isSafeInteger(n)&&n>=0&&n<=max,object=(v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v);if(!s||s.version!==1||!object(s.proposals)||!object(s.cooldowns)||!object(s.chiefs)||!Array.isArray(s.assurances)||s.assurances.length>30||!Array.isArray(s.history)||s.history.length>60)return false;
+export function validPowerPolitics(w:World){const s=w.politics;if(s===undefined)return true;if(!validCivilSettlements(w))return false;const realms=Object.keys(w.realm?.governments?.realms??{}),person=(id:string)=>typeof id==='string'&&!! getPerson(w,id)!,day=(n:number,max=w.day)=>Number.isSafeInteger(n)&&n>=0&&n<=max,object=(v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v);if(!s||s.version!==1||!object(s.proposals)||!object(s.cooldowns)||!object(s.chiefs)||!Array.isArray(s.assurances)||s.assurances.length>30||!Array.isArray(s.history)||s.history.length>60)return false;
  if(s.commitments!==undefined&&(!Array.isArray(s.commitments)||s.commitments.length>270||!s.commitments.every(q=>q&&realms.includes(q.realm)&&person(q.person)&&person(q.chief)&&['office','command'].includes(q.kind)&&day(q.until,w.day+180)&&typeof q.broken==='boolean'&&validCivilPromise(w,q))))return false;
  const reserved=s.commitments?.filter(q=>q.civil&&['offered','active'].includes(q.civil.status))??[];
  if(new Set(reserved.map(q=>q.realm+'|'+q.civil!.target.kind+'|'+q.civil!.target.id)).size!==reserved.length||new Set(reserved.map(q=>q.realm+'|'+q.person)).size!==reserved.length)return false;

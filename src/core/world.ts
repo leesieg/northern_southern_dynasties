@@ -28,6 +28,7 @@ import {actMilitaryAction,advanceAftermath} from './militaryAftermath';
 import {advanceObligations} from './obligations';
 import {actUnrest,ensureUnrest} from './unrest';
 import {governanceRules} from './governanceRules';
+import {actCivilAftermath} from './civilAftermath';
 import {actCivilWar,civilCanAdmin} from './civilWars';
 import {actEnterprise,advanceEnterprises} from './enterprises';
 import {actMilitaryCampaign,advanceMilitaryCampaigns} from './militaryCampaigns';
@@ -170,6 +171,7 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   if(command.type==='nobility'){actNobility(world,command);return;}
   if(command.type==='honor'){actHonor(world,command);return;}
   if(command.type==='unrest'){actUnrest(world,command);return;}
+  if(command.type==='civilAftermath'){actCivilAftermath(world,command);return;}
   if(command.type==='civilWar'){actCivilWar(world,command);return;}
   if(command.type==='enterprise'){actEnterprise(world,command);return;}
   if(command.type==='militaryCampaign'){actMilitaryCampaign(world,command);return;}
@@ -296,4 +298,4 @@ export function dateLabel(day: number,scriptId?:string): string {
   return `${date.getUTCFullYear()} 年 ${date.getUTCMonth()+1} 月 ${date.getUTCDate()} 日`;
 }
 
-function publicActionName(c:GameCommand){const type:Record<string,string>={power:'权力安排',pact:'归附',polity:'政权',realm:'政务',service:'差事',duty:'粮务',court:'朝廷',government:'制度',diplomacy:'外交',mobility:'出行',retinue:'幕府',build:'营建',fiscal:'拨款'};const actions:Record<string,string>={muster:'动员',relief:'赈济',fund:'拨付',event:'地方事件',approve:'批准预算',grant:'追加拨款',cancel:'撤回结余',close:'差事结案',war:'宣战',disband:'遣散',ransom:'赎返'};return (type[c.type]??'国政')+('action' in c?' · '+(actions[c.action]??'公务办理'):'');}
+function publicActionName(c:GameCommand){const type:Record<string,string>={civilAftermath:'内战善后',power:'权力安排',pact:'归附',polity:'政权',realm:'政务',service:'差事',duty:'粮务',court:'朝廷',government:'制度',diplomacy:'外交',mobility:'出行',retinue:'幕府',build:'营建',fiscal:'拨款'};const actions:Record<string,string>={muster:'动员',relief:'赈济',fund:'拨付',event:'地方事件',approve:'批准预算',grant:'追加拨款',cancel:'撤回结余',close:'差事结案',war:'宣战',disband:'遣散',ransom:'赎返'};return (type[c.type]??'国政')+('action' in c?' · '+(actions[c.action]??'公务办理'):'');}

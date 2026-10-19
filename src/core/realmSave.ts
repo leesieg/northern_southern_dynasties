@@ -80,7 +80,7 @@ export function validRealm(w:World):boolean {
  if(j.elapsed>=j.durations[j.leg]||j.durations.slice(0,j.leg).reduce((n:number,d:number)=>n+d,0)+j.elapsed!==w.day-j.started)return false;}
  }
  if(s.armyDebts!==undefined&&(!Array.isArray(s.armyDebts)||s.armyDebts.length>1000||s.armyDebts.some(d=>!obj(d)||!realm(d.realm)||typeof d.account!=='string'||d.account!=='central:'+d.realm&&!(d.account.startsWith('person:')&& getPerson(w,d.account.slice(7))!)&&(!d.account.startsWith(d.realm+'|')||!Object.hasOwn(territoryNodes,d.account.split('|')[1]))||!int(d.coins,1,1000000000))))return false;
- if((s.wars??[]).filter(v=>!v.civil).length>6)return false;
+ if((s.wars??[]).filter(v=>!v.civil).length>6||(s.wars??[]).filter(v=>v.civil).length>8)return false;
  if(s.wars!==undefined&&(!Array.isArray(s.wars)||s.wars.length>15||!int(s.nextWarId,1,1000000000)))return false;
  const wars=activeWars(w),pairs=new Map<string,Set<string>>(),ids=new Set<number>();
  for(const v of wars){if(!obj(v)||!realm(v.attacker)||!realm(v.defender)||!validCivil(w,v)||!validClaimantWar(w,v)||!site(v.target)||!validWarTerritory(v)||!int(v.started,0,w.day)||!int(v.score,-100,100))return false;

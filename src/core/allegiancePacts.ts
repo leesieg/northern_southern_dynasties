@@ -14,7 +14,7 @@ import {relationOpinion,changeRelationOpinion,oathCycle,opinionBreakdown} from '
 import {personInfluence,awardInfluence} from './personalInfluence';
 import {actMilitaryDefection,militaryDefectionQuote} from './militaryDefection';
 import {detachRetainer,retainPersonalFollowers} from './allegianceTransition';
-import {civilWar,civilReason,actCivilWar} from './civilWars';
+import {civilReason,actCivilWar} from './civilWars';
 import {activeWars} from './wars';
 import {planRoute} from './world';
 import {capital} from './realm';
@@ -113,7 +113,7 @@ export function advancePacts(w:World){if(!w.realm)return;const s=ensure(w);if(is
  if(p.status==='pending'){advancePactReception(w,p.id);continue;}if(p.status!=='active')continue;if(!isAlive(w,p.person)||allegianceRealm(w,p.person)!==p.to){p.status='ended';delete p.offer;continue;}const a=w.realm.armies.find(a=>a.id===p.army),chief=governingAuthority(w,p.to),breaches=currentPactBreaches(w,p);
  if(isMonthStart(w.day,w.scriptId)&&p.reviewed<w.day){p.reviewed=w.day;for(const cause of breaches){if(!p.breaches.includes(cause)){p.breaches.push(cause);changeRelationOpinion(w,p.person,chief,-20);const oath=w.relationships?.oaths[p.person];if(oath)oath.loyalty=Math.max(1,oath.loyalty-20);log(w, getPerson(w,p.person)!.name+'就「'+cause+'」提出交涉。');}}
  if(p.terms==='reform'&&p.integrationCompletedAt===undefined&&w.day>=p.due&&a&&!a.arrears&&!detained(w,p.person)&&relationOpinion(w,p.person,chief)>=0){delete a.owner;a.payer='central:'+p.to;for(const u of a.regiments??[])u.institution=Math.max(60,u.institution??0);p.integrationCompletedAt=w.day;log(w, getPerson(w,p.person)!.name+'依归附约定完成改编，原籍、经验与个人忠诚保留。');}
- if(p.person!==w.characterId&&!historicalOwnsDecision(w,p.person)&&breaches.length&&relationOpinion(w,p.person,chief)<-40&&!civilWar(w,p.to)){const c={type:'civilWar',action:'rise',name:'新朝'} as const;if(!civilReason(w,c,p.person))actCivilWar(w,c,p.person);}
+ if(p.person!==w.characterId&&!historicalOwnsDecision(w,p.person)&&breaches.length&&relationOpinion(w,p.person,chief)<-40){const c={type:'civilWar',action:'rise',name:'新朝'} as const;if(!civilReason(w,c,p.person))actCivilWar(w,c,p.person);}
  }}s.items=s.items.filter(p=>p.status==='pending'||p.status==='active'||w.day-p.created<360||w.historical?.items.some(e=>e.status!=='cancelled'&&e.pactId===p.id)).slice(-100);}
 export function pactBreachRisk(w:World,person:string|undefined,army:number|undefined){return !!person&&w.allegiancePacts?.items.some(p=>p.status==='active'&&p.person===person&&p.army===army&&p.terms==='retain'&&p.integrationCompletedAt===undefined&&relationOpinion(w,person,governingAuthority(w,p.to))<20);}
 

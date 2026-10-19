@@ -1,3 +1,4 @@
+import {actCivilAftermath,civilSettlements} from './civilAftermath';
 import {syncRulerHistory} from './rulerHistory';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance} from './world';
@@ -119,7 +120,7 @@ describe('civil-war persuasion and binding promises',()=>{
   w.realm!.cities[county].governor=null;syncRulerHistory(w);advanceCivilPromises(w);expect(civilCommitments(w)[0]).toMatchObject({broken:true,civil:{status:'broken'}});roundtrip(w);
  });
  it('preserves a fulfilled wartime pledge through a winning reunification and closes it once',()=>{
-  const {w,war,person,county}=fixture(),option=civilPromiseOptions(w,war,'xiao-yi',person).find(o=>o.target.id===county)!;actCivilPolitics(w,{type:'civilWar',action:'pledge',war:war.id!,person,side:'rebel',...option});choose(w,war,person,'rebel');const live=civilWar(w,'liang')!;settleCivilWar(w,live,'demand','rebel');advanceCivilPromises(w);expect(civilCommitments(w)[0].realm).toBe('liang');expect(civilCommitments(w)[0].civil.status).toBe('kept');const before=structuredClone(w);advanceCivilPromises(w);expect(w).toEqual(before);roundtrip(w);
+  const {w,war,person,county}=fixture(),option=civilPromiseOptions(w,war,'xiao-yi',person).find(o=>o.target.id===county)!;actCivilPolitics(w,{type:'civilWar',action:'pledge',war:war.id!,person,side:'rebel',...option});choose(w,war,person,'rebel');const live=civilWar(w,'liang')!;settleCivilWar(w,live,'demand','rebel');const influence=personInfluence(w,'xiao-yi');actCivilAftermath(w,{type:'civilAftermath',war:live.id!,person,action:'fulfil'});expect(personInfluence(w,'xiao-yi')).toBe(influence);expect(civilSettlements(w)[0].promises![0]).toMatchObject({atEnd:'active',outcome:'kept'});advanceCivilPromises(w);expect(civilCommitments(w)[0].realm).toBe('liang');expect(civilCommitments(w)[0].civil.status).toBe('kept');const before=structuredClone(w);advanceCivilPromises(w);expect(w).toEqual(before);roundtrip(w);
  });
  it('does not allow arbitrary titles, third-country promises, or another chief influence',()=>{
   const {w,war,person}=fixture();awardInfluence(w,person,100);const before=structuredClone(w);expect(()=>actCivilPolitics(w,{type:'civilWar',action:'pledge',war:war.id!,person,side:'rebel',target:{kind:'ministry',id:'imaginary'},mode:'after'})).toThrow();expect(()=>actCivilPolitics(w,{type:'civilWar',action:'appeal',war:war.id!,person:'xiao-yi',side:'rebel'},person)).toThrow('执政者');expect(w).toEqual(before);

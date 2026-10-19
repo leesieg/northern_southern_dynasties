@@ -79,6 +79,7 @@ export function advanceCivilPromises(w:World){
   else if(!war&&held)q.civil.status='kept';
   else if(!war&&q.civil.due!==null&&w.day>=q.civil.due)breach(w,q);
  }
+ for(const settlement of w.politics?.civilSettlements??[])for(const p of settlement.promises??[]){if(p.outcome)continue;const live=[...civilCommitments(w)].reverse().find(q=>q.civil.war===settlement.war&&q.person===p.person&&q.chief===p.chief&&q.civil.created===p.created&&q.civil.target.kind===p.target.kind&&q.civil.target.id===p.target.id);if(live&&['kept','broken','void'].includes(live.civil.status))p.outcome=live.civil.status as 'kept'|'broken'|'void';}
  // Closed records retain a bounded audit window, while unfulfilled obligations cannot be dropped.
  if(w.politics?.commitments)w.politics.commitments=w.politics.commitments.filter(q=>!q.civil||live(q as CivilCommitment)||w.day-q.until<180);
 }

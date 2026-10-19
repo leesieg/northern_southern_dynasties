@@ -11,3 +11,5 @@ dialog.paper-dialog.civil-member-dialog{width:min(820px,calc(100vw - 32px));--di
 
 .civil-situation-link{grid-column:1/-1;display:flex;align-items:center;min-height:36px;padding:8px 12px;background:#27372f;--dialog-ink:#ecdfc0;--dialog-muted:#c8c5ad;color:#ecdfc0;border:1px solid #a48b5c66;text-align:left}
 .war-details>.civil-mobilization{flex:1;overflow:auto;min-height:0}
+
+.civil-aftermath .civil-settlement-choices{display:flex;flex-wrap:wrap;gap:6px}.civil-settlement-choices button[aria-pressed="true"]{outline:2px solid #b99b55}.civil-aftermath .civil-roster{max-height:45dvh}.hou-workspace .civil-aftermath{--dialog-ink:#efdfbd;--dialog-muted:#c2b99f;color:var(--dialog-ink);margin-top:12px;padding:12px;background:#20372f;border:1px solid #8b774d}

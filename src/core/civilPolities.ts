@@ -23,6 +23,7 @@ import {returnArmyConvoy} from './armyLogistics';
 import {roads} from '../data/scenario';
 import {setLocalHolder,countyTerritory,localKey} from './localAdministration';
 import {isAlive} from './lifeState';
+import {nextCivilColor} from './polityRuntime';
 
 export const civilOrigin=(war:War)=>war.defender;
 export const independentCivil=(war:War)=>!!war.civil&&war.attacker!==war.defender;
@@ -61,7 +62,7 @@ export function establishCivilPolity(w:World,war:War,takeBase=false){
  Object.assign(g,{ruler:c.claimant,executives:[c.claimant],dynasty:r,regimeId:r+'-0',support:50,legitimacy:40,herd:0,camp:c.base,lastCamp:w.day,heirs:{ruler:null,executive:null,dynasty:null},task:null,stages:[],cooldowns:{},arrangement:{goal:'executive',sponsor:c.claimant,beneficiary:c.claimant,executive:c.claimant,name:'',since:w.day}});
  delete g.court;delete g.resignedExecutives;
  s.governments!.realms[r]=g;s.treasuries[r]={coins:0,grain:0,lastIncome:0,lastExpense:0,lastFood:0};
- (s.identities??={})[r]={origin:realmOrigin(w,origin) as 'liang'|'east'|'west',capital:c.base,created:w.day,predecessor:origin,civilWar:war.id!};
+ (s.identities??={})[r]={origin:realmOrigin(w,origin) as 'liang'|'east'|'west',capital:c.base,created:w.day,predecessor:origin,color:nextCivilColor(w),civilWar:war.id!};
  s.governments!.regimes.push({id:r+'-0',realm:r,dynasty:r,ruler:c.claimant,executives:[c.claimant],name,kind:'political',from:w.day,until:null,predecessor:null,source:null,cities});
  const f=ensureFiscal(w)!;f.net[r]=0;
  // Split shared district accounts by actual population, keeping every remainder in its source account.
@@ -98,6 +99,8 @@ export function reuniteCivilPolity(w:World,war:War){
  for(const q of w.militaryCampaigns?.items??[])if(q.status==='active'&&q.realm===r)finishCampaign(w,q,'failed','内战结束，军府委任结案退款');
  for(const p of allPeople(w))if(allegianceRealm(w,p.id)===r){if(w.relationships!.oaths[p.id]&&allegianceRealm(w,w.relationships!.oaths[p.id].lord)!==r)delete w.relationships!.oaths[p.id];(w.relationships!.allegiances??={})[p.id]={realm:origin,from:r,since:w.day,army:0,source:'civil'};}
  const successor=(key:string)=>key==='central:'+r?'central:'+origin:key.startsWith(r+'|')?origin+key.slice(r.length):key;
+ for(const p of Object.values(w.custody?.records??{}))if(p.captor===r)p.captor=origin;
+ if(w.mobility?.captivity?.captor===r)w.mobility.captivity.captor=origin;
  for(const a of s.armies)if(a.realm===r){a.realm=origin;a.payer=successor(a.payer??'central:'+r);}
  for(const d of s.armyDebts??[])if(d.realm===r){d.realm=origin;d.account=successor(d.account);}
  for(const d of w.obligations?.items??[]){d.from=successor(d.from);d.to=successor(d.to);if(d.from===d.to){d.offset+=d.remaining;d.remaining=0;}}
@@ -120,8 +123,10 @@ export function reuniteCivilPolity(w:World,war:War){
 
 export function migrateCivilPolities(w:World){
  let repaired=false;
+ for(const [id,identity] of Object.entries(w.realm?.identities??{}))if(id.startsWith('rebel-')&&!w.realm?.annexed?.[id as RealmId]&&identity&&!identity.color)identity.color=nextCivilColor(w,id as RealmId);
  for(const war of activeWars(w)){
   if(!war.civil)continue;
+  war.civil.crisis??=activeWars(w).filter(v=>v.civil&&v.defender===war.defender&&v.started<=war.started).map(v=>v.civil!.crisis??v.id!).sort((a,b)=>a-b)[0]??war.id!;
   if(!independentCivil(war)){establishCivilPolity(w,war);continue;}
   const c=war.civil,city=w.realm!.cities[c.base],county=countyTerritory(c.base);
   // Fill only a never-handed-over office in a still-held base. A lost county or a later appointment stays authoritative.

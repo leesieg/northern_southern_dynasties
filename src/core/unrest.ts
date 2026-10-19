@@ -5,7 +5,7 @@ import type {World} from './types';
 import type {RealmId} from './realm';
 import {isRealmId} from './polityRuntime';
 import {capital} from './realm';
-import {civilWar,settleCivilWar} from './civilWars';
+import {civilWar,civilWars,civilCapacityReason,settleCivilWar} from './civilWars';
 import {ensureWars} from './wars';
 import {governanceRules} from './governanceRules';
 import {governingAuthority,governingExecutives} from './government';
@@ -43,7 +43,8 @@ export function recordCulturalChange(w:World,r:RealmId,previous:string){
 export function demandSatisfied(w:World,q:LocalUnrest){const c=w.realm!.cities[q.site];return q.demand==='food'?c.grain>=Math.max(50,civilianFood(w,q.site)):q.demand==='tax'?c.tax==='light':governanceRules(w,q.realm).cultural==='customs';}
 function organizer(w:World,q:LocalUnrest){return allPeople(w).find(p=>p.id!==w.characterId&&!governingExecutives(w,q.realm).includes(p.id)&&allegianceRealm(w,p.id)===q.realm&&isAlive(w,p.id)&&!detained(w,p.id)&&(ageAt(w,p.id)??0)>=16&&!personResidence(w,p.id).traveling&&personResidence(w,p.id).site===q.site)?.id??null;}
 export function unrestBlock(w:World,q:LocalUnrest){const c=w.realm!.cities[q.site],chief=governingAuthority(w,q.realm);
- if(civilWar(w,q.realm))return '本国已有内战，其他地方诉求暂留预警';
+ if(civilCapacityReason(w))return civilCapacityReason(w);
+ if(civilWars(w,q.realm).length)return '本国已有内战，其他地方诉求暂留预警';
  if(!q.organizer||q.organizer===chief||!isAlive(w,q.organizer)||detained(w,q.organizer)||allegianceRealm(w,q.organizer)!==q.realm||personResidence(w,q.organizer).traveling||personResidence(w,q.organizer).site!==q.site)return '缺少在地组织者';
  if(w.realm!.armies.some(a=>a.realm===q.realm&&a.location===q.site&&!a.journey&&armyCommander(w,a)!==q.organizer))return '当地守军仍控制治所，诉求保留预警';
  if(w.militaryCampaigns?.items.some(t=>t.status==='active'&&w.realm!.armies.some(a=>a.id===t.army&&armyCommander(w,a)===q.organizer)))return '组织者的部队仍承担战役委任';
@@ -76,7 +77,7 @@ export function unrestReason(w:World,c:UnrestCommand,actor=w.characterId!){const
 export function actUnrest(w:World,c:UnrestCommand,actor=w.characterId!){const why=unrestReason(w,c,actor);if(why)throw new Error(why);const q=w.unrest!.items.find(q=>q.id===c.id)!;
  if(c.action==='report'){q.reported=w.day;log(w,siteById[q.site].name+'诉求已上报'+ getPerson(w,governingAuthority(w,q.realm))?.name+'，等待实际处置。');return;}
  // A local exception preserves organization; it does not grant cash or rewrite the whole policy.
- if(q.stage==='armed'){const war=civilWar(w,q.realm);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'yield','rebel');}
+ if(q.stage==='armed'){const war=civilWar(w,q.realm,q.war);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'yield','rebel');}
  else {w.realm!.cities[q.site].culturalExemption={leader:q.organizer!,since:w.day};close(w,q,'中央恢复当地军镇待遇，文化诉求和解');}
 }
 export function settleGrievance(w:World,id:number,rebelWins:boolean,white:boolean){const q=w.unrest?.items.find(q=>q.id===id);if(!q)return;
@@ -89,8 +90,8 @@ export function advanceUnrest(w:World){if(!w.realm||w.mode!=='sandbox')return;co
  for(const c of Object.values(w.realm.cities))if(c.culturalExemption&&(!isAlive(w,c.culturalExemption.leader)||allegianceRealm(w,c.culturalExemption.leader)!==c.owner||!organizedCommander(w,c.owner,c.culturalExemption.leader)))delete c.culturalExemption;
  for(const [site,c] of Object.entries(w.realm.cities))if(c.owner!=='frontier'&&c.owner===c.controller&&!w.realm.annexed?.[c.owner]&&c.order<=35){const demand=c.tax==='heavy'?'tax':c.grain<Math.max(50,civilianFood(w,site))?'food':null;if(demand)add(w,c.owner,site,demand,'conditions:'+site+':'+w.day,null);}
  for(const q of s.items){if(q.stage==='closed')continue;const c=w.realm.cities[q.site];
-  if(c.owner!==q.realm||c.controller!==q.realm&&!(q.stage==='armed'&&w.realm.identities?.[c.controller as RealmId]?.civilWar===q.war)||w.realm.annexed?.[q.realm]){if(q.stage==='armed'){const war=civilWar(w,q.realm);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'white','loyal');}else close(w,q,'地方易手，原朝廷诉求终止，实际困境保留');continue;}
-  if(q.stage==='armed'){const war=civilWar(w,q.realm);if(!war||war.id!==q.war)close(w,q,'战事终止，地方仍按实际钱粮与政策结算');else if(demandSatisfied(w,q))settleCivilWar(w,war,'yield','rebel');continue;}
+  if(c.owner!==q.realm||c.controller!==q.realm&&!(q.stage==='armed'&&w.realm.identities?.[c.controller as RealmId]?.civilWar===q.war)||w.realm.annexed?.[q.realm]){if(q.stage==='armed'){const war=civilWar(w,q.realm,q.war);if(war?.civil?.grievance===q.id)settleCivilWar(w,war,'white','loyal');}else close(w,q,'地方易手，原朝廷诉求终止，实际困境保留');continue;}
+  if(q.stage==='armed'){const war=civilWar(w,q.realm,q.war);if(!war||war.id!==q.war)close(w,q,'战事终止，地方仍按实际钱粮与政策结算');else if(demandSatisfied(w,q))settleCivilWar(w,war,'yield','rebel');continue;}
   if(q.demand==='customs'&&(!q.organizer||!isAlive(w,q.organizer)||allegianceRealm(w,q.organizer)!==q.realm||!organizedCommander(w,q.realm,q.organizer))){close(w,q,'原军镇组织条件已失效，待遇诉求终止');continue;}
   const solved=demandSatisfied(w,q),distress=q.demand==='customs'||c.order<=35;
   if(solved||!distress){close(w,q,solved?'诉求已由实际粮仓、税制或待遇解决':'地方秩序恢复，诉求消退');continue;}

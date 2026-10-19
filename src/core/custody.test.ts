@@ -1,3 +1,4 @@
+import {syncRulerHistory} from './rulerHistory';
 import {describe,it,expect} from 'vitest';
 import {newCampaignWorld,act,advance,planRoute} from './world';
 import {detainPerson,actCustody,custodyReason,advanceCustody,resolveCommanderFate,captureCityPeople,custodyAuthority} from './custody';
@@ -55,7 +56,7 @@ describe('全人物拘押与结算',()=>{
 
 it('实际城内官员才可能被俘，议降人员沿真实道路撤离',()=>{
  const w=start();w.realm!.cities.jingkou.governor='xiao-gang';w.mobility!.residences['xiao-gang']={site:'jiankang',journey:null};captureCityPeople(w,'jingkou','east','siege:remote');w.realm!.cities.jingkou.governor=null;w.realm!.cities.jiankang.governor='xiao-gang';expect(w.custody!.records['xiao-gang']).toBeUndefined();
- w.mobility!.residences['xiao-gang']={site:'jiankang',journey:null};captureCityPeople(w,'jiankang','east','siege:peace',true);expect(w.custody!.records['xiao-gang']).toBeUndefined();expect(w.mobility!.residences['xiao-gang'].journey).not.toBeNull();expect(w.people[0].journey).not.toBeNull();expect(allegianceRealm(w,'xiao-gang')).toBe('liang');validateWorld(w);
+ w.mobility!.residences['xiao-gang']={site:'jiankang',journey:null};captureCityPeople(w,'jiankang','east','siege:peace',true);expect(w.custody!.records['xiao-gang']).toBeUndefined();expect(w.mobility!.residences['xiao-gang'].journey).not.toBeNull();expect(w.people[0].journey).not.toBeNull();expect(allegianceRealm(w,'xiao-gang')).toBe('liang');syncRulerHistory(w);validateWorld(w);
 });
 it('看管军队的位置是唯一旅程来源，普通赴任不能再次推进俘虏',()=>{
  const w=start(),route=planRoute('jiankang','jingkou')!;w.realm!.armies.push({realm:'liang',location:'jiankang',troops:600,morale:80,supply:120,journey:null,siege:0,automation:'direct'});ensureArmyOrganization(w);const a=w.realm!.armies[0];detainPerson(w,'dugu-xin','liang','jiankang','battle','battle:escort',a);a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:0};advance(w,1);const p=w.mobility!.residences['dugu-xin'];expect(p.site).toBe(a.location);expect(p.journey).toEqual(a.journey);advanceMobility(w);expect(p.journey).toEqual(a.journey);validateWorld(w);

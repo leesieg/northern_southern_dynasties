@@ -1,3 +1,4 @@
+import {splitCivilSupply,mergeCivilSupply} from './civilConduct';
 import {recruitmentSources,consumeManpower,recruitmentRegiments} from './manpower';
 import {armyCommander} from './mobility';
 import {authorityGrant} from './authority';
@@ -113,9 +114,9 @@ export function actArmyOrganization(w:World,c:ArmyCommand){
   if(c.action==='split'){
    const u=a.regiments!.find(u=>u.id===c.regiment)!,share=u.troops/a.troops,supply=Math.floor(a.supply*share),arrears=Math.floor((a.arrears??0)*share);
    a.regiments=a.regiments!.filter(x=>x!==u);a.troops-=u.troops;a.supply-=supply;a.arrears!-=arrears;
-   s.armies.push({...a,id:s.nextArmyId!++,troops:u.troops,regiments:[u],supply,arrears,foodRemainder:0,trainingUntil:u.readyDay??a.trainingUntil});
+   splitCivilSupply(w,a.id!,s.nextArmyId!,share);s.armies.push({...a,id:s.nextArmyId!++,troops:u.troops,regiments:[u],supply,arrears,foodRemainder:0,trainingUntil:u.readyDay??a.trainingUntil});
   }else{
-   const b=s.armies.find(b=>b.id===c.target)!;for(const u of b.regiments!)u.readyDay??=b.trainingUntil;a.morale=Math.floor((a.morale*a.troops+b.morale*b.troops)/(a.troops+b.troops));a.troops+=b.troops;a.supply+=b.supply;a.arrears!+=b.arrears??0;a.foodRemainder!+=b.foodRemainder??0;a.regiments!.push(...b.regiments!);delete w.mobility?.pendingCommanders?.[b.id!];s.armies=s.armies.filter(x=>x!==b);
+   const b=s.armies.find(b=>b.id===c.target)!;mergeCivilSupply(w,b.id!,a.id!);for(const u of b.regiments!)u.readyDay??=b.trainingUntil;a.morale=Math.floor((a.morale*a.troops+b.morale*b.troops)/(a.troops+b.troops));a.troops+=b.troops;a.supply+=b.supply;a.arrears!+=b.arrears??0;a.foodRemainder!+=b.foodRemainder??0;a.regiments!.push(...b.regiments!);delete w.mobility?.pendingCommanders?.[b.id!];s.armies=s.armies.filter(x=>x!==b);
   }
  }
  w.chronicle.push({day:w.day,person:'player',text:c.action==='raise'?siteById[c.site].name+'征募 '+(c.amount??200)+' '+troopKinds[c.kind].name+'，人口与钱粮已划入军伍。':c.action==='split'?'已按兵团分军，兵员、随军粮与欠饷一并拆分。':'已合军，兵员、粮食与欠饷合并。'});w.chronicle=w.chronicle.slice(-100);
