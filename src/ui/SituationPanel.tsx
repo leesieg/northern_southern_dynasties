@@ -1,3 +1,4 @@
+import {px} from './peopleScale';
 import {WarDetailsDialog} from './WarDetails';
 import {CommandConfirmation} from './CommandConfirmation';
 import {activeWars,warRealmSide} from '../core/wars';
@@ -100,7 +101,7 @@ export function SituationPanel({world:w,realm,pending,send,onPerson,onTerritory,
    {ownRealm&&c.founding&&<section className="court-founding"><header><strong>{c.founding.name} · 承统</strong><HoverHint label="撤回承统议程" content="撤回后已付成本不退。"><button className="court-icon-button" aria-label="撤回承统议程" disabled={pending||!!courtReason(w,cancelCommand)} onClick={()=>setCancel(true)}><ArtIcon name="wary" size={23}/></button></HoverHint></header><progress max={120} value={c.founding.progress}/><small>{foundingPause(w,r)||`${c.founding.progress} / 120 日`}</small></section>}
   </section>
   <section className="court-pressure court-desk-column">
-   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>地方压力</h3><HoverHint label="承压人口" content={'承压地区 '+local.population.toLocaleString()+' 人，本国总人口 '+local.total.toLocaleString()+' 人。'}><small tabIndex={0}>{local.affected.length} 处</small></HoverHint></header>
+   <header className="court-desk-heading detail-landscape detail-landscape--court"><h3>地方压力</h3><HoverHint label="承压人口" content={'承压地区 '+px(local.population).toLocaleString()+' 人，本国总人口 '+px(local.total).toLocaleString()+' 人。'}><small tabIndex={0}>{local.affected.length} 处</small></HoverHint></header>
    <div className="court-scroll-list">
     {local.affected.map(v=><article className="court-pressure-place" key={v.site}>
      <header><button onClick={()=>onTerritory?.(countyTerritory(v.site))}>{siteById[v.site].name}</button>{ownRealm&&<HoverHint label={v.tasks.length?'查看地方案卷':'安排地方应对'} content={!v.tasks.length&&w.realm!.cities[v.site].controller!==r?'该地未由本国控制，须先恢复控制再安排治理差事':'打开本地案卷，或带入地点拟定差事。'}><button className="court-icon-button" aria-label={(v.tasks.length?'查看案卷 · ':'安排地方应对 · ')+siteById[v.site].name} disabled={!v.tasks.length&&w.realm!.cities[v.site].controller!==r} onClick={()=>onService?.(v.tasks[0],v.site)}><ArtIcon name="diligent" size={23}/>{v.tasks.length>0&&<b>{v.tasks.length}</b>}</button></HoverHint>}</header>

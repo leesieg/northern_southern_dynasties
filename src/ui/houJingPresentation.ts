@@ -1,3 +1,4 @@
+import {px} from './peopleScale';
 import type {World} from '../core/types';
 import {eventCatalog} from '../core/eventCatalog';
 import {activeWars,type War} from '../core/wars';
@@ -56,7 +57,7 @@ export function houJingParty(w:World,war:War,side:'attack'|'defend'){
  const leader=side==='attack'?war.civil!.claimant:war.civil!.loyalist??governmentOf(w,realm)?.executives[0]??governmentOf(w,realm)?.ruler;
  const armies=w.realm!.armies.filter(a=>warArmySide(w,war,a)===side);
  const exact=armies.every(a=>militaryArmyView(w,a).exact);
- return {realm,leader,troops:exact?armies.reduce((n,a)=>n+a.troops,0):null,cities:Object.keys(w.realm!.cities).filter(id=>warCitySide(w,war,id)===side)};
+ return {realm,leader,troops:exact?px(armies.reduce((n,a)=>n+a.troops,0)):null,cities:Object.keys(w.realm!.cities).filter(id=>warCitySide(w,war,id)===side)};
 }
 
 export function houJingMembers(w:World,war:War){
@@ -64,6 +65,6 @@ export function houJingMembers(w:World,war:War){
   const person=personSheetPresentation(w,id),site=personResidence(w,id).site;
   const armies=w.realm!.armies.filter(a=>a.owner===id||armyCommander(w,a)===id);
   const exact=armies.every(a=>militaryArmyView(w,a).exact);
-  return {id,member,person,site,troops:exact?armies.reduce((n,a)=>n+a.troops,0):null,reason:civilAvailability(w,war,id),stance:civilStanceNames[member.choice]};
+  return {id,member,person,site,troops:exact?px(armies.reduce((n,a)=>n+a.troops,0)):null,reason:civilAvailability(w,war,id),stance:civilStanceNames[member.choice]};
  });
 }

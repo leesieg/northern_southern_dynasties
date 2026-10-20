@@ -57,7 +57,7 @@ it('army dossier binds troops and orders to a real mustered army and handles a s
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');actRealm(world,{type:'realm',action:'muster'});
  const army=world.realm!.armies[0],before=serializeWorld(world);
  const html=render(<MilitaryHub {...base} world={world} tab="armies" onTab={noop} selection={{army:-1,general:'',war:null}} onArmy={noop} onCity={noop} onDiplomacy={noop}/>);
- expect(html).toContain(`第 ${army.id} 军`);expect(html).toContain(`${army.troops} 人`);expect(html).toContain('地图军令');expect(html).toContain('粮运');expect(serializeWorld(world)).toBe(before);
+ expect(html).toContain(`第 ${army.id} 军`);expect(html).toContain(`${army.troops*10} 人`);expect(html).toContain('地图军令');expect(html).toContain('粮运');expect(serializeWorld(world)).toBe(before);
 });
 it('journal has a route to older entries and personal filtering does not misclassify other records',()=>{
  const world=newCampaignWorld('xiao-yan',undefined,'sandbox');

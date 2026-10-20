@@ -58,7 +58,7 @@ describe('Hou Jing presentation boundaries (no browser)',()=>{
   const w=rebellion(),war=houJingPresentation(w).war!;w.characterId='xiao-yan';
   const before=structuredClone(w),loyal=houJingParty(w,war,'defend');
   expect(loyal.cities).toEqual(Object.keys(w.realm!.cities).filter(id=>warCitySide(w,war,id)==='defend'));
-  expect(new Set(loyal.cities).size).toBe(loyal.cities.length);expect(loyal.troops).toBe(w.realm!.armies.filter(a=>warArmySide(w,war,a)==='defend').reduce((n,a)=>n+a.troops,0));
+  expect(new Set(loyal.cities).size).toBe(loyal.cities.length);expect(loyal.troops).toBe(w.realm!.armies.filter(a=>warArmySide(w,war,a)==='defend').reduce((n,a)=>n+a.troops,0)*10);
   expect(houJingParty(w,war,'attack').troops).toBeNull();expect(w).toEqual(before);
  });
  it('uses the player response deadline and does not infer participation from allegiance',()=>{

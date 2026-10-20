@@ -1,3 +1,4 @@
+import {px} from './peopleScale';
 import {armyBattle} from '../core/combatPresentation';
 import {militaryArmyView} from '../core/militaryView';
 import {battleReportSide} from '../core/battleReports';
@@ -21,7 +22,7 @@ export function engagementMarkers(w:World){
   const army=w.realm?.armies.find(a=>a.id===b.a),site=b.site?siteById[b.site]:undefined;
   // Road encounters keep the actual army projection, rather than the endpoint city.
   const pos=(army&&armyBattle(w,army)===b?b.contact:undefined)??(army?.journey?armyMapPosition(army):site??(army?armyMapPosition(army):null));if(!pos)continue;
-  const war=wars.find(v=>v.id===b.war)!,sides=(['attack','defend'] as const).map(side=>{const report=battleReportSide(b,side),armies=(side==='attack'?b.attackers??[b.a]:b.defenders??[b.b]).map(id=>w.realm?.armies.find(a=>a.id===id)),known=armies.length>0&&armies.every(a=>a&&militaryArmyView(w,a).exact);return {realm:report.participants[0]?.realm??(side==='attack'?war.attacker:war.defender),strength:known?armies.reduce((n,a)=>n+a!.troops,0).toLocaleString():'未详'};});
+  const war=wars.find(v=>v.id===b.war)!,sides=(['attack','defend'] as const).map(side=>{const report=battleReportSide(b,side),armies=(side==='attack'?b.attackers??[b.a]:b.defenders??[b.b]).map(id=>w.realm?.armies.find(a=>a.id===id)),known=armies.length>0&&armies.every(a=>a&&militaryArmyView(w,a).exact);return {realm:report.participants[0]?.realm??(side==='attack'?war.attacker:war.defender),strength:known?px(armies.reduce((n,a)=>n+a!.troops,0)).toLocaleString():'未详'};});
   const key=battleKey(b);markers.push({key:'battle:'+key,ref:{kind:'battle',key},lon:pos.lon,lat:pos.lat,sides,label:(site?.name??'道路')+'战役 · 第 '+b.round+' 轮'});
  }
  for(const s of w.realm?.sieges??[]){const site=siteById[s.site];if(!site||!wars.some(v=>v.id===s.war))continue;markers.push({key:`siege:${s.war}:${s.site}:${s.side}`,ref:{kind:'siege',war:s.war,site:s.site,side:s.side},lon:site.lon,lat:site.lat,progress:Math.max(0,Math.min(100,s.progress)),label:site.name+'围城 · 进展 '+s.progress+'/100'});}
