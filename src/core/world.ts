@@ -53,6 +53,8 @@ import { ensureCourts,actCourt,advanceCourts } from './court';
 import { newGovernments,actGovernment,advanceGovernments } from './government';
 import { newFamilyState,advanceFamilies } from './family';
 import { ensureLifestyle,actLifestyle,advanceLifestyle } from './lifestyle';
+import {actAmbition,settleAmbitions} from './ambitions';
+import {advanceSeasonReport} from './seasonReport';
 import { initialIdentities } from '../data/characterIdentities';
 import { newRealm,actRealm,advanceRealm } from './realm';
 import { DEFAULT_SCRIPT,getScript } from '../data/scripts';
@@ -73,7 +75,7 @@ export const legDays=officialMap.legDays;
 export const planRoute=officialMap.planRoute;
 export function newWorld(scriptId=DEFAULT_SCRIPT): World {
   return {
-    version: 2, life:newLifeState({day:0,scriptId}), families:newFamilyState(0,scriptId), lifestyles:{version:2,people:{}}, identities:initialIdentities(), scriptId, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,
+    version: 2, life:newLifeState({day:0,scriptId}), families:newFamilyState(0,scriptId), lifestyles:{version:4,people:{}}, identities:initialIdentities(), scriptId, holdings:newHoldings(), contentVersion: CONTENT_VERSION, day: 0,
     people:structuredClone(campaignSetup.people),
     chronicle:[{day:0,person:'player',text:'你在建康整备行装。一张舆图，一囊行粮，山河从此展开。'}],
   };
@@ -129,7 +131,7 @@ export function act(world: World, command: GameCommand): void {
   Object.assign(world,next);
   return;
  }
- const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);advanceRulerHonors(world);}reconcileFiscal(world,before,publicActionName(command));advanceRegisteredEvents(world);
+ const before=fiscalSnapshot(world);actCommand(world,command);ensureArmyOrganization(world);reconcileOfficeAllegiance(world);reconcileServiceAllegiance(world);snapshotInfluence(world);if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);advanceRulerHonors(world);}reconcileFiscal(world,before,publicActionName(command));advanceRegisteredEvents(world);settleAmbitions(world);
 }
 export function armyBatchReason(world:World,command:ArmyBatchCommand){try{act(structuredClone(world),command);return '';}catch(error){return error instanceof Error?error.message:'军令无法执行';}}
 function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|import('./recruitmentPlans').RecruitmentPlanCommand|import('./armyDeployment').ArmyDeploymentCommand>): void {
@@ -185,6 +187,7 @@ function actCommand(world: World, command: Exclude<GameCommand,ArmyBatchCommand|
   if(command.type==='diplomacy'){actDiplomacy(world,command);return;}
   if(command.type==='relationship'){actRelationship(world,command);return;}
   if(command.type==='lifestyle'){actLifestyle(world,command);return;}
+  if(command.type==='ambition'){actAmbition(world,command);return;}
   if(command.type==='court'){actCourt(world,command);syncDiplomacy(world);return;}
   if(command.type==='government'){actGovernment(world,command);syncDiplomacy(world);return;}
   if(command.type==='population'){actPopulation(world,command);return;}
@@ -281,6 +284,8 @@ export function advance(world: World, days = 1): void {
     restoreInfluence(world,previous);advancePersonalInfluence(world);advanceNPCOfficeRecruitment(world);
     if(world.realm){cancelInvalidClaimantWars(world);syncRulerHistory(world);advanceRulerHonors(world);}
     evaluateCampaign(world);
+    settleAmbitions(world);
+    advanceSeasonReport(world);
     reconcileFiscal(world,fiscalBefore,'国政日结：俸禄、军需及公务');advanceRegisteredEvents(world);
   }
 }

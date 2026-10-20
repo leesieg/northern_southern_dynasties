@@ -1,10 +1,13 @@
+import {regionalDefense,fracturedRealm,frontReservations,armyEngaged} from './warOpportunities';
+import {warTerritoryOptions} from './warTerritories';
+import {personInfluence} from './personalInfluence';
 import {courtOf,courtPolicyActive,courtEnabled} from './court';
 import {claimantWarReason} from './wars';
 import {allPeople,getPerson} from './personRegistry';
 import {armyCampaign} from './militaryCampaigns';
 import {independentCivil} from './civilPolities';
 import {civilWar,warArmySide} from './civilWars';
-import {worldRealms} from './polityRuntime';
+import {provisionalRealm,worldRealms} from './polityRuntime';
 import type {World} from './types';
 import {roads,siteById} from '../data/scenario';
 
@@ -32,12 +35,13 @@ function set(w:World,r:RealmId,phase:RealmStrategy['phase'],target:string|null,r
 /** Border objectives, a safe own approach and a funded finite campaign are required. */
 export function strategicTargets(w:World,r:RealmId){
  const cities=w.realm!.cities;
- return Object.keys(cities).filter(id=>{const c=cities[id];return c.owner!=='frontier'&&c.owner!==r&&c.controller===c.owner&&roads.some(e=>!e.legacyOnly&&(e.from===id&&cities[e.to].controller===r||e.to===id&&cities[e.from].controller===r))&&warApproach(w,id,r,c.owner);}).map(id=>{
+ return Object.keys(cities).filter(id=>{const c=cities[id];return c.owner!=='frontier'&&c.owner!==r&&c.controller!==r&&(c.controller===c.owner||provisionalRealm(w,c.controller))&&roads.some(e=>!e.legacyOnly&&(e.from===id&&cities[e.to].controller===r||e.to===id&&cities[e.from].controller===r))&&warApproach(w,id,r,c.controller as RealmId);}).map(id=>{
   const city=cities[id],enemy=city.owner as RealmId,hostility=-(diplomaticPair(w,r,enemy)?.opinion??0),policy=courtPolicyActive(w,r);
   const approach=Math.min(...Object.keys(cities).filter(site=>cities[site].controller===r).map(site=>planRoute(site,id,node=>cities[node].controller===r||node===id)?.days??Infinity));
-  const defenders=w.realm!.armies.filter(a=>a.realm===enemy&&a.location===id).reduce((n,a)=>n+readyTroops(a,w.day),0),value=Math.min(15,Math.floor(city.population/10000)+Math.floor(city.prosperity/20)),opportunity=hostility>0?Math.max(0,25-Math.ceil(defenders/100))+value:0;
-  const motive=hostility+(policy==='expansion'?25:0)+(city.order<40?15:0)+opportunity,priority=motive+value-approach-Math.ceil(defenders/200);
-  return {id,enemy,motive,priority,approach,defenders,reason:hostility>=40?'边境敌对关系':policy==='expansion'?'朝廷拓境方略':'边境收益与驻防机会'};
+  const defenders=regionalDefense(w,city.controller as RealmId,id),value=Math.min(15,Math.floor(city.population/10000)+Math.floor(city.prosperity/20)),opportunity=hostility>0?Math.max(0,25-Math.ceil(defenders/100))+value:0;
+  const exposed=hostility>0&&fracturedRealm(w,enemy)?Math.max(0,25-Math.ceil(defenders/100)):0;
+  const motive=exposed+hostility+(policy==='expansion'?25:0)+(city.order<40?15:0)+opportunity,priority=motive+value-approach-Math.ceil(defenders/200);
+  return {id,enemy,motive,priority,approach,defenders,reason:exposed>0?'内争牵制援军，边防出现空隙':hostility>=40?'边境敌对关系':policy==='expansion'?'朝廷拓境方略':'边境收益与驻防机会'};
  }).filter(v=>v.motive>=40&&Number.isFinite(v.approach)).sort((a,b)=>b.priority-a.priority||a.approach-b.approach||a.id.localeCompare(b.id));
 }
 export function strategicClaimantTargets(w:World,r:RealmId){const actor=governingAuthority(w,r),cities=w.realm!.cities;if(!actor)return [];return (w.claims?.records??[]).filter(c=>c.until===null&&c.patron===actor&&c.realm!==r&&!claimantWarReason(w,c.realm,actor,c.person)).flatMap(claim=>Object.keys(cities).filter(id=>cities[id].owner===claim.realm&&cities[id].controller===claim.realm&&roads.some(e=>!e.legacyOnly&&(e.from===id&&cities[e.to].controller===r||e.to===id&&cities[e.from].controller===r))&&warApproach(w,id,r,claim.realm)).map(id=>({id,enemy:claim.realm,motive:80,priority:80,approach:0,defenders:0,reason:'明确支持'+claim.person+'的真实君位宣称',goal:'claimant' as const,claimant:claim.person})));}
@@ -74,24 +78,27 @@ export function advanceRealmStrategy(w:World){
     if(other===w.characterId){if(terms&&w.day-(war.peaceReviewed??-90)>=90){war.peaceOffer={from:r,to:enemy,terms,created:w.day,until:w.day+15,signature:peaceSignature(defaultPeaceQuote(w,war,r,terms))};war.peaceReviewed=w.day;log(w,r,'向玩家朝廷提出议和，等待裁定');}continue;}
     if(terms){settleWar(w,war,terms,r,[],0,undefined,defaultPeaceReturns(w,war,terms));set(w,r,'recover',null,terms==='white'?'双方归还占领地，转入战后休整':terms==='statusQuo'?'双方按实际占领交割，转入战后休整':'战争条件达成，转入战后休整');}
    }
-   if(realmAtWar(w,r))set(w,r,'war',wars[0].target,'依战争目标作战，按月复核续战成本');
-   continue;
+   if(!activeWars(w).some(v=>!v.civil&&[v.attacker,v.defender].includes(r)))continue;
+   if(activeWars(w).filter(v=>warRealmSide(v,r)).length>=2||!s.armies.some(a=>a.realm===r&&!frontReservations(w,r).has(a.id!))){if(realmAtWar(w,r))set(w,r,'war',wars[0].target,'依战争目标作战，按月复核续战成本');continue;}
+   // One additional finite front may use only units not reserved by the existing war.
   }
-  const previous=s.strategy?.[r];if(previous?.phase==='recover'&&w.day-previous.since<90){set(w,r,'recover',null,'战后恢复人口、军饷与粮运');continue;}
-  if(previous?.phase==='war'){set(w,r,'recover',null,'战争结束，转入三个月休整');continue;}
+  if(activeWars(w).filter(v=>warRealmSide(v,r)).length>=2){set(w,r,'war',activeWars(w).find(v=>warRealmSide(v,r))!.target,'现有战线已占用军队，暂停另开战线');continue;}
+  const previous=s.strategy?.[r];if(!wars.length&&previous?.phase==='recover'&&w.day-previous.since<90){set(w,r,'recover',null,'战后恢复人口、军饷与粮运');continue;}
+  if(!wars.length&&previous?.phase==='war'){set(w,r,'recover',null,'战争结束，转入三个月休整');continue;}
   if(activeWars(w).some(v=>v.civil&&warRealmSide(v,r))){set(w,r,'rest',null,'先处理国内战事');continue;}
   // Stable court policies bias motives and costs; they do not veto hostile border preparation.
   const court=courtOf(w,r);if(court&&courtEnabled(w,r)&&court.phase!=='stable'){set(w,r,'recover',null,'局势'+(court.phase==='chaos'?'混乱':'动荡')+'：安定方略暂停，先处理真实国内政治与民生压力');continue;}
   supportHostedClaimant(w,r,actor);
-  const candidates=[...strategicClaimantTargets(w,r),...strategicTargets(w,r).map(t=>({...t,goal:'territory' as const,claimant:undefined as string|undefined}))].filter(t=>!declareRealmWarReason(w,actor,r,t.id,t.goal,false,undefined,t.claimant)),prepared=candidates.find(t=>t.id===previous?.target),target=prepared&&prepared.priority>=(candidates[0]?.priority??0)-10?prepared:candidates[0];if(!target){set(w,r,'rest',null,'没有当前合法且值得投入的边境目标');continue;}
-  const t=s.treasuries[r],forecast=realmForecast(w,r),own=s.armies.filter(a=>a.realm===r&&!a.owner),local=own.filter(a=>!!planRoute(a.location,target.id,id=>s.cities[id].controller===r||s.cities[id].controller===target.enemy)),enemy=s.armies.filter(a=>a.realm===target.enemy&&(a.location===target.id||!!planRoute(a.location,target.id,id=>s.cities[id].controller===target.enemy)));
-  const reserve=defensiveReserve(w,r),field=local.filter(a=>a!==reserve&&a.automation!=='direct'&&!a.withdrawalUntil&&!armyCampaign(w,a)),planned=field.reduce((n,a)=>n+a.troops*a.morale/100,0),opposition=enemy.reduce((n,a)=>{const days=a.location===target.id?0:planRoute(a.location,target.id,id=>s.cities[id].controller===target.enemy)!.days;return n+readyTroops(a,w.day)*a.morale/100*(days===0?1:days<=10?.75:days<=30?.5:.25);},0),upkeep=own.reduce((n,a)=>n+armyMonthlyPay(w,a),0),budget=t.coins+forecast.income-forecast.expense;
+  const candidates=[...strategicClaimantTargets(w,r),...strategicTargets(w,r).map(t=>({...t,goal:'territory' as const,claimant:undefined as string|undefined}))].filter(t=>(!wars.length||fracturedRealm(w,t.enemy))&&!declareRealmWarReason(w,actor,r,t.id,t.goal,false,undefined,t.claimant)),prepared=candidates.find(t=>t.id===previous?.target),target=prepared&&prepared.priority>=(candidates[0]?.priority??0)-10?prepared:candidates[0];if(!target){set(w,r,'rest',null,'没有当前合法且值得投入的边境目标');continue;}
+  const t=s.treasuries[r],forecast=realmForecast(w,r),own=s.armies.filter(a=>a.realm===r&&!a.owner),local=own.filter(a=>!!planRoute(a.location,target.id,id=>s.cities[id].controller===r||s.cities[id].controller===target.enemy||s.cities[id].controller===s.cities[target.id].controller));
+  const reserved=frontReservations(w,r),reserve=defensiveReserve(w,r),field=local.filter(a=>!reserved.has(a.id!)&&!armyEngaged(w,a)&&a!==reserve&&a.automation!=='direct'&&!a.withdrawalUntil&&!armyCampaign(w,a)),planned=field.reduce((n,a)=>n+a.troops*a.morale/100,0),opposition=regionalDefense(w,s.cities[target.id].controller as RealmId,target.id),upkeep=own.reduce((n,a)=>n+armyMonthlyPay(w,a),0),budget=t.coins+forecast.income-forecast.expense;
   if(budget<120+upkeep*2||governmentOf(w,r)!.support<35||own.some(a=>(a.arrears??0)>0)){set(w,r,'rest',target.id,'边境动机存在，先修复军饷与两月出征预算');continue;}
   set(w,r,'prepare',target.id,target.reason+'：筹备'+siteById[target.id].name+'方向的有限战争',target.goal,target.claimant);
   if((planned<Math.max(600,opposition*1.1)||own.length<2)&&own.length<16){const from=Object.keys(s.cities).filter(id=>s.cities[id].controller===r&&s.cities[id].owner===r).map(id=>({id,path:planRoute(id,target.id,node=>s.cities[node].controller===r||s.cities[node].controller===target.enemy)})).filter(v=>v.path).sort((x,y)=>x.path!.days-y.path!.days).find(v=>mobilizeRealm(w,r,v.id));if(from)appointAICommanders(w,r);}
   const ready=field.filter(a=>armyCommander(w,a)&&!w.mobility?.pendingCommanders?.[a.id!]&&readyTroops(a,w.day)>=100&&!a.arrears&&a.supply>=Math.ceil(armyDailyFood(w,a)*30));
   if(previous?.phase==='prepare'&&previous.target===target.id&&(previous.goal??'territory')===target.goal&&previous.claimant===target.claimant&&w.day-previous.since>=30&&own.length>=2&&ready.reduce((n,a)=>n+readyTroops(a,w.day)*a.morale/100,0)>=Math.max(600,opposition*1.1)&&!declareRealmWarReason(w,actor,r,target.id,target.goal,true,undefined,target.claimant)){
-   declareRealmWar(w,actor,r,target.id,target.goal,undefined,target.claimant);set(w,r,'war',target.id,target.reason+'，预算与前线军队已备妥',target.goal,target.claimant);
+   const strength=ready.reduce((n,a)=>n+readyTroops(a,w.day)*a.morale/100,0),territory=target.goal==='territory'?[...warTerritoryOptions(w,target.enemy,'province'),...warTerritoryOptions(w,target.enemy,'prefecture')].filter(t=>t.sites.includes(target.id)&&t.sites.length>1&&strength>=Math.max(1200,t.sites.length*600,opposition*1.5)&&personInfluence(w,actor)>=(t.level==='province'?120:80)&&!declareRealmWarReason(w,actor,r,target.id,'territory',true,t.id)).sort((a,b)=>b.sites.length-a.sites.length)[0]?.id:undefined;
+   declareRealmWar(w,actor,r,target.id,target.goal,territory,target.claimant);set(w,r,'war',target.id,target.reason+'，预算与前线军队已备妥',target.goal,target.claimant);
   }
  }
 }

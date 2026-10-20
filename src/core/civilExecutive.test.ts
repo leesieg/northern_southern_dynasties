@@ -94,3 +94,33 @@ it('funded NPC recruitment consumes real population, cash and grain, while a pla
 });
 
 it('includes existing public arrears once in the recruitment reserve',()=>{const {w,a,war,site}=uprising(),before=militaryMusterBudget(w,war.attacker,site);a.arrears=50;expect(militaryMusterBudget(w,war.attacker,site)).toBe(before+50);});
+
+describe('court capture and continuing regional resistance',()=>{
+ it('keeps a real armed loyalist outside court in a separate polity without creating people, troops or money',()=>{
+  const {w,a,war}=uprising(),person='xiao-lun',site='jingkou',defender=w.realm!.armies.find(b=>b.realm==='liang'&&b.location===site)!;
+  setLocalHolder(w,countyTerritory(site),'liang',person);w.mobility!.residences[person]={site,journey:null};defender.owner=person;defender.payer='person:'+person;w.mobility!.armyCommanders![defender.id!]=person;
+  war.civil!.mobilization!.members[person]={choice:'loyal',day:0,due:15,checked:0,lastCamp:'loyal'};
+  const before=totalCash(w),troops=w.realm!.armies.reduce((n,a)=>n+a.troops,0),population=w.realm!.cities[site].population;
+  a.location='jiankang';civilCityCapture(w,war,a.location,'attack',a,'battle');act(w,{type:'realm',action:'peace',war:war.id,terms:'demand'});
+  const remaining=w.realm!.wars!.find(v=>v.civil?.claimant===person)!;
+  expect(remaining).toBeDefined();expect(remaining.civil!.crisis).toBe(war.id);expect(governingAuthority(w,'liang')).toBe('xiao-yi');expect(w.realm!.cities[site]).toMatchObject({owner:'liang',controller:remaining.attacker,governor:person,population});expect(w.realm!.armies.find(b=>b.id===defender.id)!.realm).toBe(remaining.attacker);expect(w.realm!.armies.reduce((n,a)=>n+a.troops,0)).toBe(troops);expect(totalCash(w)).toBe(before);expect(parseWorld(serializeWorld(w))).toEqual(w);
+ });
+ it('does not invent a resistance army for an unarmed official or force a player to start a new rebellion',()=>{
+  const {w,a,war}=uprising(),person='xiao-lun';setLocalHolder(w,countyTerritory('jingkou'),'liang',person);w.mobility!.residences[person]={site:'jingkou',journey:null};war.civil!.mobilization!.members[person]={choice:'loyal',day:0,due:15,checked:0};
+  a.location='jiankang';civilCityCapture(w,war,a.location,'attack',a,'battle');act(w,{type:'realm',action:'peace',war:war.id,terms:'demand'});expect(w.realm!.wars!.some(v=>v.civil?.claimant===person)).toBe(false);expect(governingAuthority(w,'liang')).toBe('xiao-yi');
+ });
+});
+
+it('lets a third country contest rebel-held legal territory, retaining its occupation after the court handover',async()=>{
+ const {declareRealmWar,declareRealmWarReason,occupyCity}=await import('./realm');const {atWar}=await import('./diplomacy');
+ const {w,a,war}=uprising();a.location='hanzhong';civilCityCapture(w,war,a.location,'attack',a,'surrender');w.realm!.personalInfluence![governingAuthority(w,'west')]=500;
+ expect(declareRealmWarReason(w,governingAuthority(w,'west'),'west','hanzhong')).toBe('');const external=declareRealmWar(w,governingAuthority(w,'west'),'west','hanzhong');
+ expect(external.defender).toBe('liang');expect(external.allies?.[war.attacker]).toBe('defend');expect(atWar(w,'west',war.attacker)).toBe(true);
+ occupyCity(w,external,'hanzhong','west',true);a.location='jiankang';civilCityCapture(w,war,a.location,'attack',a,'battle');act(w,{type:'realm',action:'peace',war:war.id,terms:'demand'});
+ expect(w.realm!.cities.hanzhong).toMatchObject({owner:'liang',controller:'west',occupiedByWar:external.id});expect(w.realm!.wars!.some(v=>v.id===external.id)).toBe(true);expect(parseWorld(serializeWorld(w))).toEqual(w);
+});
+
+it('counts observing troops as local defenders but does not promise them as distant reinforcements',async()=>{
+ const {regionalDefense}=await import('./warOpportunities');const {w,war}=uprising(),a=w.realm!.armies.find(v=>v.realm==='liang'&&v.location==='jingkou')!,person='xiao-lun';w.mobility!.armyCommanders![a.id!]=person;w.mobility!.residences[person]={site:'jingkou',journey:null};
+ war.civil!.mobilization!.members[person]={choice:'loyal',day:0,due:15,checked:0};const before=regionalDefense(w,'liang','jiankang');war.civil!.mobilization!.members[person].choice='watch';expect(regionalDefense(w,'liang','jiankang')).toBeLessThan(before);expect(regionalDefense(w,'liang','jingkou')).toBeGreaterThanOrEqual(600);
+});

@@ -1,9 +1,13 @@
-import {describe,it,expect,vi} from 'vitest';
+import {beforeEach,describe,it,expect,vi} from 'vitest';
+import bundle from 'virtual:official-content-package';
+import {setContentContext} from '../host/contentContext';
+import {createContentLibrary} from '../persistence/contentLibrary';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {GameEntry} from './GameEntry';
 import {newCampaignWorld,dateLabel} from '../core/world';
 
 describe('courtyard main menu',()=>{
+  beforeEach(()=>setContentContext({...bundle,library:createContentLibrary(bundle.content,bundle.environment)}));
   it('uses the latest real save identity without changing the world or issuing commands',()=>{
     const world=newCampaignWorld('xiao-yan',undefined,'sandbox');
     const before=structuredClone(world),send=vi.fn(async()=>true);

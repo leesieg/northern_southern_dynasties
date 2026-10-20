@@ -1,0 +1,4 @@
+/* A one-time hint floats over the window corner instead of taking layout space from the content. */
+.operations-window>.first-tip,.first-tip{position:absolute;right:30px;bottom:24px;z-index:6;display:flex;align-items:center;gap:12px;max-width:min(380px,calc(100% - 60px));margin:0;padding:9px 12px;border:1px solid #8b754d;border-left:3px solid #b8903c;border-radius:0;background:#efe3c4f2;color:#332f24;box-shadow:0 6px 18px #14221780;font:var(--text-caption)/1.6 var(--serif)}
+.first-tip span{flex:1}
+.first-tip button{flex:none;width:auto;min-height:30px;padding:3px 12px;border:1px solid #99835b;border-radius:0;background:#26372c;color:#f0e3c3;font:var(--text-caption) var(--serif)}

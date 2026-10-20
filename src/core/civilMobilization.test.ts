@@ -70,9 +70,9 @@ describe('national civil-war mobilization',()=>{
   const {w,war,person,county}=fixture();w.realm!.armies.push({realm:'liang',owner:person,location:county,troops:400,morale:80,supply:200,journey:null,siege:0,automation:'delegated'});ensureArmyOrganization(w);const id=w.realm!.armies.at(-1)!.id!;
   choose(w,war,person,'watch');const a=w.realm!.armies.find(a=>a.id===id)!;expect(civilArmyObserving(w,war,a)).toBe(true);expect(delegatedArmyDecision(w,a)).toMatchObject({intent:'观望守土'});expect(delegatedArmyDecision(w,a).route).toBeUndefined();expect(allegianceRealm(w,person)).toBe('liang');expect(w.realm!.cities[county].controller).toBe('liang');roundtrip(w);
  });
- it('NPCs decide to watch before the same day army AI can send them to a civil-war front',()=>{
+ it('pending NPCs guard their territory during the response window before army AI may send them away',()=>{
   const {w,war,person,county}=fixture();governmentOf(w,'liang')!.legitimacy=20;w.realm!.armies.push({realm:'liang',owner:person,location:county,troops:400,morale:80,supply:200,journey:null,siege:0,automation:'delegated'});ensureArmyOrganization(w);const id=w.realm!.armies.at(-1)!.id!;
-  advance(w);expect(civilWar(w,'liang')!.civil!.mobilization!.members[person].choice).toBe('watch');expect(w.realm!.armies.find(a=>a.id===id)!.journey).toBeNull();expect(war.id).toBe(1);roundtrip(w);
+  advance(w);expect(civilWar(w,'liang')!.civil!.mobilization!.members[person].choice).toBe('pending');expect(w.realm!.armies.find(a=>a.id===id)!.journey).toBeNull();expect(war.id).toBe(1);roundtrip(w);
  });
  it('player timeout means watching; no allegiance change, spending, teleport or automatic command',()=>{
   const {w,war,person}=fixture();w.characterId=person;for(const [id,m] of Object.entries(war.civil!.mobilization!.members))if(id!==person)m.choice=allegianceRealm(w,id)===war.attacker?'rebel':'loyal';
@@ -89,7 +89,7 @@ describe('national civil-war mobilization',()=>{
   const {w,war,person}=fixture(),before=structuredClone(w);const q=civilStanceEvaluation(w,war,person);expect(q.score).toBeGreaterThanOrEqual(-100);expect(q.score).toBeLessThanOrEqual(100);expect(q.parts.reduce((n,p)=>n+p.value,0)).toBe(q.score);expect(w).toEqual(before);
  });
  it('performs only due NPC reassessments and handles the same day idempotently',()=>{
-  const {w,war,person}=fixture();changeRelationOpinion(w,person,'xiao-yi',-200);changeRelationOpinion(w,person,'xiao-yan',200);w.day=1;advanceCivilMobilization(w);expect(civilWar(w,'liang')!.civil!.mobilization!.members[person].choice).not.toBe('pending');const before=structuredClone(w);advanceCivilMobilization(w);expect(w).toEqual(before);expect(war.id).toBe(1);
+  const {w,war,person}=fixture();changeRelationOpinion(w,person,'xiao-yi',-200);changeRelationOpinion(w,person,'xiao-yan',200);w.day=15;advanceCivilMobilization(w);expect(civilWar(w,'liang')!.civil!.mobilization!.members[person].choice).not.toBe('pending');const before=structuredClone(w);advanceCivilMobilization(w);expect(w).toEqual(before);expect(war.id).toBe(1);
  });
  it('restores old active wars once without remapping military wait to political neutrality',()=>{
   const {w,war,person}=fixture();delete war.civil!.mobilization;war.civil!.responses={[person]:{choice:'wait',day:0}};const before=coins(w),s=serializeWorld(w),loaded=parseWorld(s);expect(civilWar(loaded,'liang')!.civil!.mobilization!.members[person].choice).toBe('pending');expect(coins(loaded)).toBe(before);expect(parseWorld(serializeWorld(loaded))).toEqual(loaded);
@@ -132,4 +132,8 @@ describe('civil-war persuasion and binding promises',()=>{
  it('military defeat still has a valid exit after national mobilization',()=>{
   const {w,war}=fixture();w.realm!.armies=w.realm!.armies.filter(a=>a.realm!==war.attacker);for(const key of Object.keys(w.mobility!.armyCommanders??{}))if(!w.realm!.armies.some(a=>a.id===Number(key)))delete w.mobility!.armyCommanders![Number(key)];for(const c of Object.values(w.realm!.cities))if(c.controller===war.attacker){c.controller='liang';c.governor=null;delete c.occupiedSince;delete c.occupiedByWar;}advanceCivilPolitics(w);expect(civilWar(w,'liang')).toBeUndefined();roundtrip(w);
  });
+});
+
+it('a first loyal affirmation does not consume the opportunity to respond to a later offer',()=>{
+ const {w,war,person}=fixture();let live=choose(w,war,person,'loyal');expect(civilStanceQuote(w,live,person,'rebel').reason).toBe('');choose(w,live,person,'rebel');live=civilWar(w,'liang')!;expect(civilStanceQuote(w,live,person,'loyal').reason).toContain('60');roundtrip(w);
 });

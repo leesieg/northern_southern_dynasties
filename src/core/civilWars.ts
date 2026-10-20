@@ -34,6 +34,7 @@ import {validDynastyName} from './courtSave';
 import {dynastyNameOptions} from './dynastyNaming';
 import {worldRealms} from './polityRuntime';
 
+import {countyTerritory,localAncestors} from './localAdministration';
 import {siteById} from '../data/scenario';
 export interface CivilWar {crisis?:number;conduct?:Record<string,CivilFact[]>;mobilization?:CivilMobilization;grievance?:number;responses?:Record<string,{choice:'troops'|'supply'|'wait';day:number}>;partitionOffer?:{from:string;name:string;created:number;until:number};arrangement?:PowerArrangement;claimant:string;loyalist:string|null;supporters:string[];base:string;cities:string[];armies:number[];name:string}
 export type CivilCommand=CivilPoliticsCommand|{type:'civilWar';action:'rise';name:string;arrangement?:PowerArrangement}|{type:'civilWar';action:'respond';war:number;choice:'troops'|'supply'|'wait';army?:number};
@@ -84,6 +85,7 @@ export function civilPeaceReason(w:World,war:War,terms:string){if(!['white','dem
 }
 export function settleCivilWar(w:World,war:War,terms:string,forced?:'rebel'|'loyal'){const current=activeWars(w).find(v=>v.id===war.id);if(!current?.civil)return;const before=structuredClone(w);try{performCivilSettlement(w,current,terms,forced);}catch(error){Object.assign(w,before);throw error;}}
 function performCivilSettlement(w:World,war:War,terms:string,forced?:'rebel'|'loyal'){const c=war.civil!,r=civilOrigin(war),s=w.realm!,rebelsWin=forced?forced==='rebel':terms!=='white'&&(terms==='yield'?w.characterId!==c.claimant:w.characterId===c.claimant),g=governmentOf(w,r)!;
+ const holdouts=rebelsWin&&c.arrangement?.goal==='executive'?Object.entries(c.mobilization?.members??{}).filter(([id,m])=>m.choice==='loyal'||m.choice==='watch'&&relationOpinion(w,id,c.claimant)<=-30).map(([id])=>id):[];
  war.score=civilWarScore(w,war);captureCivilSettlement(w,war,terms==='white'?'white':rebelsWin?'rebel':'loyal');
  if(independentCivil(war))c.supporters=allPeople(w).filter(p=>allegianceRealm(w,p.id)===war.attacker).map(p=>p.id);
  for(const q of w.militaryCampaigns?.items??[])if(q.status==='active'&&q.war===war.id)finishCampaign(w,q,'failed','内战结束，战役委任结案并退回未用专款');
@@ -92,12 +94,28 @@ function performCivilSettlement(w:World,war:War,terms:string,forced?:'rebel'|'lo
  if(c.grievance!==undefined)settleGrievance(w,c.grievance,rebelsWin,terms==='white');
  else if(rebelsWin)applyPowerArrangement(w,r,c.arrangement??{goal:'dynasty',sponsor:c.claimant,beneficiary:c.claimant,executive:c.claimant,name:c.name},c.supporters.includes(g.ruler)?[]:[g.ruler]);
  for(const a of s.armies)if(a.realm===r){if(!activeWars(w).some(v=>v!==war&&!!warArmySide(w,v,a))&&a.journey)a.withdrawalUntil=w.day+a.journey.durations.slice(a.journey.leg).reduce((n,d)=>n+d,0)-a.journey.elapsed+1;if(!activeWars(w).some(v=>v!==war&&!!warArmySide(w,v,a)))a.siege=0;}
- if(w.politics?.proposals[r]&&w.politics.proposals[r]!.sponsor===c.claimant&&!rebelsWin){delete w.politics.proposals[r];w.politics.cooldowns[r]=w.day+180;}s.wars=s.wars!.filter(v=>v!==war);s.war=s.wars[0]??null;s.sieges=s.sieges?.filter(q=>q.war!==war.id);closeCivilOccupations(w,war);if(playerRealm(w)===r)s.mandate=governingExecutives(w,r).includes(w.characterId!);syncGovernance(w);syncRelationships(w);syncCourt(w,r);syncDiplomacy(w);
+ if(w.politics?.proposals[r]&&w.politics.proposals[r]!.sponsor===c.claimant&&!rebelsWin){delete w.politics.proposals[r];w.politics.cooldowns[r]=w.day+180;}s.wars=s.wars!.filter(v=>v!==war);s.war=s.wars[0]??null;s.sieges=s.sieges?.filter(q=>q.war!==war.id);closeCivilOccupations(w,war);continueCivilResistance(w,war,holdouts);if(playerRealm(w)===r)s.mandate=governingExecutives(w,r).includes(w.characterId!);syncGovernance(w);syncRelationships(w);syncCourt(w,r);syncDiplomacy(w);
  w.chronicle.push({day:w.day,person:'player',text:c.grievance!==undefined?'诉求型民变结束，恢复输税；君位与国号沿原国统，存活兵员与欠饷保留。':terms==='white'?'内战议定赦免停战，恢复输税，保留实际损失。':rebelsWin?'起兵方取得朝廷，重建公职与统属；军饷欠款继续偿还。':'朝廷平定内战，公职任免转入战后善后；人物保留私产继续生涯。'});w.chronicle=w.chronicle.slice(-100);
+}
+/** A court handover does not demobilize surviving local belligerents. No new levy or treasury grant. */
+function continueCivilResistance(w:World,previous:War,people:string[]){
+ const r=previous.defender,g=governmentOf(w,r)!,chief=governingAuthority(w,r),s=w.realm!;
+ for(const person of people){
+  if(person===w.characterId||!isAlive(w,person)||detained(w,person)||allegianceRealm(w,person)!==r||civilCapacityReason(w))continue;
+  const at=personResidence(w,person),city=s.cities[at.site];if(at.traveling||!city||city.owner!==r||city.controller!==r||city.governor!==person||at.site===capital(r,w))continue;
+  const region=localAncestors(countyTerritory(at.site)).find(n=>n.level==='province')?.id;
+  const supporters=people.filter(id=>id!==w.characterId&&isAlive(w,id)&&!detained(w,id)&&allegianceRealm(w,id)===r&&(id===person||region&&localAncestors(countyTerritory(personResidence(w,id).site)).some(n=>n.id===region)&&!Object.values(s.cities).some(c=>c.governor===id)));
+  const assets=civilResponseAssets(w,r,supporters,undefined,at.site);if(!assets.cities.includes(at.site)||assets.troops<300)continue;
+  const armies=splitRevoltArmies(w,supporters,assets.cities,assets.armies);if(s.armies.filter(a=>armies.includes(a.id!)).reduce((n,a)=>n+a.troops,0)<300)throw new Error('地方抵抗兵籍交接失败');
+  const next:War={id:s.nextWarId!++,attacker:r,defender:r,target:capital(r,w),started:w.day,score:0,battles:0,captureLosses:[],goal:'territory',civil:{crisis:previous.civil!.crisis??previous.id!,claimant:person,loyalist:chief,base:at.site,name:'勤王',supporters,cities:assets.cities,armies,arrangement:{goal:'executive',sponsor:person,beneficiary:g.ruler,executive:person,name:''}}};
+  s.wars!.push(next);establishCivilPolity(w,next,true);ensureCivilMobilization(w,next);
+  w.chronicle.push({day:w.day,person:'player',text:getPerson(w,person)!.name+'拒绝服从新执政，保留实际兵地另立军府；原危机的地方抵抗继续，未增发兵粮。'});w.chronicle=w.chronicle.slice(-100);
+ }
+ s.war=s.wars?.[0]??null;
 }
 export function validCivil(w:World,war:War){const c=war.civil;if(!validCivilMobilization(w,war)||!validCivilConduct(w,c?.conduct)||c?.crisis!==undefined&&(!Number.isSafeInteger(c.crisis)||c.crisis<1||c.crisis>war.id!))return false;if(!c)return war.attacker!==war.defender;if(c.grievance!==undefined&&(!Number.isSafeInteger(c.grievance)||c.arrangement||c.partitionOffer||!w.unrest?.items.some(q=>q.id===c.grievance&&q.war===war.id&&q.stage==='armed'&&q.realm===civilOrigin(war)&&q.site===c.base&&q.organizer===c.claimant)))return false;return (!c.arrangement||validArrangement(c.arrangement,w)&&c.arrangement.sponsor===c.claimant)&&(!c.partitionOffer||c.partitionOffer.from===c.claimant&&validDynastyName(c.partitionOffer.name)&&Number.isSafeInteger(c.partitionOffer.created)&&c.partitionOffer.created<=w.day&&c.partitionOffer.until===c.partitionOffer.created+15)&&(!c.responses||typeof c.responses==='object'&&!Array.isArray(c.responses)&&Object.entries(c.responses).every(([id,v])=>!! getPerson(w,id)!&&v&&['troops','supply','wait'].includes(v.choice)&&Number.isSafeInteger(v.day)&&v.day>=0&&v.day<=w.day))&&(war.attacker===war.defender||w.realm?.identities?.[war.attacker]?.civilWar===war.id&&w.realm?.identities?.[war.attacker]!.predecessor===war.defender)&&!! getPerson(w,c.claimant)!&&(c.loyalist===null||typeof c.loyalist==='string'&&!!getPerson(w,c.loyalist))&&c.claimant!==c.loyalist&&validDynastyName(c.name)&&!!siteById[c.base]&&Array.isArray(c.supporters)&&new Set(c.supporters).size===c.supporters.length&&c.supporters.includes(c.claimant)&&c.supporters.every(id=>!! getPerson(w,id)!)&&Array.isArray(c.cities)&&new Set(c.cities).size===c.cities.length&&c.cities.every(id=>!!siteById[id])&&Array.isArray(c.armies)&&new Set(c.armies).size===c.armies.length&&c.armies.every(id=>Number.isSafeInteger(id)&&id>0&&id<(w.realm?.nextArmyId??0));}
 
-export function civilCanAdmin(w:World,actor:string,site:string){if(!Object.hasOwn(w.realm?.cities??{},site))return false;const r=allegianceRealm(w,actor);if(!r)return true;return civilWars(w,r).every(war=>independentCivil(war)?warCitySide(w,war,site)!==(r===war.attacker?'defend':'attack'):war.civil!.supporters.includes(actor)===war.civil!.cities.includes(site));}
+export function civilCanAdmin(w:World,actor:string,site:string){if(!w.realm)return true;if(!Object.hasOwn(w.realm.cities,site))return false;const r=allegianceRealm(w,actor);if(!r)return true;return civilWars(w,r).every(war=>independentCivil(war)?warCitySide(w,war,site)!==(r===war.attacker?'defend':'attack'):war.civil!.supporters.includes(actor)===war.civil!.cities.includes(site));}
 
 export function advanceCivilPolitics(w:World){if(!w.realm)return;advanceCivilMobilization(w);advanceCivilAftermath(w);
  for(const warId of activeWars(w).filter(v=>v.civil).map(v=>v.id)){const war=activeWars(w).find(v=>v.id===warId);if(!war?.civil)continue;establishCivilPolity(w,war);inheritCivilFronts(w,war);const c=war.civil,origin=civilOrigin(war);if(c.grievance===undefined)war.target=capital(origin,w);c.cities=Object.keys(w.realm.cities).filter(id=>w.realm!.cities[id].controller===war.attacker);c.armies=w.realm.armies.filter(a=>a.realm===war.attacker).map(a=>a.id!);

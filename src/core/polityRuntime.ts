@@ -13,7 +13,7 @@ export function isRealmId(r:unknown):r is RealmId{return typeof r==='string'&&(i
 
 export function provisionalRealm(w:World,r:Polity){return r!=='frontier'&&w.realm?.identities?.[r]?.civilWar!==undefined&&!w.realm?.annexed?.[r];}
 /** Legal title stays with the old court; the military government administers only its own occupied counties. */
-export function administrativeRealm(w:World,site:string):Polity {const c=w.realm!.cities[site];return provisionalRealm(w,c.controller)&&w.realm!.identities![c.controller as RealmId]!.predecessor===c.owner?c.controller:c.owner;}
+export function administrativeRealm(w:World,site:string):Polity {const c=w.realm!.cities[site];if(c.controller!==c.owner&&w.realm?.wars?.some(war=>!war.civil&&war.id===c.occupiedByWar&&war.disputes?.includes(site)&&(war.attacker===c.controller||war.defender===c.controller)))return c.controller;return provisionalRealm(w,c.controller)&&w.realm!.identities![c.controller as RealmId]!.predecessor===c.owner?c.controller:c.owner;}
 export function permanentRealmCount(w:World){return worldRealms(w).filter(r=>w.realm?.identities?.[r]?.civilWar===undefined).length;}
 
 export function initialPoliticalRealm(r:RealmId){return campaignSetup.politics?.realms.find(p=>p.id===r);}

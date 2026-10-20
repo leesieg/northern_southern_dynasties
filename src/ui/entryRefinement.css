@@ -33,3 +33,5 @@
 .game-entry .entry-launch{background:linear-gradient(90deg,#10221be8,#24352cf0);padding:12px 16px;border:1px solid #9c85565e}
 .game-entry .entry-launch .primary{font-family:var(--serif);letter-spacing:.12em;border:1px solid #ceb17a;background:linear-gradient(#71613b,#443f2c);color:#fff0c9;box-shadow:inset 0 0 0 3px #302f2290}
 @media(max-width:760px){.game-entry{padding:30px 22px}.game-entry.is-selecting .roster-identity>.painted-portrait{width:100px}.game-entry .entry-launch{gap:8px;flex-wrap:wrap}.game-entry .entry-launch .entry-note{max-width:none}.game-entry .entry-launch .primary{min-width:0}.game-entry.is-loading-saves{padding:14px}}
+.cast-tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.cast-tags span{border:1px solid #b99a5566;padding:1px 8px;font-size:var(--text-caption);color:#cbb98a;border-radius:2px}

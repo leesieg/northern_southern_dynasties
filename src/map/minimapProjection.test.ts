@@ -11,3 +11,7 @@ it('handles CSS-scaled hit areas and rejects clicks outside the circular chart',
  const r={left:100,top:200,width:168,height:168};expect(minimapPoint(184,284,r)).toEqual({x:100,y:100});expect(minimapPoint(100,200,r)).toBeNull();expect(minimapPoint(268,284,r)).toEqual({x:200,y:100});
  const p=minimapProjection({type:'FeatureCollection',features:[]});expect(Number.isFinite(p.project(118.78,32.05).x)).toBe(true);
 });
+it('rejects zero-size hit regions and filters invalid geometry while a save is changing',()=>{
+ expect(minimapPoint(0,0,{left:0,top:0,width:0,height:0})).toBeNull();
+ const broken=structuredClone(regions);broken.features[0].geometry.coordinates[0][0].push([NaN,Infinity]);const p=minimapProjection(broken);expect(p.path(broken.features[0].geometry)).not.toMatch(/NaN|Infinity/);expect(Object.values(p.paper).every(Number.isFinite)).toBe(true);
+});

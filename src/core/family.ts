@@ -5,8 +5,8 @@ import {isAlive} from './lifeState';
 import {nobilityStanding} from './nobility';
 import {familyPeople} from '../data/families';
 import type { World } from './types';
-export interface FamilyState {version:1;since:number;lastMonthly:number;prestige:Record<string,number>;ledger:{day:number;member:string;amount:number;reason:'monthly'|'construction'|'friendship'|'service'|'marriage'}[]}
-export const prestigeReasons={monthly:'族人经营',construction:'主持竣工',friendship:'交好成功',service:'差事考绩',marriage:'世族联姻'};
+export interface FamilyState {version:1;since:number;lastMonthly:number;prestige:Record<string,number>;ledger:{day:number;member:string;amount:number;reason:'monthly'|'construction'|'friendship'|'service'|'marriage'|'ambition'}[]}
+export const prestigeReasons={monthly:'族人经营',construction:'主持竣工',friendship:'交好成功',service:'差事考绩',marriage:'世族联姻',ambition:'志向达成'};
 export const familyRanks=[{name:'初立门户',threshold:0},{name:'乡里知名',threshold:100},{name:'一方名门',threshold:300},{name:'海内望族',threshold:700},{name:'累世冠冕',threshold:1500}];
 export const prestigeMembers=familyPeople.filter(p=>p.status==='roster'||p.status==='fictional');
 export function newFamilyState(day=0,scriptId?:string):FamilyState{return {version:1,since:day,lastMonthly:monthStart(day,scriptId),prestige:Object.fromEntries(prestigeMembers.map(p=>[p.id,0])),ledger:[]};}
@@ -19,7 +19,7 @@ export function familyStanding(w:World,id=memberId(w)){
 }
 export function awardPrestige(w:World,id:string,reason:keyof typeof prestigeReasons){
  const s=w.families??=newFamilyState(w.day,w.scriptId);if(!Object.hasOwn(s.prestige,id)||!isAlive(w,id))return;
- const amount=Math.min(reason==='monthly'?2:reason==='construction'?10:5,1_000_000-s.prestige[id]);if(amount<=0)return;
+ const amount=Math.min(reason==='monthly'?2:reason==='construction'?10:reason==='ambition'?30:5,1_000_000-s.prestige[id]);if(amount<=0)return;
  s.prestige[id]+=amount;s.ledger.push({day:w.day,member:id,amount,reason});s.ledger=s.ledger.slice(-80);
 }
 export function advanceFamilies(w:World){
@@ -35,7 +35,7 @@ export function validFamilies(value:unknown,day:number,scriptId?:string,w?:World
  if(Object.keys(s.prestige).length!==members.length||!members.every(p=>Object.hasOwn(s.prestige,p.id)&&integer(s.prestige[p.id],1_000_000)))return false;
  if(!Array.isArray(s.ledger)||s.ledger.length>80)return false;
  let last=s.since;const subtotals:Record<string,number>={};
- for(const e of s.ledger){if(!e||!integer(e.day,day)||e.day<last||!Object.hasOwn(s.prestige,e.member)||!Object.hasOwn(prestigeReasons,e.reason)||!integer(e.amount,15)||e.amount===0)return false;if(e.amount>(e.reason==='monthly'?2:e.reason==='construction'?10:e.reason==='marriage'?15:5))return false;last=e.day;subtotals[e.member]=(subtotals[e.member]??0)+e.amount;if(subtotals[e.member]>s.prestige[e.member])return false;}
+ for(const e of s.ledger){if(!e||!integer(e.day,day)||e.day<last||!Object.hasOwn(s.prestige,e.member)||!Object.hasOwn(prestigeReasons,e.reason)||!integer(e.amount,30)||e.amount===0)return false;if(e.amount>(e.reason==='monthly'?2:e.reason==='construction'?10:e.reason==='marriage'?15:e.reason==='ambition'?30:5))return false;last=e.day;subtotals[e.member]=(subtotals[e.member]??0)+e.amount;if(subtotals[e.member]>s.prestige[e.member])return false;}
  return true;
 }
 

@@ -37,6 +37,8 @@ import {validRequestReceipts} from './requestReceipts';
 import {validEnterprises} from './enterprises';
 import {validMilitaryCampaigns} from './militaryCampaigns';
 import {validDeeds} from './deeds';
+import {validAmbitions} from './ambitions';
+import {validSeasonReport} from './seasonReport';
 import {familyById} from '../data/families';
 import {migrateCountyAccounts} from './treasury';
 import {ensureLocalAdministration} from './localAdministration';
@@ -170,6 +172,8 @@ export function validateWorld(value: unknown): asserts value is World {
   if(!validCustody(value as unknown as World))return fail();
   if(!validCoordinated(value as unknown as World)||!validCommerce(value as unknown as World)||!validHousehold(value as unknown as World)||!validMilitaryNominations(value as unknown as World)||!validDefections(value as unknown as World)||!validMilitaryCareer(value as unknown as World)||!validAftermath(value as unknown as World)||!validObligations(value as unknown as World)||!validRequestReceipts(value as unknown as World)||!validEnterprises(value as unknown as World)||!validMilitaryCampaigns(value as unknown as World))return fail();
   if(!validEconomyWorld(value as unknown as World)||!validDeeds(value as unknown as World))return fail();
+  if(value.ambitions!==undefined&&!validAmbitions(value.ambitions,value as unknown as World))return fail();
+  if(value.seasonReport!==undefined&&!validSeasonReport(value.seasonReport,value as unknown as World))return fail();
   for (const event of value.chronicle) {
     if (!obj(event) || !integer(event.day,0,value.day) || !text(event.text,400) || !expected.includes(String(event.person))) return fail();
   }

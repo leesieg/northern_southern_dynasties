@@ -11,7 +11,7 @@ export function CampaignMinimap({map,world,selected}:{map:ThreeCampaignMap|null;
  const viewport=useRef<SVGPolygonElement>(null),center=useRef<SVGCircleElement>(null),compass=useRef<SVGGElement>(null),frame=useRef(0),drag=useRef<number|null>(null);
  useEffect(()=>{
   if(!map)return;
-  const draw=()=>{frame.current=0;const view=map.minimapView(),p=projection.project(...view.center);viewport.current?.setAttribute('points',view.corners.map(ll=>{const p=projection.project(...ll);return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' '));center.current?.setAttribute('cx',String(p.x));center.current?.setAttribute('cy',String(p.y));compass.current?.setAttribute('transform',`rotate(${-map.getBearing()} 100 100)`);};
+  const draw=()=>{frame.current=0;const view=map.minimapView();if(![...view.center,...view.corners.flat(),map.getBearing()].every(Number.isFinite)){viewport.current?.setAttribute('visibility','hidden');center.current?.setAttribute('visibility','hidden');return;}viewport.current?.removeAttribute('visibility');center.current?.removeAttribute('visibility');const p=projection.project(...view.center);viewport.current?.setAttribute('points',view.corners.map(ll=>{const p=projection.project(...ll);return p.x.toFixed(2)+','+p.y.toFixed(2);}).join(' '));center.current?.setAttribute('cx',String(p.x));center.current?.setAttribute('cy',String(p.y));compass.current?.setAttribute('transform',`rotate(${-map.getBearing()} 100 100)`);};
   const queue=()=>{if(!frame.current)frame.current=requestAnimationFrame(draw);};draw();map.on('move',queue);map.on('moveend',queue);map.on('sourcedata',queue);
   return()=>{cancelAnimationFrame(frame.current);frame.current=0;map.off('move',queue);map.off('moveend',queue);map.off('sourcedata',queue);};
  },[map,projection]);

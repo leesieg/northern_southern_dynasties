@@ -1,3 +1,4 @@
+import {historicalBaseReview,historicalCurrentSummary,historicalDisputes} from './historicalEvents';
 import {dateLabel} from './world';
 import {eventProjection} from './authoredEvents';
 import type {World} from './types';
@@ -7,7 +8,7 @@ import {governmentOf,governmentReason,governmentYear,governmentTaskPause,governi
 import {allegianceRealm} from './officeEligibility';
 import {getPerson} from './personRegistry';
 import {historicalTitle,historicalPact,visibleHistoricalMilestones,historicalPending} from './historicalEvents';
-import {pactReformReview,currentPactBreaches,receptionNames} from './allegiancePacts';
+import {pactReformReview,receptionNames} from './allegiancePacts';
 
 export const eventStatusNames={dormant:'未开启',available:'可办理',active:'进行中',resolved:'已结束',cancelled:'已中止',initial:'开局已行',unavailable:'本局不适用',unknown:'消息未明'} as const;
 export type EventStatus=keyof typeof eventStatusNames;
@@ -39,14 +40,15 @@ export function eventCatalog(w:World):CatalogEntry[]{
    hou.status=e.status==='resolved'?'resolved':e.status==='cancelled'?'cancelled':e.phase==='dormant'?'dormant':'active';
    hou.chapter=historicalTitle(w,e);hou.site=e.site;hou.realm=e.host??e.origin;
    if(e.status==='active'){const chief=governingAuthority(w,e.host??e.origin);hou.people=[...new Set([e.actors.protagonist,...(chief?[chief]:[]),e.actors.protector,...hou.people])].filter(id=>!!getPerson(w,id));}
-   hou.summary=e.result??milestones.at(-1)?.text??hou.summary;
+   hou.summary=historicalCurrentSummary(w,e);
    const pactVisible=p&&!!actor&&(p.person===actor||governingExecutives(w,p.to).includes(actor));
-   if(pactVisible){hou.facts.push({label:'归附约定',text:receptionNames[p.terms]},{label:'当前争议',text:p.status==='active'?currentPactBreaches(w,p).join('、')||'暂无未解争议':p.status==='pending'?'等待接纳方答复':'交涉已结束'});}
+   if(pactVisible){hou.facts.push({label:'归附约定',text:receptionNames[p.terms]},{label:'当前争议',text:p.status==='active'?historicalDisputes(w,e,p).join('、')||'暂无未解争议':p.status==='pending'?'等待接纳方答复':'交涉已结束'});}
    const review=pactVisible?pactReformReview(w,p):undefined;
    if(review)hou.facts.push({label:'改编进度',text:'原定 '+dateLabel(review.due,w.scriptId)+'；下次月度核验 '+dateLabel(review.nextReview,w.scriptId)+'。'+(review.reasons.join('、')||'钱饷与安全条件满足，等待月度结算')+'。双方已确认，无须再次达到好感门槛。'});
    if(e.status==='active'&&insider){
-    const day=pactVisible?(p.offer?.expiresAt??(p.status==='pending'?p.due:review?.nextReview??e.handlingDue)):e.handlingDue;
-    if(day!==undefined)hou.deadline={day,label:pactVisible&&p.offer?'新条款答复期限':pactVisible&&p.status==='pending'?'来书答复期限':review?'改编月度核验':'处理窗口',note:review?'按真实欠饷、部队归属及人身安全核验；受阻则下月复核。':'届期按实际局势重新评估，不代表必然起兵。'};
+    const relocation=pactVisible?historicalBaseReview(w,e):undefined;
+    const day=relocation?.due??(pactVisible?(p.offer?.expiresAt??(p.status==='pending'?p.due:review?.nextReview??e.handlingDue)):e.handlingDue);
+    if(day!==undefined)hou.deadline={day,label:relocation?'调营抵达复核':pactVisible&&p.offer?'新条款答复期限':pactVisible&&p.status==='pending'?'来书答复期限':review?'改编月度核验':'处理窗口',note:review?'按真实欠饷、部队归属及人身安全核验；受阻则下月复核。':'届期按实际局势重新评估，不代表必然起兵。'};
     if(e.phase!=='dormant')hou.action={kind:'historical',target:e.id,label:'前往交涉与处置'};
    }
    if(e.warId!==undefined&&current)hou.war=e.warId;

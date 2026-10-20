@@ -1,0 +1,19 @@
+dialog.paper-dialog.ambition-dialog{width:min(520px,calc(100vw - 40px))}
+.ambition-dialog .ambition-progress{display:block;width:100%;height:10px;margin:0 0 14px;appearance:none;border:1px solid #9c845c;border-radius:1px;background:#d8c9a3;overflow:hidden}
+.ambition-dialog .ambition-progress::-webkit-progress-bar{background:#d8c9a3}
+.ambition-dialog .ambition-progress::-webkit-progress-value{background:linear-gradient(90deg,#8d6f2e,#c9a24e);transition:width .4s}
+.ambition-dialog .ambition-progress::-moz-progress-bar{background:linear-gradient(90deg,#8d6f2e,#c9a24e)}
+.ambition-steps{list-style:none;counter-reset:step;margin:0;padding:0;display:grid}
+.ambition-steps li{counter-increment:step;display:flex;align-items:center;gap:12px;padding:11px 8px;border-bottom:1px dashed var(--dossier-edge)}
+.ambition-steps li::before{content:counter(step,cjk-ideographic);flex:none;width:26px;height:26px;display:grid;place-items:center;border:1px solid #8b754d;border-radius:1px;color:var(--dossier-muted);font:14px var(--serif)}
+.ambition-steps li>div{flex:1;min-width:0;display:grid;gap:3px}
+.ambition-steps small{color:var(--dossier-muted);line-height:1.6}
+.ambition-steps li.done::before{content:'成';background:#4d6a45;border-color:#3d5637;color:#f0e7c8}
+.ambition-steps li.done strong{color:#4d6a45}
+.ambition-steps li.current{background:linear-gradient(90deg,#c9a24e30,transparent);box-shadow:inset 3px 0 #b8903c}
+.ambition-steps li.current::before{background:#a84133;border-color:#9b3a2e;color:#f6e7c4}
+.ambition-steps li:not(.done):not(.current){opacity:.7}
+.ambition-steps li>span{font-size:var(--text-caption);color:var(--dossier-muted);white-space:nowrap}
+.ambition-steps li>button{flex:none;min-height:32px;padding:3px 14px;background:#26372c;border:1px solid #99835b;color:#f0e3c3}
+.ambition-reward{margin:16px 0 0;padding:10px 14px;border:1px solid var(--dossier-edge);border-left:3px solid #b8903c;background:#f4e8c8aa;font-size:var(--text-caption);line-height:1.7}
+.ambition-error{color:#9b3a2e}

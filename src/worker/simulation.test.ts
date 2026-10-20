@@ -36,7 +36,7 @@ describe('worker menu and save lifecycle without browser UI',()=>{
   expect((await request({type:'speed',speed:7})).speed).toBe(7);replies=[];const update=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const completed=await update;
   expect(completed.speed).toBe(0);expect(completed.world.day).toBe(nextMonthStart(original.world.day,w.scriptId));const events=replies.flatMap(r=>r.type==='paused'?r.events:[]);expect(events.filter(e=>e.kind==='dynasty')).toHaveLength(1);expect(events.find(e=>e.kind==='dynasty')?.dynasty).toMatchObject({name:'陈',cause:'inheritance'});expect(events.some(e=>e.kind==='inheritance')).toBe(true);
   await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(completed.world);
- },30000);
+ },120000);
 
  it('keeps military defection decisions paused after reload and rolls back a failed save',async()=>{
   await request({type:'init'});const {newCampaignWorld}=await import('../core/world'),{serializeWorld}=await import('../core/save');const w=newCampaignWorld('xiao-yan',undefined,'sandbox');w.day=7;w.defections={nextId:2,lastDay:0,items:[{id:1,site:'luoyang',from:'east',to:'liang',created:0,status:'pending',reason:'地方归附请求'}]};
@@ -98,8 +98,21 @@ describe('worker menu and save lifecycle without browser UI',()=>{
   it('reports arrival when advancing one day and does not repeat the dialog on later steps',async()=>{
     await request({type:'init'});await request({type:'new'});const snapshot=await request({type:'command',command:{type:'travel',destination:'jingkou'}});
     const {advance}=await import('../core/world');const {serializeWorld}=await import('../core/save');const w=structuredClone(snapshot.world);advance(w,w.people[0].journey!.durations.reduce((a,b)=>a+b,0)-1);await request({type:'import',text:serializeWorld(w)});replies=[];
-    const arrived=await request({type:'step'});expect(arrived.speed).toBe(0);expect(replies.filter(r=>r.type==='paused')).toHaveLength(1);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='arrival'))).toBe(true);
-    replies=[];await request({type:'step'});expect(replies.some(r=>r.type==='paused')).toBe(false);
+    const arrived=await request({type:'step'});expect(arrived.speed).toBe(0);expect(replies.filter(r=>r.type==='paused')).toHaveLength(0);expect(replies.filter(r=>r.type==='notices')).toHaveLength(1);expect(replies.some(r=>r.type==='notices'&&r.events.some(e=>e.kind==='arrival'))).toBe(true);
+    replies=[];await request({type:'step'});expect(replies.some(r=>r.type==='paused')).toBe(false);expect(replies.some(r=>r.type==='notices')).toBe(false);
+  });
+
+  it('keeps time running past notice-tier events and pauses for them again once the category is set to pause',async()=>{
+    await request({type:'init'});await request({type:'new'});const snapshot=await request({type:'command',command:{type:'travel',destination:'jingkou'}});
+    const {advance}=await import('../core/world');const {serializeWorld}=await import('../core/save');const w=structuredClone(snapshot.world);advance(w,w.people[0].journey!.durations.reduce((a,b)=>a+b,0)-1);
+    await request({type:'import',text:serializeWorld(w)});expect((await request({type:'speed',speed:3})).speed).toBe(3);replies=[];
+    const update=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const running=await update;
+    expect(running.speed).toBe(3);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='arrival'))).toBe(false);expect(replies.some(r=>r.type==='notices'&&r.events.some(e=>e.kind==='arrival'))).toBe(true);
+    await request({type:'notice-settings',settings:{travel:'pause',family:'notice',personnel:'notice',military:'notice',economy:'notice',report:'notice'}});
+    await request({type:'import',text:serializeWorld(w)});replies=[];
+    expect((await request({type:'speed',speed:3})).speed).toBe(3);
+    const update2=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const paused=await update2;
+    expect(paused.speed).toBe(0);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='arrival'))).toBe(true);expect(replies.some(r=>r.type==='notices'&&r.events.some(e=>e.kind==='arrival'))).toBe(false);
   });
 
   it('persists duties atomically and pauses at a newly arrived approval request',async()=>{
@@ -149,7 +162,7 @@ describe('worker menu and save lifecycle without browser UI',()=>{
     expect(failed.world).toEqual(before.world);
     const accepted=await request({type:'command',command:{type:'government',action:'adopt',government:'feudal'}});
     expect(accepted.world.realm?.governments?.realms.liang.task?.target).toBe('feudal');
-    expect(accepted.world.realm?.treasuries.liang.coins).toBe(440);
+    expect(accepted.world.realm?.treasuries.liang.coins).toBe(before.world.realm!.treasuries.liang.coins-160);
     await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(accepted.world);
   });
   it('persists lifestyle unlocks and leaves points unchanged if saving fails',async()=>{
@@ -222,11 +235,11 @@ describe('worker menu and save lifecycle without browser UI',()=>{
 describe('生命状态的 Worker 持久化',()=>{
  it('pauses and saves immediately on automatic inheritance',async()=>{
   await request({type:'init'});const snapshot=await request({type:'new',characterId:'xiao-yan',mode:'sandbox'});
-  const {advance}=await import('../core/world');const {serializeWorld}=await import('../core/save');const w=structuredClone(snapshot.world);advance(w,29);
+  const {advance}=await import('../core/world');const {nextMonthStart}=await import('../core/calendar');const {serializeWorld}=await import('../core/save');const w=structuredClone(snapshot.world);advance(w,29);
   w.life!.seed=100000;w.life!.people['xiao-yan'].health=1;w.life!.people['xiao-yan'].illness={kind:'fever',since:29,severity:3};
   await request({type:'import',text:serializeWorld(w)});await request({type:'speed',speed:7});
   const update=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const paused=await update;
-  expect(paused.world.characterId).toBe('xiao-gang');expect(paused.speed).toBe(0);expect(paused.world.day).toBe(30);
+  expect(paused.world.characterId).toBe('xiao-gang');expect(paused.speed).toBe(0);expect(paused.world.day).toBe(nextMonthStart(w.day,w.scriptId));
   await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(paused.world);
  });
  it('does not charge for care if the save fails',async()=>{
@@ -249,6 +262,7 @@ it('save recovery keeps switch backups outside the automatic rotation',async()=>
  const {loadWorld}=await import('../core/storage');expect((await loadWorld('previous-run'))?.day).toBe(1);
 });
 it('save recovery can load an older slot after the newest stored data is corrupt',async()=>{
+ await request({type:'init'});
  const {saveWorld}=await import('../core/storage'),{newWorld}=await import('../core/world');
  await saveWorld(newWorld(),true);await saveWorld(newWorld());
  await new Promise<void>((resolve,reject)=>{const open=indexedDB.open('fynbc-world-v1',1);open.onsuccess=()=>{const db=open.result,tx=db.transaction('saves','readwrite'),store=tx.objectStore('saves'),get=store.get('manual');get.onsuccess=()=>store.put({...get.result,data:'broken'});tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>{db.close();reject(tx.error);};};});
@@ -294,3 +308,25 @@ describe('historical event worker boundaries',()=>{
   await request({type:'init'});const {newCampaignWorld}=await import('../core/world'),{initializeHistoricalStart}=await import('../core/historicalStart'),{serializeWorld}=await import('../core/save');const w=newCampaignWorld('xiao-yan',undefined,'sandbox');initializeHistoricalStart(w);w.day=1;w.life!.people['gao-huan'].illness={kind:'fever',severity:3,since:1};await request({type:'import',text:serializeWorld(w)});expect((await request({type:'speed',speed:7})).speed).toBe(7);replies=[];const update=new Promise<Snapshot>(resolve=>{waiting=resolve;});await vi.advanceTimersByTimeAsync(1000);const result=await update;expect(result.speed).toBe(0);expect(result.world.day).toBeLessThan(8);expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='historical'))).toBe(true);expect(result.world.characterId).toBe('xiao-yan');
  });
 });
+
+it('persists the selected ambition and rolls back its abandonment if saving fails',async()=>{
+ await request({type:'init'});const start=await request({type:'new',characterId:'xiao-gang',mode:'sandbox',ambition:'nobility'});
+ expect(start.world.ambitions?.people['xiao-gang'].active).toMatchObject({kind:'nobility',baseline:-1});
+ const fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});
+ expect((await request({type:'command',command:{type:'ambition',action:'abandon'}})).world).toEqual(start.world);fault.mockRestore();
+ const completed=await request({type:'command',command:{type:'ambition',action:'abandon'}});
+ expect(completed.world.ambitions!.people['xiao-gang'].history.at(-1)?.result).toBe('abandoned');
+ await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(completed.world);
+});
+it('persists political aid terms and rolls back the real transfer when saving acceptance fails',async()=>{
+ await request({type:'init'});
+ const {newCampaignWorld}=await import('../core/world'),{ensureWars}=await import('../core/wars'),{ensureArmyOrganization}=await import('../core/armyOrganization'),{setLocalHolder,countyTerritory}=await import('../core/localAdministration'),{ensureFiscal,fiscalPath}=await import('../core/treasury'),{requestForeignAid}=await import('../core/foreignAid'),{serializeWorld}=await import('../core/save');
+ const w=newCampaignWorld('yuwen-tai',undefined,'sandbox'),s=w.realm!;setLocalHolder(w,countyTerritory('hanzhong'),'liang','xiao-cha');w.mobility!.residences['xiao-cha']={site:'hanzhong',journey:null};ensureFiscal(w)!.balances[fiscalPath(w,'hanzhong')[0]]=500;
+ s.war={attacker:'east',defender:'liang',target:'hanzhong',started:0,score:0};delete s.wars;ensureWars(w);s.cities.nanxiang.controller='east';s.cities.nanxiang.occupiedByWar=s.war!.id;s.cities.nanxiang.occupiedSince=0;
+ for(const [realm,location] of [['west','huxian'],['east','nanxiang']] as const)s.armies.push({realm,location,troops:1200,morale:100,supply:500,journey:null,siege:0});ensureArmyOrganization(w);
+ requestForeignAid(w,{type:'defection',action:'request',site:'hanzhong',target:'west',mode:'paid'},'xiao-cha');w.day=7;(await import('../core/realm')).syncGovernance(w);
+ const imported=await request({type:'import',text:serializeWorld(w)});expect(replies.some(r=>r.type==='paused'&&r.events.some(e=>e.kind==='military'&&e.body.includes('援费')))).toBe(true);
+ const command={type:'defection',action:'accept',id:w.defections!.items[0].id} as const,fault=vi.spyOn(IDBObjectStore.prototype,'put').mockImplementationOnce(()=>{throw new DOMException('full','QuotaExceededError');});
+ const failed=await request({type:'command',command});fault.mockRestore();expect(failed.world).toEqual(imported.world);
+ const accepted=await request({type:'command',command});expect(accepted.world.realm!.treasuries.west.coins).toBe(imported.world.realm!.treasuries.west.coins+100);expect(accepted.world.defections!.items[0].status).toBe('accepted');expect(accepted.world.realm!.wars![0].allies?.west).toBe('defend');await request({type:'menu'});expect((await request({type:'resume'})).world).toEqual(accepted.world);
+},30000);

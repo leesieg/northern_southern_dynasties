@@ -48,3 +48,58 @@
 @media(max-width:420px){.diplomacy-bilateral-columns{grid-template-columns:1fr}.diplomacy-summary-strip{flex-wrap:wrap}.diplomacy-banner .diplomacy-court-entry{width:auto}}
 
 .diplomacy-panel .diplomacy-leaders:has(>button:nth-child(3))>button{flex-direction:row;text-align:left}
+
+/* Overview: one screen, one type scale (caption label / reading value / body heading), portrait and art share a height. */
+.focused-shell .operations-window .diplomacy-page-content{--scene-h:132px;--ink:#2f342a;--ink-muted:#625b47}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;height:var(--scene-h);margin:0 0 10px;align-items:stretch}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene>.operations-art{height:100%;width:100%;aspect-ratio:auto;overflow:hidden;min-width:0}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene .diplomacy-leaders{display:flex;flex-direction:row;gap:10px;height:100%;max-height:none;overflow:visible;padding:0;background:none}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene .diplomacy-leaders>button{display:grid;grid-template-columns:calc(var(--scene-h)*2/3) minmax(76px,auto);align-items:center;gap:10px;height:100%;min-height:0;min-width:0;flex:none;padding:0 12px 0 0;border:1px solid var(--dossier-edge);border-radius:0;background:#f0e7ce66;color:var(--ink);text-align:left}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene .painted-portrait{width:100%;height:100%;min-height:0;max-height:none;aspect-ratio:auto;margin:0;overflow:hidden}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene .painted-portrait :is(img,svg,canvas){width:100%;height:100%;object-fit:cover}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-leaders strong{display:block;font:var(--text-reading)/1.4 var(--serif);color:var(--ink)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-leaders small{display:block;margin-top:4px;font:var(--text-caption)/1.4 var(--serif);color:var(--ink-muted)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-overview-identities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-overview-identities>article{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;row-gap:0;align-items:center;text-align:left;padding:8px 12px;min-height:0}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-overview-identities>article>.art-icon{grid-row:1/3}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-overview-identities small{font:var(--text-caption)/1.3 var(--serif);color:var(--ink-muted)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-overview-identities strong{font:var(--text-reading)/1.4 var(--serif);color:var(--ink)}
+.focused-shell .operations-window .diplomacy-page-content>.diplomacy-realm-facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact{margin:0;padding:10px 12px;gap:4px;color:var(--ink);background:#ded0ad40}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact h3{margin:0;font:var(--text-body)/1.4 var(--serif);color:var(--ink)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact>strong{font:var(--text-value)/1.3 var(--serif);color:var(--ink)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact small{font:var(--text-caption)/1.5 var(--serif);color:var(--ink-muted)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact-pair{font:var(--text-caption) var(--serif);color:var(--ink-muted)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact-pair b{font:var(--text-reading) var(--serif);color:var(--ink)}
+.focused-shell .operations-window .diplomacy-page-content .diplomacy-fact-wars p{padding-top:4px}
+@media(max-width:760px){.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene{grid-template-columns:1fr;height:auto}.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene>.operations-art{height:110px}.focused-shell .operations-window .diplomacy-page-content .diplomacy-state-scene .diplomacy-leaders{height:var(--scene-h)}.focused-shell .operations-window .diplomacy-page-content>.diplomacy-realm-facts,.focused-shell .operations-window .diplomacy-page-content .diplomacy-overview-identities{grid-template-columns:1fr}}
+
+/* One flag size everywhere: 32x40 badge, 29x40 flag. The state banner may be slightly larger but never taller than its text. */
+.focused-shell :is(.operations-window,dialog.paper-dialog) button.realm-badge-link{width:32px;min-width:32px;height:40px;padding:0}
+.focused-shell :is(.operations-window,dialog.paper-dialog) button.realm-badge-link svg{width:29px!important;height:40px!important}
+.focused-shell .operations-window .diplomacy-banner{display:flex;align-items:center;gap:12px;padding:6px 14px}
+.focused-shell .operations-window .diplomacy-banner>.realm-badge-link{width:32px;height:40px}
+.focused-shell .operations-window .diplomacy-banner>div{display:flex;flex-wrap:wrap;align-items:center;gap:2px 14px}
+.focused-shell .operations-window .diplomacy-banner>div>:is(small,span){font:var(--text-caption)/1.4 var(--serif)}
+.focused-shell .operations-window .diplomacy-banner .diplomacy-court-entry{min-height:40px;padding:4px 10px}
+/* Relation ledger: rows hug their content; the long 邦交 row spans the full width. */
+.focused-shell .operations-window .diplomacy-relation-ledger{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+.focused-shell .operations-window .diplomacy-relation-row{margin:0;padding:8px 12px;min-height:48px;grid-template-columns:76px minmax(0,1fr)}
+.focused-shell .operations-window .diplomacy-relation-row:last-child{grid-column:1/-1}
+.focused-shell .operations-window .diplomacy-relation-row>span{font:var(--text-body) var(--serif);white-space:nowrap}
+.focused-shell .operations-window .diplomacy-relation-row>div{gap:8px 10px}
+.focused-shell .operations-window .diplomacy-relation-row small{font:var(--text-caption) var(--serif);color:var(--dossier-muted)}
+/* Clan dossier: identity on the left, living members on the right; portraits keep one 2:3 / 11:14 crop. */
+.focused-shell .operations-window .clan-dossier{display:grid;grid-template-columns:minmax(210px,250px) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:24px;align-content:start}
+.focused-shell .operations-window .clan-dossier>h3{grid-area:1/1;margin:0 0 4px;font:var(--text-value) var(--serif)}
+.focused-shell .operations-window .clan-dossier>p{grid-area:2/1;margin:0 0 12px;font:var(--text-caption)/1.5 var(--serif);color:var(--dossier-muted)}
+.focused-shell .operations-window .clan-dossier>.clan-dossier-head{grid-area:3/1;align-self:start;display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:0;min-height:0}
+.focused-shell .operations-window .clan-dossier-head>.painted-portrait{width:96px;height:144px;margin:0;overflow:hidden}
+.focused-shell .operations-window .clan-dossier-head>span{display:grid;gap:4px;font:var(--text-caption) var(--serif);color:var(--dossier-muted)}
+.focused-shell .operations-window .clan-dossier-head strong{font:var(--text-reading) var(--serif);color:var(--dossier-ink)}
+.focused-shell .operations-window .clan-dossier>h4{grid-area:1/2;margin:0 0 8px;font:var(--text-body) var(--serif);align-self:end}
+.focused-shell .operations-window .clan-dossier>.clan-dossier-members{grid-area:2/2/4/3;align-content:start;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.focused-shell .operations-window .clan-dossier-members>button{min-height:64px;padding:6px 10px;font:var(--text-reading) var(--serif)}
+.focused-shell .operations-window .clan-dossier-members .painted-portrait{width:44px;height:56px;overflow:hidden}
+.focused-shell .operations-window .clan-dossier :is(.painted-portrait) :is(img,canvas,svg){width:100%;height:100%;object-fit:cover}
+@media(max-width:760px){.focused-shell .operations-window .clan-dossier{grid-template-columns:1fr}.focused-shell .operations-window .clan-dossier>*{grid-area:auto!important}.focused-shell .operations-window .diplomacy-relation-ledger{grid-template-columns:1fr}}

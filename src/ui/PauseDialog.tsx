@@ -21,6 +21,7 @@ import {AssignmentPanel} from './AssignmentPanel';
 import {CouncilPanel} from './ServicePanel';
 import {diplomaticQuote,diplomacyActions} from '../core/diplomacy';
 import {playerRealm} from '../core/realm';
+import {siteById} from '../data/scenario';
 import {useEffect,useRef,useState} from 'react';
 import type {PauseEvent} from '../core/pauseEvents';
 import {pauseHasActions} from '../core/pauseEvents';
@@ -73,6 +74,7 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  {event.kind==='battle'&&event.battle&&<BattleResult world={world} battle={event.battle}/>}
  {!actionable&&event.id.startsWith('unrest:')&&<button disabled={pending} onClick={()=>onNavigate(event)}>前往当地治理 ›</button>}
  {!actionable&&event.kind==='situation'&&<button disabled={pending} onClick={()=>onNavigate(event)}>查看原因与应对 ›</button>}
+ {event.kind==='ambition'&&<button disabled={pending} onClick={()=>onNavigate(event)}>立新志 ›</button>}
  {!actionable&&event.kind==='service'&&task?.result&&<><ServiceOutcome task={task}/><button disabled={pending} onClick={()=>onNavigate(event)}>查看结案与后续 ›</button></>}
  {actionable&&event.kind==='custody'&&event.person&&<CustodyPerson key={event.person} world={world} person={event.person} pending={pending} send={send}/>}
  {actionable&&event.kind==='mobility'&&<ActivityProgress world={world} send={send} pending={pending} id={event.activityId}/>}
@@ -83,7 +85,8 @@ export function PauseDialog({event,count,world,pending,error,onClose,onNavigate,
  {event.kind==='appointments'&&actionable&&event.appointmentRealm&&<AppointmentReview world={world} realm={event.appointmentRealm} pending={pending} send={send}/>}
  {event.kind==='local'&&actionable&&<LocalRequests world={world} pending={pending} send={send} requestId={event.localId} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
  {event.kind==='fiscal'&&actionable&&grant&&grant.status==='pending'&&grant.approver===world.characterId&&<FiscalPetitionAudience world={world} request={grant} pending={pending} send={send} onPerson={person=>onNavigate({...event,kind:'inheritance',person})}/>}
- {realmEvent&&<section className="pause-decision"><h3>{eventDefinitions[realmEvent.kind].title}</h3><p>{eventDefinitions[realmEvent.kind].body}</p><p>{eventDefinitions[realmEvent.kind].effect}</p><EventDecision label="处置政务" pending={pending} send={send} options={(['fund','decline'] as const).map(choice=>{const command={type:'realm',action:'event',choice} as const;return {id:choice,title:choice==='fund'?'拨付处理':'暂缓处理',description:choice==='fund'?`中央支出 ${eventDefinitions[realmEvent.kind].cost} 钱。${eventDefinitions[realmEvent.kind].effect}`:'不支付本次款项；后果依当前事件结算。',art:'treasury',command,reason:realmReason(world,command)};})}/></section>}
+ {realmEvent&&<section className="pause-decision"><h3>{eventDefinitions[realmEvent.kind].title} · {siteById[realmEvent.site].name}</h3><p>{eventDefinitions[realmEvent.kind].body}</p>{realmEvent.reason&&<p><small>{realmEvent.reason}</small></p>}<EventDecision label="处置政务" pending={pending} send={send} options={(['fund','partial','decline'] as const).map(choice=>{const command={type:'realm',action:'event',choice} as const,def=eventDefinitions[realmEvent.kind];return {id:choice,title:choice==='fund'?'拨付处理':choice==='partial'?'酌量处置':'暂缓处理',description:choice==='fund'?`中央支出 ${def.cost}。${def.effect}`:choice==='partial'?`中央支出减半。${def.partial}`:'不支付本次款项；后果依当前事件结算。',art:'treasury',command,reason:realmReason(world,command)};})}/></section>}
+ {event.kind==='report'&&event.report&&<section className="pause-decision season-report"><table><thead><tr><th>项目</th><th>季初</th><th>季末</th><th>变化</th></tr></thead><tbody>{event.report.rows.map(r=>{const d=r.before===null||r.after===null?null:r.after-r.before;return <tr key={r.label}><td>{r.label}</td><td>{r.before??'—'}</td><td>{r.after??'—'}</td><td className={d===null?'':d>0?'positive':d<0?'negative':''}>{d===null?'—':d>0?'+'+d:d}</td></tr>;})}</tbody></table>{event.report.entries.length>0&&<><h4>本季纪事</h4><ul>{event.report.entries.map((e,i)=><li key={i}>{e}</li>)}</ul></>}</section>}
  {event.kind==='diplomacy'&&world.diplomacy?.missions.filter(m=>m.status==='audience'&&m.to===playerRealm(world)).map(m=><section className="pause-decision" key={m.id}><h3><RealmBadge realm={m.from} world={world}/>使团 · {diplomacyActions[m.action]}</h3><p>答复期限尚余 {Math.max(0,m.expires-world.day)} 日</p><div className="realm-actions">{(['accept','reject'] as const).map(action=>{const command={type:'diplomacy',action,mission:m.id} as const,reason=diplomaticQuote(world,command).reason;return <div key={action}><button disabled={pending||!!reason} onClick={()=>send(command)}>{action==='accept'?'接纳议案':'拒绝议案'}</button>{reason&&<small>{reason}</small>}</div>;})}</div></section>)}
  {event.kind==='realm'&&!realmEvent&&<p role="status">此项政务已处理。</p>}
  {error&&<p className="pause-error" role="alert">{error}</p>}

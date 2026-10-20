@@ -1,9 +1,11 @@
 import {authoredPending} from '../core/authoredEvents';
 import {historicalPending} from '../core/historicalEvents';
 import {createCampaign} from '../core/campaignStart';
+import {actAmbition,ambitionReason} from '../core/ambitions';
 import {commandReceived,recordCommand} from '../core/requestReceipts';
 import {appointmentPauses} from '../core/appointmentCycle';
 import {pauseSnapshot,pauseEvents,allegiancePauses,successionPauses,familyPauses,economyPauses,militaryPauses,type PauseEvent} from '../core/pauseEvents';
+import {noticeTier,defaultNoticeSettings,validNoticeSettings,normalizeNoticeSettings,type NoticeSettings} from '../core/noticePolicy';
 import { act, advance, newWorld } from '../core/world';
 import {latestSaveInfo,type SimulationStorage} from '../core/simulationStorage';
 import { parseWorld, serializeWorld } from '../core/save';
@@ -18,10 +20,12 @@ let hasCurrentWorld=false,preparedLaunch=false;
 let slots: SaveInfo[] = [];
 let lastSaved: number | null = null;
 let busy = false;
+let noticeSettings:NoticeSettings=defaultNoticeSettings;
 const publish = () => reply({type:'world',world,speed,slots,lastSaved});
 const notice = (text: string, error = false) => reply({type:'notice',text,error});
 const pendingDecisions=(w:World)=>[...allegiancePauses(w),...successionPauses(w),...familyPauses(w),...appointmentPauses(w),...economyPauses(w),...militaryPauses(w),...historicalPending(w),...authoredPending(w)];
 function paused(events:PauseEvent[]){if(events.length){speed=0;reply({type:'paused',events});}}
+function announce(events:PauseEvent[]){const pausing:PauseEvent[]=[],notices:PauseEvent[]=[];for(const e of events)(noticeTier(world,e,noticeSettings)==='pause'?pausing:notices).push(e);if(notices.length)reply({type:'notices',events:notices});paused(pausing);}
 // A committed command must not be reported as failed solely because its directory refresh failed.
 async function refreshSavedSlots(){try{slots=await listSaves();return true;}catch{notice('变更已完成，但行记列表暂时未能刷新；可再次保存以刷新列表。');return false;}}
 async function save(auto = false) {
@@ -38,10 +42,12 @@ function dispatch(request:Request):Promise<void>{
       if (request.type === 'init') {
         try { await prepareStorage();slots = await listSaves();initialized=true;preparedLaunch=!!request.skipLoad;const loaded=request.skipLoad?null:await loadWorld();world=loaded??newWorld();lastSaved=loaded?latestSaveInfo(slots)?.savedAt??null:null;hasCurrentWorld=!!loaded; }
         catch (error) { ok=false;failure=(error instanceof Error ? error.message : '读取存档失败。')+(initialized?' 请在行记中选择其他存档或导入备份。':'');notice(failure,true); }
-      } else if (!initialized) {ok=false;failure='世界尚未就绪，请先重试读取存档。';notice(failure,true);return;}
+      } else if(request.type==='notice-settings'){if(validNoticeSettings(request.settings))noticeSettings=normalizeNoticeSettings(request.settings);else notice('通知设置未能识别，已沿用当前设置。',true);}
+      else if (!initialized) {ok=false;failure='世界尚未就绪，请先重试读取存档。';notice(failure,true);return;}
       else if(request.type==='new'){
         speed=0;
         const next=createCampaign(request.characterId,request.scriptId,request.mode,crypto.getRandomValues(new Uint32Array(1))[0]);
+        if(request.ambition&&!ambitionReason(next,{type:'ambition',action:'choose',kind:request.ambition}))actAmbition(next,{type:'ambition',action:'choose',kind:request.ambition});
         if(slots.length&&!hasCurrentWorld&&!preparedLaunch)throw new Error('最近存档读取失败，请先读取有效备份或导入存档，再开新局。');
         if(hasCurrentWorld)await saveWorld(world,false,'previous-run');
         lastSaved=await saveWorld(next);world=next;hasCurrentWorld=true;await refreshSavedSlots();reply({type:'screen',page:'play'});paused(authoredPending(world));
@@ -73,7 +79,7 @@ function dispatch(request:Request):Promise<void>{
         lastSaved=await saveWorld(imported);world = imported;hasCurrentWorld=true;speed = 0;if(await refreshSavedSlots())notice('导入成功，原进度保留在切换前备份中。');reply({type:'screen',page:'play'});
       }
     } catch (error) { ok=false;let message=error instanceof Error ? error.message : '操作失败。';if(['new','load','import'].includes(request.type)){try{slots=await listSaves();}catch{message+=' 存档列表未能刷新，请重试。';}}failure=message;notice(message,true); }
-    finally { if(['init','load','import','resume'].includes(request.type))paused(pendingDecisions(world));if(request.type==='speed'&&request.speed>0)paused(pendingDecisions(world));if(request.type==='step'||request.type==='command')paused(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(pendingDecisions(world).length||world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish();if(request.requestId)reply({type:'receipt',requestId:request.requestId,ok,text:failure||undefined}); }
+    finally { if(['init','load','import','resume'].includes(request.type))paused(pendingDecisions(world));if(request.type==='speed'&&request.speed>0)paused(pendingDecisions(world));if(request.type==='step'||request.type==='command')announce(pauseEvents(previousPause,world));if(request.type==='speed'&&request.speed>0&&world.realm?.event)paused([{id:`${world.day}:realm`,kind:'realm',title:'政务待决',body:'请先处理呈报的政务，再继续时间。'}]);if(pendingDecisions(world).length||world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;busy = false; publish();if(request.requestId)reply({type:'receipt',requestId:request.requestId,ok,text:failure||undefined}); }
   });
   return queue;
 }
@@ -83,18 +89,19 @@ function tick():Promise<void>{
   queue = queue.then(async () => {
     try {
       const before = world.day,next=structuredClone(world);
-      let events:PauseEvent[]=pendingDecisions(next);
-      for (let n=0;n<speed&&!events.length;n++) {
+      let pausing:PauseEvent[]=pendingDecisions(next);const notices:PauseEvent[]=[];
+      for (let n=0;n<speed&&!pausing.length;n++) {
         const snapshot=pauseSnapshot(next);
         advance(next);
-        events=pauseEvents(snapshot,next);
-        if(events.length||next.realm?.event||next.campaign&&next.campaign.status!=='active')break;
+        for(const e of pauseEvents(snapshot,next))(noticeTier(next,e,noticeSettings)==='pause'?pausing:notices).push(e);
+        if(pausing.length||next.realm?.event||next.campaign&&next.campaign.status!=='active')break;
       }
-      if(events.length||Math.floor(next.day/10)!==Math.floor(before/10)){
+      if(pausing.length||notices.length||Math.floor(next.day/10)!==Math.floor(before/10)){
         const savedAt=await saveWorld(next,true);lastSaved=savedAt;await refreshSavedSlots();
       }
       world=next;
-      paused(events);
+      if(notices.length)reply({type:'notices',events:notices});
+      paused(pausing);
       if(world.realm?.event||world.campaign&&world.campaign.status!=='active')speed=0;
     } catch (error) { paused([{id:`${world.day}:error`,kind:'error',title:'时间推进已中止',body:error instanceof Error ? error.message : '时间推进失败，请保存或导出当前进度。'}]); }
     finally { busy = false; publish(); }

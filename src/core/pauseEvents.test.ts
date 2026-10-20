@@ -8,9 +8,10 @@ describe('pause event reasons',()=>{
  it('reports simultaneous arrival and illness without losing either cause, then does not repeat them',()=>{
   const w=newCampaignWorld();act(w,{type:'travel',destination:'jingkou'});const before=pauseSnapshot(w);
   w.people[0].location='jingkou';w.people[0].journey=null;lifeOf(w,'fictional')!.illness={kind:'fever',since:0,severity:1};
-  const events=pauseEvents(before,w);expect(events.map(e=>e.kind)).toEqual(['health','arrival']);expect(events[1].site).toBe('jingkou');expect(pauseEvents(pauseSnapshot(w),w)).toEqual([]);
+  const events=pauseEvents(before,w);expect(events.map(e=>e.kind)).toEqual(['health','arrival']);expect(events[0].notice).toBe('family');expect(events[1].site).toBe('jingkou');expect(pauseEvents(pauseSnapshot(w),w)).toEqual([]);
  });
  it('distinguishes interrupted journeys from arrival',()=>{const w=newCampaignWorld();act(w,{type:'travel',destination:'jingkou'});const before=pauseSnapshot(w);w.people[0].journey=null;expect(pauseEvents(before,w)[0].kind).toBe('journey');});
+ it('keeps a critical health pause when a mild illness is diagnosed on the same day',()=>{const w=newCampaignWorld(),before=pauseSnapshot(w),life=lifeOf(w,'fictional')!;life.health=20;life.illness={kind:'fever',since:0,severity:1};const events=pauseEvents(before,w).filter(e=>e.kind==='health');expect(events).toHaveLength(1);expect(events[0].notice).toBeUndefined();});
  it('reports a new duty decision, completion, and realm events',()=>{
   const w=newCampaignWorld('yuwen-tai',undefined,'sandbox');act(w,{type:'duty',action:'open'});const before=pauseSnapshot(w);advance(w,2);expect(pauseEvents(before,w).map(e=>e.kind)).toEqual(['duties']);
   const approved=pauseSnapshot(w);act(w,{type:'duty',action:'cancel'});expect(pauseEvents(approved,w)[0].kind).toBe('duties');

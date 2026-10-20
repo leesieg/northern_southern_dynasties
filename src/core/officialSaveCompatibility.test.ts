@@ -32,6 +32,8 @@ const checkpoints=[
  {packageId:'official-nsd',digest:'ffed10191b16f837f0fbd14cbe594f83b90b6e7e721af17f5340cc5a980445d1',engine:'4bcf58a3af5856a5e5feb950940cc56960e4d891d0a706d0b3daf03b80e76f24',assets},
  {packageId:'official-nsd',digest:'fbfdeede4f409e2baed0949b4c769232910551d55c9fae88a24ad3f2afd3af08',engine:'c0a9dd56700ff051970be7713d0fffa9438521e283e5054a50ab50c5279fb136',assets},
  {packageId:'official-nsd',digest:'3ad2f52800b83d0b596ce18b6ac3665dd383a94f9b15f959b2e75489da7d5f7a',engine:'92f2e7b25584fcab5ff32f0e447b0d694974a7d465d2f7b631d65e407a98e9d4',assets},
+ {packageId:'official-nsd',digest:'d27b620ca9d58e1933f244be67a6a9edd17422d463c7c775dbd712a1b041db5f',engine:'c04ad2f823660e4259a4043967ee7130b40a1ebda825754b414adc525e5476b0',assets:'0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e'},
+ {packageId:'official-nsd',digest:'a20793d810f7fe740f55c5717064171b04dc3b6cb63528b705946483c51faec0',engine:'c6af5a08cf8c70347b3e51d68d55fbf3fc66830bdc8e727c9d140135d821dc37',assets:'0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e'},
 ];
 const current={...checkpoints[0],digest:'current',engine:'current'};
 describe('official save compatibility',()=>{

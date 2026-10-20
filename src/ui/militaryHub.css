@@ -61,3 +61,5 @@
 .military-deployment-detail .military-record{border-radius:2px}.military-deployment-detail .military-record>label{font-size:var(--text-caption);line-height:1.5}
 
 .military-section-heading{margin:14px 0 8px;padding-top:10px;border-top:1px solid #b69c6340;font:var(--text-reading) var(--serif);color:#e5d0a2}
+
+.foreign-aid-panel{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid #a48a5144}.foreign-aid-panel h3{flex-basis:100%;margin:0 0 4px}.foreign-aid-panel>button{min-height:36px}

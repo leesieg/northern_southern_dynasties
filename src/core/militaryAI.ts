@@ -1,3 +1,5 @@
+import {armyCommander} from './mobility';
+import {frontAssignments} from './warOpportunities';
 import {civilArmyObserving} from './civilMobilization';
 import {administrativeRealm,provisionalRealm} from './polityRuntime';
 import {independentCivil} from './civilPolities';
@@ -82,13 +84,14 @@ export function delegatedArmyDecision(w:World,a:Army,context=armyDecisionContext
  const report=(intent:string,current:string,reason:string,next:string,target?:string):ArmyDecision=>({intent,current,reason,next,target});
  if(a.journey)return report(a.withdrawalUntil?'撤往安全据点':'执行既定行程','行军中','沿已经下达的路线前进','抵达后按指挥方式重新核对局势',a.journey.route.at(-1));
  if(w.allegiancePacts?.items.some(p=>p.person!==w.characterId&&p.army===a.id&&p.status==='pending'&&p.due>w.day))return report('归附交涉','驻留候复','统帅正在以本军议定归附条款','收到答复或交涉结束后恢复军令判断');
+ if(w.historical?.items.some(e=>e.status==='active'&&e.actors.protagonist!==w.characterId&&e.warId===undefined&&['north','reception','settlement','dispute'].includes(e.phase)&&(a.owner===e.actors.protagonist||armyCommander(w,a)===e.actors.protagonist&&w.allegiancePacts?.items.some(p=>p.person===e.actors.protagonist&&p.army===a.id&&p.status==='active'&&p.terms==='retain'))))return report('处理安置与营地','部曲留营','本军由领袖按实际交涉与据点条件决定去向','交涉、调营或起兵后按实际战争目标重新判断');
  if(a.automation==='direct')return report('亲自下令','驻留待命','本军已由你直接指挥','等待新的手动军令');
  if(w.mobility?.pendingCommanders?.[a.id!])return report('将领交接','等待赴任','新任统帅尚未抵营','抵营交接后重新判断行军');
  if(a.withdrawalUntil)return report('战后撤离','撤离保护中','撤离期限尚未清除','保护结束后重新判断局势');
  if(armyCampaign(w,a))return report('奉行战役委任','遵循战役授权','由独立战役目标与预算决定推进','查看战役的停止原因与追加条件');
  if(!wars.length)return context.wars.some(war=>civilArmyObserving(w,war,a))?report('观望守土','驻防本地','统领选择观望，不自动参加本场远征','改变立场、交接统帅或遭受进攻后复核'):report('驻守地方','驻留待命','当前没有本国参与的战争','出现战事后重新核对目标');
  if(readyTroops(a,w.day)<100)return report('整备兵员','等待成军','可战兵员不足 100 人','完成训练或补充可战兵员后再议行军');
- const armyWars=wars.filter(v=>!!warArmySide(w,v,a)),armyEnemy=s.armies.filter(b=>b!==a&&armiesHostile(w,a,b));
+ const assignment=wars.length>1?frontAssignments(w,r).get(a.id!):undefined,armyWars=wars.filter(v=>!!warArmySide(w,v,a)&&(!assignment||v.id===assignment)),armyEnemy=s.armies.filter(b=>b!==a&&armiesHostile(w,a,b));
  const retreat=a.supply<armyDailyFood(w,a)*2||a.morale<25||(a.arrears??0)>100;
  const coup=armyWars.find(v=>v.civil&&v.attacker===r&&v.civil.arrangement?.goal==='executive');
  if(coup&&!playerExecutive&&!retreat&&armyControls(w,a,a.location)){
@@ -111,7 +114,7 @@ export function delegatedArmyDecision(w:World,a:Army,context=armyDecisionContext
   const hostile=armyEnemy.filter(e=>e.location===target&&!e.journey).reduce((n,e)=>n+readyTroops(e,w.day),0);
   const staging=Object.keys(s.cities).filter(id=>id!==target&&armyControls(w,a,id)&&!armyEnemy.some(e=>e.location===id&&!e.journey)&&s.cities[id].grain>civilianFood(w,id)*2+30).map(id=>({id,path:planRoute(id,target,x=>canMarchThrough(w,r,x,target,a))})).filter(v=>v.path).sort((x,y)=>x.path!.days-y.path!.days)[0];
   if(hostile>a.troops*1.25&&staging){
-   const assembled=s.armies.filter(b=>b.realm===r&&!armiesHostile(w,a,b)&&b.automation!=='direct'&&!b.withdrawalUntil&&!armyCampaign(w,b)&&!w.mobility?.pendingCommanders?.[b.id!]&&(playerExecutive||threats.length>0||!wars.some(v=>v.attacker===r)||b!==reserve)&&((b.location===staging.id&&!b.journey)||b.journey?.route.at(-1)===target)).reduce((n,b)=>n+readyTroops(b,w.day),0);
+   const front=wars.length>1?frontAssignments(w,r):undefined,assembled=s.armies.filter(b=>(!front?.get(b.id!)||front.get(b.id!)===assignment)&&b.realm===r&&!armiesHostile(w,a,b)&&b.automation!=='direct'&&!b.withdrawalUntil&&!armyCampaign(w,b)&&!w.mobility?.pendingCommanders?.[b.id!]&&(playerExecutive||threats.length>0||!wars.some(v=>v.attacker===r)||b!==reserve)&&((b.location===staging.id&&!b.journey)||b.journey?.route.at(-1)===target)).reduce((n,b)=>n+readyTroops(b,w.day),0);
    if(assembled<hostile*1.1){
     if(a.location===staging.id)return report(intent,'等待集结',`已集结可战 ${assembled} 人，目标敌军 ${hostile} 人`,'集结达到敌军 1.1 倍后重新评估',target);
     const stagingRoute=planRoute(a.location,staging.id,id=>armyControls(w,a,id));

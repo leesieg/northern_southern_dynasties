@@ -38,15 +38,16 @@ export function civilResponseAssets(w:World,from:RealmId,people:string[],to?:Rea
  }
  const candidates=new Set([...governing,...plans.filter(p=>s.cities[p.army.location]?.controller===from).map(p=>p.army.location)]),cities:string[]=[];
  for(const site of candidates){
-  const c=s.cities[site];if(to?c.owner!==from&&c.owner!==to:c.owner!==from)continue;
+  const c=s.cities[site];if(to?c.owner!==from&&c.owner!==to&&c.controller!==from:c.owner!==from)continue;
   const stationed=s.armies.filter(a=>a.location===site&&!a.journey),following=plans.filter(p=>p.army.location===site).reduce((n,p)=>n+p.following,0),resisting=stationed.reduce((n,a)=>n+a.troops,0)-following;
   const reason=s.sieges?.some(q=>q.site===site)?'城邑正在被围攻':c.governor&&!eligible.includes(c.governor)&&site!==uprising?'当地县域主官未响应':resisting>0&&following<=resisting?'有效驻军仍抵抗交接':!governing.includes(site)&&following<300?'未掌握县域职权或优势驻军':'';
   if(reason)blocked.push({label:site,reason});else cities.push(site);
  }
  return {cities:cities.sort(),localSites:governing,armies:plans.map(p=>p.army.id!),troops:plans.reduce((n,p)=>n+p.following,0),blocked};
 }
-export function civilTransferPreview(w:World,war:War,person:string,to:RealmId){
+export function civilTransferPreview(w:World,war:War,person:string,to:RealmId,sites?:string[]){
  const from=allegianceRealm(w,person)!,assets=civilResponseAssets(w,from,[person],to),accounts:{from:string;to:string;coins:number}[]=[],f=w.realm!.fiscal;
+ if(sites){assets.cities=assets.cities.filter(id=>sites.includes(id));assets.localSites=assets.localSites.filter(id=>sites.includes(id));assets.armies=assets.armies.filter(id=>sites.includes(w.realm!.armies.find(a=>a.id===id)!.location));assets.troops=assets.armies.reduce((n,id)=>{const a=w.realm!.armies.find(a=>a.id===id)!,local=assets.localSites.includes(a.location)&&(a.payer??'').startsWith(from+'|');return n+(a.regiments?.filter(u=>regimentFollows(u,a,[person],local)).reduce((m,u)=>m+u.troops,0)??a.troops);},0);}
  if(from!==to)for(const [key,balance] of Object.entries(f?.balances??{})){
   if(!key.startsWith(from+'|'))continue;
   const territory=key.slice(from.length+1),sites=descendantSites(territory),total=sites.filter(id=>w.realm!.cities[id]?.controller===from).reduce((n,id)=>n+w.realm!.cities[id].population,0),part=sites.filter(id=>assets.cities.includes(id)).reduce((n,id)=>n+w.realm!.cities[id].population,0),target=to+'|'+territory;
@@ -59,8 +60,8 @@ export function civilTransferPreview(w:World,war:War,person:string,to:RealmId){
  return {...preview,revision:civilRevision(preview)};
 }
 /** Caller runs this inside the stance transaction. No new government or resource pool. */
-export function joinCivilCamp(w:World,war:War,person:string,to:RealmId){
- const q=civilTransferPreview(w,war,person,to);if(q.from===to)return q;
+export function joinCivilCamp(w:World,war:War,person:string,to:RealmId,sites?:string[]){
+ const q=civilTransferPreview(w,war,person,to,sites);if(q.from===to)return q;
  const commanders=new Map(q.armies.map(id=>[id,armyCommander(w,w.realm!.armies.find(a=>a.id===id)!)]));
  const ids=splitRevoltArmies(w,[person],q.localSites,q.armies);
  if(ids.length!==q.armies.length)throw new Error('响应部队已变化，请重新确认交接');
@@ -72,13 +73,13 @@ export function joinCivilCamp(w:World,war:War,person:string,to:RealmId){
  for(const [id,commander] of Object.entries(w.mobility?.armyCommanders??{}))if(commander===person&&!ids.includes(Number(id)))delete w.mobility!.armyCommanders![Number(id)];
  if(w.mobility?.commanders[q.from]===person)delete w.mobility.commanders[q.from];
  for(const [id,pending] of Object.entries(w.mobility?.pendingCommanders??{}))if(pending.person===person||allegianceRealm(w,pending.person)!==w.realm!.armies.find(a=>a.id===Number(id))?.realm)delete w.mobility!.pendingCommanders![Number(id)];
- for(const p of q.accounts){w.realm!.fiscal!.balances[p.from]-=p.coins;w.realm!.fiscal!.balances[p.to]=(w.realm!.fiscal!.balances[p.to]??0)+p.coins;fiscalRecord(w,to,p.from,p.to,p.coins,'内战响应县域实际公款交接');}
+ for(const p of q.accounts){w.realm!.fiscal!.balances[p.from]-=p.coins;w.realm!.fiscal!.balances[p.to]=(w.realm!.fiscal!.balances[p.to]??0)+p.coins;fiscalRecord(w,to,p.from,p.to,p.coins,war.civil?'内战响应县域实际公款交接':'归附县域实际公款交接');}
  for(const site of q.cities){const c=w.realm!.cities[site];c.controller=to;if(c.owner===to){delete c.occupiedByWar;delete c.occupiedSince;delete c.occupiedFrom;}else{c.occupiedByWar=war.id;c.occupiedSince=w.day;delete c.occupiedFrom;}const county=countyTerritory(site);delete w.realm!.local?.seats[localKey(q.from,county)];setLocalHolder(w,county,to,person);}
  for(const r of [q.from,to])syncCourt(w,r);
  reconcileOfficeAllegiance(w);reconcileServiceAllegiance(w);syncRelationships(w);syncGovernance(w);inheritCivilFronts(w,war);
- war.civil!.supporters=war.civil!.supporters.filter(id=>id!==person);if(to===war.attacker)war.civil!.supporters.push(person);
+ if(war.civil){war.civil.supporters=war.civil.supporters.filter(id=>id!==person);if(to===war.attacker)war.civil!.supporters.push(person);
  war.civil!.cities=Object.keys(w.realm!.cities).filter(id=>w.realm!.cities[id].controller===war.attacker);
- war.civil!.armies=w.realm!.armies.filter(a=>a.realm===war.attacker).map(a=>a.id!);
+ war.civil!.armies=w.realm!.armies.filter(a=>a.realm===war.attacker).map(a=>a.id!);}
  // A local officer keeps only the transferred county seats; upper mandates do not move wholesale.
  if(!governmentOf(w,to))throw new Error('接收阵营已结束');
  return q;

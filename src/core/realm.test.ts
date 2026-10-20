@@ -3,7 +3,8 @@ import {routeGrant,localBalance} from './treasury';
 import { describe,it,expect } from 'vitest';
 import {act,advance,planRoute} from './world';
 import { serializeWorld,parseWorld } from './save';
-import { actRealm,realmReason,realmForecast,playerRealm,syncGovernance,cityYield } from './realm';
+import { actRealm,realmReason,realmForecast,playerRealm,syncGovernance,cityYield,advanceRealm } from './realm';
+import { calendarDate } from './calendar';
 import { roads,siteById } from '../data/scenario';
 import type { World } from './types';
 const sandbox=(id='xiao-yan')=>newCampaignWorld(id,undefined,'sandbox');
@@ -35,7 +36,33 @@ describe('沙盒政治经济军事',()=>{
  });
  it('事件暂停时间且拒绝其他命令，资源不足可以选择搁置',()=>{
   const w=sandbox();advance(w,100);expect(w.day).toBe(90);expect(w.realm!.event).not.toBeNull();const before=structuredClone(w);expect(()=>act(w,{type:'provision'})).toThrow('待决');expect(w).toEqual(before);advance(w,10);expect(w.day).toBe(90);
-  w.realm!.treasuries.liang.grain=0;expect(()=>act(w,{type:'realm',action:'event',choice:'fund'})).toThrow('不足');act(w,{type:'realm',action:'event',choice:'decline'});advance(w);expect(w.day).toBe(91);validate(w);
+  w.realm!.treasuries.liang.grain=0;w.realm!.treasuries.liang.coins=0;expect(()=>act(w,{type:'realm',action:'event',choice:'fund'})).toThrow('不足');act(w,{type:'realm',action:'event',choice:'decline'});advance(w);expect(w.day).toBe(91);validate(w);
+ });
+ it('政务事件按城市情境选址，秋季出秋收、非汛期不出水患',()=>{
+  const w=sandbox(),s=w.realm!,r=playerRealm(w),event=()=>s.event as {kind:string;reason?:string}|null;
+  for(const c of Object.values(s.cities)){c.controller=r;c.owner=r;c.governor='xiao-yan';c.order=100;c.prosperity=100;}
+  let d=1;while(calendarDate(d).getUTCMonth()+1!==9)d++;w.day=d;s.lastEvent=w.day-100;s.event=null;s.lastEventKind=undefined;advanceRealm(w);
+  expect(event()?.kind).toBe('harvest');expect(event()?.reason).toBe('秋收在即');
+ });
+ it('情境事件连续两次不重复同种，并取得分最高城',()=>{
+  const w=sandbox(),s=w.realm!,r=playerRealm(w),event=()=>s.event as {kind:string;site:string}|null;
+  for(const c of Object.values(s.cities)){c.controller=r;c.owner=r;c.governor=null;c.order=100;c.prosperity=100;}
+  s.cities.jiankang.governor='xiao-yan';s.cities.jiankang.order=10;s.cities.jiankang.prosperity=10;
+  let d=1;while(calendarDate(d).getUTCMonth()+1!==1)d++;w.day=d;s.lastEvent=w.day-100;s.event=null;s.lastEventKind=undefined;advanceRealm(w);
+  expect(event()?.kind).toBe('market');expect(event()?.site).toBe('jiankang');
+  w.day+=365;s.cities.jiankang.governor='xiao-yan';s.cities.jiankang.order=10;s.cities.jiankang.prosperity=10;s.event=null;s.lastEvent=w.day-100;advanceRealm(w);expect(event()?.kind).toBe('dispute');expect(event()?.site).toBe('jiankang');
+ });
+ it('酌量处置按半额结算且无搁置惩罚，资源不足拒绝',()=>{
+  const w=sandbox(),s=w.realm!;
+  s.event={kind:'corruption',site:'jiankang',day:w.day};s.lastEvent=w.day;
+  const t=s.treasuries.liang;t.coins=300;const influence=s.influence,order=s.cities.jiankang.order;
+  act(w,{type:'realm',action:'event',choice:'partial'});
+  expect(t.coins).toBe(283);expect(s.influence).toBe(influence+5);expect(s.cities.jiankang.order).toBe(order+2);expect(s.event).toBeNull();
+  s.event={kind:'flood',site:'jiankang',day:w.day};s.lastEvent=w.day;t.grain=10;
+  expect(realmReason(w,{type:'realm',action:'event',choice:'partial'})).toContain('不足');expect(()=>act(w,{type:'realm',action:'event',choice:'partial'})).toThrow();
+ });
+ it('旧档无 lastEventKind 字段仍合法',()=>{
+  const w=sandbox();advance(w,100);delete w.realm!.lastEventKind;expect(parseWorld(serializeWorld(w))).toBeTruthy();
  });
  it('断粮先伤士气，持续缺粮才减员，遣散不退款',()=>{
   const w=sandbox();act(w,{type:'realm',action:'muster'});const a=w.realm!.armies[0];w.realm!.treasuries.liang.grain=0;a.supply=0;advance(w);expect(a.troops).toBe(600);expect(a.morale).toBe(98);advance(w);expect(a.troops).toBe(600);advance(w);expect(a.troops).toBe(597);expect(a.starvationDays).toBe(3);const coins=w.realm!.treasuries.liang.coins;act(w,{type:'realm',action:'disband'});expect(w.realm!.armies).toHaveLength(0);expect(w.realm!.treasuries.liang.coins).toBe(coins);validate(w);

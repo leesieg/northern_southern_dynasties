@@ -65,3 +65,15 @@ describe('strategic choice and finite war',()=>{
   expect(strategicTargets(w,'west').length).toBeGreaterThan(0);advanceRealmStrategy(w);expect(activeWars(w).some(v=>v.attacker==='west')).toBe(false);expect(s.armies.some(a=>a.realm==='west')).toBe(false);expect(s.influence).toBe(500);expect(s.strategy?.west).toBeUndefined();
  });
 });
+
+it('prepares a second hostile border front only with distinct reserves after another country fractures',()=>{
+ const {w,s,actor}=preparedWest();s.armies=[];w.mobility!.armyCommanders={};for(const id of ['li-bi','dugu-xin','yuwen-hu','yu-jin','yang-zhong']){const a=army(w,'west','changan',1200);w.mobility!.armyCommanders![a.id!]=id;w.mobility!.residences[id]={site:'changan',journey:null};}
+ s.war={attacker:'east',defender:'west',target:'luoyang',started:0,score:0};delete s.wars;ensureWars(w);army(w,'east','luoyang',600);s.governments!.realms.liang.support=20;
+ const target=strategicTargets(w,'west').find(t=>t.enemy==='liang')!;expect(target).toBeDefined();s.strategy!.west={phase:'prepare',target:target.id,goal:'territory',since:0,reviewed:0,reason:'边防机会'};
+ advanceRealmStrategy(w);expect(activeWars(w).some(v=>v.attacker==='west'&&v.defender==='liang')).toBe(true);expect(activeWars(w).some(v=>v.attacker==='east'&&v.defender==='west')).toBe(true);expect(s.personalInfluence![actor]).toBeLessThan(500);expect(parseWorld(serializeWorld(w))).toEqual(w);
+});
+
+it('does not reuse a committed army to open the second border front',()=>{
+ const {w,s}=preparedWest();s.war={attacker:'east',defender:'west',target:'luoyang',started:0,score:0};delete s.wars;ensureWars(w);army(w,'east','luoyang',6000);s.governments!.realms.liang.support=20;
+ const target=strategicTargets(w,'west').find(t=>t.enemy==='liang')!;s.strategy!.west={phase:'prepare',target:target.id,goal:'territory',since:0,reviewed:0,reason:'边防机会'};advanceRealmStrategy(w);expect(activeWars(w).some(v=>v.attacker==='west'&&v.defender==='liang')).toBe(false);
+});

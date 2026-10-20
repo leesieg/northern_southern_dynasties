@@ -421,3 +421,33 @@ dialog.paper-dialog.paper-dialog .event-decision>footer>button,
 dialog.paper-dialog.paper-dialog :is(.war-treaty-preview,.war-report-paper)>footer>button{
  background:linear-gradient(#796033,#66522f) #796033!important;--dialog-ink:#fff1d2;color:var(--dialog-ink);text-shadow:none;
 }
+
+/* Dialog consistency pass: direct-child notices, one command-button family, readable ink on paper. */
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer{
+ display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;position:sticky;bottom:0;margin:0;padding:12px 20px;
+ background:var(--dossier-texture) var(--dossier-paper);border-top:1px solid var(--dossier-edge);clear:both;
+}
+dialog.paper-dialog.paper-dialog.pause-dialog>:is(.pause-error,[role=alert]){margin:0 20px 12px;padding:6px 10px;border-left:2px solid #985b43;background:#ac684b0d;color:#7a3f2e;font-size:var(--text-caption)}
+dialog.paper-dialog.paper-dialog.pause-dialog>.dynasty-event-footer{justify-content:space-between}
+dialog.paper-dialog.paper-dialog.pause-dialog>.dynasty-event-footer>.pause-error{margin:0;flex:1;border:0;padding:0;background:none}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience) :is(.pause-paper-content,.event-decision)>footer,
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer{gap:10px;justify-content:flex-end;flex-wrap:wrap}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience) :is(.pause-paper-content,.event-decision)>footer>button,
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer>button{min-height:36px;padding:8px 22px;border:1px solid #99835b;border-radius:0;font:var(--text-body)/1.3 var(--serif);letter-spacing:.5px;box-shadow:inset 0 0 0 2px #141e1733}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer>button:not(.primary):not(.danger){background:#ece3cbcc;color:var(--dossier-ink);--dialog-ink:var(--dossier-ink)}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer>button.primary{background:linear-gradient(#796033,#66522f) #796033;color:#fff1d2;--dialog-ink:#fff1d2;border-color:#8d713e}
+dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer>button.danger{background:linear-gradient(#966352,#754536);color:#fff0d5;border-color:#91614e}
+/* Inline "go to" links inside notices share one quiet ink-button look. */
+dialog.paper-dialog.paper-dialog.pause-dialog .pause-paper-content>button{display:block;clear:both;margin:14px 0 0 auto;min-height:34px;padding:6px 16px;border:1px solid #99835b;border-radius:0;background:#26372c;color:#f0e3c3;font:var(--text-body)/1.3 var(--serif);box-shadow:none}
+/* Quarterly report: ink was tuned for the old dark notice; paper needs dark ink. */
+dialog.paper-dialog .season-report{border-top:1px solid var(--dossier-edge)}
+dialog.paper-dialog .season-report :is(th,td){border-bottom-color:var(--dossier-edge);padding:7px 10px}
+dialog.paper-dialog .season-report th{font-weight:600;color:var(--dossier-muted)}
+dialog.paper-dialog .season-report .positive{color:#3f6a3a}
+dialog.paper-dialog .season-report .negative{color:#9b3a2e}
+dialog.paper-dialog .season-report h4{font:var(--text-reading) var(--serif);margin:14px 0 4px}
+dialog.paper-dialog .season-report ul{font-size:var(--text-caption)}
+@media(max-width:760px){dialog.paper-dialog.paper-dialog.pause-dialog:not(.pause-dialog--audience)>footer{padding:10px 14px}dialog.paper-dialog.paper-dialog.pause-dialog>:is(.pause-error,[role=alert]){margin-inline:14px}}
+/* Header paintings never leave the window: clip the band and every art layer inside it. */
+.focused-shell .modal.operations-window>.operations-header{overflow:hidden;clip-path:inset(0)}
+.focused-shell .modal.operations-window>.operations-header :is(.operations-header-paint,.operations-header-illustration){max-width:100%;overflow:hidden}

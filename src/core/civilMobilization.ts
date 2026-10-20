@@ -86,8 +86,9 @@ export function ensureCivilMobilization(w:World,war:War){
  if(!qualifies(w,war))return;
  const c=war.civil!,fresh=!c.mobilization;
  const m=c.mobilization??={version:1,source:c.grievance===undefined?'political':'escalation',opened:w.day,lastDay:w.day,front:front(w,war),members:{},appeals:{}};
+ for(const [id,member] of Object.entries(m.members))if(member.lastCamp==='loyal'&&member.lastSwitch!==undefined&&!c.conduct?.[id]?.some(f=>f.kind==='switch'&&f.day===member.lastSwitch))delete member.lastSwitch;
  const ids=[...civilCandidates(w,war.defender,c.claimant),...civilCandidates(w,war.attacker,c.claimant)];
- for(const id of ids)if(!m.members[id]&&!civilAvailability(w,war,id)){const fixed=civilFixedSide(w,war,id),response=c.responses?.[id]?.choice,commission=w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.war===war.id&&q.commander===id),choice=fixed??(allegianceRealm(w,id)===war.attacker?'rebel':commission||response==='troops'||response==='supply'?'loyal':'pending');m.members[id]={choice,day:w.day,due:w.day+15,checked:w.day,...(choice==='rebel'||choice==='loyal'?{lastCamp:choice,lastSwitch:w.day}:{})};}
+ for(const id of ids)if(!m.members[id]&&!civilAvailability(w,war,id)){const fixed=civilFixedSide(w,war,id),response=c.responses?.[id]?.choice,commission=w.militaryCampaigns?.items.some(q=>q.status==='active'&&q.war===war.id&&q.commander===id),choice=fixed??(allegianceRealm(w,id)===war.attacker?'rebel':commission||response==='troops'||response==='supply'?'loyal':'pending');m.members[id]={choice,day:w.day,due:w.day+15,checked:w.day,...(choice==='rebel'||choice==='loyal'?{lastCamp:choice,...(choice==='rebel'?{lastSwitch:w.day}:{})}:{})};}
  return fresh?m:c.mobilization;
 }
 export function civilStanceQuote(w:World,war:War,id:string,choice:CivilStance){
@@ -101,6 +102,13 @@ export function civilStanceQuote(w:World,war:War,id:string,choice:CivilStance){
  const transfer=from&&to&&crossing?civilTransferPreview(w,war,id,to):null;
  const revision=civilRevision({war:war.id,day:w.day,id,choice,member,transfer:transfer?.revision??null});
  return {reason,revision,from,to,transfer,crossing};
+}
+/** Same decision gates used by NPC review and the public negotiation preview. */
+export function civilResponseReview(w:World,war:War,person:string,side:'loyal'|'rebel'){
+ const member=war.civil?.mobilization?.members[person],evaluation=civilStanceEvaluation(w,war,person),quote=civilStanceQuote(w,war,person,side);
+ const crossing=allegianceRealm(w,person)!==civilCampRealm(war,side),repeat=crossing&&member?.lastSwitch!==undefined;
+ const threshold=repeat?45:25,remaining=repeat?Math.max(0,60-(w.day-member!.lastSwitch!)):0;
+ return {score:evaluation.score,threshold,remaining,reason:quote.reason,ready:!quote.reason&&(side==='rebel'?evaluation.score:-evaluation.score)>=threshold};
 }
 function record(w:World,text:string){w.chronicle.push({day:w.day,person:'player',text});w.chronicle=w.chronicle.slice(-100);}
 export function civilPoliticsReason(w:World,c:CivilPoliticsCommand,actor=w.characterId!){
@@ -122,14 +130,14 @@ export function actCivilPolitics(w:World,c:CivilPoliticsCommand,actor=w.characte
   const q=civilStanceQuote(next,war,actor,c.choice),old=next.relationships?.oaths[actor];
   if(q.crossing){joinCivilCamp(next,war,actor,q.to!);recordCivilFact(next,war,actor,{source:'switch:'+next.day,kind:'switch',side:c.choice==='rebel'?'attack':'defend',day:next.day,amount:1});if(old)changeRelationOpinion(next,actor,old.lord,-25);const oldChief=governingAuthority(next,q.from!);if(oldChief!==old?.lord)changeRelationOpinion(next,actor,oldChief,-25);}
   m.members[actor]={...m.members[actor],choice:c.choice,day:next.day,checked:next.day};delete m.members[actor].unavailable;
-  if(c.choice!=='watch'&&m.members[actor].lastCamp!==c.choice){m.members[actor].lastCamp=c.choice;m.members[actor].lastSwitch=next.day;}
+  if(c.choice!=='watch'&&m.members[actor].lastCamp!==c.choice){m.members[actor].lastCamp=c.choice;if(q.crossing)m.members[actor].lastSwitch=next.day;}
   activateCivilPromises(next,war,actor,c.choice);
   record(next,(getPerson(next,actor)?.name??actor)+'选择'+civilStanceNames[c.choice]+(q.transfer?'，实际交接 '+q.transfer.cities.length+' 处县域、'+q.transfer.troops+' 名兵员；原法理与真实损失保留。':'；效忠与兵地维持实际状态。'));
  }
  if(next!==w)Object.assign(w,next);
 }
 export function civilArmyObserving(w:World,war:War,a:Army){
- return [a.owner,armyCommander(w,a)].some(id=>{const m=id&&war.civil?.mobilization?.members[id];return !!m&&!m.unavailable&&m.choice==='watch';});
+ return [a.owner,armyCommander(w,a)].some(id=>{const m=id&&war.civil?.mobilization?.members[id];return !!m&&!m.unavailable&&(m.choice==='watch'||m.choice==='pending');});
 }
 export function advanceCivilMobilization(w:World){
  for(const war of [...activeWars(w)]){
@@ -141,6 +149,7 @@ export function advanceCivilMobilization(w:World){
    const fixed=civilFixedSide(w,war,id);if(fixed){member.choice=fixed;continue;}
    if(id===w.characterId){if(member.choice==='pending'&&w.day>=member.due){member.choice='watch';member.day=w.day;member.checked=w.day;}continue;}
    const appealed=Math.max(m.appeals[id+'|rebel']??-1,m.appeals[id+'|loyal']??-1)>=member.checked||civilCommitments(w).some(q=>q.civil.war===war.id&&q.person===id&&q.civil.created>=member.checked&&['offered','active'].includes(q.civil.status));
+   if(member.choice==='pending'&&w.day<member.due&&!appealed&&!changed)continue;
    if(member.choice!=='pending'&&!changed&&!appealed&&w.day-member.checked<30)continue;
    const evaluation=civilStanceEvaluation(w,war,id);member.checked=w.day;
    let choice=evaluation.choice;
@@ -168,5 +177,5 @@ export function advanceCivilMobilization(w:World){
 export function validCivilMobilization(w:World,war:War){
  const m=war.civil?.mobilization;if(m===undefined)return true;
  const object=(v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v),day=(n:number,max=w.day)=>Number.isSafeInteger(n)&&n>=0&&n<=max;
- return object(m)&&m.version===1&&['political','escalation'].includes(m.source)&&day(m.opened)&&day(m.lastDay)&&m.lastDay>=m.opened&&typeof m.front==='string'&&m.front.length<=1024&&object(m.members)&&object(m.appeals)&&Object.entries(m.members).every(([id,q])=>!!getPerson(w,id)&&object(q)&&['pending','loyal','rebel','watch'].includes(q.choice)&&day(q.day)&&day(q.checked)&&day(q.due,w.day+15)&&(q.lastCamp===undefined?q.lastSwitch===undefined:['loyal','rebel'].includes(q.lastCamp)&&day(q.lastSwitch!))&&(q.unavailable===undefined||typeof q.unavailable==='string'&&q.unavailable.length<=100))&&Object.entries(m.appeals).every(([key,n])=>{const split=key.lastIndexOf('|');return !!getPerson(w,key.slice(0,split))&&['loyal','rebel'].includes(key.slice(split+1))&&day(n);});
+ return object(m)&&m.version===1&&['political','escalation'].includes(m.source)&&day(m.opened)&&day(m.lastDay)&&m.lastDay>=m.opened&&typeof m.front==='string'&&m.front.length<=1024&&object(m.members)&&object(m.appeals)&&Object.entries(m.members).every(([id,q])=>!!getPerson(w,id)&&object(q)&&['pending','loyal','rebel','watch'].includes(q.choice)&&day(q.day)&&day(q.checked)&&day(q.due,w.day+15)&&(q.lastCamp===undefined?q.lastSwitch===undefined:['loyal','rebel'].includes(q.lastCamp)&&(q.lastSwitch===undefined||day(q.lastSwitch)))&&(q.unavailable===undefined||typeof q.unavailable==='string'&&q.unavailable.length<=100))&&Object.entries(m.appeals).every(([key,n])=>{const split=key.lastIndexOf('|');return !!getPerson(w,key.slice(0,split))&&['loyal','rebel'].includes(key.slice(split+1))&&day(n);});
 }

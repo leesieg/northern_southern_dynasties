@@ -1,5 +1,6 @@
 import {allPeople} from './personRegistry';
 import {getPerson} from './personRegistry';
+import {ambitionDeed} from './ambitions';
 import {worldRealms} from './polityRuntime';
 import {siteById} from '../data/scenario';
 
@@ -21,7 +22,7 @@ export function awardDeed(w:World,realm:RealmId,person:string,source:string,amou
  const cut=source.lastIndexOf(':'),sequence=Number(source.slice(cut+1));if(cut<0||!Number.isSafeInteger(sequence)||sequence<0)throw new Error('成果须有稳定流水号');
  const s=ensureDeeds(w)!,key=realm+'|'+person+'|'+source.slice(0,cut),ranges=s.settled[key]??[];if(contains(ranges,sequence))return 0;
  const before=g.merit[person]??0,after=Math.max(0,Math.min(100,before+amount));
- s.settled[key]=insert(ranges,sequence);g.merit[person]=after;s.recent.push({source,person,realm,day:w.day,amount:after-before,reason,...(evidence?{evidence}: {})});s.recent=s.recent.slice(-512);return after-before;
+ s.settled[key]=insert(ranges,sequence);g.merit[person]=after;s.recent.push({source,person,realm,day:w.day,amount:after-before,reason,...(evidence?{evidence}: {})});s.recent=s.recent.slice(-512);if(after>before)ambitionDeed(w,person,source,after-before);return after-before;
 }
 export function validDeeds(w:World){
  if(w.deeds===undefined)return true;

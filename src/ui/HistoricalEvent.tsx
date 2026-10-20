@@ -1,3 +1,4 @@
+import {civilSettlements} from '../core/civilAftermath';
 import {HistoricalArmyOrder} from './HistoricalArmyOrder';
 import {militaryArmyView} from '../core/militaryView';
 import type {RealmId} from '../core/realm';
@@ -5,7 +6,7 @@ import {warArmySide} from '../core/civilWars';
 import {useEffect,useState} from 'react';
 import type {World,GameCommand} from '../core/types';
 import type {HistoricalEventInstance} from '../core/historicalEventState';
-import {historicalPact,historicalArmy,historicalTitle,historicalReason,visibleHistoricalMilestones,historicalDisputes,historicalSecurityCommand,settlementReview} from '../core/historicalEvents';
+import {historicalCurrentSummary,historicalPact,historicalArmy,historicalTitle,historicalReason,visibleHistoricalMilestones,historicalDisputes,historicalSecurityCommand,settlementReview} from '../core/historicalEvents';
 import {historicalMusterQuote} from '../core/historicalMuster';
 import {pactReformReview,pactQuote,pactReason,receptionNames,type ReceptionTerms,type PactCommand} from '../core/allegiancePacts';
 import {governingExecutives,governingAuthority} from '../core/government';
@@ -74,7 +75,7 @@ export function HistoricalContent({world:w,event:e,pending,send,navigation:n,err
  <section className="historical-workspace"><DetailTabs label="事件文书" value={tab} onChange={setTab} items={[{id:'situation',label:'局势',icon:'world'},{id:'history',label:'经过',icon:'diligent'},{id:'people',label:'人物',icon:'person'}]}/>
  <div className="historical-scroll">
  {tab==='history'?<ol className="historical-timeline">{milestones.map(m=><li key={m.key}><time>{dateLabel(m.day,w.scriptId)}</time><p>{m.text}</p></li>)}</ol>:tab==='people'?<div className="historical-people">{[...new Set([e.actors.protagonist,e.actors.protector,...milestones.flatMap(m=>m.people)])].map(id=><button key={id} onClick={()=>n.onPerson(id)}><CharacterPortrait world={w} characterId={id} compact/><span>{getPerson(w,id)?.name}<LifeSummary world={w} id={id}/></span></button>)}</div>:<>
- <p className="historical-lead">{e.result??milestones.at(-1)?.text??'当前事实尚未形成新的交涉。'}</p>
+ <p className="historical-lead">{historicalCurrentSummary(w,e)}</p>
  {hasChoices?<>
  {mine&&d.kind==='north'&&<label className="historical-host">接纳朝廷 <select value={host} onChange={v=>setHost(v.target.value as RealmId)} disabled={pending}>{worldRealms(w).filter(r=>r!==allegianceRealm(w,w.characterId!)&&!w.realm!.annexed?.[r]).map(r=><option key={r} value={r}>{regimeName(w,r)}</option>)}</select></label>}
  <SingleChoiceCards value={choice} onChange={setChoice} label={council?'议定军政交接':'决定下一步'} disabled={pending} options={decisions}/>
@@ -84,6 +85,7 @@ export function HistoricalContent({world:w,event:e,pending,send,navigation:n,err
  <section className="historical-consequences"><h3>{reception?'接纳后果':'当前约定与争议'}</h3><dl><div><dt>追随兵员</dt><dd>{quote?.troops??0} 人</dd></div><div><dt>{reception?'接纳国中央支出':'现行条款'}</dt><dd>{reception?(quote?.protection??0)+' 钱':receptionNames[p.terms]}</dd></div><div><dt>原地部队</dt><dd>{quote?.remaining??0} 人</dd></div></dl><p>{reception&&terms!=='personal'?'接纳将承担保护战争；原县域归属不随军队转移。':p.integrationCompletedAt!==undefined?'已按约完成改编。':'授职、调军与安置须另行办理。'}</p>{review&&<p>原定改编：{dateLabel(review.due,w.scriptId)}；下次月初核验：{dateLabel(review.nextReview,w.scriptId)}。{review.reasons.join('、')||'钱饷与安全条件满足，等待月度结算'}；双方已确认，无须再次达到好感门槛。</p>}{p.status==='active'&&<p>{historicalDisputes(w,e,p).join('、')||'当前没有未解决的违约事项。'}</p>}{p.offer&&<p>新条款由 {getPerson(w,p.offer.proposer)?.name} 提出；等待 {getPerson(w,p.offer.respondent)?.name} 答复。</p>}{command?.action==='propose'&&<p>本次仅提出改约，个人影响力 −10；对方确认后才生效。</p>}</section>
 
  </>:null}
+ {!war&&e.warId!==undefined&&<section className="historical-consequences"><h3>乱后地方战事</h3>{w.realm?.wars?.filter(v=>v.civil&&v.civil.crisis===(civilSettlements(w).find(s=>s.war===e.warId)?.crisis??e.warId)).map(v=><button key={v.id} onClick={()=>n.onWar(v.id!)}>{getPerson(w,v.civil!.claimant)?.name} · {siteById[v.civil!.base]?.name} · 地方抵抗 ›</button>)}<p>朝廷执政交接不等于地方全部归顺；北方占领、其他军府与未完外战继续保留。</p></section>}
  {war&&<section className="historical-consequences"><h3>{siteById[war.target]?.name}军情</h3><p>起兵方兵力 {w.realm!.armies.filter(v=>warArmySide(w,war,v)==='attack').every(a=>militaryArmyView(w,a).exact)?w.realm!.armies.filter(v=>warArmySide(w,war,v)==='attack').reduce((sum,v)=>sum+v.troops,0)+' 人':'未详'}</p><p>{w.realm?.sieges?.find(s=>s.war===war.id&&s.site===war.target)?'已形成围城；守军、补给与战况详见本场战事。':'尚未形成首都围城；以军队实际行程为准。'}</p><button onClick={()=>n.onWar(war.id!)}>查看战况与议和 ›</button><button onClick={()=>setOrderTarget(war.target)}>{war.civil?.supporters.includes(w.characterId!)?'进军首都':'救援首都'} ›</button>{war.civil&&<button onClick={()=>setOrderTarget(war.civil!.base)}>调军至{siteById[war.civil.base].name} ›</button>}<button onClick={n.onArmy}>军队与粮运 ›</button></section>}
  {!mine&&p?.status!=='pending'&&<div className="historical-links"><button onClick={n.onCourt}>朝廷与任命</button><button onClick={n.onArmy}>军队与供饷</button><button onClick={()=>n.onSite(e.site)}>当地治理</button></div>}
  {!p&&!mine&&!war&&<p>当前无待办裁决。可以翻阅已经发生的经过。</p>}

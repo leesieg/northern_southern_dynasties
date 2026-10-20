@@ -16,3 +16,10 @@
 @media(max-width:700px){.pause-dialog--audience .service-audience-stage{min-height:136px;padding:14px 12px 12px 146px}.pause-audience-decoration .service-audience-title{top:-41px}.pause-audience-decoration .service-audience-figure{top:-77px}}
 @media(max-width:600px){.pause-dialog--audience{transform:translateY(36px)}.pause-dialog-scroll{max-height:calc(100dvh - 100px);padding:0 8px 10px}}
 @media(max-width:480px){.pause-dialog--audience{transform:translateY(25px)}.pause-dialog-scroll{max-height:calc(100dvh - 75px)}.pause-dialog--audience .service-audience-stage{min-height:128px;padding:12px 9px 10px 111px}.pause-audience-decoration .service-audience-title{top:-36px}.pause-audience-decoration .service-audience-figure{top:-52px;left:-6px}}
+.season-report table{width:100%;border-collapse:collapse;font-size:var(--text-caption)}
+.season-report th,.season-report td{padding:5px 8px;text-align:right;border-bottom:1px solid #b6a77633}
+.season-report td:first-child,.season-report th:first-child{text-align:left}
+.season-report .positive{color:#b0c79e}
+.season-report .negative{color:#e7a394}
+.season-report h4{margin:12px 0 4px}
+.season-report ul{margin:0;padding-left:18px;font-size:var(--text-caption);line-height:1.9}

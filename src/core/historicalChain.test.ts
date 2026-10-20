@@ -1,3 +1,5 @@
+import {civilReason} from './civilWars';
+import {historicalRiseCommand} from './historicalEvents';
 import {describe,it,expect} from 'vitest';
 import {createCampaign} from './campaignStart';
 import {advance,act} from './world';
@@ -16,7 +18,7 @@ describe('Hou Jing historical chain',()=>{
    rebellion=['rebellion','siege','court'].includes(w.historical!.items[0].phase);
   }
   const e=w.historical!.items[0],army=w.realm!.armies.find(a=>a.owner==='hou-jing'||w.mobility?.armyCommanders?.[a.id!]==='hou-jing');
-  expect(e.phase).toBe('rebellion');
+  expect(e.phase,rebellion?undefined:civilReason(w,historicalRiseCommand(w,e),'hou-jing')).toBe('rebellion');
   expect(w.realm!.wars?.some(v=>v.civil?.claimant==='hou-jing')).toBe(true);
   expect(army?.troops??0).toBeGreaterThanOrEqual(300);
   const war=w.realm!.wars!.find(v=>v.civil?.claimant==='hou-jing')!;

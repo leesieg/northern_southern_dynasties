@@ -3,6 +3,7 @@ import type {RetinueState,RetinueCommand} from './retinue';
 import type {MobilityState,MobilityCommand} from './mobilityState';
 import type {ServiceState,ServiceCommand} from './assignments';
 import type {PauseEvent} from './pauseEvents';
+import type {NoticeSettings} from './noticePolicy';
 import type {DutiesState,DutyCommand} from './duties';
 import type { LifeState,LifeCommand } from './lifeState';
 import type { DiplomacyState,DiplomacyCommand } from './diplomacy';
@@ -55,6 +56,8 @@ export interface World {
   enterprises?: import('./enterprises').Enterprises;
   militaryCampaigns?: import('./militaryCampaigns').MilitaryCampaigns;
   deeds?: import('./deeds').Deeds;
+  ambitions?: import('./ambitions').AmbitionState;
+  seasonReport?: import('./seasonReport').SeasonReportState;
   economy?: import('./personalEconomyRules').PersonalEconomyState;
   version: 2; retinue?:RetinueState; mobility?:MobilityState; service?:ServiceState; duties?:DutiesState; life?:LifeState; diplomacy?:DiplomacyState; relationships?:RelationshipState; families?:FamilyState; lifestyles?:LifestyleState; identities?:IdentityState; mode?:'sandbox'; realm?:RealmState; scriptId?:string; social?:Social; characterId?:string; campaign?:Campaign; holdings: Holdings; contentVersion: string; calendarSince?:number; day: number; people: Person[]; chronicle: Chronicle[];
 }
@@ -65,10 +68,10 @@ export type GameCommand = import('./civilAftermath').CivilAftermathCommand | imp
   | { type: 'travel'; destination: string }
   | { type: 'provision' }
   | { type: 'commission' }
-  | import('./localAdministration').LocalCommand | import('./treasury').FiscalCommand | RetinueCommand | MobilityCommand | ServiceCommand | DutyCommand | LifeCommand | DiplomacyCommand | RelationshipCommand | CourtCommand | GovernmentCommand | BuildCommand | SocialCommand | RealmCommand | LifestyleCommand;
+  | import('./localAdministration').LocalCommand | import('./treasury').FiscalCommand | RetinueCommand | MobilityCommand | ServiceCommand | DutyCommand | LifeCommand | DiplomacyCommand | RelationshipCommand | CourtCommand | GovernmentCommand | BuildCommand | SocialCommand | RealmCommand | LifestyleCommand | import('./ambitions').AmbitionCommand;
 export type Request = (
   | { type: 'init'; skipLoad?:boolean }
-  | { type:'new';mode?:'sandbox'|'tutorial';scriptId?:string;characterId?:string }
+  | { type:'new';mode?:'sandbox'|'tutorial';scriptId?:string;characterId?:string;ambition?:import('./ambitions').AmbitionKind }
   | { type:'resume'|'menu' }
   | { type: 'speed'; speed: number }
   | { type: 'step' }
@@ -81,12 +84,14 @@ export type Request = (
   | { type: 'load'; slot: string }
   | { type: 'delete-save'; slot: string }
   | { type: 'export' }
-  | { type: 'import'; text: string }) & {requestId?:string};
+  | { type: 'import'; text: string }
+  | { type:'notice-settings';settings:NoticeSettings }) & {requestId?:string};
 export interface SaveInfo { content?:import('./contentBinding').ContentLock;scriptName?:string;date?:string; mode?:'sandbox'; scriptId?:string; characterName?:string; id: string; savedAt: number; day: number }
 export type Reply =
   | {type:'checkpoint';text:string|null}
   | {type:'receipt';requestId:string;ok:boolean;text?:string}
   | {type:'paused';events:PauseEvent[]}
+  | {type:'notices';events:PauseEvent[]}
   | { type:'screen';page:'menu'|'play' }
   | { type: 'world'; world: World; speed: number; slots: SaveInfo[]; lastSaved: number | null }
   | { type: 'notice'; text: string; error?: boolean }

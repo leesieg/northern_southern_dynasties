@@ -20,7 +20,7 @@ import {civilReason,actCivilWar,warCitySide} from './civilWars';
 import {activeWars} from './wars';
 import {worldRealms} from './polityRuntime';
 import {ensurePowerPolitics,actPower,powerReason} from './powerPolitics';
-import {ensureFiscal,territoryAccount,fiscalRecord} from './treasury';
+import {localBalance,ensureFiscal,territoryAccount,fiscalRecord} from './treasury';
 import {siteById} from '../data/scenario';
 import type {PauseEvent} from './pauseEvents';
 import {planRoute} from './world';
@@ -173,7 +173,7 @@ function npcDecision(w:World,e:Event){
   command=review&&concede&&!e.appliedEffects.includes('review-proposal:'+p.id)&&!historicalReason(w,reform,d.actor)?reform:{...base,optionId:concede||personInfluence(w,d.actor)<10?'withhold':'guarantee'};
  }else if(d.kind==='crisis'){
   const p=historicalPact(w,e),danger=!!p&&historicalDisputes(w,e,p).some(v=>v.includes('安全')||v.includes('兵权'));
-  if(danger||relationOpinion(w,d.actor,governingAuthority(w,e.host!))<-40){const q={...base,optionId:'rise'} as const;if(!historicalReason(w,q,d.actor))command=q;}
+  if(danger||relationOpinion(w,d.actor,governingAuthority(w,e.host!))<-40){const q={...base,optionId:'rise'} as const,blocked=historicalReason(w,q,d.actor);if(!blocked)command=q;else if(blocked==='须在自己或支持者实控县域举兵'&&prepareHistoricalBase(w,e))return;}
   const a=historicalArmy(w,d.actor);
   if(command.optionId==='wait'&&p&&a&&a.id===p.army&&a.troops<300&&!a.journey&&(a.owner===d.actor||armyCommander(w,a)===d.actor)){
    if(p.offer)return;
@@ -185,6 +185,19 @@ function npcDecision(w:World,e:Event){
   }
  }
  if(!historicalReason(w,command,d.actor))actHistorical(w,command,d.actor);
+}
+/** Relocation uses a real, currently legal base and the existing force; never hands over a remote county. */
+export function prepareHistoricalBase(w:World,e:Event){
+ const id=e.actors.protagonist,a=historicalArmy(w,id),at=personResidence(w,id),r=allegianceRealm(w,id);
+ if(id===w.characterId||!e.decision||!a||!r||a.troops<300||a.journey||at.traveling||(a.trainingUntil??0)>w.day||a.owner!==id&&armyCommander(w,a)!==id)return false;
+ const sites=Object.entries(w.realm!.cities).filter(([site,c])=>site!==a.location&&c.owner===r&&c.controller===r&&c.grain>=60&&localBalance(w,site)>=100&&!w.realm!.sieges?.some(s=>s.site===site)).map(([site])=>({site,route:planRoute(a.location,site,node=>w.realm!.cities[node].controller===r)})).filter(v=>v.route).sort((a,b)=>a.route!.days-b.route!.days);
+ for(const candidate of sites){
+  const next=structuredClone(w),unit=next.realm!.armies.find(v=>v.id===a.id)!;unit.location=candidate.site;unit.journey=null;next.mobility!.residences[id]={site:candidate.site,journey:null};
+  if(civilReason(next,historicalRiseCommand(next,e),id))continue;
+  const route=candidate.route!;a.journey={route:route.route,durations:route.durations,leg:0,elapsed:0,started:w.day};a.siege=0;dispatchNPC(w,id,candidate.site);e.decision.handled=true;e.handlingDue=w.day+Math.min(30,route.days+1);
+  remember(w,e,'base-relocation:'+w.day,'现驻地不能形成举兵基地，侯景与现有部曲沿实际道路调营至'+siteById[candidate.site].name+'；抵达后重新核验兵地与钱粮，不提前交城或赠兵。');return true;
+ }
+ return false;
 }
 /** An accepted private force must actually march into host territory before local settlement. */
 function marchToHost(w:World,e:Event,p:AllegiancePact){
@@ -254,7 +267,7 @@ export function advanceHistorical(w:World){
    if(occupied){const ruler=governmentOf(w,civilOrigin(live))!.ruler,c=w.custody?.records[ruler];if(c?.war===live.id)remember(w,e,'captive:'+ruler,'在城君主被本场战争俘获。',true);}
    continue;
   }
-  if(e.warId!==undefined){finish(w,e,!isAlive(w,id)||detained(w,id)?'起兵收场：侯景已死亡或被俘。':governingExecutives(w,e.host!).includes(id)?'战争结束：侯景取得实际执政权。':'战争结束，按已生效的和约与控制范围收场。');continue;}
+  if(e.warId!==undefined){finish(w,e,!isAlive(w,id)||detained(w,id)?'起兵收场：侯景已死亡或被俘。':governingExecutives(w,e.host!).includes(id)?(w.realm!.wars?.some(v=>v.civil?.crisis===e.warId)?'侯景取得梁廷执政权，地方军府仍在抵抗，乱局尚未结束。':'侯景取得实际执政权，本场朝廷争夺结束；地方与对外局势继续按实际状态演变。'):'战争结束，按已生效的和约与控制范围收场。');continue;}
   if(!isAlive(w,id)){finish(w,e,'侯景已故，未发生的事件不再继续。',true);continue;}
   if(detained(w,id)){finish(w,e,custodyInterruption,true);continue;}
   if(p){
@@ -293,6 +306,7 @@ export function advanceHistorical(w:World){
    if(breaches.length){
     delete e.stableSince;phase(w,e,'dispute','归附承诺出现争议：'+breaches.join('、')+'。');
     e.handlingDue??=w.day+30;
+    if(e.decision?.kind==='crisis'&&e.decision.handled&&e.milestones.some(m=>m.key==='base-relocation:'+e.decision!.created)){if(historicalArmy(w,id)?.journey||personResidence(w,id).traveling)continue;e.handlingDue=w.day;}
     if(w.day>=e.handlingDue&&(!e.decision||e.decision.handled&&e.decision.created<e.handlingDue)){ensurePlacementFund(w,e,p);decide(w,e,'crisis',id);npcDecision(w,e);}continue;
    }
    if(e.phase!=='settlement')phase(w,e,'settlement',p.integrationCompletedAt!==undefined?'部曲已按约完成改编。':'侯景已归附'+regimeName(w,p.to)+'，当前进入安置阶段。',allegianceRealm(w,id)===p.to);
@@ -329,3 +343,20 @@ export function historicalPending(w:World):PauseEvent[]{
  return result;
 }
 export function historicalPactCommands(w:World,e:Event):PactCommand[]{const p=historicalPact(w,e);return p?.offer?[true,false].map(accept=>({type:'pact',action:'respondOffer',id:p.id,revision:p.offer!.revision,accept})):p?.status==='pending'?[true,false].map(accept=>({type:'pact',action:'answer',id:p.id,accept})):[];}
+
+/** Explain the current dispute rather than repeating an unrelated placement receipt. */
+export function historicalCurrentSummary(w:World,e:Event){
+ const p=historicalPact(w,e),actor=w.characterId;
+ if(e.status==='active'&&e.phase==='dispute'&&p&&actor&&(actor===p.person||governingExecutives(w,p.to).includes(actor))){
+  const disputes=historicalDisputes(w,e,p),base=historicalBaseReview(w,e);
+  if(base)return '侯景与现有部曲正在调营至'+siteById[base.site].name+'，约 '+Math.max(0,base.due-w.day)+' 日后抵达并复核实际举兵条件；当前争议仍然保留。';
+  return disputes.length?'当前争议：'+disputes.join('、')+'。须就安全担保与部曲安置继续交涉。':e.security?.status==='negotiating'?'双方正在议定改编，原约继续有效，等待实际答复。':'当前正在复议人身安全与部曲安置，尚未形成新的违约事实。';
+ }
+ return e.result??visibleHistoricalMilestones(w,e).at(-1)?.text??'当前事实尚未形成新的交涉。';
+}
+
+export function historicalBaseReview(w:World,e:Event){
+ const d=e.decision,a=historicalArmy(w,e.actors.protagonist),j=a?.journey;
+ if(!d?.handled||d.kind!=='crisis'||!e.milestones.some(m=>m.key==='base-relocation:'+d.created)||!j)return;
+ return {site:j.route.at(-1)!,due:w.day+j.durations.slice(j.leg).reduce((n,nxt)=>n+nxt,0)-j.elapsed};
+}
