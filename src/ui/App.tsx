@@ -255,8 +255,10 @@ function GameView(){
       <ReferenceHudFrame kind="eventTrim"/>
       <PlayerHud world={game.world} onPerson={()=>openPerson(game.world!.characterId??'player',false)}/><OngoingFlags onWar={id=>{void afterCommand(pauseForPanel(),()=>{showWar(id);});}} key={'ongoing:'+game.entry} world={game.world} onOpen={openOngoing} onBrowse={()=>game.send({type:'speed',speed:0})}/><TimeControl date={dateLabel(game.world.day,game.world.scriptId)} day={game.world.day} speed={game.speed} locked={!person||timeLocked} lockReason={game.pauses.length?'待处理事件':lifestyleOpen?'选择生活重心中':modal==='estate'?'庄园窗口已暂停':modal==='staff'?'安排职官中':modal==='retinue'?'安排幕僚中':modal==='saves'?'管理存档中':'菜单已暂停'} onSpeed={speed=>{resumeSpeed.current=0;game.send({type:'speed',speed});}} onStep={()=>{resumeSpeed.current=0;game.send({type:'step'});}} onSave={()=>openModal('saves')} onMenu={()=>openModal('menu')}/>
 
+      <div className="campaign-right-dock">
       <NoticeStack notices={game.notices} onView={game.viewNotice} onDismiss={game.dismissNotice}/>
       {!houJingVisible&&<ArmyDock focus={armyFocus} key={'armies:'+game.entry} world={game.world} pending={game.pending} send={command=>game.send({type:'command',command})} onPerson={id=>openPerson(id)} onLocate={id=>{setSelected(id);setCameraAction(a=>({type:'selected',seq:a.seq+1}));}} selectedArmies={selectedArmies} onSelectArmy={selectArmy} onClearSelection={()=>setSelectedArmies([])} move={armyMove} onMove={value=>{setArmyMove(value);if(value){setLevel('city');setDrawer(null);setModal(null);}}}/>}
+      </div>
     </header>
 
     <div className={`game-body ${drawer==='character'?'character-open':''} ${drawer==='place'?'place-open':''} ${modal&&modal!=='map-person'&&modal!=='estate'&&modal!=='staff'&&modal!=='retinue'?'utility-open':''}`}>

@@ -1,11 +1,18 @@
 import {noticeCategories,noticeCategoryNames,type NoticeCategory} from '../core/noticePolicy';
 import {useNoticeSettings,changeNoticeSettings} from './noticeSettings';
 import {useEffect,useState} from 'react';
+import {paperIcon,type PaperIcon} from '../map/artSample/paperSymbols';
 import type {PauseEvent} from '../core/pauseEvents';
 import './noticeStack.css';
+const noticeIcons:Record<NoticeCategory,PaperIcon>={travel:'horse',family:'city',personnel:'objective',military:'army',economy:'coin',report:'objective'};
 function NoticeCard({event,held,onView,onDismiss}:{event:PauseEvent;held:boolean;onView:(event:PauseEvent)=>void;onDismiss:(id:string)=>void}){
  useEffect(()=>{if(held)return;const timer=setTimeout(()=>onDismiss(event.id),10000);return()=>clearTimeout(timer);},[held,event.id,onDismiss]);
- return <article className="notice-card"><div className="notice-card-main"><span className="notice-card-kind">{event.notice?noticeCategoryNames[event.notice]:'消息'}</span><strong>{event.title}</strong><p>{event.body}</p></div><div className="notice-card-actions"><button onClick={()=>onView(event)}>查看</button><button aria-label="关闭通知" onClick={()=>onDismiss(event.id)}>×</button></div></article>;
+ const category=event.notice,label=category==='military'?'军报':category?noticeCategoryNames[category]:'消息';
+ return <article className="notice-card">
+  <span className="notice-card-emblem" dangerouslySetInnerHTML={{__html:paperIcon(category?noticeIcons[category]:'objective')}}/>
+  <div className="notice-card-main"><div className="notice-card-heading"><span className="notice-card-kind">{label}</span><strong>{event.title}</strong></div><p>{event.body}</p></div>
+  <div className="notice-card-actions"><button className="notice-card-read" aria-label={'展阅'+event.title} onClick={()=>onView(event)}>展阅<span aria-hidden="true">›</span></button><button className="notice-card-dismiss" aria-label={'关闭通知：'+event.title} onClick={()=>onDismiss(event.id)}>×</button></div>
+ </article>;
 }
 export function NoticeStack({notices,onView,onDismiss}:{notices:PauseEvent[];onView:(event:PauseEvent)=>void;onDismiss:(id:string)=>void}){
  const [held,setHeld]=useState(false);

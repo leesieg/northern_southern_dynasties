@@ -61,7 +61,12 @@
 .focused-shell .ongoing-flag-row{justify-content:start}
 .focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-row{box-sizing:border-box;padding-right:32px}
 .focused-shell .ongoing-flags[data-compact=true] .ongoing-flag-entry .ongoing-flag{width:60px;height:96px}
-.focused-shell .topbar:has(.ongoing-flags[data-below-header=true]:not([data-empty=true])) .army-dock{top:calc(var(--ongoing-flags-bottom,var(--campaign-header)) + 10px);max-height:calc(100dvh - var(--ongoing-flags-bottom,var(--campaign-header)) - 24px)}
+/* Notices and units share one flowing column below the clock, clear of its tassel. */
+.focused-shell .campaign-right-dock{--dispatch-dock-top:calc(var(--campaign-header) + 10px);position:absolute;right:8px;top:var(--dispatch-dock-top);z-index:5;display:flex;flex-direction:column;gap:8px;width:366px;max-width:calc(100vw - var(--rail-width) - 24px);max-height:calc(100dvh - var(--dispatch-dock-top) - 24px);pointer-events:none}
+.focused-shell .campaign-right-dock:empty{display:none}
+.focused-shell .campaign-right-dock:has(>.notice-stack){--dispatch-dock-top:calc(var(--campaign-header) + 34px)}
+.focused-shell .campaign-right-dock>.army-dock{position:static;flex:0 1 auto;min-height:0;width:100%}
+.focused-shell .topbar:has(.ongoing-flags[data-below-header=true]:not([data-empty=true])) .campaign-right-dock{--dispatch-dock-top:calc(var(--ongoing-flags-bottom,var(--campaign-header)) + 10px)}
 
 /* Paper map dial, gilded arc, fixed circular targets and carved pedestal. */
 .focused-shell .map-command-dock.campaign-navigation{right:0;bottom:0;width:calc(350 * var(--dial-unit));height:calc(336 * var(--dial-unit));max-width:none;--dial-metal:radial-gradient(ellipse at 35% 18%,#3b3a2a,#17221b 50%,#0d1511)}
@@ -106,7 +111,8 @@
 .focused-shell .three-map-attribution summary:focus-visible{outline:2px solid #ebce91;outline-offset:3px}
 @media(max-width:850px){
  .focused-shell .chronicle-control{top:84px;max-width:calc(100vw - 76px)}
- .focused-shell .army-dock{top:178px;max-height:calc(100dvh - 202px)}
+ .focused-shell .campaign-right-dock{--dispatch-dock-top:178px}
+ .focused-shell .campaign-right-dock:has(>.notice-stack){--dispatch-dock-top:202px}
  .focused-shell .topbar>.reference-hud-frame--eventTrim{top:168px}
 }
 @media(max-width:600px){
@@ -126,3 +132,4 @@
  .focused-shell .chronicle-control .clock-utilities button{width:26px;height:28px}
 }
 @media(prefers-reduced-motion:reduce){.focused-shell .command-rail>button,.focused-shell .map-command-dock.campaign-navigation :is(button,summary){transition:none}}
+@media(max-width:480px){.focused-shell .campaign-right-dock{width:330px}}

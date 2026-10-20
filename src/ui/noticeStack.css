@@ -1,13 +1,20 @@
-.notice-stack{position:absolute;top:82px;right:336px;z-index:4;width:320px;display:grid;gap:7px;pointer-events:auto}
-.notice-card{display:flex;gap:6px;padding:8px 9px;background:linear-gradient(115deg,#f0e9d4,#e6dcc2);border:1px solid #a68d5a;border-radius:5px;box-shadow:0 4px 12px #07130c55;color:#30382d}
+/* Approved dispatch slips: two lines of ink on paper, with quiet brass fittings. */
+.notice-stack{display:grid;gap:6px;flex:none;min-width:0;width:100%;pointer-events:auto}
+.notice-card{--notice-ink:#31372b;--notice-muted:#67634e;position:relative;display:flex;align-items:center;gap:8px;min-width:0;min-height:48px;padding:6px 7px 6px 10px;color:var(--notice-ink);border:1px solid #9e8050;border-radius:3px;background:linear-gradient(100deg,#f3ead4f2,#eae0c7ed),url('/art/campaign/national-parchment.webp') center/500px;box-shadow:inset 0 0 0 2px #fff9e444,0 2px 4px #151c2040}
+.notice-card::before{content:'';position:absolute;inset:2px;border:1px solid #a68c542b;border-radius:1px;pointer-events:none}
+.notice-card::after{content:'';position:absolute;left:-3px;top:8px;bottom:8px;width:3px;border:1px solid #8f7041;border-radius:2px 0 0 2px;background:linear-gradient(90deg,#795a32,#d6bc7b);pointer-events:none}
+.notice-card-emblem{display:block;flex:0 0 24px;width:24px;height:26px;color:#71583b}
+.notice-card-emblem>svg{display:block;width:100%;height:100%;fill:#cbb78a44;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 #fff8e180)}
 .notice-card-main{min-width:0;flex:1;display:grid;gap:2px}
-.notice-card-kind{justify-self:start;padding:0 6px;font-size:var(--text-caption);line-height:16px;color:#f0ead9;background:#4c5a48;border-radius:2px}
-.notice-card-main>strong{font:var(--text-reading) var(--serif)}
-.notice-card-main>p{margin:0;font-size:var(--text-caption);line-height:15px;color:#525c49;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.notice-card-actions{display:flex;flex-direction:column;gap:4px;flex:none}
-.notice-card-actions button{font-size:var(--text-caption);padding:2px 8px}
-.notice-card button:focus-visible{outline:2px solid #8a6f3a;outline-offset:2px}
-@media(max-width:760px){.notice-stack{right:8px}}
+.notice-card-heading{display:flex;align-items:center;gap:6px;min-width:0}
+.notice-card-kind{flex:none;padding:0 4px;font:10px/14px var(--serif);color:#f5efdb;background:#4c5945;border-radius:1px;box-shadow:inset 0 0 0 1px #d2bd8b33}
+.notice-card-heading>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 14px/17px var(--serif);color:var(--notice-ink)}
+.notice-card-main>p{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/14px var(--serif);color:var(--notice-muted)}
+.notice-card-actions{display:flex;align-items:center;gap:2px;flex:none}
+.notice-card .notice-card-actions>button{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;min-width:0;min-height:32px;height:32px;padding:3px 5px;border:0;border-radius:1px;background:none;box-shadow:none;font:12px/1 var(--serif);color:#655a3f}
+.notice-card .notice-card-actions>.notice-card-dismiss{width:28px;padding:0;border-left:1px solid #9e80503d;color:#6b6554;font-size:16px}
+.notice-card .notice-card-actions>button:hover{background:#94754412;color:#333c2c}
+.notice-card .notice-card-actions>button:focus-visible{outline:2px solid #806338;outline-offset:-2px;background:#94754412}
 .notice-preferences{display:grid;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #c9bd9d66;color:inherit}
 .notice-preferences h3{margin:0;font:var(--text-reading) var(--serif)}
 .notice-preferences-note{margin:0;font-size:var(--text-caption);opacity:.75}
