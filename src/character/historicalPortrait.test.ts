@@ -107,3 +107,19 @@ it('the two young relatives grow through authored age stages and only adult outf
  world.life!.people['yuwen-jue'].death={day:0,cause:'illness'};
  const deceased=portraitContext('yuwen-jue',world);expect(deceased.life?.age).toBe(4);expect(source('yuwen-jue')).toContain('yuwen-jue-canonical-faces.png');
 });
+
+it('eleven portraits follow actual offices and preserve the approved native originals',()=>{
+ const world=newCampaignWorld('xiao-gang',undefined,'sandbox'),before=serializeWorld(world);
+ for(const id of ['zhu-yi','cui-jishu','hulu-guang','yu-jin','peng-le','xiao-lun','wang-sengbian','yang-kun','wang-lin','xiao-ji','xiao-cha'] as const){
+  const context=portraitContext(id,world),recipe=approvedPaintedRecipe(id,context),registration=historicalPortraitRegistration[id];
+  expect(context.office).toBe(id==='xiao-ji'?'governor':'civilian');
+  expect(recipe.rig).toBe('c-historical-'+id+'-v1');expect(recipe.parts[0].source).toContain('/historical-eleven-v1/');
+  expect(recipe.facialHair).toBe(id!=='yang-kun');expect(recipe.coveredEye).toBeUndefined();
+  const native=approvedPaintedRecipe(id,{...context,office:registration.native});expect(native.parts[0].source).toContain(id+'-canonical-faces.png');
+  if(context.office===registration.native)expect(recipe).toEqual(native);else expect(recipe.parts[0].source).toContain(id+'-faces.png');
+  const young=historicalPaintedRecipe(id,{...context,life:{...context.life!,age:12}});expect(young).toBeUndefined();
+ }
+ expect(serializeWorld(world)).toBe(before);
+ const cha=approvedPaintedRecipe('xiao-cha',portraitContext('xiao-cha',world));expect(cha.coveredEye).toBeUndefined();
+ expect(approvedPaintedRecipe('xiao-yi',portraitContext('xiao-yi',world)).coveredEye).toBe('left');
+});
