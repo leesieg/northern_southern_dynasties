@@ -10,6 +10,19 @@ import {personInfluence} from './personalInfluence';
 import {governingAuthority} from './government';
 function start(id='hou-jing'){const w=newCampaignWorld(id,undefined,'sandbox');initializeHistoricalStart(w);return w;}
 describe('historical Hou Jing factual chain',()=>{
+ it.each(['personal','retain'] as const)('reconsiders Liang only when the rejected %s offer has different terms',terms=>{
+  const w=start('guest-west'),army=w.realm!.armies.find(a=>w.mobility!.armyCommanders?.[a.id!]==='hou-jing')!;
+  actPact(w,{type:'pact',action:'request',realm:'liang',army:army.id,terms},'hou-jing');
+  actPact(w,{type:'pact',action:'answer',id:w.allegiancePacts!.items[0].id,accept:false},'xiao-yan');
+  w.day=200;w.life!.people['gao-huan'].illness={kind:'fever',severity:3,since:w.day};
+  const troops=army.troops,coins=w.realm!.treasuries.liang.coins;
+  advanceHistorical(w);
+  expect(w.allegiancePacts!.items.at(-1)).toMatchObject({to:terms==='personal'?'liang':'west',terms:'retain',status:'pending',army:army.id});
+  expect(w.allegiancePacts!.items[0].status).toBe('rejected');expect(w.realm!.armies.find(a=>a.id===army.id)!.troops).toBe(troops);expect(w.realm!.treasuries.liang.coins).toBe(coins);
+  w.day++;advanceHistorical(w);expect(w.allegiancePacts!.items.at(-1)?.status).toBe('active');
+  expect(w.realm!.armies.find(a=>a.id===army.id)!.troops).toBe(troops);expect(w.realm!.treasuries.liang.coins).toBe(coins-(terms==='personal'?100:0));
+  expect(parseWorld(serializeWorld(w)).historical).toEqual(w.historical);
+ });
  it('funds four real opening forces once, and does not backfill legacy saves',()=>{
   const w=newCampaignWorld('hou-jing',undefined,'sandbox'),population=Object.values(w.realm!.cities).reduce((n,c)=>n+c.population,0),grain=Object.values(w.realm!.cities).reduce((n,c)=>n+c.grain,0),coins=Object.values(w.realm!.treasuries).reduce((n,c)=>n+c.coins,0);
   initializeHistoricalStart(w);

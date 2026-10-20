@@ -11,7 +11,7 @@ import {grainCapacity,ensurePopulation,civilianFood} from './population';
 import {canEnter} from './diplomacy';
 import {governmentOf} from './government';
 import {accountWallet,transferAccount} from './obligations';
-import {fiscalRecord,territoryAccount,ensureFiscal} from './treasury';
+import {fiscalRecord,fiscalPath,ensureFiscal} from './treasury';
 import {takeCasualties} from './militaryAftermath';
 import type {World} from './types';
 export interface ArmyConvoy {labor?:number;loaded?:number;from:string;to:string;grain:number;route:string[];durations:number[];leg:number;elapsed:number}
@@ -37,7 +37,7 @@ function dispatch(w:World,a:Army){if(a.convoy||a.troops<=0)return;a.logisticsRea
  const city=s.cities[source.id],workers=Math.max(0,Math.floor(city.population*.1)-mobilizedTransportLabor(w,source.id)),mobilization=Math.max(.25,Math.min(1.5,((governmentOf(w,a.realm)?.support??60)+city.order)/120));
  let amount=Math.floor(Math.min(need,source.local+source.bank,lead?Math.min(600,workers*10*mobilization):6000));const wallet=accountWallet(w,a.payer??'central:'+a.realm);if(a.owner)amount=Math.min(amount,Math.max(0,(wallet?.read()??0)-(lead?1:0)));
  const cost=lead?Math.ceil(amount/50):0;if(amount<1||!wallet||wallet.read()<cost+(a.owner?amount:0)){a.logisticsReason=workers<1?'地方民夫已被征用':'运输或购粮预算不足';return;}
- if(a.owner){const destination=territoryAccount(w,a.realm,'county:'+source.id);ensureFiscal(w)!.balances[destination]??=0;const recipient=accountWallet(w,destination)!;if(recipient.read()+amount>recipient.capacity){a.logisticsReason='粮源公库无法收款';return;}transferAccount(w,a.payer!,destination,amount,'部曲购买军粮');}if(cost){wallet.write(wallet.read()-cost);fiscalRecord(w,a.realm,a.payer??'central:'+a.realm,'expense',cost,'军粮运输劳役费用');}
+ if(a.owner){const destination=fiscalPath(w,source.id,a.realm)[0];ensureFiscal(w)!.balances[destination]??=0;const recipient=accountWallet(w,destination)!;if(recipient.read()+amount>recipient.capacity){a.logisticsReason='粮源公库无法收款';return;}transferAccount(w,a.payer!,destination,amount,'部曲购买军粮');}if(cost){wallet.write(wallet.read()-cost);fiscalRecord(w,a.realm,a.payer??'central:'+a.realm,'expense',cost,'军粮运输劳役费用');}
  const local=Math.min(source.local,amount);city.grain-=local;s.treasuries[a.realm].grain-=amount-local;
  emergencyBurden(w,a.realm,source.id,local);
  if(!lead){a.supply+=amount;return;}a.convoy={labor:Math.ceil(amount/(10*mobilization)),from:source.id,to,grain:amount,route:source.path!.route,durations:source.path!.durations,leg:0,elapsed:0};

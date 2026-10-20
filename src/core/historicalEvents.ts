@@ -159,9 +159,10 @@ function npcDecision(w:World,e:Event){
    const to=historicalMusterDestination(w,e);if(to&&to!==personResidence(w,d.actor).site){dispatchNPC(w,d.actor,to);return;}
   }
   if((historicalArmy(w,d.actor)?.trainingUntil??0)>w.day)return;
-  const rejected=new Set(w.allegiancePacts?.items.filter(p=>p.person===d.actor&&p.status==='rejected'&&w.day-p.created<360).map(p=>p.to));
-  const hosts=worldRealms(w).filter(r=>r!==e.origin&&!w.realm!.annexed?.[r]&&!rejected.has(r)).sort((a,b)=>Number(b==='liang')-Number(a==='liang')||relationOpinion(w,d.actor,governingAuthority(w,b))-relationOpinion(w,d.actor,governingAuthority(w,a)));
-  choose:for(const terms of ['retain','personal'] as const)for(const realm of hosts){const q={...base,optionId:'seek',realm,terms} as const;if(!historicalReason(w,q,d.actor)){command=q;break choose;}}
+  // Refusing personal refuge does not reject a later offer backed by real troops.
+  const rejected=w.allegiancePacts?.items.filter(p=>p.person===d.actor&&p.status==='rejected'&&w.day-p.created<360)??[];
+  const hosts=worldRealms(w).filter(r=>r!==e.origin&&!w.realm!.annexed?.[r]).sort((a,b)=>Number(b==='liang')-Number(a==='liang')||relationOpinion(w,d.actor,governingAuthority(w,b))-relationOpinion(w,d.actor,governingAuthority(w,a)));
+  choose:for(const terms of ['retain','personal'] as const)for(const realm of hosts){if(rejected.some(p=>p.to===realm&&p.terms===terms))continue;const q={...base,optionId:'seek',realm,terms} as const;if(!historicalReason(w,q,d.actor)){command=q;break choose;}}
   // Travel, duties or influence can temporarily block every legal request. Retry the same decision.
   if(command.optionId==='wait')return;
  }else if(d.kind==='security-demand'){if(relationOpinion(w,e.actors.protagonist,d.actor)<=-30)command={...base,optionId:'demand'};}

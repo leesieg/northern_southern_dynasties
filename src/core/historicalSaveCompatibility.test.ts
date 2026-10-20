@@ -1,6 +1,15 @@
 import {it,expect} from 'vitest';
 import {officialSaveCompatible} from './contentBinding';
 
+it('restores the inspected day-1819 official save without accepting altered or custom locks',()=>{
+ const prior={packageId:'official-nsd',digest:'e7c5d7fe801fa1c1228b11fc85c427e0d044e522bfa5b21a7102b0e21d463a3b',engine:'4131f533a2275188434a8dbf04c8821ca962cd2ecc5751822b0cd5576993b459',assets:'0ff28f6346c87e80bd0fd56604c6d8be03b833f8ee3837b3e87e010e2979152e'};
+ const current={...prior,digest:'current',engine:'current'};
+ expect(officialSaveCompatible(prior,current)).toBe(true);
+ for(const field of ['digest','engine','assets','packageId'] as const)expect(officialSaveCompatible({...prior,[field]:'unknown'},current)).toBe(false);
+ expect(officialSaveCompatible({...prior,extra:true},current)).toBe(false);
+ expect(officialSaveCompatible(prior,{...current,packageId:'custom'})).toBe(false);
+});
+
 it('accepts only the exact official pre-health checkpoint, never an altered lock',()=>{
  const prior={packageId:'official-nsd',digest:'7552d2d58e4581fbb45f022305332fc36200c273e614fbfd238ee6e79fdef8ac',engine:'503eab013dd173d6b1913cb31ecd5a0283d68eae4cf664ede971c43d45348afd',assets:'74361bfbf572ba0c4928f662a47e563a9a16cdc96cb19c24c4c7702735e26a58'};
  const current={...prior,digest:'current',engine:'current'};
