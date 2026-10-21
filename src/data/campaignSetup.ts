@@ -11,7 +11,7 @@ export let campaignSetup={
  seed:546103,
  personSetup:{} as PersonSetups,
  succession:{} as InitialSuccession,
- life:null as ScenarioLife|null,
+ life:{'xiao-yi-elder':{presence:'dead',health:0,deathYear:500,source:'《南史》卷五十一；500 年已故。生年 450 为游戏设定，享年 50。'}} as ScenarioLife|null,
  politics:null as PoliticalDefinition|null,
  strategy:null as StrategyDefinition|null,
  // Authored initial stocks. Empty in official play; never reapplied on load.

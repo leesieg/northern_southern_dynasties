@@ -49,3 +49,11 @@ it.each(preElevenPortraitLocks)('preserves the exact pre-eleven-portrait officia
  expect(officialSaveCompatible({...prior,extra:true},current)).toBe(false);
  expect(officialSaveCompatible(prior,{...current,packageId:'custom'})).toBe(false);
 });
+
+it('restores only the captured pre-kinsmen official content lock',()=>{
+ const prior={"packageId":"official-nsd","digest":"cf4db2af94ed091fe69f17d8ec6d3c742c6cc0947d130f95d5cd4439ff5214b9","engine":"08be3e1d6ae422276750a840673892a74ab7d1dcc397bee317a153afbe7cb300","assets":"3cbb521d22480f1dc61f611bf84eb7d007510edb302790279682d2261fbee4aa"};
+ const current={...prior,digest:'current',engine:'current',assets:'updated'};
+ expect(officialSaveCompatible(prior,current)).toBe(true);
+ for(const field of ['digest','engine','assets','packageId'] as const)expect(officialSaveCompatible({...prior,[field]:'unknown'},current)).toBe(false);
+ expect(officialSaveCompatible({...prior,extra:true},current)).toBe(false);expect(officialSaveCompatible(prior,{...current,packageId:'custom'})).toBe(false);
+});

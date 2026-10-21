@@ -1,0 +1,239 @@
+{
+  "date": "2026-10-21",
+  "generator": "built-in image_gen",
+  "collection": "historical-seven-v1",
+  "canonicals": [
+    {
+      "id": "wei-shou",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/wei-shou.png",
+      "output": "wei-shou-canonical-faces.png"
+    },
+    {
+      "id": "li-hu",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/li-hu.png",
+      "output": "li-hu-canonical-faces.png"
+    },
+    {
+      "id": "yuan-qin",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/yuan-qin.png",
+      "output": "yuan-qin-canonical-faces.png"
+    },
+    {
+      "id": "yuan-kuo",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/yuan-kuo.png",
+      "output": "yuan-kuo-canonical-faces.png"
+    },
+    {
+      "id": "xiao-yuanming",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/xiao-yuanming.png",
+      "output": "xiao-yuanming-canonical-faces.png"
+    },
+    {
+      "id": "xiao-yi-elder",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/xiao-yi-elder.png",
+      "output": "xiao-yi-elder-canonical-faces.png"
+    },
+    {
+      "id": "chen-qian",
+      "variant": "canonical",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/chen-qian.png",
+      "output": "chen-qian-canonical-faces.png"
+    },
+    {
+      "id": "chen-qian",
+      "variant": "sovereign",
+      "reference": "../../../../../docs/art-direction/portrait-studies/historical-seven-546-v1/chen-qian-sovereign.png",
+      "output": "chen-qian-sovereign-faces.png"
+    }
+  ],
+  "edits": [
+    {
+      "id": "wei-shou",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-571b30dc-b0cc-41f7-9907-db9644079a75.png",
+      "output": "wei-shou-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n39-year-old narrow refined face, short neat moustache, pointed goatee, observant eyes. Blue-grey and warm taupe palette. Civilian scholar robe and brush; official blue robe with small honey-brown ribbed crown and tablet; commander modest iron lamellar over blue robe and low helmet; sovereign blue-grey ceremonial robe and compact upright Tongtian crown, no beads.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-b6bc7798-abaa-4e82-9d50-c61033d7b2fe.png"
+    },
+    {
+      "id": "wei-shou",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-571b30dc-b0cc-41f7-9907-db9644079a75.png",
+      "output": "wei-shou-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-c0378719-9aa9-4cb5-9aeb-901b3e66bcf6.png"
+    },
+    {
+      "id": "wei-shou",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-b6bc7798-abaa-4e82-9d50-c61033d7b2fe.png",
+      "output": "wei-shou-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-c8b92524-e5fd-47d2-9ac6-8aafa804d8a7.png"
+    },
+    {
+      "id": "li-hu",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-afd1f1a5-0549-4958-89e5-9889d0c684da.png",
+      "output": "li-hu-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n46-year-old broad-shouldered, strong brow, square jaw, short straight moustache, almost no chin beard. Slate-blue, ivory and coral-red palette. Civilian dark blue robe and black cap; official coral-red rectangular front panel with ivory border and black cap as reference; commander red/steel lamellar chest guard with blue sleeves and low helmet; sovereign subdued red/blue formal layered robe with black upright crown, no beads.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-acd9e0a1-c035-4666-b64f-203b9849dc72.png"
+    },
+    {
+      "id": "li-hu",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-afd1f1a5-0549-4958-89e5-9889d0c684da.png",
+      "output": "li-hu-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-7267daf4-77ce-4895-883e-1629a27efff3.png"
+    },
+    {
+      "id": "li-hu",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-acd9e0a1-c035-4666-b64f-203b9849dc72.png",
+      "output": "li-hu-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-4ee367a3-e638-4e39-8a02-b01ce557d12b.png"
+    },
+    {
+      "id": "yuan-qin",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-100173d9-f3d6-4442-b88c-c3fc5e87bd3f.png",
+      "output": "yuan-qin-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n21-year-old slender prince, poised long youthful clean-shaven face. Muted vermilion, green, ivory and ochre palette. Civilian green robe and small topknot crown; official green front panel, vermilion wide sleeves and tall but compact ivory cap with red cords; commander iron lamellar and red/green cloak with low helmet; sovereign red/green formal robe and pale Tongtian crown without beads. Same young face and no beard in EVERY cell.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-92f8b955-9111-499b-9249-09aa055d9d56.png"
+    },
+    {
+      "id": "yuan-qin",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-100173d9-f3d6-4442-b88c-c3fc5e87bd3f.png",
+      "output": "yuan-qin-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-791821dd-a126-44d4-938e-079b78e42375.png"
+    },
+    {
+      "id": "yuan-qin",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-92f8b955-9111-499b-9249-09aa055d9d56.png",
+      "output": "yuan-qin-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-9f5baae4-17d5-433c-b256-6e7ee82af3a8.png"
+    },
+    {
+      "id": "yuan-kuo",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-e0f62523-4d68-4b99-928e-3685bb0841f9.png",
+      "output": "yuan-kuo-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n16-year-old youthful smooth clean-shaven adolescent face, worried arched brows, soft features. Yellow-green, lavender and ivory palette. Civilian checked yellow-green robe with ivory lapels and small black ridged crown like reference; official lavender/green robes and modest official cap; commander proportionate lamellar over green cloth and small helmet, never bulky adult anatomy; sovereign green/lavender formal robe and black upright crown without beads. Same teenage face no beard in EVERY cell.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-62d7c688-edbf-4fa1-b06f-a094c43a3218.png"
+    },
+    {
+      "id": "yuan-kuo",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-e0f62523-4d68-4b99-928e-3685bb0841f9.png",
+      "output": "yuan-kuo-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-1ab9bd60-8849-4f1e-ab1e-41e6fdcbebaa.png"
+    },
+    {
+      "id": "yuan-kuo",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-62d7c688-edbf-4fa1-b06f-a094c43a3218.png",
+      "output": "yuan-kuo-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-2dbad047-a0fc-4446-921e-1f3301683ea3.png"
+    },
+    {
+      "id": "xiao-yuanming",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-38a61438-db72-4018-99da-9ec28df9d041.png",
+      "output": "xiao-yuanming-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n56-year-old long mature firm face, dark moustache and tapered medium beard with sparse grey. Olive-gold, charcoal-plum, ivory and bronze palette. Civilian patterned olive short over-robe, dark undersleeves and small two-handled bronze vessel as reference; official same palette with modest upright cap and tablet; commander subdued lamellar and olive cape; sovereign dignified olive/ochre formal robe with restrained Tongtian crown without beads. Preserve exact mature face.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-7205c46f-792f-4ff2-8013-e7080b4e13ac.png"
+    },
+    {
+      "id": "xiao-yuanming",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-38a61438-db72-4018-99da-9ec28df9d041.png",
+      "output": "xiao-yuanming-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-8d1a15a0-911b-424d-b33c-e3dbb543c425.png"
+    },
+    {
+      "id": "xiao-yi-elder",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-67c26726-3fcd-4bb1-b5ea-d2b3f3b72170.png",
+      "output": "xiao-yi-elder-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n50-year-old mature narrow angular face, sunken thoughtful eyes, slender moustache, long narrow dark pointed beard with sparse grey. Smoky blue-grey, jade-green, ivory palette. Civilian soft blue-grey robe, small black topknot cap and hand over chest; official patterned blue-grey robe, jade trim and upright black crown with bronze plaque as reference; commander plain late fifth-century lamellar over blue sleeves; sovereign restrained blue/jade court robe and compact upright crown no beads. These last two are optional artistic wardrobe variants, NOT historical appointments or resurrection.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-34eec339-7b2b-4850-8980-9b08ff4fe956.png"
+    },
+    {
+      "id": "xiao-yi-elder",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-67c26726-3fcd-4bb1-b5ea-d2b3f3b72170.png",
+      "output": "xiao-yi-elder-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-e0545d7c-8b27-470d-bc2f-34d7d9b741c9.png"
+    },
+    {
+      "id": "chen-qian",
+      "kind": "atlas",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-f65b06ce-190d-458d-a7f9-3ec0092cea64.png",
+      "output": "chen-qian-faces.png",
+      "prompt": "Use case: identity-preserve. Asset: four-outfit portrait atlas for the existing historical game compositor.\nThe reference is this SAME person's portrait. Preserve their distinctive identity, face shape, specified age, colouring, three-quarter FRONT angle, fine brown-black ink and muted watercolour on ivory. Create ONE 1024×1536 PNG with a precise 2×2 grid, FOUR 512×768 cells. No gaps, dividing lines, labels or frames. Order TOP LEFT civilian; TOP RIGHT governor/official; BOTTOM LEFT military commander; BOTTOM RIGHT sovereign.\nEach cell shows ONE same person from FULL headgear to upper thighs, BOTH eyes visible, natural hands close to waist, same head scale and angle across cells, eye line around local y=180. Headgear and feathers SHORT and fully inside their cell with at least 40px plain paper ABOVE. No overlap. Paper background no scene. Sixth-century Southern/Northern Dynasties clothing, no Tang/Song/Ming shortcuts, no oversized armour, bead curtains, writing, watermarks, logo, blood or wounds. Identity must remain identical across ALL four cells.\n24-year-old recognisable oval handsome face, narrow almond eyes, straight brows, slender curled moustache and neat short chin/jaw beard. Plum, wine crimson, ivory, gold palette. Civilian plum patterned robe and small black cap; official exactly the reference's crimson rectangular front panel, broad ivory border, plum sleeves with gold lining and round black cap with ivory fittings; commander crimson lamellar over plum sleeves, compact steel helmet; sovereign muted saffron over wine red, pale ivory sculptural Tongtian crown with no beads, modest slightly longer tapered beard but SAME adult face and jaw. Sheathed ring-pommel sword in commander/official, hands close to waist.",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-0765f3cf-6579-4665-bc87-0bcf70850926.png"
+    },
+    {
+      "id": "chen-qian",
+      "kind": "canonical-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-f65b06ce-190d-458d-a7f9-3ec0092cea64.png",
+      "output": "chen-qian-canonical-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-51e06b3b-f9fe-4264-bf04-4bc7ea73ce17.png"
+    },
+    {
+      "id": "chen-qian",
+      "kind": "sovereign-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-e75235ba-b7d8-4cd1-aecc-beb218d34fe4.png",
+      "output": "chen-qian-sovereign-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-34c10b17-4775-4eb4-9ca8-25456711186e.png"
+    },
+    {
+      "id": "xiao-yuanming",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-7205c46f-792f-4ff2-8013-e7080b4e13ac.png",
+      "output": "xiao-yuanming-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-4e721ff3-2095-4501-8ace-0464abdf55b5.png"
+    },
+    {
+      "id": "xiao-yi-elder",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-34eec339-7b2b-4850-8980-9b08ff4fe956.png",
+      "output": "xiao-yi-elder-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-22024b4a-f2f9-448c-b292-e1fc4e855886.png"
+    },
+    {
+      "id": "chen-qian",
+      "kind": "atlas-base",
+      "reference": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-0765f3cf-6579-4665-bc87-0bcf70850926.png",
+      "output": "chen-qian-base.png",
+      "prompt": "Use case: precise-object-edit. Asset: matched blank-face base for the game's layered genetic portrait compositor.\nEdit THIS EXACT image at IDENTICAL 1024×1536 dimensions and spatial alignment. Erase ONLY internal features on EVERY visible face: both eyebrows, eyes including creases/pupils/lashes, nose outline/shadows/nostrils, lips and mouth line. Fill ONLY these inner face regions with smooth skin-coloured watercolour matching adjacent skin. Preserve EXACT silhouette, ears, hairline, cheeks, chin, external beard/moustache, head position/scale, headwear, body, clothes, hands, props and ivory paper arrangement. No eye remnants, nostrils or lip contours. Do not reposition, resize, reframe, redesign or improve anything else. Intentionally faceless internal compositor layer. No text, logos or new objects.\n",
+      "generatedOriginal": "/Users/siegsieg/.codex/generated_images/01a1473c-9fd7-79b0-a1af-a2af87d95b6a/exec-360e663e-8c98-4947-afcf-7e0b491fdfae.png"
+    }
+  ],
+  "requestFailures": [
+    {
+      "phase": "initial companion requests",
+      "detail": "Seven blank-face requests lacked the prompt and three atlas requests stopped locally before generation because the prompting constants were read before their producing execution completed. No image was produced by those requests. Constants were made available, and only the affected requests were repeated successfully."
+    }
+  ]
+}

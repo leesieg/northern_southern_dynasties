@@ -5,6 +5,7 @@ import {expandedPeople} from './expandedPeople';
 export interface BirthRecord {year:number;basis:'year'|'estimate'|'fictional';source?:string}
 const liang='https://zh.wikisource.org/wiki/梁書/',qi='https://zh.wikisource.org/wiki/北齊書_(四庫全書本)/',zhou='https://zh.wikisource.org/wiki/周書/';
 export let birthRecords:Record<string,BirthRecord>={
+ 'xiao-yi-elder':{year:450,basis:'estimate',source:'https://zh.wikisource.org/wiki/南史/卷51'},
  'xiao-yan':{year:464,basis:'year',source:liang+'卷03'},
  'xiao-gang':{year:503,basis:'year',source:liang+'卷04'},
  'xiao-yi':{year:508,basis:'year',source:liang+'卷05'},

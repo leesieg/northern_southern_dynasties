@@ -16,15 +16,16 @@ const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&
 export function upgradeContent(value:unknown){
  if(!object(value)||value.version!==2)return;
  if(!allowsLegacyContent()){if(value.contentVersion!==CONTENT_VERSION)throw new Error('此内容包没有声明适用的旧版迁移。');return;}
+ if(value.contentVersion==='546-map-0.6'){upgradeHistoricalRelatives(value);value.contentVersion=CONTENT_VERSION;return;}
  if(['546-map-0.1','546-map-0.2','546-map-0.3','546-map-0.4','546-map-0.5'].includes(String(value.contentVersion)))upgradeCalendar(value);
- if(value.contentVersion==='546-map-0.5'){value.contentVersion=CONTENT_VERSION;return;}
- if(value.contentVersion==='546-map-0.2'||value.contentVersion==='546-map-0.3'||value.contentVersion==='546-map-0.4'){upgradeOfficials(value);return;}
+ if(value.contentVersion==='546-map-0.5'){upgradeHistoricalRelatives(value);value.contentVersion=CONTENT_VERSION;return;}
+ if(value.contentVersion==='546-map-0.2'||value.contentVersion==='546-map-0.3'||value.contentVersion==='546-map-0.4'){upgradeOfficials(value);upgradeHistoricalRelatives(value);return;}
  if(value.contentVersion!=='546-map-0.1')return;
  if(!Number.isSafeInteger(value.day)||Number(value.day)<0||Number(value.day)>365000)return;
  const day=Number(value.day),w=value as unknown as World;
  if(object(value.realm)&&object(value.realm.cities))for(const [id] of expandedSeats){
   if(Object.hasOwn(value.realm.cities,id))throw new Error('旧版存档包含新版地点，无法安全升级。');
-  const s=siteById[id];value.realm.cities[id]={owner:s.polity,controller:s.polity,governor:null,population:regionalEconomy(id).initialPopulation,grain:0,irrigation:0,order:70,prosperity:50,tax:'normal'};
+  const s=siteById[id];value.realm.cities[id]={owner:s.polity,controller:s.polity,governor:null,population:regionalEconomy(id).initialPopulation,grain:0,irrigation:0,order:70,prosperity:50,tax:'normal',estatePolicy:'compact'};
  }
  for(const p of expandedPeople){
   if(object(value.life)&&object(value.life.people)&&!Object.hasOwn(value.life.people,p.id))value.life.people[p.id]={health:healthCapacity(ageAt(w,p.id)??18),illness:null,careUntil:0,death:null};
@@ -40,7 +41,7 @@ export function upgradeContent(value:unknown){
   if(!Object.hasOwn(value.families.prestige,p.id))value.families.prestige[p.id]=0;
  }
  if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const court=w.realm.governments.realms[r]?.court;if(court?.members&&object(court.members)){const fresh=newCourt(w,r);for(const p of expandedPeople.filter(p=>p.realm===r))if(!Object.hasOwn(court.members,p.id))court.members[p.id]=fresh.members[p.id];}}
- upgradeOfficials(value);
+ upgradeOfficials(value);upgradeHistoricalRelatives(value);
  value.contentVersion=CONTENT_VERSION;
  if(Array.isArray(value.chronicle)){value.chronicle.push({day,person:'player',text:'州郡与人物名录已增补。既有地点人口、钱粮及进行中事项保留；新增县域人口为剧本估计，未追溯结算收入。'});if(value.chronicle.length>100)value.chronicle.shift();}
 }
@@ -84,4 +85,19 @@ function upgradeOfficials(value:Record<string,unknown>){
  }
  if(w.realm?.governments)for(const r of ['liang','east','west'] as const){const g=w.realm.governments.realms[r];if(!g)continue;const court=g.court;for(const p of officeReserves.filter(p=>p.realm===r))g.merit[p.id]??=p.initialMerit;if(court?.members){const fresh=newCourt(w,r);for(const p of [...countyOfficials,...officeReserves].filter(p=>p.realm===r))court.members[p.id]??=fresh.members[p.id];}}
  value.contentVersion=CONTENT_VERSION;
+}
+
+/** Add only the new living kinsman; existing people and all wallets stay intact. */
+function upgradeHistoricalRelatives(value:Record<string,unknown>){
+ if(!Number.isSafeInteger(value.day)||Number(value.day)<0)return;
+ const w=value as unknown as World;
+ if(w.life?.people&&!Object.hasOwn(w.life.people,'xiao-yi-elder'))w.life.people['xiao-yi-elder']={health:0,illness:null,careUntil:0,death:null};
+ const p=expandedPeople.find(p=>p.id==='xiao-yuanming');if(!p)return;
+ if(w.life?.people&&!Object.hasOwn(w.life.people,p.id))w.life.people[p.id]={health:healthCapacity(ageAt(w,p.id)??56),illness:null,careUntil:0,death:null};
+ if(w.relationships?.reserves&&!Object.hasOwn(w.relationships.reserves,p.id))w.relationships.reserves[p.id]=0;
+ if(w.relationships?.maritalBasis&&!Object.hasOwn(w.relationships.maritalBasis,p.id))w.relationships.maritalBasis[p.id]='free';
+ if(w.mobility?.residences&&!Object.hasOwn(w.mobility.residences,p.id))w.mobility.residences[p.id]={site:p.home,journey:null};
+ if(w.families?.prestige&&!Object.hasOwn(w.families.prestige,p.id))w.families.prestige[p.id]=0;
+ if(w.realm?.personalInfluence&&!Object.hasOwn(w.realm.personalInfluence,p.id))w.realm.personalInfluence[p.id]=0;
+ const g=w.realm?.governments?.realms[p.realm];if(g?.court?.members&&!Object.hasOwn(g.court.members,p.id))g.court.members[p.id]=newCourt(w,p.realm).members[p.id];
 }

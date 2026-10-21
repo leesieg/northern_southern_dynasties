@@ -2,7 +2,7 @@ import {personCulture} from '../core/culture';
 import {armyCommander} from '../core/mobility';
 import {portraitRank} from './portraitRank';
 import {expandedPersonById} from '../data/expandedPeople';
-import {ageOf,ageAt,lifeOf} from '../core/lifeState';
+import {ageOf,ageAt,lifeOf,isDeceased} from '../core/lifeState';
 import type {PortraitLife} from './portraitLife';
 import { portraitProfiles,applyPortraitProfile } from '../data/portraitProfiles';
 import { characterById,historicalCharacters } from '../data/characters';
@@ -30,7 +30,7 @@ export function portraitContext(id:string,world?:World):PortraitContext {
  if(retired)office='civilian';
  else if(office==='civilian'&&world?.realm&&!world.realm.governments&&(Object.values(world.realm.cities).some(city=>city.governor===id)||Object.values(world.realm.local?.seats??{}).some(seat=>seat.holder===id)))office='governor';
  const age=ageOf(world,id),life=lifeOf(world,id);
- return {life:age===null?undefined:{age,baselineAge:ageAt(undefined,id)??0,sickness:life?.illness?.severity??0,deceased:!!life?.death,beard:identity.sex==='male'&&!!portraitProfiles[id]?.beard&&portraitProfiles[id].beard!=='none'},identity:{...identity,cultureId:personCulture(world,id)},office,headwear:portraitProfiles[id]?.headwear,maturity:age===null?portraitProfiles[id]?.maturity??.35:Math.max(0,Math.min(1,(age-12)/75)),beard:portraitProfiles[id]?.beard??'none',traits:world?.social?.traits[id]??defaultTraits(id),stress:world?.characterId===id?world.social?.stress??0:0};
+ return {life:age===null?undefined:{age,baselineAge:ageAt(undefined,id)??0,sickness:life?.illness?.severity??0,deceased:isDeceased(world,id),beard:identity.sex==='male'&&!!portraitProfiles[id]?.beard&&portraitProfiles[id].beard!=='none'},identity:{...identity,cultureId:personCulture(world,id)},office,headwear:portraitProfiles[id]?.headwear,maturity:age===null?portraitProfiles[id]?.maturity??.35:Math.max(0,Math.min(1,(age-12)/75)),beard:portraitProfiles[id]?.beard??'none',traits:world?.social?.traits[id]??defaultTraits(id),stress:world?.characterId===id?world.social?.stress??0:0};
 }
 export function composePortrait(context:PortraitContext){
  const phenotype=expressGenome(context.identity.genome),northern=context.identity.culture==='northern';

@@ -20,7 +20,8 @@ import {healthLabel} from '../core/lifeState';
 import {die} from '../core/life';
 import type {World} from '../core/types';
 const start=()=>newCampaignWorld('xiao-yan',undefined,'sandbox');
-function legacy(){const w=start();w.contentVersion='546-map-0.1';for(const [id] of expandedSeats)delete w.realm!.cities[id];for(const p of expandedPeople){delete w.life!.people[p.id];delete w.mobility!.residences[p.id];delete w.relationships!.reserves[p.id];delete w.relationships!.maritalBasis[p.id];delete w.realm!.personalInfluence![p.id];for(const g of Object.values(w.realm!.governments!.realms))delete g.court!.members[p.id];}for(const id of Object.keys(w.families!.prestige))if(id!=='fictional'&&!historicalCharacters.some(p=>p.id===id))delete w.families!.prestige[id];return w;}
+// Version 0.1 predates tenure history; a fresh modern ledger still refers to the removed county seats.
+function legacy(){const w=start();w.contentVersion='546-map-0.1';delete w.rulerHistory;for(const [id] of expandedSeats)delete w.realm!.cities[id];for(const p of expandedPeople){delete w.life!.people[p.id];delete w.mobility!.residences[p.id];delete w.relationships!.reserves[p.id];delete w.relationships!.maritalBasis[p.id];delete w.realm!.personalInfluence![p.id];for(const g of Object.values(w.realm!.governments!.realms))delete g.court!.members[p.id];}for(const id of Object.keys(w.families!.prestige))if(id!=='fictional'&&!historicalCharacters.some(p=>p.id===id))delete w.families!.prestige[id];return w;}
 describe('546 content enrichment',()=>{
  it('has connected, unique seats and five-level administrative entities, with matching groups',()=>{
   expect(sites.length).toBeGreaterThan(100);expect(new Set(sites.map(s=>s.id)).size).toBe(sites.length);

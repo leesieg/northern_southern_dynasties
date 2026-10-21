@@ -123,3 +123,21 @@ it('eleven portraits follow actual offices and preserve the approved native orig
  const cha=approvedPaintedRecipe('xiao-cha',portraitContext('xiao-cha',world));expect(cha.coveredEye).toBeUndefined();
  expect(approvedPaintedRecipe('xiao-yi',portraitContext('xiao-yi',world)).coveredEye).toBe('left');
 });
+
+
+it('new historical portraits share the common rules while the deceased elder keeps his own identity',()=>{
+ const w=newCampaignWorld('xiao-yan',undefined,'sandbox'),before=structuredClone(w);
+ for(const id of ['wei-shou','li-hu','yuan-qin','yuan-kuo','xiao-yuanming','xiao-yi-elder','chen-qian']){
+  const context=portraitContext(id,w),recipe=approvedPaintedRecipe(id,context);
+  expect(recipe.rig).toBe('c-historical-'+id+'-v1');expect(recipe.parts[0].source).toContain('/historical-seven-v1/');
+ }
+ const elder=portraitContext('xiao-yi-elder',w);expect(elder.life!.age).toBe(50);expect(elder.life!.deceased).toBe(true);expect(elder.identity.cultureId).toBe('han');
+ expect(historicalPortraitRegistration['yuan-qin'].facialHair).toBe(false);expect(historicalPortraitRegistration['yuan-kuo'].facialHair).toBe(false);expect(w).toEqual(before);
+});
+
+it('Chen Qian uses the separate supplied official and emperor paintings without changing age or genes',()=>{
+ const w=newCampaignWorld('xiao-yan',undefined,'sandbox'),context=portraitContext('chen-qian',w),identity=structuredClone(context.identity);
+ const official=approvedPaintedRecipe('chen-qian',{...context,office:'governor'}),sovereign=approvedPaintedRecipe('chen-qian',{...context,office:'ruler'});
+ expect(official.parts[0].source).toContain('chen-qian-canonical-faces.png');expect(sovereign.parts[0].source).toContain('chen-qian-sovereign-faces.png');expect(sovereign.parts[0].crop).toEqual({x:0,y:0,width:1024,height:1536});
+ w.realm!.governments!.realms.liang.ruler='chen-qian';const crowned=portraitContext('chen-qian',w);expect(crowned.office).toBe('ruler');expect(crowned.life!.age).toBe(context.life!.age);expect(crowned.identity).toEqual(identity);expect(approvedPaintedRecipe('chen-qian',crowned).parts[0].source).toContain('chen-qian-sovereign-faces.png');
+});

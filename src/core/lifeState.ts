@@ -53,7 +53,7 @@ export function ageAt(w:Pick<World,'day'|'scriptId'|'generatedPeople'>|undefined
  return Math.max(0,new Date(Date.UTC(getScript(w?.scriptId).year,0,1+day)).getUTCFullYear()-birth.year);
 }
 export function ageOf(w:World|undefined,id:string){const declared=campaignSetup.life?.[lifeId(id)];if(declared?.presence==='dead')return declared.deathYear===null?null:declared.deathYear-birthRecords[lifeId(id)].year;return ageAt(w,id,lifeOf(w,id)?.death?.day??w?.day??0);}
-export function ageLabel(w:World|undefined,id:string){const presence=initialPresence(lifeId(id));if(presence==='unborn')return '未出生';if(presence==='excluded')return '不参与本局';const n=ageOf(w,id);return n===null?'年龄不详':(birthRecords[lifeId(id)]?.basis==='estimate'?'约 ':'')+n+' 岁';}
+export function ageLabel(w:World|undefined,id:string){const presence=initialPresence(lifeId(id));if(presence==='unborn')return '未出生';if(presence==='excluded')return '不参与本局';const n=ageOf(w,id);return n===null?'年龄不详':n+' 岁';}
 export function lifeStage(age:number){return age<16?'幼年':age<30?'青年':age<50?'壮年':age<65?'中年':'老年';}
 export function healthLabel(w:World,id:string){const presence=initialPresence(lifeId(id));if(presence==='unborn')return '未出生';if(presence==='excluded')return '不参与本局';const p=lifeOf(w,id);return isDeceased(w,id)?'已故':!p?'健康不详':p.illness?(p.illness.severity===3?'重症 · ':'')+illnessNames[p.illness.kind]:(p.injuryUntil??0)>w.day?'军中负伤':(p?.health??100)<40?'衰弱':(p?.health??100)<65?'欠安':activeHealthProfile(w,id)?.complication?'积劳欠安':'康健';}
 export function healthCapacity(age:number){return Math.max(25,100-Math.max(0,age-40));}

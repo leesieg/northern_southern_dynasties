@@ -14,6 +14,7 @@ import {CharacterTraitIcon} from './CharacterTraitIcon';
 import {isDeceased,ageLabel,ageOf,healthLabel,lifeOf,lifeStage,illnessNames,activeHealthProfile,ageRiskMultiplier} from '../core/lifeState';
 import {autoCareReason,careReason} from '../core/life';
 import {birthRecords} from '../data/lifespans';
+import {campaignSetup} from '../data/campaignSetup';
 import {healthProfileFor} from '../data/healthProfiles';
 import {dateLabel} from '../core/world';
 import type {World,GameCommand} from '../core/types';
@@ -30,21 +31,21 @@ export function TemporaryIllnessTrait({world,id}:{world:World;id:string}){
 }
 export function LifeSummary({world,id}:{world:World;id:string}){
  const life=lifeOf(world,id),age=ageOf(world,id);
- if(isDeceased(world,id))return <p className="person-vitals deceased"><span>已故</span>{life?.death&&<strong>{ageLabel(world,id)}</strong>}</p>;
- return <p className="person-vitals"><strong title="按出生年份计龄；生年不详者显示约龄">{ageLabel(world,id)}</strong>{age!==null&&<span>{age>=70?'高龄':lifeStage(age)}</span>}{life&&<span>{healthLabel(world,id)}</span>}{life&&life.careUntil>world.day&&<span>照料中</span>}</p>;
+ if(isDeceased(world,id))return <p className="person-vitals deceased"><span>已故</span>{age!==null&&<strong>{ageLabel(world,id)}</strong>}</p>;
+ return <p className="person-vitals"><strong title="按设定出生年份计龄">{ageLabel(world,id)}</strong>{age!==null&&<span>{age>=70?'高龄':lifeStage(age)}</span>}{life&&<span>{healthLabel(world,id)}</span>}{life&&life.careUntil>world.day&&<span>照料中</span>}</p>;
 }
 export function LifeDetails({world:w,id,pending,send,onSuccession,onOffice}:{world:World;id:string;pending:boolean;send:(c:GameCommand)=>Promise<boolean>;onSuccession?:()=>void;onOffice?:()=>void}){
  const [careAction,setCareAction]=useState<LifeCommand['action']|null>(null);
  useEffect(()=>setCareAction(null),[id]);
  const life=lifeOf(w,id),generated=w.generatedPeople?.[id],birth=birthRecords[id]??(generated?{year:new Date(Date.UTC(getScript(w.scriptId).year,0,1+generated.birthDay)).getUTCFullYear(),basis:'fictional'}:undefined);if(!life||!birth)return null;
- const reason=careReason(w,id),illness=life.illness,restCommand:FamilyCommand={type:'familyLife',action:resting(w,id)?'resume':'rest'};
+ const deceased=isDeceased(w,id),initialDeath=campaignSetup.life?.[id]?.deathYear,reason=careReason(w,id),illness=life.illness,restCommand:FamilyCommand={type:'familyLife',action:resting(w,id)?'resume':'rest'};
  const healthReason=(action:LifeCommand['action'])=>action==='care'?careReason(w,id):autoCareReason(w,id)||(action==='auto-care'&&w.life?.autoCare?.payer===id?'已有自动延医额度':action==='stop-auto-care'&&w.life?.autoCare?.payer!==id?'自动延医已停止':'');
  const careTitle=careAction==='care'?'延医照料':careAction==='auto-care'?'设置自动延医':'停止自动延医';
  const careBlocker=careAction?healthReason(careAction):'';
  const recipient=getPerson(w,id)?.name??(id===(w.characterId??'fictional')?w.people[0].name:id);
 
- return <section className="person-health"><h3><ArtIcon name="steadfast" size={26}/>{life.death?'生卒':'身体与安排'}</h3><p>{birth.basis==='estimate'?'约生于 ':birth.basis==='fictional'?'生于 ':'生于 '}{birth.year} 年{life.death?' · '+dateLabel(life.death.day,w.scriptId)+' '+(({illness:'病逝',age:'寿终',battle:'战死',murder:'遇害',execution:'被处决'}[life.death.cause])):''}</p>{birth.basis==='estimate'&&<small>生年不详 · 约龄</small>}
- {!life.death&&<><div className="health-gauge"><meter min={0} max={100} low={40} high={65} optimum={100} value={life.health} aria-label="健康"/><span>{healthLabel(w,id)}</span></div>
+ return <section className="person-health"><h3><ArtIcon name="steadfast" size={26}/>{deceased?'生卒':'身体与安排'}</h3><p>生于 {birth.year} 年{life.death?' · '+dateLabel(life.death.day,w.scriptId)+' '+(({illness:'病逝',age:'寿终',battle:'战死',murder:'遇害',execution:'被处决'}[life.death.cause])):initialDeath!=null?' · '+initialDeath+' 年去世':''}</p>
+ {!deceased&&<><div className="health-gauge"><meter min={0} max={100} low={40} high={65} optimum={100} value={life.health} aria-label="健康"/><span>{healthLabel(w,id)}</span></div>
  <p className="health-risk-note">年龄风险与病伤分别结算；延医降低病伤风险，不能消除衰老风险。病情逐月评估，不保证到期痊愈。</p>{id===w.characterId&&<div className="historical-links">{onSuccession&&<button onClick={onSuccession}>家业继任</button>}{onOffice&&w.realm&&<button onClick={onOffice}>公职与交接</button>}</div>}
  {(life.injuryUntil??0)>w.day&&<p>军中负伤 · 余 {life.injuryUntil!-w.day} 日。军事 −2，其他能力 −1；延医或交接事务后休养可加快恢复。</p>}
  {illness?<p>{illnessNames[illness.kind]} · {['轻症','病势加重','重症'][illness.severity-1]}。{illness.severity===3?'暂不能远行。':''}患病使军事能力降低 {illness.severity*2}。</p>:<p>静养可恢复身体；年岁增长会逐渐削弱体力。</p>}

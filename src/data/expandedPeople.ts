@@ -5,6 +5,8 @@ import {countyOfficials,officeReserves} from './localOfficials';
 export interface ExpandedPerson {id:string;name:string;realm:'liang'|'east'|'west';family:string;home:string;birth:number;sex:'male'|'female';role:'commander'|'scholar'|'prince';source:{title:string;url:string};note:string;fictional?:boolean}
 type Row=[string,string,ExpandedPerson['realm'],string,string,number,ExpandedPerson['role'],string,number];
 const rows:Row[]=[
+ // Birth year 490 is a gameplay estimate; the sources do not give a certain year.
+ ['xiao-yuanming','萧渊明','liang','xiao','jiankang',490,'prince','北齊書',33],
  ['xiao-lun','萧纶','liang','xiao','jiankang',507,'prince','梁書',29],
  ['xiao-ji','萧纪','liang','xiao','chengdu',508,'prince','梁書',55],
  ['xiao-cha','萧詧','liang','xiao','xiangyang',519,'prince','周書',48],
@@ -67,6 +69,7 @@ expandedPeople.push(...countyOfficials,...officeReserves);
 export let expandedPersonById:Record<string,ExpandedPerson>=Object.fromEntries(expandedPeople.map(p=>[p.id,p]));
 // Each edge has its own source; common surnames never imply a blood relationship.
 export let expandedParentPairs:[string,string,string,number][]=[
+ ['xiao-shunzhi','xiao-yi-elder','南史',51],['xiao-yi-elder','xiao-yuanming','南史',51],
  ['xiao-yan','xiao-lun','梁書',29],['xiao-yan','xiao-ji','梁書',55],['xiao-yan','xiao-tong','梁書',8],
  ['xiao-tong','xiao-cha','周書',48],['xiao-tong','xiao-yu','梁書',55],['xiao-gang','xiao-daqi','梁書',44],
  ['gao-huan','gao-yan','北齊書',6],['gao-huan','gao-zhan','北齊書',7],
@@ -83,6 +86,7 @@ export let expandedParentPairs:[string,string,string,number][]=[
  ['guest-liang-engineer','guest-liang-clerk','',0],['guest-east-elder','guest-east-clerk','',0],['guest-west-elder','guest-west-clerk','',0],
 ];
 export let expandedAncestors=[
+ {id:'xiao-yi-elder',name:'萧懿',family:'xiao',book:'南史',volume:51},
  {id:'wei-xu',name:'韦旭',family:'wei-jingzhao',book:'周書',volume:31},
  {id:'duan-rong',name:'段荣',family:'duan-wuwei',book:'北齊書',volume:16},
  {id:'yang-jin',name:'杨津',family:'yang-hongnong',book:'北齊書',volume:34},
@@ -93,6 +97,7 @@ export let expandedAncestors=[
 ];
 
 const biographies:Record<string,string>={
+ 'xiao-yuanming':'字靖通，萧懿之子、萧衍之侄，封贞阳侯。生年未详，490 年仅为本局年龄估值，建康驻地为剧本安排；未前置 547 年出征、被俘及后来的帝位。',
  'xiao-lun':'萧衍第六子，封邵陵王。','xiao-ji':'萧衍第八子，封武陵王，经营蜀地。','xiao-cha':'萧统之子，封岳阳王，出镇襄阳。','xiao-yu':'萧统之子，封河东王。','xiao-daqi':'皇太子萧纲长子，封宣城王。',
  'he-jingrong':'梁廷旧臣，曾任尚书仆射。','zhu-yi':'梁廷近臣，参与机务与文书。','yang-kan':'泰山梁甫人，南归梁朝的将领。','yang-kun':'羊侃之子，出身将门。','wei-can':'韦叡之孙、韦放之子，梁将。','wang-sengbian':'王神念之子，效力于湘东王。','wang-lin':'会稽山阴人，效力于湘东王。',
  'xu-chi':'徐陵之父，梁东宫文士。','xu-ling':'徐摛之子，梁东宫文士。','yu-jianwu':'南阳新野人，庾信之父。','yu-xin':'庾肩吾之子，梁东宫文士，此时尚未北迁。','chen-qian':'陈道谭之子，陈霸先之侄。','chen-daotan':'陈霸先之兄，梁将。',

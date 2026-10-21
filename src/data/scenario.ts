@@ -5,7 +5,7 @@ import {expandedSeats} from './expandedGeography.ts';
 import { countySeats } from './administration.ts';
 import type { Polity, Road, Site } from '../core/types';
 
-export let CONTENT_VERSION = '546-map-0.6';
+export let CONTENT_VERSION = '546-map-0.7';
 export let polities: Record<Polity, { name: string; color: string; short: string }> = {
   liang: { name: '梁', color: '#668b7b', short: '江左' },
   east: { name: '东魏', color: '#8e778f', short: '河北' },
